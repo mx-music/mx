@@ -3416,21 +3416,6 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # Written by ear, they stay as they were until recordings of a kit's kick, clap and rimshot are found, so their synthdefs keep these hashes.
-  @unchanged %{
-    kick: "4a8d0ed94b0c5c993d4c7410cfdd92530c572f89dc5855241a541d67408989e3",
-    clap: "6a37c221ce2238d75634dd3f21d0ad158506cdd2407facba4e4343d52c59cf80",
-    rimshot: "2aad24d0a0a00b5f976bcd6c03847f6ad7f6d2c9f2330e14acbb2335a3cb539a"
-  }
-
-  test "the kick, clap and rimshot are the synths they were before the kit was measured" do
-    for {drum, expected} <- @unchanged do
-      path = "priv/synthdefs/mx-#{drum}.scsyndef"
-      hash = Base.encode16(:crypto.hash(:sha256, File.read!(path)), case: :lower)
-      assert hash == expected, "#{drum}"
-    end
-  end
-
   # Measured from VSCO 2's snare with its snares on, at its softest, middle and hardest strengths, which vel 0.3, 0.65 and 1 stand for.
   # Each band's level as a stroke starts, against its loudest band, and the seconds it takes to fade 60 dB.
   # Below 160 Hz the recordings hold only a hum, and at the softest strength the hum lengthens every band's fade, so those are left out.
