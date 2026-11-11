@@ -1,43 +1,37 @@
-defmodule Mx.Engine.RustTest do
+defmodule Mx.Engine.MxsTest do
   use ExUnit.Case, async: false
 
   import ExUnit.CaptureIO
 
-  alias Mx.Engine.Rust
+  alias Mx.Engine.Mxs
   alias Mx.{Song, Synths}
-
-  setup do
-    previous = Application.get_env(:mx, :engine)
-    Application.put_env(:mx, :engine, Rust)
-    on_exit(fn -> Application.put_env(:mx, :engine, previous) end)
-  end
 
   describe "events" do
     test "a note names mxs's synth, with its pitch as its note option, and its chain's key" do
-      assert Rust.event({:note, 7, :piano, 60, [vel: 1, amp: 0.5], %{key: 3}}) ==
+      assert Mxs.event({:note, 7, :piano, 60, [vel: 1, amp: 0.5], %{key: 3}}) ==
                {:note, 7, "piano", [{"note", 60.0}, {"vel", 1.0}, {"amp", 0.5}], 3}
     end
 
     test "a drum's own pitch sends no note, and a named option sends its name" do
-      assert Rust.event({:note, nil, :tabla, nil, [bol: :ghe], nil}) ==
+      assert Mxs.event({:note, nil, :tabla, nil, [bol: :ghe], nil}) ==
                {:note, nil, "tabla", [{"bol", "ghe"}], nil}
     end
 
     test "a sample plays from the number mxs loaded it as" do
-      assert Rust.event({:sample, nil, %{sample: 4, channels: 2}, [rate: 1], nil}) ==
+      assert Mxs.event({:sample, nil, %{sample: 4, channels: 2}, [rate: 1], nil}) ==
                {:sample, nil, 4, [{"rate", 1.0}], nil}
     end
 
     test "a change reaches its sounds, every note in a chain, or one effect of it" do
       chain = %{key: 3}
 
-      assert Rust.event({:set, {:sounds, [1, 2]}, [amp: 0]}) ==
+      assert Mxs.event({:set, {:sounds, [1, 2]}, [amp: 0]}) ==
                {:set, {:sounds, [1, 2]}, [{"amp", 0.0}]}
 
-      assert Rust.event({:set, {:part, chain}, [cutoff: 80]}) ==
+      assert Mxs.event({:set, {:part, chain}, [cutoff: 80]}) ==
                {:set, {:part, 3}, [{"cutoff", 80.0}]}
 
-      assert Rust.event({:set, {:effect, chain, 1}, [mix: 0.5]}) ==
+      assert Mxs.event({:set, {:effect, chain, 1}, [mix: 0.5]}) ==
                {:set, {:effect, 3, 1}, [{"mix", 0.5}]}
     end
   end
@@ -76,27 +70,27 @@ defmodule Mx.Engine.RustTest do
 
   describe "rendering offline" do
     test "renders a note the same on every run" do
-      first = Rust.render_note(:piano, [note: 60, sustain: 0.5, release: 0.3], 1, nil, [])
+      first = Mxs.render_note(:piano, [note: 60, sustain: 0.5, release: 0.3], 1, nil, [])
       assert length(first) == 48_000
       assert Enum.any?(first, &(abs(&1) > 0.01))
-      assert first == Rust.render_note(:piano, [note: 60, sustain: 0.5, release: 0.3], 1, nil, [])
+      assert first == Mxs.render_note(:piano, [note: 60, sustain: 0.5, release: 0.3], 1, nil, [])
     end
 
     test "applies changes to the note while it renders" do
-      quiet = Rust.render_note(:berimbau, [amp: 1], 1, nil, [{0.1, [amp: 0]}])
+      quiet = Mxs.render_note(:berimbau, [amp: 1], 1, nil, [{0.1, [amp: 0]}])
       assert Enum.all?(Enum.slice(quiet, 9600, 1000), &(&1 == 0.0))
     end
 
     test "renders through an empty effect chain as the note alone" do
-      {left, right} = Rust.render_through(:berimbau, [], 0.5, nil, [])
+      {left, right} = Mxs.render_through(:berimbau, [], 0.5, nil, [])
       assert left == right
-      assert left == Rust.render_note(:berimbau, [], 0.5, nil, [])
+      assert left == Mxs.render_note(:berimbau, [], 0.5, nil, [])
     end
   end
 
   test "a panic in the engine's Rust code raises in Elixir, and the BEAM carries on" do
-    assert_raise ErlangError, ~r/nif_panicked/, fn -> Rust.Native.panic_on_purpose() end
-    assert Rust.render_note(:berimbau, [], 0.1, nil, []) != []
+    assert_raise ErlangError, ~r/nif_panicked/, fn -> Mxs.Native.panic_on_purpose() end
+    assert Mxs.render_note(:berimbau, [], 0.1, nil, []) != []
   end
 
   @tag :tmp_dir
@@ -104,8 +98,8 @@ defmodule Mx.Engine.RustTest do
     tmp_dir: dir
   } do
     wav = Path.join(dir, "session.wav")
-    start_supervised!({Rust, live: false, record: wav})
-    stop_supervised!(Rust)
+    start_supervised!({Mxs, live: false, record: wav})
+    stop_supervised!(Mxs)
 
     assert Mx.Recording.report(wav) == ["Recorded 0.0 seconds to #{wav}, peaking at -inf dB."]
   end
@@ -116,12 +110,12 @@ defmodule Mx.Engine.RustTest do
     Process.flag(:trap_exit, true)
 
     assert {:error, "mxs could not record to " <> _} =
-             Rust.start_link(live: false, record: wav)
+             Mxs.start_link(live: false, record: wav)
   end
 
   describe "playing" do
     setup do
-      start_supervised!({Rust, live: false})
+      start_supervised!({Mxs, live: false})
       :ok
     end
 
@@ -130,32 +124,32 @@ defmodule Mx.Engine.RustTest do
 
       output =
         capture_io(:stderr, fn ->
-          :ok = Rust.play(at, [{:note, nil, :piano, 60, [vel: 1.5], nil}])
-          :ok = Rust.play(at, [{:note, nil, :piano, 62, [vel: 1.5], nil}])
+          :ok = Mxs.play(at, [{:note, nil, :piano, 60, [vel: 1.5], nil}])
+          :ok = Mxs.play(at, [{:note, nil, :piano, 62, [vel: 1.5], nil}])
         end)
 
       assert output == "piano's option vel was held to its range, 0.05 to 1\n"
     end
 
     test "ids count up for the sounds a later change reaches" do
-      assert Rust.new_id() + 1 == Rust.new_id()
+      assert Mxs.new_id() + 1 == Mxs.new_id()
     end
 
     test "an effect it does not have is refused, naming it" do
       assert_raise ArgumentError, "no effect named warble", fn ->
-        Rust.start_fx([{:warble, []}])
+        Mxs.start_fx([{:warble, []}])
       end
     end
 
     test "live audio without input says to restart, and plays nothing" do
       live = %Song.Live{name: :mic, opts: [pan: 0.5]}
 
-      output = capture_io(:stderr, fn -> assert Rust.set_live([live], 60) == :ok end)
+      output = capture_io(:stderr, fn -> assert Mxs.set_live([live], 60) == :ok end)
 
       assert output ==
                "live_audio needs audio input, which mxs started without; restart mx to hear it.\n"
 
-      assert capture_io(:stderr, fn -> assert Rust.set_live([], 60) == :ok end) == ""
+      assert capture_io(:stderr, fn -> assert Mxs.set_live([], 60) == :ok end) == ""
     end
 
     @tag :tmp_dir
@@ -165,9 +159,9 @@ defmodule Mx.Engine.RustTest do
       wav = Path.join(dir, "take.wav")
       at = System.os_time(:microsecond)
 
-      assert Rust.record_input(wav, {:sample, "test/support/samples/sn_dolf.flac"}, at) == :ok
-      assert Rust.stop_input() == :ok
-      assert Rust.stop_input() == :ok
+      assert Mxs.record_input(wav, {:sample, "test/support/samples/sn_dolf.flac"}, at) == :ok
+      assert Mxs.stop_input() == :ok
+      assert Mxs.stop_input() == :ok
 
       assert {:ok, %{rate: 48_000, samples: []}} = Mx.Audio.read(wav)
 
@@ -182,17 +176,17 @@ defmodule Mx.Engine.RustTest do
       wav = Path.join(dir, "take.wav")
 
       assert {:error, "mxs could not record to " <> _} =
-               Rust.record_input(nowhere, {:sample, "test/support/samples/sn_dolf.flac"}, at)
+               Mxs.record_input(nowhere, {:sample, "test/support/samples/sn_dolf.flac"}, at)
 
       output =
         capture_io(:stderr, fn ->
-          assert Rust.record_input(wav, {:sample, "no/such.wav"}, at) ==
+          assert Mxs.record_input(wav, {:sample, "no/such.wav"}, at) ==
                    {:error, "mxs could not load no/such.wav"}
         end)
 
       assert output =~ "mxs could not load sample no/such.wav"
 
-      assert Rust.record_input(wav, {:input, 1}, at) ==
+      assert Mxs.record_input(wav, {:input, 1}, at) ==
                {:error, "mxs could not record to #{wav}: the sound card has no input 1"}
     end
   end

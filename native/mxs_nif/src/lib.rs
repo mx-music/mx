@@ -279,4 +279,4 @@ fn panic_on_purpose() -> Atom {
     panic!("on purpose")
 }
 
-rustler::init!("Elixir.Mx.Engine.Rust.Native");
+rustler::init!("Elixir.Mx.Engine.Mxs.Native");

@@ -4,7 +4,7 @@ defmodule Mx.Hum.RecorderTest do
   import ExUnit.CaptureIO
 
   alias Mx.{Audio, Voice}
-  alias Mx.Engine.Rust
+  alias Mx.Engine.Mxs
   alias Mx.Hum.Recorder
 
   @moduletag :tmp_dir
@@ -59,12 +59,12 @@ defmodule Mx.Hum.RecorderTest do
 
       bleed =
         Enum.flat_map(0..11, fn _ ->
-          Rust.render_note(:closed_hihat, [vel: 1.0], beat, ctx.tmp_dir, [])
+          Mxs.render_note(:closed_hihat, [vel: 1.0], beat, ctx.tmp_dir, [])
           |> Enum.map(&(&1 * 0.5))
         end)
 
       source = Path.join(ctx.tmp_dir, "bleed.wav")
-      Audio.write(source, bleed, Rust.render_rate())
+      Audio.write(source, bleed, Mxs.render_rate())
       wav = Path.join(ctx.tmp_dir, "hum.wav")
 
       {result, _} =

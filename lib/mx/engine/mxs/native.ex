@@ -1,4 +1,4 @@
-defmodule Mx.Engine.Rust.Native do
+defmodule Mx.Engine.Mxs.Native do
   @moduledoc false
 
   use Rustler, otp_app: :mx, crate: "mxs_nif"

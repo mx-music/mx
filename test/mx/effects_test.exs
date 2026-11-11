@@ -2,7 +2,7 @@ defmodule Mx.EffectsTest do
   use ExUnit.Case, async: true
 
   alias Mx.Synths
-  alias Mx.Engine.Rust
+  alias Mx.Engine.Mxs
 
   @moduletag :engine
   @moduletag :tmp_dir
@@ -110,7 +110,7 @@ defmodule Mx.EffectsTest do
     chain = [fx(:ping_pong, phase: 0.5, pan_start: 1)]
 
     {left, right} =
-      Rust.render_through(:closed_hihat, [vel: 1.0], 1.2, ctx.tmp_dir, chain)
+      Mxs.render_through(:closed_hihat, [vel: 1.0], 1.2, ctx.tmp_dir, chain)
 
     [_, l1, l2, l3 | _] = left |> levels(0.25)
     [_, r1, r2, r3 | _] = right |> levels(0.25)
@@ -156,7 +156,7 @@ defmodule Mx.EffectsTest do
   defp saw(ctx, opts, chain) do
     seconds = Keyword.get(opts, :sustain, 1)
     opts = Keyword.merge([note: 60, sustain: seconds, release: 0.01, amp: 0.5], opts)
-    Rust.render_through(:saw, opts, seconds + 0.2, ctx.tmp_dir, chain)
+    Mxs.render_through(:saw, opts, seconds + 0.2, ctx.tmp_dir, chain)
   end
 
   defp rms(samples), do: :math.sqrt(Enum.sum(Enum.map(samples, &(&1 * &1))) / length(samples))

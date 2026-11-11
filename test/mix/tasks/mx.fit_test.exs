@@ -5,7 +5,7 @@ defmodule Mix.Tasks.Mx.FitTest do
   import ExUnit.CaptureIO
 
   alias Mx.Fit
-  alias Mx.Engine.Rust
+  alias Mx.Engine.Mxs
 
   @moduletag :tmp_dir
 
@@ -228,7 +228,7 @@ defmodule Mix.Tasks.Mx.FitTest do
 
     for note <- 60..62 do
       given = Keyword.merge([note: note, vel: 0.6, sustain: 2], opts)
-      sound = Rust.render_note(:clarinet, given, given[:sustain] + 1, dir, [])
+      sound = Mxs.render_note(:clarinet, given, given[:sustain] + 1, dir, [])
       path = write_wav(dir, "#{note}.wav", sound)
       "#{path}:#{note}"
     end
@@ -238,8 +238,8 @@ defmodule Mix.Tasks.Mx.FitTest do
   defp drone(ctx) do
     dir = Path.join(ctx.tmp_dir, "drone")
     File.mkdir_p!(dir)
-    sound = Rust.render_note(:clarinet, [note: 60, vel: 0.6, sustain: 8], 8, dir, [])
-    rate = Rust.render_rate()
+    sound = Mxs.render_note(:clarinet, [note: 60, vel: 0.6, sustain: 8], 8, dir, [])
+    rate = Mxs.render_rate()
 
     plucked =
       Enum.with_index(sound, fn sample, index ->
@@ -253,7 +253,7 @@ defmodule Mix.Tasks.Mx.FitTest do
 
   defp write_wav(dir, name, samples) do
     path = Path.join(dir, name)
-    rate = Rust.render_rate()
+    rate = Mxs.render_rate()
     data = for sample <- samples, into: <<>>, do: <<sample::float-little-32>>
 
     fmt =

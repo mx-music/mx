@@ -1,4 +1,4 @@
-defmodule Mx.Engine.Rust do
+defmodule Mx.Engine.Mxs do
   @moduledoc """
   mx's engine on mxs, mx's sound engine in Rust, through a NIF.
 
@@ -19,7 +19,7 @@ defmodule Mx.Engine.Rust do
 
   use GenServer
 
-  alias Mx.Engine.Rust.Native
+  alias Mx.Engine.Mxs.Native
   alias Mx.Synths
 
   @rate 48_000

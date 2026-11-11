@@ -3,7 +3,7 @@ defmodule Mx.DesignsTest do
   use ExUnit.Case, async: false
 
   alias Mx.{Measure, Signal, Synths}
-  alias Mx.Engine.Rust
+  alias Mx.Engine.Mxs
   alias Mx.Measure.{Held, Hits}
 
   @moduletag :engine
@@ -4993,7 +4993,7 @@ defmodule Mx.DesignsTest do
   end
 
   defp render(ctx, synth, opts, seconds \\ 2, later \\ []) do
-    Rust.render_note(synth, opts, seconds, ctx.tmp_dir, later)
+    Mxs.render_note(synth, opts, seconds, ctx.tmp_dir, later)
   end
 
   defp window(sound, from, to) do

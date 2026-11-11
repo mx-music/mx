@@ -4,7 +4,7 @@ defmodule Mix.Tasks.Mx.HumTest do
   import ExUnit.CaptureIO
 
   alias Mx.{Audio, Hum, Voice}
-  alias Mx.Engine.Rust
+  alias Mx.Engine.Mxs
 
   @moduletag :tmp_dir
 
@@ -14,13 +14,13 @@ defmodule Mix.Tasks.Mx.HumTest do
     @describetag :engine
 
     test "a flute's quarter notes and half note come out as they were played", ctx do
-      wav = write_wav(ctx, "flute.wav", flute(ctx, vibrato: 0.25), Rust.render_rate())
+      wav = write_wav(ctx, "flute.wav", flute(ctx, vibrato: 0.25), Mxs.render_rate())
 
       assert song(wav, 90) =~ "seq(e4: 1, g4: 1, a4: 1, b4: 2, r: 3)"
     end
 
     test "a flute's notes held with vibrato are still those four notes", ctx do
-      wav = write_wav(ctx, "flute.wav", flute(ctx, vibrato: 0.5), Rust.render_rate())
+      wav = write_wav(ctx, "flute.wav", flute(ctx, vibrato: 0.5), Mxs.render_rate())
 
       assert song(wav, 90) =~ "seq(e4: 1, g4: 1, a4: 1, b4: 2, r: 3)"
     end
@@ -29,8 +29,8 @@ defmodule Mix.Tasks.Mx.HumTest do
       beat = 60 / 90
       slide = [{beat, [note: 64]}]
       opts = [note: 60, sustain: 2 * beat, release: 0.05, note_slide: beat / 10]
-      samples = Rust.render_note(:saw, opts, 2.2 * beat, ctx.tmp_dir, slide)
-      %{notes: notes} = Hum.transcribe(samples, Rust.render_rate(), 90)
+      samples = Mxs.render_note(:saw, opts, 2.2 * beat, ctx.tmp_dir, slide)
+      %{notes: notes} = Hum.transcribe(samples, Mxs.render_rate(), 90)
 
       assert [{+0.0, 60, 1.0}, {1.0, 64, _}] = notes
     end
@@ -180,7 +180,7 @@ defmodule Mix.Tasks.Mx.HumTest do
     [{64, 1}, {67, 1}, {69, 1}, {71, 2}]
     |> Enum.flat_map(fn {note, beats} ->
       note_opts = [note: note, sustain: beats * beat - 0.2, release: 0.1, vel: 0.6] ++ opts
-      Rust.render_note(:flute, note_opts, beats * beat, ctx.tmp_dir, [])
+      Mxs.render_note(:flute, note_opts, beats * beat, ctx.tmp_dir, [])
     end)
   end
 

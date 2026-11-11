@@ -5,7 +5,7 @@ defmodule Mix.Tasks.Mx.MeasureTest do
   import ExUnit.CaptureIO
 
   alias Mx.Measure
-  alias Mx.Engine.Rust
+  alias Mx.Engine.Mxs
   alias Mx.Measure.{Held, Hits}
 
   @moduletag :tmp_dir
@@ -64,11 +64,11 @@ defmodule Mix.Tasks.Mx.MeasureTest do
   @tag :engine
   test "a design test and mix mx.measure give the same figures for the same rendered sound",
        ctx do
-    sound = Rust.render_note(:guitar, [note: 45, vel: 0.6], 4.4, ctx.tmp_dir, [])
+    sound = Mxs.render_note(:guitar, [note: 45, vel: 0.6], 4.4, ctx.tmp_dir, [])
     path = write_wav(ctx, "guitar.wav", sound)
     output = capture_io(fn -> Mix.Tasks.Mx.Measure.run(["#{path}:A2"]) end)
 
-    for band <- Measure.bands([Measure.note(sound, Rust.render_rate(), 45)]) do
+    for band <- Measure.bands([Measure.note(sound, Mxs.render_rate(), 45)]) do
       {low, high} = band.band
       fade = :erlang.float_to_binary(band.fade, decimals: 2)
       level = :erlang.float_to_binary(band.level, decimals: 1)
@@ -371,11 +371,11 @@ defmodule Mix.Tasks.Mx.MeasureTest do
   test "a design test and mix mx.measure give the same figures for the same held note and hit",
        ctx do
     flute =
-      Rust.render_note(:flute, [note: 69, vel: 0.6, sustain: 2], 3, ctx.tmp_dir, [])
+      Mxs.render_note(:flute, [note: 69, vel: 0.6, sustain: 2], 3, ctx.tmp_dir, [])
 
     path = write_wav(ctx, "flute.wav", flute)
     output = capture_io(fn -> Mix.Tasks.Mx.Measure.run(["--held", "#{path}:A4"]) end)
-    summary = Held.summary([Held.note(flute, Rust.render_rate(), 69)])
+    summary = Held.summary([Held.note(flute, Mxs.render_rate(), 69)])
     attack = :erlang.float_to_binary(summary.attack, decimals: 2)
     assert output =~ ~r/^attack +#{Regex.escape(attack)} s$/m
 
@@ -385,11 +385,11 @@ defmodule Mix.Tasks.Mx.MeasureTest do
       assert_in_delta String.to_float(printed), level, 0.15
     end
 
-    cowbell = Rust.render_note(:cowbell, [], 2, ctx.tmp_dir, [])
+    cowbell = Mxs.render_note(:cowbell, [], 2, ctx.tmp_dir, [])
     path = write_wav(ctx, "cowbell.wav", cowbell)
     output = capture_io(fn -> Mix.Tasks.Mx.Measure.run(["--hits", path]) end)
 
-    for band <- Hits.summary([Hits.hit(cowbell, Rust.render_rate(), nil)]),
+    for band <- Hits.summary([Hits.hit(cowbell, Mxs.render_rate(), nil)]),
         band.fade != nil do
       {low, high} = band.band
       fade = :erlang.float_to_binary(band.fade, decimals: 2)

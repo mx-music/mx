@@ -121,7 +121,7 @@ defmodule Mx.Synths do
   defp catalog do
     case :persistent_term.get(__MODULE__, nil) do
       nil ->
-        catalog = Mx.Engine.Rust.catalog()
+        catalog = Mx.Engine.Mxs.catalog()
         :persistent_term.put(__MODULE__, catalog)
         catalog
 

@@ -77,6 +77,6 @@ defmodule Mx.Engine do
   @doc "Plays events at the Unix time in microseconds given."
   @callback play(at_us :: integer(), events :: [event()]) :: :ok
 
-  @doc "The engine mx plays through: the `:engine` setting of `:mx`, or `Mx.Engine.Rust`."
-  def current, do: Application.get_env(:mx, :engine, Mx.Engine.Rust)
+  @doc "The engine mx plays through: the `:engine` setting of `:mx`, or `Mx.Engine.Mxs`."
+  def current, do: Application.get_env(:mx, :engine, Mx.Engine.Mxs)
 end
