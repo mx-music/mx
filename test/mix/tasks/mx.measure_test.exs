@@ -164,7 +164,7 @@ defmodule Mix.Tasks.Mx.MeasureTest do
       capture_io(fn -> Mix.Tasks.Mx.Measure.run(["--hits", path, "--synth", "cowbell"]) end)
 
     [_bands, moments] = String.split(output, "after the loudest moment")
-    assert moments =~ ~r/^band +recordings +cowbell +difference$/m
+    assert moments =~ ~r/^band +recordings +cowbell at vel 0\.6 +difference$/m
     assert moments =~ ~r/^250-400 Hz +\+0 +-3 +-6 +-12( +([-+]\d+|-)){8}$/m
   end
 
