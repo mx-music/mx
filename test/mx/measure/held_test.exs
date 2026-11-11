@@ -58,6 +58,12 @@ defmodule Mx.Measure.HeldTest do
     assert Enum.map(Held.notes(notes, @rate, 57), & &1.note) == [57, 58, 59]
   end
 
+  test "leaves out a note that holds nothing within 12 dB of a short burst at its start" do
+    silence = List.duplicate(0.0, round(@rate * 0.3))
+    quiet = Enum.map(tone(440, 1), &(&1 * 0.02))
+    assert Held.notes(silence ++ tone(440, 0.03) ++ quiet, @rate, 69) == []
+  end
+
   # Twelve harmonics at 1/number of the first, or as many as asked, rising linearly over the attack.
   defp tone(f0, seconds, opts \\ []) do
     attack = Keyword.get(opts, :attack, 0.01)

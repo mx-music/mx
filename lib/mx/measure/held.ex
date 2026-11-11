@@ -118,23 +118,32 @@ defmodule Mx.Measure.Held do
         for from <- starts,
             do: energy(Signal.spectrum(sound, from + div(large - small, 2), small))
 
-      held = held(starts, energies)
-      inside = inside(held, div(large - small, 2))
-      spectra = for from <- Enum.take_every(inside, 5), do: Signal.spectrum(sound, from, large)
-      bin = rate / large
-      f0 = pitch(spectra, Signal.hz(guess), bin)
-      harmonics = harmonics(spectra, f0, bin, rate, cutoff)
-      centre = div(large, 2)
+      case held(starts, energies) do
+        # A single frame is a burst, such as an accent, with nothing held after it.
+        [_] ->
+          nil
 
-      %{
-        note: round(69 + 12 * :math.log2(f0 / 440)),
-        pitch: f0,
-        held: length(held) * @hop,
-        attack: attack(segment, rate, held, centre),
-        vibrato: vibrato(sound, held, f0, harmonics, rate, centre),
-        harmonics: harmonics,
-        noise: noise(spectra, f0, bin, rate, cutoff)
-      }
+        held ->
+          inside = inside(held, div(large - small, 2))
+
+          spectra =
+            for from <- Enum.take_every(inside, 5), do: Signal.spectrum(sound, from, large)
+
+          bin = rate / large
+          f0 = pitch(spectra, Signal.hz(guess), bin)
+          harmonics = harmonics(spectra, f0, bin, rate, cutoff)
+          centre = div(large, 2)
+
+          %{
+            note: round(69 + 12 * :math.log2(f0 / 440)),
+            pitch: f0,
+            held: length(held) * @hop,
+            attack: attack(segment, rate, held, centre),
+            vibrato: vibrato(sound, held, f0, harmonics, rate, centre),
+            harmonics: harmonics,
+            noise: noise(spectra, f0, bin, rate, cutoff)
+          }
+      end
     end
   end
 
