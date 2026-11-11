@@ -111,10 +111,7 @@ defmodule Mix.Tasks.Mx.PlayTest do
 
   # The seconds into a recording of its first sample above a thousandth of full scale.
   defp sound_start(path) do
-    <<"RIFF", _::32, "WAVE", chunks::binary>> = File.read!(path)
-    [_, data] = :binary.split(chunks, "data")
-    <<_size::32, samples::binary>> = data
-    frames = for <<left::little-signed-24, _right::little-signed-24 <- samples>>, do: left
-    Enum.find_index(frames, &(abs(&1) > 8388)) / 48_000
+    {:ok, %{samples: samples, rate: rate}} = Mx.Audio.read(path)
+    Enum.find_index(samples, &(abs(&1) > 0.001)) / rate
   end
 end
