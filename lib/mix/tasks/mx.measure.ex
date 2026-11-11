@@ -34,8 +34,9 @@ defmodule Mix.Tasks.Mx.Measure do
 
   use Mix.Task
 
-  alias Mx.{Audio, Engine, Measure, Notes, Signal, Synths}
+  alias Mx.{Audio, Measure, Notes, Signal, Synths}
   alias Mx.Measure.{Held, Hits}
+  alias Mx.Engine.Mxs
 
   @example "Guitar.mf.sulA.A2B2.aif:A2"
   @moments "levels in dB at 0, 50, 100 and 200 ms after the loudest moment, against the loudest band then"
@@ -197,9 +198,9 @@ defmodule Mix.Tasks.Mx.Measure do
 
     [{_path, note, _hit, _to} | _] = picked
     opts = synth_opts(synth, [note: note] ++ given)
-    rendered = in_tmp_dir(&Engine.current().render_note(synth, opts, @compared, &1, []))
+    rendered = in_tmp_dir(&Mxs.render_note(synth, opts, @compared, &1, []))
     parts = Enum.map(picked, &recorded_hit/1) ++ List.duplicate(rendered, 3)
-    Audio.write(out, Enum.flat_map(parts, &compared/1), Engine.current().render_rate())
+    Audio.write(out, Enum.flat_map(parts, &compared/1), Mxs.render_rate())
 
     names =
       Enum.map(picked, fn {path, _note, hit, _to} ->
@@ -231,7 +232,7 @@ defmodule Mix.Tasks.Mx.Measure do
     |> Enum.slice(from - before, count + before + margin)
     |> Signal.high_pass(rate, 30)
     |> Enum.slice(before, count)
-    |> resample(rate, Engine.current().render_rate())
+    |> resample(rate, Mxs.render_rate())
   end
 
   defp resample(samples, rate, rate), do: samples
@@ -249,10 +250,10 @@ defmodule Mix.Tasks.Mx.Measure do
   end
 
   defp compared(samples) do
-    length = round(@compared * Engine.current().render_rate())
+    length = round(@compared * Mxs.render_rate())
     padded = Enum.take(samples ++ List.duplicate(0.0, length), length)
     peak = padded |> Enum.map(&abs/1) |> Enum.max()
-    fade = round(0.01 * Engine.current().render_rate())
+    fade = round(0.01 * Mxs.render_rate())
 
     # The last 10 ms fade out, so a hit still ringing at the cut ends without a click.
     scaled =
@@ -261,7 +262,7 @@ defmodule Mix.Tasks.Mx.Measure do
         sample / max(peak, 1.0e-9) * 0.5 * min(1, (length - 1 - index) / fade)
       end)
 
-    scaled ++ List.duplicate(0.0, round(@gap * Engine.current().render_rate()))
+    scaled ++ List.duplicate(0.0, round(@gap * Mxs.render_rate()))
   end
 
   defp listed([one]), do: one
@@ -389,8 +390,8 @@ defmodule Mix.Tasks.Mx.Measure do
       |> Task.async_stream(
         fn note ->
           opts = synth_opts(synth, [note: note.note, sustain: note.held] ++ given)
-          sound = Engine.current().render_note(synth, opts, note.held + 2, dir, [])
-          Held.note(sound, Engine.current().render_rate(), note.note)
+          sound = Mxs.render_note(synth, opts, note.held + 2, dir, [])
+          Held.note(sound, Mxs.render_rate(), note.note)
         end,
         timeout: :infinity
       )
@@ -404,8 +405,8 @@ defmodule Mix.Tasks.Mx.Measure do
       |> Task.async_stream(
         fn note ->
           opts = synth_opts(synth, [note: note] ++ given)
-          sound = Engine.current().render_note(synth, opts, 4, dir, [])
-          Hits.hit(sound, Engine.current().render_rate(), note, partials: count)
+          sound = Mxs.render_note(synth, opts, 4, dir, [])
+          Hits.hit(sound, Mxs.render_rate(), note, partials: count)
         end,
         timeout: :infinity
       )
@@ -438,8 +439,8 @@ defmodule Mix.Tasks.Mx.Measure do
       |> Enum.uniq()
       |> Task.async_stream(
         fn note ->
-          sound = Engine.current().render_note(synth, [note: note] ++ given, 4.4, dir, [])
-          Measure.note(sound, Engine.current().render_rate(), note)
+          sound = Mxs.render_note(synth, [note: note] ++ given, 4.4, dir, [])
+          Measure.note(sound, Mxs.render_rate(), note)
         end,
         timeout: :infinity
       )

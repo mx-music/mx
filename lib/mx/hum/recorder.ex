@@ -9,7 +9,8 @@ defmodule Mx.Hum.Recorder do
   Whatever can be refused is refused before the first click: a recording or song that exists without `force:`, a folder that cannot be written, and an input that runs at another sample rate than the output.
   """
 
-  alias Mx.{Audio, Engine, Hum, Recording}
+  alias Mx.{Audio, Hum, Recording}
+  alias Mx.Engine.Mxs
 
   @count_in 4
   @lead_us 300_000
@@ -48,18 +49,18 @@ defmodule Mx.Hum.Recorder do
     synth_opts =
       [input: match?({:input, _}, source), input_advice: nil] ++ Keyword.get(opts, :synth, [])
 
-    case Engine.current().start_link(synth_opts) do
+    case Mxs.start_link(synth_opts) do
       {:ok, engine} ->
         start_us = System.os_time(:microsecond) + @lead_us
         beat_us = round(60_000_000 / tempo)
 
         result =
-          with :ok <- Engine.current().record_input(wav, source, start_us) do
+          with :ok <- Mxs.record_input(wav, source, start_us) do
             clicker = spawn_link(fn -> click(start_us, beat_us, 0) end)
             Keyword.get(opts, :wait, fn -> IO.gets("") end).()
             Process.unlink(clicker)
             Process.exit(clicker, :kill)
-            Engine.current().stop_input()
+            Mxs.stop_input()
           end
 
         GenServer.stop(engine)
@@ -74,7 +75,7 @@ defmodule Mx.Hum.Recorder do
     at_us = start_us + beat * beat_us
     Process.sleep(max(div(at_us - @ahead_us - System.os_time(:microsecond), 1000), 0))
     vel = if rem(beat, 4) == 0, do: 1.0, else: 0.5
-    Engine.current().play(at_us, [{:note, nil, :closed_hihat, nil, [vel: vel], nil}])
+    Mxs.play(at_us, [{:note, nil, :closed_hihat, nil, [vel: vel], nil}])
     click(start_us, beat_us, beat + 1)
   end
 

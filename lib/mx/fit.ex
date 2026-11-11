@@ -10,7 +10,8 @@ defmodule Mx.Fit do
   """
 
   alias Mx.Measure.Held
-  alias Mx.{Engine, Signal, Synths}
+  alias Mx.{Signal, Synths}
+  alias Mx.Engine.Mxs
 
   @quiet 25
   @top 4000
@@ -132,8 +133,8 @@ defmodule Mx.Fit do
           opts = for {key, value} <- given, Synths.option?(synth, key), do: {key, value}
 
           Held.note(
-            Engine.current().render_note(synth, opts ++ controls, held + 0.5, dir, []),
-            Engine.current().render_rate(),
+            Mxs.render_note(synth, opts ++ controls, held + 0.5, dir, []),
+            Mxs.render_rate(),
             note
           )
         end,
