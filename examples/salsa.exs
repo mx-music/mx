@@ -104,13 +104,13 @@ defmodule Salsa do
   # Every hit starts dark and opens, like a wah pedal.
   def stab(notes, length) do
     note(notes, length,
-      cutoff: 64,
+      cutoff: 90,
       res: 0.55,
       detune: 0.25,
       amp: 0.14,
       sustain: length,
       release: 0.15,
-      changes: [{0, cutoff: 104, cutoff_slide: min(length, 0.4)}]
+      changes: [{0, cutoff: 126, cutoff_slide: min(length, 0.2)}]
     )
   end
 
@@ -189,13 +189,13 @@ defmodule Salsa do
 
       lead =
         note(lead_note.(index), 4 - first,
-          cutoff: 70,
+          cutoff: 98,
           res: 0.6,
           detune: 0.12,
           amp: 0.3,
           sustain: 3.6 - first,
           release: 0.3,
-          changes: [{0, cutoff: 108, cutoff_slide: 3} | bends]
+          changes: [{0, cutoff: 126, cutoff_slide: 0.5} | bends]
         )
 
       {at([{first, lead}], 4), List.last([index | glides])}
