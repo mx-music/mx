@@ -1,19 +1,18 @@
 # mx
 
 Music written as Elixir code, and changed while it plays.
-mx is inspired by Sonic Pi, and makes sound with SuperCollider's scsynth.
+mx is inspired by Sonic Pi, and makes sound with mxs, its own sound engine in Rust.
 
 ## Install
 
-mx needs Elixir and SuperCollider.
-On macOS, install SuperCollider with:
+mx needs Elixir and Rust, and a clone of mxs, https://github.com/rodrigues/mxs, in a folder beside mx's:
 
 ```sh
-brew install --cask supercollider
+git clone https://github.com/rodrigues/mxs ../mxs
 ```
 
-Other systems can get it from https://supercollider.github.io/downloads.
-mx looks for `scsynth` on the `PATH`, then in `/Applications/SuperCollider.app`.
+mx builds mxs into itself when it compiles.
+After changing mxs, `mix compile --force` builds it again, since mx does not watch mxs's files.
 
 The `mx` command plays a song file with nothing else installed.
 It is the script `bin/mx` in this repository; copy it onto your `PATH`:
@@ -22,18 +21,8 @@ It is the script `bin/mx` in this repository; copy it onto your `PATH`:
 cp bin/mx ~/.local/bin/mx
 ```
 
-The first time it runs, it installs mx from GitHub with `Mix.install`, and after that it uses Mix's cache.
-`MX_PATH=~/code/mx mx song.exs` plays with a local checkout of mx instead.
-
-The violin, viola, cello and double bass play a bowed string model when scsynth has sc3-plugins, SuperCollider's collection of extra units, and their simpler designs otherwise; a song using them says so when it starts.
-To install them, download the release matching your SuperCollider from https://github.com/supercollider/sc3-plugins/releases, copy its `SC3plugins` folder into `~/Library/Application Support/SuperCollider/Extensions`, and remove the macOS metadata files beginning with `._` that its zip carries, which scsynth would try to load as plugins:
-
-```sh
-find ~/Library/Application\ Support/SuperCollider/Extensions/SC3plugins -name '._*' -delete
-```
-
-The first start after installing can be slow enough that mx stops with "scsynth did not start answering on its port."; the next start works.
-
+The first time it runs, it installs mx with `Mix.install`, and after that it uses Mix's cache.
+Give it a clone of mx, with mxs beside it, as `MX_PATH=~/code/mx mx song.exs`; mx installed from GitHub cannot find mxs.
 To play Sonic Pi's samples, download its sample pack once, from a clone of mx:
 
 ```sh
@@ -49,7 +38,7 @@ Run the command again to finish an interrupted download.
 mx song.exs
 ```
 
-mx starts scsynth when it is not running, or uses the one that is, and plays the song until it ends or you press Enter.
+mx plays the song until it ends or you press Enter.
 Save the file and the new version takes over at the end of the section playing.
 A part added to the file joins at the next section, and a part removed from it stops at the end of its pass.
 A version that does not load prints its error with the line, and the previous version keeps playing.
@@ -64,7 +53,7 @@ mx song.exs --record session.wav
 
 Recording starts before the first note, carries on without a gap when you save the song, and ends when you press Enter, once the notes still sounding have faded or after four seconds at most.
 mx then prints where it wrote the recording, how long it is, and its peak in dB below full scale.
-The recording is 24-bit, so a sound louder than full scale is cut flat and distorts; when that happens mx says how many times the recording clipped and when it first did, and lowering the amp of the loudest parts records it cleanly.
+The recording is 32-bit floating point, which keeps a sound louder than full scale, but it distorts once played or converted; when that happens mx says how many times the recording clipped and when it first did, and lowering the amp of the loudest parts records it cleanly.
 A file that already exists is refused unless you add `--force`, and so is a path mx cannot write; both are checked before anything plays.
 
 `examples/ambient.exs` is a demo to start from, a slow ambient piece of pads, keys, bells and samples through reverb and echo:
@@ -664,7 +653,7 @@ part(:lead, note(:a4, 4, changes: [{1, note: :c5, note_slide: 0.1}]), synth: :fl
 
 Every part starts on the same beat when mx starts, and all parts share one tempo.
 Each part plays in its own process.
-A pass works out its notes before they play, and mx sends them to scsynth half a second ahead, stamped with the time of their beat.
+A pass works out its notes before they play, and mx sends them to mxs half a second ahead, stamped with the time of their beat.
 The time of each beat is counted from the start of playing, so parts never drift from the tempo or from each other.
 A tempo change written in the music starts on its beat, for every part at once.
 Saving the song with a new `song(tempo:)` starts that tempo on the first whole beat after the notes already sent; saving it with the same one keeps the tempo the music has changed to.
@@ -672,18 +661,16 @@ A pass that takes longer than that half second to work out is late: mx drops its
 
 ## Live audio and sample rates
 
-mx turns on scsynth's audio input only when the song it starts with has `live_audio`, so other songs never touch the microphone; a `live_audio` added while playing needs mx restarted.
-scsynth cannot start with input on when the input and output devices run at different sample rates, as Bluetooth headphones at 24 kHz beside speakers at 48 kHz do.
-mx then stops with a message naming the devices and their rates; set both to the same rate in Audio MIDI Setup, or use other devices.
+mx reads the sound card's input only when the song it starts with has `live_audio`, so other songs never touch the microphone; a `live_audio` added while playing needs mx restarted.
+mxs cannot start with input on when the input and output devices run at different sample rates, as Bluetooth headphones at 24 kHz beside speakers at 48 kHz do.
+mx then stops with a message naming the device and the rates it runs at; set both to the same rate in Audio MIDI Setup, or use other devices.
 macOS may ask once whether the terminal can use the microphone.
 
 ## Synths
 
 acid, bandolim, bassoon, berimbau, brass, cabasa, cajon, cavaquinho, cello, cello.bowed, clap, clarinet, clave, closed_hihat, cowbell, crash, double_bass, flute, fm, ganza, glockenspiel, guiro, guitar, harmonium, harp, high_agogo, high_bongo, high_conga, high_timbale, high_tom, horn, kick, low_agogo, low_bongo, low_conga, low_timbale, low_tom, marimba, mid_conga, mid_tom, noise, oboe, open_hihat, organ, pandeiro, pandeiro_heel, pandeiro_jingles, pandeiro_slap, pandeiro_thumb, piano, pluck, pulse, rimshot, saw, shaker, sitar, snare, square, supersaw, tabla, tabla_ghe, tabla_ke, tabla_na, tabla_tas, tabla_te, tabla_tun, tambourine, tambourine_shake, tanpura, tenor_sax, timbale_shell, timpani, tri, triangle, trombone, trumpet, tuba, vibraphone, viola, violin, xylophone.
 
-They are mx's own designs, in `priv/synthdefs/mx-instruments.scd` and `priv/synthdefs/mx-drums.scd`.
-After changing one of mx's designs, `mix mx.synthdefs priv/synthdefs/mx-drums.scd` compiles it with SuperCollider's sclang, found on the `PATH` or in `/Applications/SuperCollider.app`, and prints the synths it wrote; `mix mx.synthdefs` alone compiles them all.
-A mistake in the design stops it with sclang's error and its line.
+They are mx's own designs, in mxs's `src/synths`.
 mx ships none of Sonic Pi's synths, its sc808 drum kit or its effects.
 
 mx's own synths take `note`, `amp`, `pan`, `attack`, `decay`, `sustain`, `release`, `attack_level`, `decay_level` and `sustain_level`, and slides for `note`, `amp` and `pan`.
@@ -696,10 +683,11 @@ mx's own synths take `note`, `amp`, `pan`, `attack`, `decay`, `sustain`, `releas
 - `xylophone` takes `vel` as the marimba does. A note is short and bright, and fades by itself in about a second at the bottom and a tenth of a second at the top; the xylophone is measured from the University of Iowa's xylophone struck with rosewood mallets, from F4 to C8.
 - `glockenspiel` takes `vel` as the marimba does. A note rings for many seconds unless `sustain` and `release` damp it; the glockenspiel is measured from the University of Iowa's orchestral bells struck with plastic mallets, from C5 to E8.
 - `harp` is a folk harp, the kind the Paraguayan and llanera harps are; it takes `vel` as the guitar does. A string rings for many seconds unless `sustain` and `release` damp it; the harp is measured from the folk harp of the Versilian Community Sample Library, from C2 to G#6.
-- `violin` takes `vel` as the guitar does, `vibrato` as the flute does, 0.25 by default, and `pizz: 1` to pluck the string instead of bowing it. A bowed note swells in over a fraction of a second, slower the softer it is played, and holds for its `sustain`; a plucked note rings until it fades by itself, unless `sustain` and `release` damp it. The violin is measured from the University of Iowa's violin, bowed and plucked, from G3 to B7, and VSCO 2's solo violin. With sc3-plugins, its bowed notes come from DWGBowed, a model of a bowed string, fitted to the same Iowa recordings, with the bow's hiss and the same options.
-- `viola` takes the same options as `violin`, and is measured from the University of Iowa's viola, bowed and plucked, from C3 to Bb6. With sc3-plugins, its bowed notes come from DWGBowed, fitted to the same Iowa recordings, as the violin's do.
-- `cello` takes the same options as `violin`, and is measured from the University of Iowa's cello, bowed and plucked, from C2 to Bb5. With sc3-plugins, its bowed notes come from DWGBowed, fitted to the same Iowa recordings from 80 Hz, as the violin's do.
-- `double_bass` takes the same options as `violin`, and is measured from the University of Iowa's double bass, bowed and plucked, from E1 to G4, at the pitch it sounds. With sc3-plugins, its bowed notes come from DWGBowed, fitted to the same Iowa recordings from 80 Hz, as the violin's do.
+- `violin` takes `vel` as the guitar does, `vibrato` as the flute does, 0.25 by default, and `pizz: 1` to pluck the string instead of bowing it. A bowed note swells in over a fraction of a second, slower the softer it is played, and holds for its `sustain`; a plucked note rings until it fades by itself, unless `sustain` and `release` damp it. The violin is measured from the University of Iowa's violin, bowed and plucked, from G3 to B7, and VSCO 2's solo violin.
+- `viola` takes the same options as `violin`, and is measured from the University of Iowa's viola, bowed and plucked, from C3 to Bb6.
+- `cello` takes the same options as `violin`, and is measured from the University of Iowa's cello, bowed and plucked, from C2 to Bb5.
+- `cello.bowed` takes `vel` and `vibrato` as `cello` does, and bows a model of a string rather than adding up its harmonics, with its tone fitted to the University of Iowa's cello at pp, mf and ff. It is a prototype, and has no `pizz`.
+- `double_bass` takes the same options as `violin`, and is measured from the University of Iowa's double bass, bowed and plucked, from E1 to G4, at the pitch it sounds.
 - `organ` is a pipe organ measured from VSCO 2's organ: it takes `loud: 1` for its loud set, a principal chorus, instead of its quiet one, a stopped flute, and no `vel`, since a pipe sounds the same however hard its key is struck; a note holds one level for its `sustain`.
 - `flute` takes `vibrato`, the depth of the vibrato that grows as a note holds, in semitones, 0.25 by default and shallower the softer the note; 0 turns it off. The flute is measured from the University of Iowa's flute, from B3 to Db7, and VSCO 2's flute.
 - `tanpura` plays a drone with its note as Sa: four strings plucked in turn, Pa a fourth below, Sa twice and Sa an octave below, on beats 0, 2, 3 and 4 of a cycle of six gaps, as the Hindustani pattern goes. `gap` is the time between plucks in beats, 0.8 by default; the drone holds for its `sustain`, 16 beats by default, and the strings then ring out over its `release`. `vel` sets how hard the strings are plucked, and it has no vibrato. Each pluck brings the higher harmonics in over the next second, as the jawari, the strings buzzing on the bridge, does. The tanpura is measured from "Tanpura 10" by sankalp on Freesound, a big tanpura on Db3, with each band's harmonics and the noise between them within 6 dB of the recording's from 80 Hz to 16 kHz. Its body is lower the lower its Sa, as a bigger tanpura's is, but it is still 13 to 20 dB brighter than "Tanpura in E" by iluppai, a flat tanpura on E2, from 160 Hz to 1.6 kHz:
@@ -753,7 +741,9 @@ The drums are kick, snare, clap, closed_hihat, open_hihat, low_tom, mid_tom, hig
 - `low_agogo` and `high_agogo` take `vel`, from 0 to 1, how hard the bell is struck: harder is louder and brighter, as on the Versilian Community Sample Library's agogô they are measured from.
 - `ganza` and `shaker` take `vel`, how hard the stroke is, and `up: 1` for an up stroke instead of a down stroke; they are measured from the small and the large shaker of the Versilian Community Sample Library.
 - `pandeiro_thumb`, `pandeiro_heel`, `pandeiro_slap` and `pandeiro_jingles` take `vel`, how hard the stroke is; they are measured from pandeiro recordings on Freesound.
+- `pandeiro` plays any of those strokes, named by `stroke`: `thumb`, the default, `heel`, `slap` or `jingles`.
 - `tabla_na`, `tabla_tun`, `tabla_te` and `tabla_tas` are the dayan's strokes, and `tabla_ghe` and `tabla_ke` the bayan's; each takes `vel`, how hard the stroke is, harder being louder and brighter. A dayan stroke's `note` tunes the drum to Sa, D#4 by default, and `tabla_ghe` takes `note` with `note_slide` to bend the bayan while it rings, as the palm does. Play dha, dhin and the other strokes of both hands by playing a dayan and a bayan stroke on the same beat. They are measured from the "tabla bols" pack by mmiron on Freesound, each band within 6 dB and 30 percent of the fade of the recordings' from 250 Hz to 8 kHz, and from 80 Hz to 4 kHz for `tabla_ghe`; `tabla_ke`, whose recordings are too short to measure as hits, follows their spectrum and is silent 0.1 seconds after it is struck.
+- `tabla` plays any of those strokes, named by `bol`: `na`, the default, `tun`, `te`, `tas`, `ghe` or `ke`; its `note` is the stroke's own unless given.
 - `berimbau` plays an open stroke, `coin: 1` the stroke with the coin pressed to the string, a semitone higher, and `buzz: 1` the buzzed stroke, the coin resting on the wire so the string dies within a fifth of a second under its rattle; it takes `vel`, how hard the stick strikes, harder being louder and brighter, and `note` tunes the open string, D#2 by default, as the jam it is measured from. It is measured from "Berimbau jam without caxixi" by EliasArtista on Freesound, each band within 6 dB of the jam's as it is struck and 50, 100 and 200 ms after with the gourd held still, with its partials on the string's harmonics and the 3rd and 5th strongest, as the gourd brings them out. `gourd` is how many times a second the gourd opens and closes against the belly while the string rings, swinging its 5th harmonic against its 3rd as uiop's "berimbau.aif" on Freesound does; it is 2.3 by default, as on that recording, and 0 holds the gourd still. No open recording has buzzed strokes, so the buzz is designed rather than measured; there is no bend of the coin pressed while the string rings.
 - `cabasa` takes `vel`, how hard it is struck, and `rub: 1` to turn the beads against the cylinder for its `sustain` instead of striking them; it is measured from the cabasa of the Versilian Community Sample Library.
 - `cajon` takes `vel`, how hard it is played, and `slap`, from 0 for the bass tone to 1 for the slap, as the congas do; it is measured from the cajón of the Versilian Community Sample Library.
@@ -797,7 +787,7 @@ For each band it prints the level of the harmonics while the note holds and the 
 `--drone` with `--held` measures each file as one note held from its first sample to its last, for a drone plucked again and again, such as a tanpura, which would otherwise read as a note at each pluck.
 With `--hits`, it prints each hit's strongest peaks as ratios to the lowest, which shows the partials of a bar or a bell whatever its pitch, then for each band the seconds it takes to fade 60 dB and its level as the hit starts, against the loudest band.
 With `--synth`, a held note renders for as long as the recordings hold it, and a hit renders once at each note given, each with only the options the synth takes.
-`--partials` with a count adds, under each hit, up to that many of its strongest partials within 40 dB of the loudest, lowest first, each with its frequency in Hz, its ratio to the lowest, its level against the loudest, and the seconds it takes to fade 60 dB; these are the figures a struck instrument's design is written in, such as the agogô's in `priv/synthdefs/mx-drums.scd`.
+`--partials` with a count adds, under each hit, up to that many of its strongest partials within 40 dB of the loudest, lowest first, each with its frequency in Hz, its ratio to the lowest, its level against the loudest, and the seconds it takes to fade 60 dB; these are the figures a struck instrument's design is written in, such as the agogô's in mxs's `src/synths/drums.rs`.
 With `--synth`, the synth's partials print the same way under its name, after the recordings'.
 
 ```sh
@@ -834,7 +824,7 @@ The recordings' figures are kept in the system's temporary folder and reused unt
 
 ## Effects
 
-These are mx's own designs, in `priv/synthdefs/mx-synths.scd`, with option names that follow Sonic Pi's.
+These are mx's own designs, in mxs's `src/effects.rs`, with option names that follow Sonic Pi's.
 bitcrusher and chorus follow Airwindows' DeRez and Chorus, as `LICENSE-designs.md` credits.
 
 bitcrusher, bpf, chorus, compressor, distortion, echo, flanger, hpf, level, lpf, pan, ping_pong, reverb, rlpf, slicer, tremolo, wobble.
@@ -869,17 +859,15 @@ ambi_choir, ambi_dark_woosh, ambi_drone, ambi_glass_hum, ambi_glass_rub, ambi_ha
 
 ```sh
 mix test
-mix test --only scsynth
+mix test --only engine
 ```
 
-The tests tagged `scsynth` start a real scsynth on port 57190, and are left out of a plain `mix test`.
+The tests tagged `engine` play or render sound through mxs, the design tests among them, and are left out of a plain `mix test`.
 The test tagged `timing` sends MIDI and OSC for a minute and checks when they arrive; run it with `mix test --only timing`.
 The tests tagged `iowa` measure the University of Iowa's guitar recordings; download the mono guitar files from https://theremin.music.uiowa.edu/MISguitar.html, unzip them, and run `MX_IOWA_GUITAR=folder mix test --only iowa`.
-The tests tagged `iowa` also measure the Iowa flute played mf, with and without vibrato, from https://theremin.music.uiowa.edu/MISflute.html, in the folder `MX_IOWA_FLUTE` names, and render mx's flute, so they need scsynth.
+The tests tagged `iowa` also measure the Iowa flute played mf, with and without vibrato, from https://theremin.music.uiowa.edu/MISflute.html, in the folder `MX_IOWA_FLUTE` names, and render mx's flute.
 They also fit mx's clarinet to the Iowa Bb clarinet, from https://theremin.music.uiowa.edu/MISBbclarinet.html, in the folder `MX_IOWA_CLARINET` names.
 The tests tagged `vsco` measure the cowbell hits of the VSCO 2 Community Edition percussion, from https://github.com/sgossner/VSCO-2-CE; run them with `MX_VSCO_PERCUSSION=folder mix test --only vsco`.
-The tests tagged `sc3_plugins` measure the bowed strings and need sc3-plugins installed; run them with `mix test --include scsynth --only sc3_plugins`, and fit them to the Iowa recordings with `--include iowa`: the violin from https://theremin.music.uiowa.edu/MISviolin.html in the folder `MX_IOWA_VIOLIN` names, the viola from https://theremin.music.uiowa.edu/MISviola.html in `MX_IOWA_VIOLA`, the cello from https://theremin.music.uiowa.edu/MIScello.html in `MX_IOWA_CELLO`, and the double bass from https://theremin.music.uiowa.edu/MISdoublebass.html in `MX_IOWA_DOUBLE_BASS`.
-The tests tagged `sclang` compile synth designs with SuperCollider's sclang; run them with `mix test --only sclang`.
-The tests tagged `vcsl` measure the Versilian Community Sample Library, from https://github.com/sgossner/VCSL; run them with `MX_VCSL=folder mix test --only vcsl`, where the folder is the library's root, and they render mx's synths, so they need scsynth.
+The tests tagged `vcsl` measure the Versilian Community Sample Library, from https://github.com/sgossner/VCSL; run them with `MX_VCSL=folder mix test --only vcsl`, where the folder is the library's root, and they render mx's synths.
 The tests tagged `audiveris` scan pages of the Bach-Gesellschaft's St Matthew Passion with Audiveris and take two to three minutes; set it up as documentation/audiveris.md describes and run them with `mix test --only audiveris`.
 `scripts/lint.sh` runs credo, the project's style rules, the formatter, ex_dna's check for duplicated code, a check that every public function has a `@doc`, and a check for compile-time cycles; it needs ripgrep.
