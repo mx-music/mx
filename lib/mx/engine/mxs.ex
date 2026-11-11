@@ -29,23 +29,34 @@ defmodule Mx.Engine.Mxs do
 
   @doc "The synths, players and effects mxs has, each with its options and their defaults."
   def catalog do
+    Map.new(entries(), fn {name, specs} ->
+      defaults = defaults(specs)
+
+      defaults =
+        if name in ~w(live_audio_mono live_audio_stereo),
+          do: Map.put(defaults, :input, 1),
+          else: defaults
+
+      {String.to_atom(name), defaults}
+    end)
+  end
+
+  @doc "Each synth's and effect's options declared in beats, which a song gives in beats and mxs takes in seconds."
+  def beats do
+    Map.new(entries(), fn {name, specs} ->
+      {String.to_atom(name),
+       MapSet.new(for %{kind: "beats"} = spec <- specs, do: String.to_atom(spec.name))}
+    end)
+  end
+
+  # Each entry's own options, then those every note, sample or effect takes, which win over its own.
+  defp entries do
     {_synths, note, sample, effects, effect} = Native.catalog()
-    synths = synth_specs()
-    playing = defaults(note)
-    players = Map.merge(defaults(sample), playing)
 
-    entries =
-      Enum.map(synths, fn {name, specs} -> {name, Map.merge(defaults(specs), playing)} end) ++
-        [{"mono_player", players}, {"stereo_player", players}] ++
-        [
-          {"live_audio_mono", Map.put(playing, :input, 1)},
-          {"live_audio_stereo", Map.put(playing, :input, 1)}
-        ] ++
-        Enum.map(effects ++ effect_specs(), fn {name, specs} ->
-          {"fx_" <> name, Map.merge(defaults(specs), defaults(effect))}
-        end)
-
-    Map.new(entries, fn {name, defaults} -> {String.to_atom(name), defaults} end)
+    for({name, specs} <- synth_specs(), do: {name, specs ++ note}) ++
+      [{"mono_player", sample ++ note}, {"stereo_player", sample ++ note}] ++
+      [{"live_audio_mono", note}, {"live_audio_stereo", note}] ++
+      for {name, specs} <- effects ++ effect_specs(), do: {"fx_" <> name, specs ++ effect}
   end
 
   @doc "Each synth's options that take a range or a set of names, as `{:range, low, high}`, with nil for an open end, or `{:names, names}`."

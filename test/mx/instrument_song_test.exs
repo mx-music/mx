@@ -94,4 +94,24 @@ defmodule Mx.InstrumentSongTest do
     assert error.line == 3
     assert Exception.message(error) =~ "returns its sound"
   end
+
+  test "an option a defsynth declares in beats is given in beats and played in seconds" do
+    Code.eval_string("""
+    defmodule Mx.InstrumentSongTest.Pulse do
+      use Mx.Instrument
+      attr :note, :note, default: 60
+      attr :gap, :beats, default: 1
+      attr :level, :float, default: 1
+      envelope_attrs()
+
+      defsynth pulse(hit) do
+        sine(hz: hz(hit.note)) |> gain(hit.level * hit.gap) |> note_envelope(hit)
+      end
+    end
+    """)
+
+    assert Mx.Synths.to_seconds(:pulse, [gap: 2, level: 2], 120)[:gap] == 1.0
+    assert Mx.Synths.to_seconds(:pulse, [gap: 2, level: 2], 120)[:level] == 2
+    assert Mx.Synths.to_seconds(:pulse, [], 120)[:gap] == 0.5
+  end
 end

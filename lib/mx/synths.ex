@@ -2,20 +2,17 @@ defmodule Mx.Synths do
   @moduledoc """
   The synths mx ships, with the options each one takes and their defaults, as mxs lists them.
 
-  A song measures time options in beats: attack, decay, sustain, release, the tanpura's gap between plucks, and every option ending in `_slide`.
+  A song measures time options in beats: those a synth or effect declares in beats, such as attack, decay, sustain, release and an echo's phase, and every option ending in `_slide`.
   `to_seconds/3` turns them into the seconds the engine expects, defaults included, so a synth sounds the same against the beat at any tempo; `given_to_seconds/3` turns only the options given, for changing a sound that plays.
   A negative time is left alone, since the sample players read a sustain of -1 as "until the end of the sample".
   `tremolo` and `motor` are rates, picks and pulses per beat, so they are sent per second.
 
   The effects are the synths named `fx_` followed by the effect's name, and are not synths a loop can play.
-  An effect also measures `phase` and `max_phase` in beats.
   Its `in_bus` and `out_bus` are mx's to set, so a song cannot give them.
   The live audio synths read the sound card for `live_audio`, and the sample players play `sample`, so neither are synths a loop can play.
   `tail_seconds/1` is how long an effect chain keeps sounding after its last note ends, as Sonic Pi works it out for each effect.
   """
 
-  @time_options ~w(attack decay sustain release gap)
-  @effect_time_options ~w(phase max_phase)
   @rate_options ~w(tremolo motor)
   @effect_buses [:in_bus, :out_bus]
   @not_playable [:live_audio_mono, :live_audio_stereo, :mono_player, :stereo_player, :recorder]
@@ -103,10 +100,8 @@ defmodule Mx.Synths do
   end
 
   defp time_option?(synth, key) do
-    name = Atom.to_string(key)
-
-    name in @time_options or String.ends_with?(name, "_slide") or
-      (effect_name?(synth) and name in @effect_time_options)
+    String.ends_with?(Atom.to_string(key), "_slide") or
+      MapSet.member?(Map.get(beats(), synth, MapSet.new()), key)
   end
 
   defp fx(effect), do: :"fx_#{effect}"
@@ -159,17 +154,21 @@ defmodule Mx.Synths do
   def forget do
     :persistent_term.erase(__MODULE__)
     :persistent_term.erase({__MODULE__, :limits})
+    :persistent_term.erase({__MODULE__, :beats})
   end
 
-  defp limits do
-    case :persistent_term.get({__MODULE__, :limits}, nil) do
-      nil ->
-        limits = Mx.Engine.Mxs.limits()
-        :persistent_term.put({__MODULE__, :limits}, limits)
-        limits
+  defp limits, do: cached(:limits, &Mx.Engine.Mxs.limits/0)
+  defp beats, do: cached(:beats, &Mx.Engine.Mxs.beats/0)
 
-      limits ->
-        limits
+  defp cached(key, read) do
+    case :persistent_term.get({__MODULE__, key}, nil) do
+      nil ->
+        value = read.()
+        :persistent_term.put({__MODULE__, key}, value)
+        value
+
+      value ->
+        value
     end
   end
 
