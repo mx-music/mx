@@ -189,6 +189,37 @@ defmodule Mx.MusicTest do
     end
 
     @tag :tmp_dir
+    test "a value outside an option's range is refused, naming the range", ctx do
+      path = write(ctx, "song(music: part(:lead, note(:c5, 1, vel: 1.5), synth: :flute))")
+
+      assert Song.load(path) ==
+               {:error,
+                "#{path}:3: part lead: synth flute takes vel from 0 to 1, not 1.5, in note(72, 1, vel: 1.5)"}
+    end
+
+    @tag :tmp_dir
+    test "a name an option does not take is refused, naming the ones it does", ctx do
+      path =
+        write(
+          ctx,
+          "song(music: part(:drums, seq([note(:c3, 1, bol: :ghe), note(:c3, 1, bol: :dha)]), synth: :tabla))"
+        )
+
+      assert Song.load(path) ==
+               {:error,
+                "#{path}:3: part drums: synth tabla takes bol na, tun, te, tas, ghe or ke, not dha, in note(48, 1, bol: :dha)"}
+    end
+
+    @tag :tmp_dir
+    test "a value outside its range in a part's defaults is refused", ctx do
+      path =
+        write(ctx, "song(music: part(:lead, note(:c5, 1), synth: :flute, defaults: [vel: -0.5]))")
+
+      assert Song.load(path) ==
+               {:error, "#{path}:3: part lead: synth flute takes vel from 0 to 1, not -0.5"}
+    end
+
+    @tag :tmp_dir
     test "a note outside any part is refused", ctx do
       path = write(ctx, "song(music: note(:c4, 1))")
 

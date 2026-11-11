@@ -423,11 +423,16 @@ defmodule Mx.Music do
       {changes, opts} = Keyword.pop(note.opts, :changes, [])
 
       result =
-        with :ok <- Pass.check_play(synth, part.defaults, note.pitch, opts) do
+        with :ok <- Pass.check_play(synth, part.defaults, note.pitch, opts),
+             :ok <- check_values(synth, opts) do
           Enum.find_value(changes, :ok, fn {_beat, change} ->
             try do
               Pass.check_change(synth, change)
-              nil
+
+              case check_values(synth, change) do
+                :ok -> nil
+                error -> error
+              end
             rescue
               error in ArgumentError -> {:error, Exception.message(error)}
             end
@@ -457,6 +462,20 @@ defmodule Mx.Music do
       nil -> :ok
       option -> raise ArgumentError, "part #{name}: synth #{synth} has no option #{option}"
     end
+
+    case check_values(synth, defaults) do
+      :ok -> :ok
+      {:error, message} -> raise ArgumentError, "part #{name}: #{message}"
+    end
+  end
+
+  defp check_values(synth, opts) do
+    Enum.find_value(opts, :ok, fn {option, value} ->
+      case Synths.check_value(synth, option, value) do
+        :ok -> nil
+        error -> error
+      end
+    end)
   end
 
   @doc "The song, refusing a note outside any part, a part of one name played with other options, and repeat with no count anywhere but around the whole music."

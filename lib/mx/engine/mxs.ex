@@ -29,14 +29,8 @@ defmodule Mx.Engine.Mxs do
 
   @doc "The synths, players and effects mxs has, each with its options and their defaults."
   def catalog do
-    {synths, note, sample, effects, effect} = Native.catalog()
-
-    synths =
-      synths ++
-        for module <- Mx.Instrument.modules(),
-            synth <- module.__synths__(),
-            do: {Atom.to_string(synth.name), Mx.Instrument.specs(synth)}
-
+    {_synths, note, sample, effects, effect} = Native.catalog()
+    synths = synth_specs()
     playing = defaults(note)
     players = Map.merge(defaults(sample), playing)
 
@@ -52,6 +46,31 @@ defmodule Mx.Engine.Mxs do
         end)
 
     Map.new(entries, fn {name, defaults} -> {String.to_atom(name), defaults} end)
+  end
+
+  @doc "Each synth's options that take a range or a set of names, as `{:range, low, high}`, with nil for an open end, or `{:names, names}`."
+  def limits do
+    Map.new(synth_specs(), fn {name, specs} ->
+      limits =
+        for spec <- specs, limit = limit(spec), into: %{}, do: {String.to_atom(spec.name), limit}
+
+      {String.to_atom(name), limits}
+    end)
+  end
+
+  defp limit(%{kind: "name", values: [_ | _] = values}),
+    do: {:names, Enum.map(values, &String.to_atom/1)}
+
+  defp limit(%{low: low, high: high}) when low != nil or high != nil, do: {:range, low, high}
+  defp limit(_spec), do: nil
+
+  defp synth_specs do
+    {synths, _note, _sample, _effects, _effect} = Native.catalog()
+
+    synths ++
+      for module <- Mx.Instrument.modules(),
+          synth <- module.__synths__(),
+          do: {Atom.to_string(synth.name), Mx.Instrument.specs(synth)}
   end
 
   # mxs glides any number option over its _slide partner, so each one is listed.

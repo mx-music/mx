@@ -118,8 +118,54 @@ defmodule Mx.Synths do
     String.to_atom(effect)
   end
 
+  @doc "Refuses a number outside the range a synth's option takes, or a name it does not take, naming what it takes."
+  def check_value(synth, option, value) do
+    limit = limits() |> Map.get(synth, %{}) |> Map.get(option)
+
+    if within?(limit, value) do
+      :ok
+    else
+      takes = takes(limit)
+      value = inspect(value) |> String.trim_leading(":")
+      {:error, "synth #{synth} takes #{option} #{takes}, not #{value}"}
+    end
+  end
+
+  defp within?({:range, low, high}, value) when is_number(value),
+    do: (low == nil or value >= low) and (high == nil or value <= high)
+
+  defp within?({:names, names}, value) when is_atom(value), do: value in names
+  defp within?(_limit, _value), do: true
+
+  defp takes({:range, low, nil}), do: "from #{number(low)} up"
+  defp takes({:range, nil, high}), do: "up to #{number(high)}"
+  defp takes({:range, low, high}), do: "from #{number(low)} to #{number(high)}"
+
+  defp takes({:names, names}) do
+    {rest, [last]} = Enum.split(names, -1)
+    Enum.join(rest, ", ") <> " or #{last}"
+  end
+
+  defp number(value) when value == trunc(value), do: Integer.to_string(trunc(value))
+  defp number(value), do: Float.to_string(value)
+
   @doc "Forgets the catalog read from the engine, so the next use reads it again, with the synths written in Elixir known since."
-  def forget, do: :persistent_term.erase(__MODULE__)
+  def forget do
+    :persistent_term.erase(__MODULE__)
+    :persistent_term.erase({__MODULE__, :limits})
+  end
+
+  defp limits do
+    case :persistent_term.get({__MODULE__, :limits}, nil) do
+      nil ->
+        limits = Mx.Engine.Mxs.limits()
+        :persistent_term.put({__MODULE__, :limits}, limits)
+        limits
+
+      limits ->
+        limits
+    end
+  end
 
   defp catalog do
     case :persistent_term.get(__MODULE__, nil) do
