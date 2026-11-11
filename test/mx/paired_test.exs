@@ -65,12 +65,26 @@ defmodule Mx.PairedTest do
     end
   end
 
+  for vel <- [0.3, 1] do
+    test "the violin's note 69 at vel #{vel}, held with its vibrato, renders the same in its defsynth and Rust forms" do
+      options = [note: 69, vel: unquote(vel), sustain: 2]
+      apart = apart(Mx.Paired.Violin, :violin, options, 3)
+      assert apart < -60, "#{apart} dB apart"
+    end
+  end
+
+  test "the violin plucked renders the same in its defsynth and Rust forms" do
+    apart = apart(Mx.Paired.Violin, :violin, [note: 69, vel: 0.6, pizz: 1], 3)
+    assert apart < -60, "#{apart} dB apart"
+  end
+
   @tag :bench
   test "prints each paired instrument's render time per second of sound in both forms" do
     for {module, synth, options, seconds} <- [
           {Mx.Paired.Marimba, :marimba, [note: 60, vel: 1], 3},
           {Mx.Paired.Flute, :flute, [note: 72, vel: 1, sustain: 2], 3},
-          {Mx.Paired.Tabla, :tabla, [bol: :ghe, vel: 1], 3}
+          {Mx.Paired.Tabla, :tabla, [bol: :ghe, vel: 1], 3},
+          {Mx.Paired.Violin, :violin, [note: 69, vel: 1, sustain: 2], 3}
         ] do
       rust = Float.round(timed(nil, synth, options, seconds), 2)
       elixir = Float.round(timed(module, synth, options, seconds), 2)

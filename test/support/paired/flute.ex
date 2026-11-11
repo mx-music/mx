@@ -38,7 +38,7 @@ defmodule Mx.Paired.Flute do
     # The vibrato waits a quarter second, then grows in over 1.2.
     grows = envelope([[0.25, 0, 2], [1.2, 1, 2]])
     swing = sine(hz: 5) * grows * (blown.vibrato * vel ** 0.65)
-    pitch = freq * 2 ** (swing / 12)
+    pitch = hz(follow(blown.note)) * 2 ** (swing / 12)
 
     tone =
       partials(pitch,
