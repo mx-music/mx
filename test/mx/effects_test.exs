@@ -34,16 +34,17 @@ defmodule Mx.EffectsTest do
     assert difference(right, dry_right) < -100
   end
 
-  test "a bitcrusher at 4 bits and 4000 Hz is coarse, and at 16 bits and 44100 Hz is dry but a sample late",
+  # Holding at 44100 Hz repeats about one sample in twelve, which alone leaves this saw 30 dB from dry.
+  test "a bitcrusher at 4 bits and 4000 Hz is coarse, at 16 bits and 44100 Hz near dry, and at 48000 Hz dry",
        ctx do
     {dry, _} = saw(ctx, [], [])
     {coarse, _} = saw(ctx, [], [fx(:bitcrusher, bits: 4, sample_rate: 4000)])
     {fine, _} = saw(ctx, [], [fx(:bitcrusher, bits: 16, sample_rate: 44_100)])
     {full, _} = saw(ctx, [], [fx(:bitcrusher, bits: 16, sample_rate: 48_000)])
 
-    assert difference(tl(coarse), Enum.drop(dry, -1)) > 0
-    assert difference(tl(fine), Enum.drop(dry, -1)) < -40
-    assert difference(tl(full), Enum.drop(dry, -1)) < -60
+    assert difference(coarse, dry) > 0
+    assert difference(fine, dry) < -25
+    assert difference(full, dry) < -60
   end
 
   test "a tremolo with phase: 1 and depth: 1 at 120 bpm turns a held note fully down and up every half second",
