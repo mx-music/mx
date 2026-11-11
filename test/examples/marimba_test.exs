@@ -3,7 +3,7 @@ defmodule Mx.Examples.MarimbaTest do
 
   import ExUnit.CaptureIO
 
-  @song "examples/marimba/solo.exs"
+  @song "examples/solo/marimba.exs"
 
   test "the solo plays only the marimba" do
     for pass <- 0..5 do
@@ -30,7 +30,7 @@ defmodule Mx.Examples.MarimbaTest do
   end
 
   test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/marimba"
+    assert File.read!("README.md") =~ "examples/solo/marimba.exs"
     assert File.read!("LICENSE-designs.md") =~ "The marimba is measured"
   end
 

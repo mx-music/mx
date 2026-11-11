@@ -3,7 +3,7 @@ defmodule Mx.Examples.TanpuraTest do
 
   import ExUnit.CaptureIO
 
-  @song "examples/tanpura/solo.exs"
+  @song "examples/solo/tanpura.exs"
 
   test "the solo plays only the tanpura" do
     for pass <- 0..4 do
@@ -34,7 +34,7 @@ defmodule Mx.Examples.TanpuraTest do
   end
 
   test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/tanpura"
+    assert File.read!("README.md") =~ "examples/solo/tanpura.exs"
 
     assert File.read!("LICENSE-designs.md") =~
              ~s(The tanpura is measured from the recording "Tanpura 10")

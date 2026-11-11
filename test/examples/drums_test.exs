@@ -3,7 +3,7 @@ defmodule Mx.Examples.DrumsTest do
 
   import ExUnit.CaptureIO
 
-  @song "examples/drums/solo.exs"
+  @song "examples/solo/drums.exs"
   @kit ~w(closed_hihat crash high_tom kick low_tom mid_tom open_hihat snare)
 
   test "the solo plays only the drum kit" do
@@ -37,7 +37,7 @@ defmodule Mx.Examples.DrumsTest do
   end
 
   test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/drums"
+    assert File.read!("README.md") =~ "examples/solo/drums.exs"
     license = File.read!("LICENSE-designs.md")
     assert license =~ "snare drum recordings"
     assert license =~ "crash cymbal recordings"

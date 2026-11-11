@@ -3,7 +3,7 @@ defmodule Mx.Examples.ViolaTest do
 
   import ExUnit.CaptureIO
 
-  @song "examples/viola/solo.exs"
+  @song "examples/solo/viola.exs"
 
   test "the solo plays only the viola" do
     for pass <- 0..4 do
@@ -43,7 +43,7 @@ defmodule Mx.Examples.ViolaTest do
   end
 
   test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/viola"
+    assert File.read!("README.md") =~ "examples/solo/viola.exs"
     assert File.read!("LICENSE-designs.md") =~ "The viola is measured"
   end
 

@@ -3,7 +3,7 @@ defmodule Mx.Examples.SitarTest do
 
   import ExUnit.CaptureIO
 
-  @song "examples/sitar/solo.exs"
+  @song "examples/solo/sitar.exs"
 
   test "the solo plays the sitar alone" do
     for pass <- 0..7 do
@@ -23,7 +23,7 @@ defmodule Mx.Examples.SitarTest do
   end
 
   test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/sitar"
+    assert File.read!("README.md") =~ "examples/solo/sitar.exs"
     assert File.read!("LICENSE-designs.md") =~ "sitar01.flac"
     assert File.read!("LICENSE-designs.md") =~ "sitar j"
   end

@@ -3,7 +3,7 @@ defmodule Mx.Examples.FluteTest do
 
   import ExUnit.CaptureIO
 
-  @song "examples/flute/solo.exs"
+  @song "examples/solo/flute.exs"
 
   test "the solo plays only the flute" do
     for pass <- 0..4 do
@@ -34,7 +34,7 @@ defmodule Mx.Examples.FluteTest do
   end
 
   test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/flute"
+    assert File.read!("README.md") =~ "examples/solo/flute.exs"
     assert File.read!("LICENSE-designs.md") =~ "The flute is measured"
   end
 

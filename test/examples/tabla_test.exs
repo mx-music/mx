@@ -3,7 +3,7 @@ defmodule Mx.Examples.TablaTest do
 
   import ExUnit.CaptureIO
 
-  @song "examples/tabla/solo.exs"
+  @song "examples/solo/tabla.exs"
   @synths ~w(tabla_ghe tabla_ke tabla_na tabla_te tabla_tun)
 
   test "the solo plays the tabla alone" do
@@ -32,7 +32,7 @@ defmodule Mx.Examples.TablaTest do
   end
 
   test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/tabla"
+    assert File.read!("README.md") =~ "examples/solo/tabla.exs"
     assert File.read!("LICENSE-designs.md") =~ "tabla bols"
   end
 

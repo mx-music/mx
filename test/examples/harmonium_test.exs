@@ -3,7 +3,7 @@ defmodule Mx.Examples.HarmoniumTest do
 
   import ExUnit.CaptureIO
 
-  @song "examples/harmonium/solo.exs"
+  @song "examples/solo/harmonium.exs"
 
   test "the solo plays the harmonium alone, a melody over a held Sa" do
     for pass <- 0..4 do
@@ -25,7 +25,7 @@ defmodule Mx.Examples.HarmoniumTest do
   end
 
   test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/harmonium"
+    assert File.read!("README.md") =~ "examples/solo/harmonium.exs"
     assert File.read!("LICENSE-designs.md") =~ "cabled_mess"
     assert File.read!("LICENSE-designs.md") =~ "donyaquick"
   end

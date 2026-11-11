@@ -3,7 +3,7 @@ defmodule Mx.Examples.ClavesTest do
 
   import ExUnit.CaptureIO
 
-  @song "examples/claves/solo.exs"
+  @song "examples/solo/claves.exs"
 
   test "the solo plays only the clave" do
     for pass <- 0..9 do
@@ -42,7 +42,7 @@ defmodule Mx.Examples.ClavesTest do
   end
 
   test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/claves"
+    assert File.read!("README.md") =~ "examples/solo/claves.exs"
     assert File.read!("LICENSE-designs.md") =~ "claves recordings"
   end
 

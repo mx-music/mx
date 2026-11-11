@@ -3,7 +3,7 @@ defmodule Mx.Examples.TriangleTest do
 
   import ExUnit.CaptureIO
 
-  @song "examples/triangle/solo.exs"
+  @song "examples/solo/triangle.exs"
 
   test "the solo plays only the triangle" do
     for pass <- 0..7 do
@@ -35,7 +35,7 @@ defmodule Mx.Examples.TriangleTest do
   end
 
   test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/triangle"
+    assert File.read!("README.md") =~ "examples/solo/triangle.exs"
     assert File.read!("LICENSE-designs.md") =~ "triangle recordings"
   end
 

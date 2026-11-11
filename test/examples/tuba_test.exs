@@ -3,7 +3,7 @@ defmodule Mx.Examples.TubaTest do
 
   import ExUnit.CaptureIO
 
-  @song "examples/tuba/solo.exs"
+  @song "examples/solo/tuba.exs"
 
   test "the solo plays only the tuba" do
     for pass <- 0..4 do
@@ -31,7 +31,7 @@ defmodule Mx.Examples.TubaTest do
   end
 
   test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/tuba"
+    assert File.read!("README.md") =~ "examples/solo/tuba.exs"
 
     assert File.read!("LICENSE-designs.md") =~
              "The tuba is measured"

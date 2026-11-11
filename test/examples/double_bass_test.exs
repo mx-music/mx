@@ -3,7 +3,7 @@ defmodule Mx.Examples.DoubleBassTest do
 
   import ExUnit.CaptureIO
 
-  @song "examples/double_bass/solo.exs"
+  @song "examples/solo/double_bass.exs"
 
   test "the solo plays only the double bass" do
     for pass <- 0..4 do
@@ -34,7 +34,7 @@ defmodule Mx.Examples.DoubleBassTest do
   end
 
   test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/double_bass"
+    assert File.read!("README.md") =~ "examples/solo/double_bass.exs"
     assert File.read!("LICENSE-designs.md") =~ "The double bass is measured"
   end
 

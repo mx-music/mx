@@ -3,7 +3,7 @@ defmodule Mx.Examples.AgogoTest do
 
   import ExUnit.CaptureIO
 
-  @song "examples/agogo/solo.exs"
+  @song "examples/solo/agogo.exs"
 
   test "the solo plays the agogô's two bells alone" do
     for pass <- 0..21 do
@@ -40,7 +40,7 @@ defmodule Mx.Examples.AgogoTest do
   end
 
   test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/agogo"
+    assert File.read!("README.md") =~ "examples/solo/agogo.exs"
     assert File.read!("LICENSE-designs.md") =~ "Versilian Community Sample Library"
   end
 

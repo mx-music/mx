@@ -3,7 +3,7 @@ defmodule Mx.Examples.GanzaTest do
 
   import ExUnit.CaptureIO
 
-  @song "examples/ganza/solo.exs"
+  @song "examples/solo/ganza.exs"
 
   test "the solo plays the ganzá, joined by the shaker after its first section" do
     for pass <- 0..11 do
@@ -36,7 +36,7 @@ defmodule Mx.Examples.GanzaTest do
   end
 
   test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/ganza"
+    assert File.read!("README.md") =~ "examples/solo/ganza.exs"
     assert File.read!("LICENSE-designs.md") =~ "large shaker recordings"
   end
 

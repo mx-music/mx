@@ -3,7 +3,7 @@ defmodule Mx.Examples.TenorSaxTest do
 
   import ExUnit.CaptureIO
 
-  @song "examples/tenor_sax/solo.exs"
+  @song "examples/solo/tenor_sax.exs"
 
   test "the solo plays only the tenor saxophone" do
     for pass <- 0..4 do
@@ -34,7 +34,7 @@ defmodule Mx.Examples.TenorSaxTest do
   end
 
   test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/tenor_sax"
+    assert File.read!("README.md") =~ "examples/solo/tenor_sax.exs"
 
     assert File.read!("LICENSE-designs.md") =~
              "The tenor saxophone, tenor_sax, is measured"

@@ -3,7 +3,7 @@ defmodule Mx.Examples.GuiroTest do
 
   import ExUnit.CaptureIO
 
-  @song "examples/guiro/solo.exs"
+  @song "examples/solo/guiro.exs"
 
   test "the solo plays only the guiro" do
     for pass <- 0..11 do
@@ -30,7 +30,7 @@ defmodule Mx.Examples.GuiroTest do
   end
 
   test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/guiro"
+    assert File.read!("README.md") =~ "examples/solo/guiro.exs"
     assert File.read!("LICENSE-designs.md") =~ "güiro recordings"
   end
 

@@ -110,10 +110,10 @@ mx examples/raga.exs
 mx examples/midnight.exs
 ```
 
-`examples/piano/solo.exs` is the piano on its own: a sweep from its lowest note to its highest, chords played softly and then hard, runs over a bass, and its lowest and highest notes at the hardest and the softest.
+`examples/solo/piano.exs` is the piano on its own: a sweep from its lowest note to its highest, chords played softly and then hard, runs over a bass, and its lowest and highest notes at the hardest and the softest.
 
 ```sh
-mx examples/piano/solo.exs
+mx examples/solo/piano.exs
 ```
 
 `examples/piano/clair_de_lune.exs` is Debussy's Clair de lune of 1905, in the public domain, played whole on the piano from the Mutopia Project's engraving: the melody voiced over the inner notes, the pedal changing with the bass, and the bars stretched and pressed by the rubato its markings ask for, from pianissimo to the forte of bar 41 and back to a morendo.
@@ -122,136 +122,136 @@ mx examples/piano/solo.exs
 mx examples/piano/clair_de_lune.exs
 ```
 
-`examples/marimba/solo.exs` is the marimba on its own: a sweep from its lowest bar to its highest, a melody rolled by two mallets over ringing bass bars, the same arpeggio on its low bars and its high ones, and a last chord.
+`examples/solo/marimba.exs` is the marimba on its own: a sweep from its lowest bar to its highest, a melody rolled by two mallets over ringing bass bars, the same arpeggio on its low bars and its high ones, and a last chord.
 
 ```sh
-mx examples/marimba/solo.exs
+mx examples/solo/marimba.exs
 ```
 
-`examples/vibraphone/solo.exs` is the vibraphone on its own: chords left to ring with the pedal, the same chords with the motor turning, a line of short damped notes, and a last chord.
+`examples/solo/vibraphone.exs` is the vibraphone on its own: chords left to ring with the pedal, the same chords with the motor turning, a line of short damped notes, and a last chord.
 
 ```sh
-mx examples/vibraphone/solo.exs
+mx examples/solo/vibraphone.exs
 ```
 
-`examples/xylophone/solo.exs` is the xylophone on its own: runs over two octaves in sixteenths, a note struck every sixteenth as a melody moves under it, a melody on its brightest bars, and a run up to its top bar.
+`examples/solo/xylophone.exs` is the xylophone on its own: runs over two octaves in sixteenths, a note struck every sixteenth as a melody moves under it, a melody on its brightest bars, and a run up to its top bar.
 
 ```sh
-mx examples/xylophone/solo.exs
+mx examples/solo/xylophone.exs
 ```
 
-`examples/glockenspiel/solo.exs` is the glockenspiel on its own: a melody high in its range, each note damped as the next one comes, then a chord struck one bar at a time and left to ring, and an arpeggio up to its top bar.
+`examples/solo/glockenspiel.exs` is the glockenspiel on its own: a melody high in its range, each note damped as the next one comes, then a chord struck one bar at a time and left to ring, and an arpeggio up to its top bar.
 
 ```sh
-mx examples/glockenspiel/solo.exs
+mx examples/solo/glockenspiel.exs
 ```
 
-`examples/harp/solo.exs` is the harp on its own: a joropo in A minor, the bass in 3/4 under arpeggios in 6/8, then chords left to ring, and a last arpeggio.
+`examples/solo/harp.exs` is the harp on its own: a joropo in A minor, the bass in 3/4 under arpeggios in 6/8, then chords left to ring, and a last arpeggio.
 
 ```sh
-mx examples/harp/solo.exs
+mx examples/solo/harp.exs
 ```
 
-`examples/violin/solo.exs` is the violin on its own, in D minor: a cantabile slurred in groups whose long notes swell and ease, bariolage against the open A string as in the Preludio of Bach's Partita No. 3, the melodic minor slurred eight notes to a bow and arpeggios in short notes, chords plucked down to the open G, and a climb on audible shifts to a long D7 with vibrato.
+`examples/solo/violin.exs` is the violin on its own, in D minor: a cantabile slurred in groups whose long notes swell and ease, bariolage against the open A string as in the Preludio of Bach's Partita No. 3, the melodic minor slurred eight notes to a bow and arpeggios in short notes, chords plucked down to the open G, and a climb on audible shifts to a long D7 with vibrato.
 
 ```sh
-mx examples/violin/solo.exs
+mx examples/solo/violin.exs
 ```
 
-`examples/viola/solo.exs` is the viola on its own, in C minor: a cantabile low on its C and G strings whose long notes swell and ease, measured tremolo growing from soft to loud, arpeggios from the low C slurred four notes to a bow across the strings, plucked chords, and the melody an octave higher settling on the low C.
+`examples/solo/viola.exs` is the viola on its own, in C minor: a cantabile low on its C and G strings whose long notes swell and ease, measured tremolo growing from soft to loud, arpeggios from the low C slurred four notes to a bow across the strings, plucked chords, and the melody an octave higher settling on the low C.
 
 ```sh
-mx examples/viola/solo.exs
+mx examples/solo/viola.exs
 ```
 
-`examples/bassoon/solo.exs` is the bassoon on its own: a song-like melody in B flat in its tenor register, a walking bass line low in its range, a comic tune in short detached notes, and the melody again, closing on its low B flat.
+`examples/solo/bassoon.exs` is the bassoon on its own: a song-like melody in B flat in its tenor register, a walking bass line low in its range, a comic tune in short detached notes, and the melody again, closing on its low B flat.
 
 ```sh
-mx examples/bassoon/solo.exs
+mx examples/solo/bassoon.exs
 ```
 
-`examples/cello/solo.exs` is the cello on its own, in G major: the opening bars of the Prelude of Bach's Cello Suite No. 1 broken across the strings, a cantabile climbing to the A string on audible shifts with its long notes swelled, a plucked walking bass, and a climb to a long high D falling back to the low G.
+`examples/solo/cello.exs` is the cello on its own, in G major: the opening bars of the Prelude of Bach's Cello Suite No. 1 broken across the strings, a cantabile climbing to the A string on audible shifts with its long notes swelled, a plucked walking bass, and a climb to a long high D falling back to the low G.
 
 ```sh
-mx examples/cello/solo.exs
+mx examples/solo/cello.exs
 ```
 
-`examples/double_bass/solo.exs` is the double bass on its own: a plucked walking line through a twelve-bar blues in F, then a slow melody over its low strings slurred in swelled bows, and a last walk down to its low F, bowed, held and swelled.
+`examples/solo/double_bass.exs` is the double bass on its own: a plucked walking line through a twelve-bar blues in F, then a slow melody over its low strings slurred in swelled bows, and a last walk down to its low F, bowed, held and swelled.
 
 ```sh
-mx examples/double_bass/solo.exs
+mx examples/solo/double_bass.exs
 ```
 
-`examples/flute/solo.exs` is the flute on its own: a lyrical melody in D major with vibrato, fast runs in sixteenths, the melody again in its low register, softly, and a last phrase high in its range, loud.
+`examples/solo/flute.exs` is the flute on its own: a lyrical melody in D major with vibrato, fast runs in sixteenths, the melody again in its low register, softly, and a last phrase high in its range, loud.
 
 ```sh
-mx examples/flute/solo.exs
+mx examples/solo/flute.exs
 ```
 
-`examples/clarinet/solo.exs` is the clarinet on its own: a dark melody in G minor low in its range, fast arpeggios through its registers, the melody again higher up, and a last phrase high in its range, loud.
+`examples/solo/clarinet.exs` is the clarinet on its own: a dark melody in G minor low in its range, fast arpeggios through its registers, the melody again higher up, and a last phrase high in its range, loud.
 
 ```sh
-mx examples/clarinet/solo.exs
+mx examples/solo/clarinet.exs
 ```
 
-`examples/oboe/solo.exs` is the oboe on its own: a pastoral melody in F major, a dance in short detached notes, a climb through its range from its low B flat to F6, and the melody again an octave up.
+`examples/solo/oboe.exs` is the oboe on its own: a pastoral melody in F major, a dance in short detached notes, a climb through its range from its low B flat to F6, and the melody again an octave up.
 
 ```sh
-mx examples/oboe/solo.exs
+mx examples/solo/oboe.exs
 ```
 
-`examples/tenor_sax/solo.exs` is the tenor saxophone on its own: a choro melody in F major with its runs in sixteenths, a slow phrase with vibrato, the same phrase at its softest and then its loudest, and a last run down to its low A flat.
+`examples/solo/tenor_sax.exs` is the tenor saxophone on its own: a choro melody in F major with its runs in sixteenths, a slow phrase with vibrato, the same phrase at its softest and then its loudest, and a last run down to its low A flat.
 
 ```sh
-mx examples/tenor_sax/solo.exs
+mx examples/solo/tenor_sax.exs
 ```
 
-`examples/trumpet/solo.exs` is the trumpet on its own: a fanfare call in Bb major, tongued short and answered, then a fourth higher, a lyrical phrase with vibrato, the call at its loudest with a soft echo, and a last climb to a held Bb5.
+`examples/solo/trumpet.exs` is the trumpet on its own: a fanfare call in Bb major, tongued short and answered, then a fourth higher, a lyrical phrase with vibrato, the call at its loudest with a soft echo, and a last climb to a held Bb5.
 
 ```sh
-mx examples/trumpet/solo.exs
+mx examples/solo/trumpet.exs
 ```
 
-`examples/trombone/solo.exs` is the trombone on its own: a legato melody in F major whose notes glide into each other as the slide moves, then a fourth lower, a march in short notes, a long note at its softest and then its loudest, and a last glide from F2 up to F4.
+`examples/solo/trombone.exs` is the trombone on its own: a legato melody in F major whose notes glide into each other as the slide moves, then a fourth lower, a march in short notes, a long note at its softest and then its loudest, and a last glide from F2 up to F4.
 
 ```sh
-mx examples/trombone/solo.exs
+mx examples/solo/trombone.exs
 ```
 
-`examples/horn/solo.exs` is the French horn on its own: a broad melody in Eb major, then again an octave lower, hunting calls answered a fourth lower, a long note at its softest and then its loudest, and a run down to a held low Eb2.
+`examples/solo/horn.exs` is the French horn on its own: a broad melody in Eb major, then again an octave lower, hunting calls answered a fourth lower, a long note at its softest and then its loudest, and a run down to a held low Eb2.
 
 ```sh
-mx examples/horn/solo.exs
+mx examples/solo/horn.exs
 ```
 
-`examples/tuba/solo.exs` is the tuba on its own: an oom-pah bass in Bb major in short notes, then a walking bass under the same chords, a melody high in its range, a long note at its softest and then its loudest, and a run down to a held low F1.
+`examples/solo/tuba.exs` is the tuba on its own: an oom-pah bass in Bb major in short notes, then a walking bass under the same chords, a melody high in its range, a long note at its softest and then its loudest, and a run down to a held low F1.
 
 ```sh
-mx examples/tuba/solo.exs
+mx examples/solo/tuba.exs
 ```
 
-`examples/organ/solo.exs` is the organ on its own: chords held over a walking bass on its quiet set, then on its loud set, and a last chord on both.
+`examples/solo/organ.exs` is the organ on its own: chords held over a walking bass on its quiet set, then on its loud set, and a last chord on both.
 
 ```sh
-mx examples/organ/solo.exs
+mx examples/solo/organ.exs
 ```
 
-`examples/agogo/solo.exs` is the agogô on its own: a samba bell pattern, a partido alto one, a maracatu figure, eighths across both bells with accents, and four more samba patterns.
+`examples/solo/agogo.exs` is the agogô on its own: a samba bell pattern, a partido alto one, a maracatu figure, eighths across both bells with accents, and four more samba patterns.
 
 ```sh
-mx examples/agogo/solo.exs
+mx examples/solo/agogo.exs
 ```
 
-`examples/ganza/solo.exs` is the ganzá in four samba patterns of sixteenths, down and up strokes, with the large shaker in eighths under it.
+`examples/solo/ganza.exs` is the ganzá in four samba patterns of sixteenths, down and up strokes, with the large shaker in eighths under it.
 
 ```sh
-mx examples/ganza/solo.exs
+mx examples/solo/ganza.exs
 ```
 
-`examples/pandeiro/solo.exs` is the pandeiro on its own, in choro, samba de roda, baião, forró and coco de embolada.
+`examples/solo/pandeiro.exs` is the pandeiro on its own, in choro, samba de roda, baião, forró and coco de embolada.
 
 ```sh
-mx examples/pandeiro/solo.exs
+mx examples/solo/pandeiro.exs
 ```
 
 `examples/pandeiro/virtuoso.exs` is a pandeiro solo whose hand never stops rocking: a coco groove and its ruffs, then accents every three and every five sixteenths that cross the bar line, and every fourth stroke of sextuplets.
@@ -260,101 +260,101 @@ mx examples/pandeiro/solo.exs
 mx examples/pandeiro/virtuoso.exs
 ```
 
-`examples/cabasa/solo.exs` is the cabasa on its own, in the steady sixteenths of bossa nova, accenting each beat, then the bossa nova figure, then turning the beads on it.
+`examples/solo/cabasa.exs` is the cabasa on its own, in the steady sixteenths of bossa nova, accenting each beat, then the bossa nova figure, then turning the beads on it.
 
 ```sh
-mx examples/cabasa/solo.exs
+mx examples/solo/cabasa.exs
 ```
 
-`examples/bongos/solo.exs` is the bongos on their own: the martillo, with the hembra's open tone on its seventh stroke, then with heel-tip strokes, and a fill across both drums.
+`examples/solo/bongos.exs` is the bongos on their own: the martillo, with the hembra's open tone on its seventh stroke, then with heel-tip strokes, and a fill across both drums.
 
 ```sh
-mx examples/bongos/solo.exs
+mx examples/solo/bongos.exs
 ```
 
-`examples/cajon/solo.exs` is the cajón on its own in a festejo of mx's own in 12/8, with bass tones, slaps and ghost strokes.
+`examples/solo/cajon.exs` is the cajón on its own in a festejo of mx's own in 12/8, with bass tones, slaps and ghost strokes.
 
 ```sh
-mx examples/cajon/solo.exs
+mx examples/solo/cajon.exs
 ```
 
-`examples/timpani/solo.exs` is the timpani on its own: a roll on A2 that swells from soft to loud, the tonic and dominant pounded in turn, a melody on five drums tuned to D major, the same melody at its softest, and a roll on D3 that ends on a loud stroke left to ring.
+`examples/solo/timpani.exs` is the timpani on its own: a roll on A2 that swells from soft to loud, the tonic and dominant pounded in turn, a melody on five drums tuned to D major, the same melody at its softest, and a roll on D3 that ends on a loud stroke left to ring.
 
 ```sh
-mx examples/timpani/solo.exs
+mx examples/solo/timpani.exs
 ```
 
-`examples/congas/solo.exs` is the three congas on their own: a tumbao on the conga and the tumba, the same with a slap answered on the quinto, a solo on the quinto over muted strokes, the tumbao at its softest, and a run down the three drums to a last slap.
+`examples/solo/congas.exs` is the three congas on their own: a tumbao on the conga and the tumba, the same with a slap answered on the quinto, a solo on the quinto over muted strokes, the tumbao at its softest, and a run down the three drums to a last slap.
 
 ```sh
-mx examples/congas/solo.exs
+mx examples/solo/congas.exs
 ```
 
-`examples/tambourine/solo.exs` is the tambourine on its own, played its standard ways: a shake roll that starts and ends on a stroke, the pop and soul backbeat shaken in eighths and struck on two and four, a tarantella in continuous 6/8 triplets, soft fingertip strokes, and a roll that grows into a last stroke.
+`examples/solo/tambourine.exs` is the tambourine on its own, played its standard ways: a shake roll that starts and ends on a stroke, the pop and soul backbeat shaken in eighths and struck on two and four, a tarantella in continuous 6/8 triplets, soft fingertip strokes, and a roll that grows into a last stroke.
 
 ```sh
-mx examples/tambourine/solo.exs
+mx examples/solo/tambourine.exs
 ```
 
-`examples/triangle/solo.exs` is the triangle on its own, played its standard ways: single strokes left to ring, strokes the hand damps at once, a roll inside one corner, and the forró triangle of the baião, open on the third sixteenth of each beat and closed on the others.
+`examples/solo/triangle.exs` is the triangle on its own, played its standard ways: single strokes left to ring, strokes the hand damps at once, a roll inside one corner, and the forró triangle of the baião, open on the third sixteenth of each beat and closed on the others.
 
 ```sh
-mx examples/triangle/solo.exs
+mx examples/solo/triangle.exs
 ```
 
-`examples/claves/solo.exs` is the claves on their own, playing the standard clave patterns: son clave 3-2 and 2-3, rumba clave, the bossa nova clave, and the 6/8 standard bell of bembé.
+`examples/solo/claves.exs` is the claves on their own, playing the standard clave patterns: son clave 3-2 and 2-3, rumba clave, the bossa nova clave, and the 6/8 standard bell of bembé.
 
 ```sh
-mx examples/claves/solo.exs
+mx examples/solo/claves.exs
 ```
 
-`examples/cowbell/solo.exs` is the cowbell on its own, playing the campana, the bongocero's bell in salsa, in its two 2:3 patterns: the second gear, with the 3 side's first two strokes open and hard, and the standard third gear, open on each half bar and closed between.
+`examples/solo/cowbell.exs` is the cowbell on its own, playing the campana, the bongocero's bell in salsa, in its two 2:3 patterns: the second gear, with the 3 side's first two strokes open and hard, and the standard third gear, open on each half bar and closed between.
 
 ```sh
-mx examples/cowbell/solo.exs
+mx examples/solo/cowbell.exs
 ```
 
-`examples/guiro/solo.exs` is the güiro on its own: long, slow scrapes, the cha-cha-chá's long scrape and two short ones, son's long-short-short-long, Puerto Rican bomba's three short scrapes before a long one, and a last long scrape.
+`examples/solo/guiro.exs` is the güiro on its own: long, slow scrapes, the cha-cha-chá's long scrape and two short ones, son's long-short-short-long, Puerto Rican bomba's three short scrapes before a long one, and a last long scrape.
 
 ```sh
-mx examples/guiro/solo.exs
+mx examples/solo/guiro.exs
 ```
 
-`examples/tanpura/solo.exs` is the tanpura on its own: Pa, Sa, Sa and the low Sa plucked in turn, the first and the last given two beats, in a slow drone on C sharp, the same drone plucked quicker, two short drones on a low E, and a long, slow drone on C sharp.
+`examples/solo/tanpura.exs` is the tanpura on its own: Pa, Sa, Sa and the low Sa plucked in turn, the first and the last given two beats, in a slow drone on C sharp, the same drone plucked quicker, two short drones on a low E, and a long, slow drone on C sharp.
 
 ```sh
-mx examples/tanpura/solo.exs
+mx examples/solo/tanpura.exs
 ```
 
-`examples/tabla/solo.exs` is the tabla on its own in teentaal: its theka, with the khali, beats 9 to 12, played without the bayan, a faster variation splitting each beat in two, and the theka with the bayan bent upwards while it rings.
+`examples/solo/tabla.exs` is the tabla on its own in teentaal: its theka, with the khali, beats 9 to 12, played without the bayan, a faster variation splitting each beat in two, and the theka with the bayan bent upwards while it rings.
 
 ```sh
-mx examples/tabla/solo.exs
+mx examples/solo/tabla.exs
 ```
 
-`examples/berimbau/solo.exs` is the berimbau on its own as a capoeira roda plays it: the toque of Angola with three of its variations, São Bento Pequeno, São Bento Grande speeding up from 150 to 172 bpm, and Benguela to calm the game, each toque ending its bar on two quick buzzed strokes, at the tempo and spacing of a public-domain recording of Angola.
+`examples/solo/berimbau.exs` is the berimbau on its own as a capoeira roda plays it: the toque of Angola with three of its variations, São Bento Pequeno, São Bento Grande speeding up from 150 to 172 bpm, and Benguela to calm the game, each toque ending its bar on two quick buzzed strokes, at the tempo and spacing of a public-domain recording of Angola.
 Its strokes move a little off the beat and in strength from bar to bar, as much as that recording's do.
 
 ```sh
-mx examples/berimbau/solo.exs
+mx examples/solo/berimbau.exs
 ```
 
-`examples/sitar/solo.exs` is the sitar on its own in raga Yaman, tuned to Sa C sharp in cents: a slow alap that glides between notes on one pluck, then a gat in teentaal, low and high on the string, with long notes and quick runs.
+`examples/solo/sitar.exs` is the sitar on its own in raga Yaman, tuned to Sa C sharp in cents: a slow alap that glides between notes on one pluck, then a gat in teentaal, low and high on the string, with long notes and quick runs.
 
 ```sh
-mx examples/sitar/solo.exs
+mx examples/solo/sitar.exs
 ```
 
-`examples/harmonium/solo.exs` is the harmonium on its own in raga Bhairav, tuned to Sa G in cents: the left hand holds Sa an octave down while the right plays the ascent and descent, the pakad, a phrase dipping below Sa, one high in the upper octave, and an ending on Sa.
+`examples/solo/harmonium.exs` is the harmonium on its own in raga Bhairav, tuned to Sa G in cents: the left hand holds Sa an octave down while the right plays the ascent and descent, the pakad, a phrase dipping below Sa, one high in the upper octave, and an ending on Sa.
 
 ```sh
-mx examples/harmonium/solo.exs
+mx examples/solo/harmonium.exs
 ```
 
-`examples/drums/solo.exs` is the drum kit on its own: a rock beat that opens on a crash, the hi-hat opening and the pedal closing it, ghost notes on the snare between its hardest strokes, a fill down the toms, and a crash that is choked.
+`examples/solo/drums.exs` is the drum kit on its own: a rock beat that opens on a crash, the hi-hat opening and the pedal closing it, ghost notes on the snare between its hardest strokes, a fill down the toms, and a crash that is choked.
 
 ```sh
-mx examples/drums/solo.exs
+mx examples/solo/drums.exs
 ```
 
 `examples/guitar/` shows the guitar on its own: `fingerpicking.exs` lets each string ring until it is plucked again, `bass_line.exs` walks the low strings of a 7-string guitar, and `soft_and_hard.exs` plays one phrase softly, normally and hard.

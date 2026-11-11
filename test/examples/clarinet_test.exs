@@ -3,7 +3,7 @@ defmodule Mx.Examples.ClarinetTest do
 
   import ExUnit.CaptureIO
 
-  @song "examples/clarinet/solo.exs"
+  @song "examples/solo/clarinet.exs"
 
   test "the solo plays only the clarinet" do
     for pass <- 0..4 do
@@ -31,7 +31,7 @@ defmodule Mx.Examples.ClarinetTest do
   end
 
   test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/clarinet"
+    assert File.read!("README.md") =~ "examples/solo/clarinet.exs"
     assert File.read!("LICENSE-designs.md") =~ "The clarinet is measured"
   end
 

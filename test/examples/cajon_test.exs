@@ -3,7 +3,7 @@ defmodule Mx.Examples.CajonTest do
 
   import ExUnit.CaptureIO
 
-  @song "examples/cajon/solo.exs"
+  @song "examples/solo/cajon.exs"
 
   test "the solo plays only the cajón" do
     for pass <- 0..10 do
@@ -29,7 +29,7 @@ defmodule Mx.Examples.CajonTest do
   end
 
   test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/cajon"
+    assert File.read!("README.md") =~ "examples/solo/cajon.exs"
     assert File.read!("LICENSE-designs.md") =~ "cajón recordings"
   end
 

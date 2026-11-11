@@ -3,7 +3,7 @@ defmodule Mx.Examples.GlockenspielTest do
 
   import ExUnit.CaptureIO
 
-  @song "examples/glockenspiel/solo.exs"
+  @song "examples/solo/glockenspiel.exs"
 
   test "the solo plays only the glockenspiel" do
     for pass <- 0..3 do
@@ -31,7 +31,7 @@ defmodule Mx.Examples.GlockenspielTest do
   end
 
   test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/glockenspiel"
+    assert File.read!("README.md") =~ "examples/solo/glockenspiel.exs"
     assert File.read!("LICENSE-designs.md") =~ "The glockenspiel is measured"
   end
 

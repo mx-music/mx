@@ -3,7 +3,7 @@ defmodule Mx.Examples.PandeiroTest do
 
   import ExUnit.CaptureIO
 
-  @song "examples/pandeiro/solo.exs"
+  @song "examples/solo/pandeiro.exs"
   @virtuoso "examples/pandeiro/virtuoso.exs"
 
   test "the solo plays only the pandeiro" do
@@ -75,7 +75,7 @@ defmodule Mx.Examples.PandeiroTest do
   end
 
   test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/pandeiro/solo.exs"
+    assert File.read!("README.md") =~ "examples/solo/pandeiro.exs"
     assert File.read!("README.md") =~ "examples/pandeiro/virtuoso.exs"
     assert File.read!("LICENSE-designs.md") =~ "MeanRaccoon"
   end

@@ -3,7 +3,7 @@ defmodule Mx.Examples.TimpaniTest do
 
   import ExUnit.CaptureIO
 
-  @song "examples/timpani/solo.exs"
+  @song "examples/solo/timpani.exs"
 
   test "the solo plays only the timpani" do
     for pass <- 0..4 do
@@ -40,7 +40,7 @@ defmodule Mx.Examples.TimpaniTest do
   end
 
   test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/timpani"
+    assert File.read!("README.md") =~ "examples/solo/timpani.exs"
     assert File.read!("LICENSE-designs.md") =~ "The timpani is measured"
   end
 

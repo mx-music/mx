@@ -3,7 +3,7 @@ defmodule Mx.Examples.TambourineTest do
 
   import ExUnit.CaptureIO
 
-  @song "examples/tambourine/solo.exs"
+  @song "examples/solo/tambourine.exs"
 
   test "the solo plays only the tambourine, struck and shaken" do
     for pass <- 0..7 do
@@ -49,7 +49,7 @@ defmodule Mx.Examples.TambourineTest do
   end
 
   test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/tambourine"
+    assert File.read!("README.md") =~ "examples/solo/tambourine.exs"
     assert File.read!("LICENSE-designs.md") =~ "tambourine recordings"
   end
 

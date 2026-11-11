@@ -3,7 +3,7 @@ defmodule Mx.Examples.BongosTest do
 
   import ExUnit.CaptureIO
 
-  @song "examples/bongos/solo.exs"
+  @song "examples/solo/bongos.exs"
 
   test "the solo plays only the bongos" do
     for pass <- 0..8 do
@@ -35,7 +35,7 @@ defmodule Mx.Examples.BongosTest do
   end
 
   test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/bongos"
+    assert File.read!("README.md") =~ "examples/solo/bongos.exs"
     assert File.read!("LICENSE-designs.md") =~ "bongo recordings"
   end
 

@@ -3,7 +3,7 @@ defmodule Mx.Examples.BerimbauTest do
 
   import ExUnit.CaptureIO
 
-  @song "examples/berimbau/solo.exs"
+  @song "examples/solo/berimbau.exs"
 
   test "the solo plays the berimbau alone" do
     for pass <- 0..37 do
@@ -73,7 +73,7 @@ defmodule Mx.Examples.BerimbauTest do
   end
 
   test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/berimbau"
+    assert File.read!("README.md") =~ "examples/solo/berimbau.exs"
     assert File.read!("LICENSE-designs.md") =~ "Berimbau jam without caxixi"
   end
 

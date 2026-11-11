@@ -3,7 +3,7 @@ defmodule Mx.Examples.OrganTest do
 
   import ExUnit.CaptureIO
 
-  @song "examples/organ/solo.exs"
+  @song "examples/solo/organ.exs"
 
   test "the solo plays only the organ" do
     for pass <- 0..5 do
@@ -24,7 +24,7 @@ defmodule Mx.Examples.OrganTest do
   end
 
   test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/organ"
+    assert File.read!("README.md") =~ "examples/solo/organ.exs"
     assert File.read!("LICENSE-designs.md") =~ "Simon Dalzell"
   end
 

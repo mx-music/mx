@@ -3,7 +3,7 @@ defmodule Mx.Examples.CelloTest do
 
   import ExUnit.CaptureIO
 
-  @song "examples/cello/solo.exs"
+  @song "examples/solo/cello.exs"
 
   test "the solo plays only the cello" do
     for pass <- 0..3 do
@@ -42,7 +42,7 @@ defmodule Mx.Examples.CelloTest do
   end
 
   test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/cello"
+    assert File.read!("README.md") =~ "examples/solo/cello.exs"
     assert File.read!("LICENSE-designs.md") =~ "The cello is measured"
   end
 
