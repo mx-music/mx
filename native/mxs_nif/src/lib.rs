@@ -1,11 +1,12 @@
 //! mx's NIF onto mxs: it turns Elixir terms into the engine's types and calls its public API.
 
-use mxs::{Engine, Event, Kind, Source, Spec, Target, Value, effects, synths};
+use mxs::graph::{Clause, Graph};
+use mxs::{Engine, Event, Kind, Source, Spec, Synth, Target, Value, effects, synths};
 use rustler::types::tuple::get_tuple;
 use rustler::{Atom, Binary, Encoder, Env, NifResult, OwnedBinary, ResourceArc, Term};
 use std::sync::Mutex;
 
-rustler::atoms! { ok, error, note, sample, input, set, stop, sounds, part, effect }
+rustler::atoms! { ok, error, note, sample, input, set, stop, sounds, part, effect, option, name, list, call }
 
 struct EngineResource {
     engine: Mutex<Engine>,
@@ -188,6 +189,65 @@ fn target(term: Term) -> NifResult<Target> {
 }
 
 /// Options as `{name, value}`, each value a float or a name as a string.
+/// Registers a synth traced by defsynth: its options' declarations, and each clause as the options it matches and its graph.
+#[rustler::nif]
+fn register_graph<'a>(env: Env<'a>, resource: ResourceArc<EngineResource>, name: String, specs: Vec<SpecTerm>, clauses: Vec<(Term<'a>, Term<'a>)>) -> NifResult<Term<'a>> {
+    let specs = specs.into_iter().map(spec).collect();
+    let clauses = clauses.into_iter().map(|(matches, graph)| Ok(Clause { matches: options(matches)?, graph: graph_of(graph)? })).collect::<NifResult<_>>()?;
+    match Synth::graph(&name, specs, clauses) {
+        Ok(synth) => {
+            lock(&resource).register(synth);
+            Ok(ok().encode(env))
+        }
+        Err(reason) => Ok((error(), reason).encode(env)),
+    }
+}
+
+fn spec(term: SpecTerm) -> Spec {
+    let kind = match term.kind.as_str() {
+        "note" => Kind::Note,
+        "hz" => Kind::Hz,
+        "db" => Kind::Db,
+        "seconds" => Kind::Seconds,
+        "beats" => Kind::Beats,
+        "integer" => Kind::Integer,
+        "boolean" => Kind::Boolean,
+        "name" => Kind::Name(term.values),
+        _ => Kind::Float,
+    };
+    let mut spec = Spec::new(&term.name, kind).doc(&term.doc);
+    if let Some(x) = term.default {
+        spec = spec.default(x);
+    }
+    if let Some(n) = &term.default_name {
+        spec = spec.default(n.as_str());
+    }
+    if term.low.is_some() || term.high.is_some() {
+        spec = spec.range(term.low.unwrap_or(f64::NEG_INFINITY), term.high.unwrap_or(f64::INFINITY));
+    }
+    if term.required { spec.required() } else { spec }
+}
+
+/// A graph as defsynth encodes it: a float, `{:option, name}`, `{:name, name}`, `{:list, items}` or `{:call, name, args, named}`.
+fn graph_of(term: Term) -> NifResult<Graph> {
+    if let Ok(x) = term.decode::<f64>() {
+        return Ok(Graph::Number(x));
+    }
+    let parts = get_tuple(term)?;
+    let tag: Atom = parts.first().ok_or(rustler::Error::BadArg)?.decode()?;
+    match parts.as_slice() {
+        [_, value] if tag == option() => Ok(Graph::Option(value.decode()?)),
+        [_, value] if tag == name() => Ok(Graph::Name(value.decode()?)),
+        [_, items] if tag == list() => Ok(Graph::List(items.decode::<Vec<Term>>()?.into_iter().map(graph_of).collect::<NifResult<_>>()?)),
+        [_, callee, args, named] if tag == call() => {
+            let args = args.decode::<Vec<Term>>()?.into_iter().map(graph_of).collect::<NifResult<_>>()?;
+            let named = named.decode::<Vec<(String, Term)>>()?.into_iter().map(|(k, v)| Ok((k, graph_of(v)?))).collect::<NifResult<_>>()?;
+            Ok(Graph::Call { name: callee.decode()?, args, named })
+        }
+        _ => Err(rustler::Error::BadArg),
+    }
+}
+
 fn options(term: Term) -> NifResult<Options> {
     let pairs: Vec<(String, Term)> = term.decode()?;
     pairs

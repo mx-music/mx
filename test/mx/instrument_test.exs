@@ -1,0 +1,104 @@
+defmodule Mx.InstrumentTest do
+  use ExUnit.Case, async: true
+
+  alias Mx.Engine.Rust.Native
+
+  defp render(module, synth, options, seconds \\ 1.0) do
+    {:ok, engine} = Native.start(false, false)
+    :ok = Mx.Instrument.register(engine, module)
+
+    :ok =
+      Native.play(engine, [{0.0, Mx.Engine.Rust.event({:note, nil, synth, nil, options, nil})}])
+
+    {:ok, {left, _right}} = Native.render(engine, seconds)
+    for <<x::float-32-native <- left>>, do: x
+  end
+
+  defp peak(samples), do: samples |> Enum.map(&abs/1) |> Enum.max()
+
+  test "the marimba and the flute, as the guide sketches them, play through mxs" do
+    marimba = render(Mx.Instruments.Marimba, :marimba, note: 60, vel: 0.8)
+    flute = render(Mx.Instruments.Flute, :flute, note: 72, vel: 0.6, sustain: 0.5)
+    assert peak(marimba) > 0.01
+    assert peak(flute) > 0.01
+    assert peak(Enum.drop(flute, round(0.9 * 48_000))) < 1.0e-4
+  end
+
+  test "a harder stroke on the marimba is louder" do
+    assert peak(render(Mx.Instruments.Marimba, :marimba, note: 60, vel: 1.0)) >
+             peak(render(Mx.Instruments.Marimba, :marimba, note: 60, vel: 0.3))
+  end
+
+  test "the same marimba note, tap of noise and all, renders the same samples twice" do
+    assert render(Mx.Instruments.Marimba, :marimba, note: 55) ==
+             render(Mx.Instruments.Marimba, :marimba, note: 55)
+  end
+
+  test "each synth declares its options with their types, defaults and ranges" do
+    [flute] = Mx.Instruments.Flute.__synths__()
+    assert {:vel, :float, opts} = List.keyfind(flute.attrs, :vel, 0)
+    assert opts[:default] == 0.6 and opts[:range] == {0, 1}
+    assert {:sustain, :beats, sustain} = List.keyfind(flute.attrs, :sustain, 0)
+    assert sustain[:default] == 0.5
+  end
+
+  test "an if on a note's option fails when the module compiles, naming the file, the line and select" do
+    source = """
+    defmodule Mx.InstrumentTest.Iffy do
+      use Mx.Instrument
+      attr :note, :note, default: 60
+      attr :vel, :float, default: 0.6
+      envelope_attrs()
+
+      defsynth iffy(hit) do
+        level = if hit.vel > 0.5, do: 1, else: 0.5
+        sine(hz: hz(hit.note)) |> gain(level) |> note_envelope(hit)
+      end
+    end
+    """
+
+    error = assert_raise CompileError, fn -> Code.compile_string(source, "iffy.exs") end
+    assert error.file =~ "iffy.exs"
+    assert error.line == 8
+    assert Exception.message(error) =~ "select(condition, then, else)"
+  end
+
+  test "a synth with neither an envelope nor rings fails when its module compiles" do
+    source = """
+    defmodule Mx.InstrumentTest.Endless do
+      use Mx.Instrument
+      attr :note, :note, default: 60
+
+      defsynth endless(hit) do
+        sine(hz: hz(hit.note))
+      end
+    end
+    """
+
+    error = assert_raise CompileError, fn -> Code.compile_string(source, "endless.exs") end
+    assert error.line == 5
+    assert Exception.message(error) =~ "endless ends with neither note_envelope nor rings"
+  end
+
+  test "data written in the module takes any Elixir, such as Enum.zip, and plays" do
+    source = """
+    defmodule Mx.InstrumentTest.Chime do
+      use Mx.Instrument
+      @ratios [1, 2.76, 5.4]
+      @levels [0, -6, -12]
+      attr :note, :note, default: 72
+
+      defsynth chime(hit) do
+        mix(for {ratio, level} <- Enum.zip(@ratios, @levels) do
+          impulse() |> mode(hz: hz(hit.note) * ratio, level: db(level), fade: 1.5)
+        end)
+        |> gain(0.2)
+        |> rings(seconds: 2)
+      end
+    end
+    """
+
+    [{module, _}] = Code.compile_string(source, "chime.exs")
+    assert peak(render(module, :chime, note: 72)) > 0.01
+  end
+end
