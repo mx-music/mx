@@ -60,7 +60,40 @@ defmodule Mx.Instrument do
     end
   end
 
-  @doc "Declares an option of the next synth: its name, its unit or type, and `default:`, `range:`, `values:`, `required:` and `doc:`."
+  @doc """
+  Declares an option of the next `defsynth`.
+
+  An `attr` line applies to the next `defsynth` after it, and only that one.
+  Declare the options again before each synth.
+  The synth's documentation lists them under "Options", so a `@doc` written above the first `attr` line gains that section.
+
+  `name` is an atom, the key the synth reads from its map: `played.vel` reads the option `:vel`.
+  `type` says what the value means: `:float`, `:note` for a MIDI note number, `:beats` for a length in beats, or `:atom` for a choice among names.
+
+  ## Options
+
+    * `:default` - the value a note gets when its song gives none.
+    * `:range` - the lowest and highest value the option takes, as a range literal such as `0..1`.
+      A song that sets a value outside it is refused when the song is saved.
+    * `:values` - for an `:atom` option, the names it takes, as a list.
+    * `:required` - when `true`, the option is marked as one a note has to set.
+      Defaults to `false`.
+    * `:doc` - one sentence saying what the option does, for the synth's documentation and catalog.
+
+  ## Examples
+
+      @doc "A marimba note."
+      attr :note, :note, default: 52, doc: "The pitch."
+      attr :vel, :float, default: 0.6, range: 0.05..1, doc: "How hard the bar is struck."
+      defsynth marimba(hit) do
+        ...
+      end
+
+  An option that picks among names lists them in `values:`.
+  Clauses of the synth can then match on each name:
+
+      attr :bol, :atom, values: [:na, :tun, :te], default: :na, doc: "The stroke."
+  """
   defmacro attr(name, type, opts \\ []) do
     opts = Keyword.update(opts, :range, nil, &range/1)
 
@@ -69,7 +102,23 @@ defmodule Mx.Instrument do
     end
   end
 
-  @doc "Declares the seven options of the note's envelope, with the defaults given in place of the usual ones."
+  @doc """
+  Declares the seven options of the note's envelope: `attack`, `decay`, `sustain`, `release`, `attack_level`, `decay_level` and `sustain_level`.
+
+  Each has the usual default and documentation, as the module's `@envelope` lists them.
+  Pass a keyword list to give some of them another default; the others keep the usual one.
+  Like `attr/3`, it applies to the next `defsynth`.
+
+  ## Examples
+
+  The usual envelope:
+
+      envelope_attrs()
+
+  A note that holds a long time and fades in 0.3 beats:
+
+      envelope_attrs sustain: 1000, release: 0.3
+  """
   defmacro envelope_attrs(defaults \\ []) do
     for {name, {type, default, doc}} <- @envelope do
       quote do
@@ -84,7 +133,34 @@ defmodule Mx.Instrument do
   defp range({:.., _, [low, high]}), do: {low, high}
   defp range(other), do: other
 
-  @doc "Defines a clause of a synth, a function of the note's options that returns its sound."
+  @doc """
+  Defines a clause of a synth, a function of the note's options that returns its sound.
+
+  The argument is a pattern over the map of options.
+  The synth is named after the function, and a song plays it by that name.
+  Clauses of one synth sit next to each other, and the one whose pattern matches the note plays.
+  Mx records a match only on atoms and numbers, such as `%{bol: :na}`.
+
+  The body takes the arithmetic, comparisons and `select/3` described in the moduledoc, and ends with `note_envelope/2` or `rings/2`.
+  Use `select/3` where you would write an `if` on an option.
+
+  ## Examples
+
+  One clause, reading its options by key:
+
+      attr :note, :note, default: 52, doc: "The pitch."
+      envelope_attrs()
+      defsynth beep(played) do
+        sine(hz: hz(played.note))
+        |> note_envelope(played)
+      end
+
+  A clause per stroke, matched on the option's value:
+
+      attr :bol, :atom, values: [:na, :tun], default: :na, doc: "The stroke."
+      defsynth drum(%{bol: :na} = hit), do: ...
+      defsynth drum(%{bol: :tun} = hit), do: ...
+  """
   defmacro defsynth(call, do: body) do
     {name, [pattern]} = Macro.decompose_call(call)
     matches = Macro.escape(matches(pattern))
@@ -96,14 +172,35 @@ defmodule Mx.Instrument do
     end
   end
 
-  @doc "Defines a piece of sound other modules' synths can call."
+  @doc """
+  Defines a piece of sound other modules' synths can call.
+
+  It is a public function whose body takes the same arithmetic as a synth's.
+  Use `defsoundp/2` for a piece only this module needs.
+
+  ## Examples
+
+      defsound mallet(hz, corner, slope), do: slope * max(log2(hz / corner), 0)
+  """
   defmacro defsound(call, do: body) do
     quote do
       def unquote(call), do: unquote(rewrite(body, __CALLER__))
     end
   end
 
-  @doc "Defines a piece of sound only this module's synths call."
+  @doc """
+  Defines a piece of sound only this module's synths call.
+
+  It is the private form of `defsound/2`, so other modules cannot call it.
+
+  ## Examples
+
+      defsoundp above(hz, corner), do: max(log2(hz / corner), 0)
+
+      defsoundp mallet(hz, corner, slope) do
+        slope * above(hz, corner)
+      end
+  """
   defmacro defsoundp(call, do: body) do
     quote do
       defp unquote(call), do: unquote(rewrite(body, __CALLER__))
@@ -165,7 +262,16 @@ defmodule Mx.Instrument do
     unless Code.can_await_module_compilation?(), do: known(env.module)
   end
 
-  @doc "Makes a module's synths known to mx: songs can play them, and a running mxs engine builds them."
+  @doc """
+  Makes a module's synths known to mx: songs can play them, and a running mxs engine builds them.
+
+  A module compiled outside mix's own compilation becomes known on its own, so call this only for a module compiled some other way.
+  Calling it again for the same module is harmless.
+
+  ## Examples
+
+      Mx.Instrument.known(Mx.Instruments.Flute)
+  """
   def known(module) do
     :persistent_term.put({__MODULE__, :modules}, Enum.uniq(modules() ++ [module]))
     Mx.Synths.forget()
@@ -176,7 +282,14 @@ defmodule Mx.Instrument do
     end
   end
 
-  @doc "The modules whose synths mx knows, in the order they became known."
+  @doc """
+  The modules whose synths mx knows, in the order they became known.
+
+  ## Examples
+
+      Mx.Instrument.modules()
+      #=> [Mx.Instruments.Marimba, Mx.Instruments.Flute]
+  """
   def modules, do: :persistent_term.get({__MODULE__, :modules}, [])
 
   defp matches({:=, _, [left, right]}), do: matches(left) ++ matches(right)
@@ -250,7 +363,12 @@ defmodule Mx.Instrument do
     end)
   end
 
-  @doc "Registers each synth of `module` with the mxs engine `engine`, as `Mx.Engine.Mxs.Native` starts it."
+  @doc """
+  Registers each synth of `module` with the mxs engine `engine`, as `Mx.Engine.Mxs.Native` starts it.
+
+  Returns `:ok` once every synth is registered, or `{:error, reason}` at the first the engine refuses; the synths after it are not registered.
+  `known/1` calls it for a running engine, so call it yourself only with an engine you started.
+  """
   def register(engine, module) do
     Enum.reduce_while(module.__synths__(), :ok, fn synth, :ok ->
       clauses =
@@ -289,7 +407,13 @@ defmodule Mx.Instrument do
 
   def encode(tuple) when is_tuple(tuple), do: tuple |> Tuple.to_list() |> encode()
 
-  @doc "A synth's options as mxs declares them, for its catalog."
+  @doc """
+  A synth's options as mxs declares them, for its catalog.
+
+  `synth` is one entry of a module's `__synths__/0`.
+  Each option becomes a map with its `name`, `kind`, `values`, `default`, `default_name`, `low`, `high`, `required` and `doc`.
+  Numbers are floats, and a missing default, low or high is `nil`.
+  """
   def specs(synth), do: Enum.map(synth.attrs, &spec/1)
 
   defp spec({name, type, opts}) do

@@ -69,7 +69,7 @@ defmodule Mx.Instrument.Vocabulary do
   The nodes and functions a `defsynth` builds its sound from, named by what they do, with each argument named by its unit.
 
   Numbers: `hz/1`, `db/1`, `log2/1`, `exp/1`, `sin/1`, `cos/1`, `clamp/3` and `select/3`, worked out at once on numbers and when the note starts on its options.
-  Sources: `impulse/0`, `sine/1`, `saw/1`, `square/1`, `triangle/1`, `pulse/1` and `noise/1`.
+  Sources: `impulse/0`, `sine/1`, `partials/2`, `saw/1`, `square/1`, `triangle/1`, `pulse/1` and `noise/1`.
   Filters: `lowpass/2`, `highpass/2` and `bandpass/2`, at `hz:` with `q:` and `poles:`, `lowshelf/2`, `highshelf/2` and `peak/2`, at `hz:` with `q:` and `db:`, and `mode/2`, a resonator struck by its input at `hz:`, ringing at `level:` and fading 60 dB over `fade:` seconds.
   Shapes: `envelope/1` and `perc/1` are levels over time, and `envelope/2` and `perc/2` scale a sound by them.
   Mixing: `mix/1` adds a list of sounds, and `gain/2` scales one.
@@ -111,6 +111,9 @@ defmodule Mx.Instrument.Vocabulary do
     @doc false
     def unquote(wave)(opts), do: Expr.call(unquote(wave), [], opts)
   end
+
+  @doc "Harmonics of the pitch `hz` at each of `ratios:`, with their `levels:` and starting `phases:` in radians; a level of 0 leaves its harmonic out."
+  def partials(hz, opts), do: Expr.call(:partials, [hz], opts)
 
   @doc "Noise, `:white` or `:pink`."
   def noise(colour), do: Expr.call(:noise, [colour])
