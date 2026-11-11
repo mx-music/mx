@@ -1211,7 +1211,7 @@ defmodule Mx.Music do
   defp written_opts([]), do: ""
 
   defp written_opts(opts) do
-    opts = opts |> inspect() |> String.trim_leading("[") |> String.trim_trailing("]")
+    opts = opts |> inspect() |> String.slice(1..-2//1)
     ", #{opts}"
   end
 
