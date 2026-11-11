@@ -24,6 +24,14 @@ defmodule Mx.InstrumentTest do
     assert peak(Enum.drop(flute, round(0.9 * 48_000))) < 1.0e-4
   end
 
+  test "the tabla plays the clause its bol matches, at the bol's own pitch unless the note gives one" do
+    na = render(Mx.Instruments.Tabla, :tabla, bol: :na)
+    assert na == render(Mx.Instruments.Tabla, :tabla, [])
+    assert peak(render(Mx.Instruments.Tabla, :tabla, bol: :ghe)) > 0.01
+    refute render(Mx.Instruments.Tabla, :tabla, bol: :ghe) == na
+    refute render(Mx.Instruments.Tabla, :tabla, bol: :na, note: 58) == na
+  end
+
   test "a harder stroke on the marimba is louder" do
     assert peak(render(Mx.Instruments.Marimba, :marimba, note: 60, vel: 1.0)) >
              peak(render(Mx.Instruments.Marimba, :marimba, note: 60, vel: 0.3))

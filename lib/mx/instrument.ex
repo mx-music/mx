@@ -150,6 +150,9 @@ defmodule Mx.Instrument do
       {fun, meta, [_, _] = args} when fun in [:max, :min] ->
         {{:., meta, [Ops, fun]}, meta, args}
 
+      {:||, meta, [_, _] = args} ->
+        {{:., meta, [Ops, :or_else]}, meta, args}
+
       {:abs, meta, [_] = args} ->
         {{:., meta, [Ops, :abs]}, meta, args}
 

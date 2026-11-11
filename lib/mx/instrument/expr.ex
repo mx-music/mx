@@ -49,6 +49,10 @@ defmodule Mx.Instrument.Ops do
   def abs(a), do: Kernel.abs(a)
 
   @doc false
+  def or_else(%Expr{op: :option} = option, fallback), do: Expr.call(:or_else, [option, fallback])
+  def or_else(value, fallback), do: if(value, do: value, else: fallback)
+
+  @doc false
   def condition!(%Expr{}, file, line) do
     raise CompileError,
       file: file,
