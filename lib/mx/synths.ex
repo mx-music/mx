@@ -118,6 +118,9 @@ defmodule Mx.Synths do
     String.to_atom(effect)
   end
 
+  @doc "Forgets the catalog read from the engine, so the next use reads it again, with the synths written in Elixir known since."
+  def forget, do: :persistent_term.erase(__MODULE__)
+
   defp catalog do
     case :persistent_term.get(__MODULE__, nil) do
       nil ->

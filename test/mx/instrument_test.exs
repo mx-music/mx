@@ -1,14 +1,14 @@
 defmodule Mx.InstrumentTest do
   use ExUnit.Case, async: true
 
-  alias Mx.Engine.Rust.Native
+  alias Mx.Engine.Mxs.Native
 
   defp render(module, synth, options, seconds \\ 1.0) do
     {:ok, engine} = Native.start(false, false)
     :ok = Mx.Instrument.register(engine, module)
 
     :ok =
-      Native.play(engine, [{0.0, Mx.Engine.Rust.event({:note, nil, synth, nil, options, nil})}])
+      Native.play(engine, [{0.0, Mx.Engine.Mxs.event({:note, nil, synth, nil, options, nil})}])
 
     {:ok, {left, _right}} = Native.render(engine, seconds)
     for <<x::float-32-native <- left>>, do: x

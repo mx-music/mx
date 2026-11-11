@@ -8,7 +8,7 @@ defmodule Mx.Instrument do
   When the module compiles, each clause runs once with the note's options as placeholders, and what its body does with them is recorded as a graph.
   Data written in the module takes any Elixir, while a placeholder takes only arithmetic, comparisons, `select/3` and the vocabulary of `Mx.Instrument.Vocabulary`.
   An `if` on a placeholder fails then, with its file and line, and so does a synth that ends with neither `note_envelope/2` nor `rings/2`.
-  `register/2` sends a module's synths to a running mxs engine, by the name each `defsynth` gives.
+  A module compiled outside mix's own compilation, such as one a song file defines, becomes known to mx as it compiles: songs play its synths by name, and mxs builds them from then on, so a `defsynth` saved in a song plays without restarting mx.
 
   In this first version an option is read once, when the note starts, so a change to it does not reach a playing note.
   """
@@ -127,7 +127,24 @@ defmodule Mx.Instrument do
     end
   end
 
-  def __after_compile__(env, _bytecode), do: env.module.__synths__()
+  def __after_compile__(env, _bytecode) do
+    env.module.__synths__()
+    unless Code.can_await_module_compilation?(), do: known(env.module)
+  end
+
+  @doc "Makes a module's synths known to mx: songs can play them, and a running mxs engine builds them."
+  def known(module) do
+    :persistent_term.put({__MODULE__, :modules}, Enum.uniq(modules() ++ [module]))
+    Mx.Synths.forget()
+
+    case :persistent_term.get(Mx.Engine.Mxs, nil) do
+      {engine, _origin} -> register(engine, module)
+      nil -> :ok
+    end
+  end
+
+  @doc "The modules whose synths mx knows, in the order they became known."
+  def modules, do: :persistent_term.get({__MODULE__, :modules}, [])
 
   @doc false
   def hidden(name), do: :"__synth_#{name}__"
@@ -203,17 +220,17 @@ defmodule Mx.Instrument do
     end)
   end
 
-  @doc "Registers each synth of `module` with the mxs engine `engine`, as `Mx.Engine.Rust.Native` starts it."
+  @doc "Registers each synth of `module` with the mxs engine `engine`, as `Mx.Engine.Mxs.Native` starts it."
   def register(engine, module) do
     Enum.reduce_while(module.__synths__(), :ok, fn synth, :ok ->
       clauses =
         for {matches, sound} <- synth.clauses,
             do: {Enum.map(matches, &encode_match/1), encode(sound)}
 
-      case Mx.Engine.Rust.Native.register_graph(
+      case Mx.Engine.Mxs.Native.register_graph(
              engine,
              Atom.to_string(synth.name),
-             Enum.map(synth.attrs, &spec/1),
+             specs(synth),
              clauses
            ) do
         :ok -> {:cont, :ok}
@@ -241,6 +258,9 @@ defmodule Mx.Instrument do
   end
 
   def encode(tuple) when is_tuple(tuple), do: tuple |> Tuple.to_list() |> encode()
+
+  @doc "A synth's options as mxs declares them, for its catalog."
+  def specs(synth), do: Enum.map(synth.attrs, &spec/1)
 
   defp spec({name, type, opts}) do
     {kind, values} =

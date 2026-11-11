@@ -30,6 +30,13 @@ defmodule Mx.Engine.Mxs do
   @doc "The synths, players and effects mxs has, each with its options and their defaults."
   def catalog do
     {synths, note, sample, effects, effect} = Native.catalog()
+
+    synths =
+      synths ++
+        for module <- Mx.Instrument.modules(),
+            synth <- module.__synths__(),
+            do: {Atom.to_string(synth.name), Mx.Instrument.specs(synth)}
+
     playing = defaults(note)
     players = Map.merge(defaults(sample), playing)
 
@@ -69,6 +76,7 @@ defmodule Mx.Engine.Mxs do
     Process.flag(:trap_exit, true)
 
     with {:ok, engine} <- Native.start(live, input),
+         :ok <- instruments(engine),
          :ok <- record(engine, opts[:record]) do
       origin = System.os_time(:microsecond) - round(Native.now(engine) * 1_000_000)
       :persistent_term.put(__MODULE__, {engine, origin})
@@ -147,6 +155,7 @@ defmodule Mx.Engine.Mxs do
   @impl Mx.Engine
   def render_note(synth, params, seconds, _dir, changes) do
     {:ok, engine} = Native.start(false, false)
+    :ok = instruments(engine)
     note = event({:note, 1, synth, nil, params, nil})
     sets = for {at, change} <- changes, do: {at / 1, event({:set, {:sounds, [1]}, change})}
     :ok = Native.play(engine, [{0.0, note} | sets])
@@ -157,10 +166,20 @@ defmodule Mx.Engine.Mxs do
   @impl Mx.Engine
   def render_through(synth, params, seconds, _dir, effects) do
     {:ok, engine} = Native.start(false, false)
+    :ok = instruments(engine)
     effects = for {effect, opts} <- effects, do: {Atom.to_string(effect), options(opts)}
     {:ok, key} = Native.start_effects(engine, effects)
     :ok = Native.play(engine, [{0.0, event({:note, nil, synth, nil, params, %{key: key}})}])
     render(engine, seconds)
+  end
+
+  defp instruments(engine) do
+    Enum.reduce_while(Mx.Instrument.modules(), :ok, fn module, :ok ->
+      case Mx.Instrument.register(engine, module) do
+        :ok -> {:cont, :ok}
+        error -> {:halt, error}
+      end
+    end)
   end
 
   defp render(engine, seconds) do
