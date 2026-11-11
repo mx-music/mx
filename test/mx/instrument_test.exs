@@ -32,6 +32,22 @@ defmodule Mx.InstrumentTest do
     refute render(Mx.Instruments.Tabla, :tabla, bol: :na, note: 58) == na
   end
 
+  test "a value outside an option's range plays held to it, and is reported once" do
+    played = fn vel ->
+      {:ok, engine} = Native.start(false, false)
+      :ok = Mx.Instrument.register(engine, Mx.Instruments.Flute)
+      note = Mx.Engine.Rust.event({:note, nil, :flute, nil, [vel: vel], nil})
+      :ok = Native.play(engine, [{0.0, note}, {0.5, note}])
+      warnings = Native.warnings(engine)
+      {:ok, {left, _right}} = Native.render(engine, 1.0)
+      {left, warnings}
+    end
+
+    {too_hard, [warning]} = played.(1.5)
+    assert warning =~ "vel"
+    assert {^too_hard, []} = played.(1.0)
+  end
+
   test "a harder stroke on the marimba is louder" do
     assert peak(render(Mx.Instruments.Marimba, :marimba, note: 60, vel: 1.0)) >
              peak(render(Mx.Instruments.Marimba, :marimba, note: 60, vel: 0.3))
