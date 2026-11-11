@@ -36,7 +36,7 @@ defmodule Mx.InstrumentTest do
     played = fn vel ->
       {:ok, engine} = Native.start(false, false)
       :ok = Mx.Instrument.register(engine, Mx.Instruments.Flute)
-      note = Mx.Engine.Rust.event({:note, nil, :flute, nil, [vel: vel], nil})
+      note = Mx.Engine.Mxs.event({:note, nil, :flute, nil, [vel: vel], nil})
       :ok = Native.play(engine, [{0.0, note}, {0.5, note}])
       warnings = Native.warnings(engine)
       {:ok, {left, _right}} = Native.render(engine, 1.0)

@@ -36,9 +36,9 @@ defmodule Mx.InstrumentSongTest do
     refute Mx.Synths.exists?(:bell)
     Code.eval_string(bell(0.1))
     assert Mx.Synths.exists?(:bell)
-    quiet = Rust.render_note(:bell, [note: 72], 1.0, nil, [])
+    quiet = Mxs.render_note(:bell, [note: 72], 1.0, nil, [])
     ExUnit.CaptureIO.capture_io(:stderr, fn -> Code.eval_string(bell(0.4)) end)
-    loud = Rust.render_note(:bell, [note: 72], 1.0, nil, [])
+    loud = Mxs.render_note(:bell, [note: 72], 1.0, nil, [])
     assert_in_delta peak(loud) / peak(quiet), 4.0, 0.01
   end
 
