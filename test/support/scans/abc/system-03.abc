@@ -1,0 +1,9 @@
+%%rokot-abc 0.1
+X:1
+M:2/4
+L:1/8
+K:Ab
+V:1 clef=treble
+V:2 clef=treble
+[V:1] [fa]/2 b/2 [_f_c']/2 a/2 b/2 [e=c'] a/2 | [ec']/2 a/2 [eb] [ea] z/2 [Aa]/2- | [Aa] [Aa] [Aa] [Aa]/2 [Aa]/2- | [Aa]/2 e/2 [Af]/2 c/2 e/2 [Af] [_FA]/2- | [_FA]/2 B/2 [_F_c]/2 A/2 B/2 [E=c] A/2 |1 [Ec]/2 A/2 [EB] [EA] z :|
+[V:2] [_FA_c]/2 [F_A_c] [E=Ac] [EAc] | [EAc] [EGd] [Ac] z | [K:clef=bass] [=D,F,A,=B,] [D,F,A,B,] [D,F,A,B,] [D,F,A,B,] | [E,A,C] [E,A,C] [E,A,C] [E,A,C] | [_F,A,_C] [_F,A,_C] [E,A,=C] [E,A,C] |1 [E,G,C] [E,G,D] [A,C] [E,C] :|

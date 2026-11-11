@@ -1,0 +1,17 @@
+#!/usr/bin/env elixir
+# Plays a song file with nothing but Elixir installed: mx song.exs
+# MX_PATH points it at a local checkout of mx instead of GitHub.
+dep = if path = System.get_env("MX_PATH"), do: {:mx, path: path}, else: {:mx, github: "rodrigues/mx"}
+Mix.install([dep])
+
+case Mx.Player.parse(System.argv()) do
+  {opts, [path]} ->
+    case Mx.Player.play(path, opts) do
+      :ok -> :ok
+      {:error, message} -> IO.puts(:stderr, message) && System.halt(1)
+    end
+
+  _ ->
+    IO.puts(:stderr, "usage: mx song.exs [--record session.wav [--force]]")
+    System.halt(1)
+end

@@ -1,0 +1,79 @@
+import Mx
+
+# A solo for the piano written for mx: its whole range, chords softly and then hard, runs over a bass, and its lowest and highest notes.
+
+defmodule Piano do
+  import Mx
+
+  # C major, A minor, F major and G major, two beats each.
+  def chords, do: [[48, 55, 60, 64], [45, 52, 57, 60], [41, 48, 53, 57], [43, 50, 55, 59]]
+
+  # Every C, E, G and A from A0 to C8, the piano's lowest and highest notes.
+  def keyboard, do: Enum.filter(21..108, &(rem(&1, 12) in [0, 4, 7, 9]))
+
+  def strokes(:sweep) do
+    notes = keyboard() ++ Enum.reverse(keyboard())
+
+    notes
+    |> Enum.with_index()
+    |> Enum.map(fn {note, index} -> {index * 8 / length(notes), [note], 0.6, 0.5} end)
+  end
+
+  def strokes(:soft_chords) do
+    for {chord, index} <- Enum.with_index(chords()), do: {index * 2, chord, 0.2, 1.8}
+  end
+
+  def strokes(:loud_chords) do
+    for {chord, index} <- Enum.with_index(chords()),
+        do: {index * 2, Enum.map(chord, &(&1 + 12)), 0.75, 1.8}
+  end
+
+  # The bass holds each chord's root an octave down while the right hand runs up and down its notes in sixteenths.
+  def strokes(:runs) do
+    for {chord, index} <- Enum.with_index(chords()), step <- 0..7 do
+      tones = Enum.map(chord, &(&1 + 12)) ++ Enum.map(chord, &(&1 + 24))
+      run = tones ++ Enum.reverse(tones)
+      beat = index * 2 + step * 0.25
+
+      if step == 0 do
+        [{beat, [hd(chord) - 12], 0.7, 1.9}, {beat, [Enum.at(run, step)], 0.55, 0.3}]
+      else
+        [{beat, [Enum.at(run, step)], 0.5, 0.3}]
+      end
+    end
+    |> List.flatten()
+  end
+
+  def strokes(:extremes) do
+    [
+      {0, [21], 1, 3},
+      {1, [108], 1, 2.5},
+      {3, [108], 0.15, 2},
+      {4, [21], 0.15, 3},
+      {6, [48, 55, 60, 64, 67], 0.1, 2}
+    ]
+  end
+
+  # A pass of piano, as 8 beats.
+  def piano(section, _pass) do
+    notes =
+      for {beat, notes, vel, sustain} <- strokes(section),
+          do: {beat, note(notes, sustain, vel: vel)}
+
+    at(notes, 8)
+  end
+
+  # The form, each of its passes a section.
+  def form do
+    sections =
+      for {section, count} <- [sweep: 1, soft_chords: 1, loud_chords: 1, runs: 2, extremes: 1],
+          _ <- 1..count,
+          do: section
+
+    Enum.with_index(sections, fn section, pass ->
+      part(:piano, piano(section, pass), synth: :piano)
+    end)
+  end
+end
+
+song(tempo: 84, music: repeat(seq(Piano.form())))

@@ -1,0 +1,67 @@
+import Mx
+
+# A solo for the xylophone written for mx: fast runs over two octaves, a note struck again and again as a melody moves over it, its brightest bars, and a run to its top note.
+
+defmodule Xylophone do
+  import Mx
+
+  # The C major scale from F4, the xylophone's lowest bar, to B7, a bar below its highest.
+  def scale, do: Enum.filter(65..107, &(rem(&1, 12) in [0, 2, 4, 5, 7, 9, 11]))
+
+  # Sixteenths up two octaves from a starting note and back down, the second pass a fifth higher.
+  def strokes(:runs, pass) do
+    from = Enum.find_index(scale(), &(&1 == 72 + 7 * pass))
+    up = Enum.slice(scale(), from, 15)
+    notes = up ++ tl(Enum.reverse(up)) ++ [hd(up)]
+
+    notes
+    |> Enum.with_index()
+    |> Enum.map(fn {note, index} ->
+      {index / 4, note, if(rem(index, 4) == 0, do: 0.8, else: 0.6)}
+    end)
+  end
+
+  # G5 struck every sixteenth, louder on the beat, while a melody on the other mallet moves under it each beat.
+  def strokes(:repeats, _pass) do
+    melody = [76, 77, 76, 74, 72, 74, 76, 72]
+
+    repeated =
+      for index <- 0..31, do: {index / 4, 79, if(rem(index, 4) == 0, do: 0.75, else: 0.5)}
+
+    repeated ++ Enum.with_index(melody, fn note, beat -> {beat, note, 0.7} end)
+  end
+
+  # A melody in eighths on the top two octaves.
+  def strokes(:bright, _pass) do
+    melody = [96, 100, 103, 100, 98, 96, 93, 91, 93, 96, 98, 100, 103, 105, 103, 100]
+    Enum.with_index(melody, fn note, index -> {index / 2, note, 0.7} end)
+  end
+
+  # A run up the scale in thirty-seconds to C8, the top bar, and the last C struck in three octaves at once.
+  def strokes(:ending, _pass) do
+    run = Enum.filter(scale(), &(&1 >= 84))
+    rising = Enum.with_index(run, fn note, index -> {index / 8, note, 0.6} end)
+    last = length(run) / 8
+    rising ++ [{last, 108, 0.9}] ++ Enum.map([72, 84, 96], &{last + 1, &1, 0.9})
+  end
+
+  # A pass of xylophone, as 8 beats.
+  def xylophone(section, pass) do
+    notes = for {beat, note, vel} <- strokes(section, pass), do: {beat, note(note, 0, vel: vel)}
+    at(notes, 8)
+  end
+
+  # The form, each of its passes a section.
+  def form do
+    sections =
+      for {section, count} <- [runs: 2, repeats: 1, bright: 1, ending: 1],
+          _ <- 1..count,
+          do: section
+
+    Enum.with_index(sections, fn section, pass ->
+      part(:xylophone, xylophone(section, pass), synth: :xylophone)
+    end)
+  end
+end
+
+song(tempo: 126, music: repeat(seq(Xylophone.form())))

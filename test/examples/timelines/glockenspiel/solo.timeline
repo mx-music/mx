@@ -1,0 +1,30 @@
+%{
+  glockenspiel: {[
+     {0.0, 88.0, [release: 0.1, sustain: 0.9, vel: 0.6]},
+     {1.0, 91.0, [release: 0.1, sustain: 0.9, vel: 0.6]},
+     {2.0, 96.0, [release: 0.1, sustain: 1.4, vel: 0.6]},
+     {3.5, 95.0, [release: 0.1, sustain: 0.4, vel: 0.6]},
+     {4.0, 93.0, [release: 0.1, sustain: 0.9, vel: 0.6]},
+     {5.0, 91.0, [release: 0.1, sustain: 0.9, vel: 0.6]},
+     {6.0, 88.0, [release: 0.1, sustain: 1.9, vel: 0.6]},
+     {8.0, 89.0, [release: 0.1, sustain: 0.9, vel: 0.6]},
+     {9.0, 93.0, [release: 0.1, sustain: 0.9, vel: 0.6]},
+     {10.0, 98.0, [release: 0.1, sustain: 1.4, vel: 0.6]},
+     {11.5, 96.0, [release: 0.1, sustain: 0.4, vel: 0.6]},
+     {12.0, 95.0, [release: 0.1, sustain: 0.9, vel: 0.6]},
+     {13.0, 91.0, [release: 0.1, sustain: 0.9, vel: 0.6]},
+     {14.0, 96.0, [release: 0.1, sustain: 1.9, vel: 0.6]},
+     {16.0, 72.0, [release: 0.3, sustain: 1000.0, vel: 0.7]},
+     {18.0, 76.0, [release: 0.3, sustain: 1000.0, vel: 0.7]},
+     {20.0, 79.0, [release: 0.3, sustain: 1000.0, vel: 0.7]},
+     {22.0, 84.0, [release: 0.3, sustain: 1000.0, vel: 0.7]},
+     {24.0, 84.0, [release: 0.3, sustain: 1000.0, vel: 0.65]},
+     {24.5, 88.0, [release: 0.3, sustain: 1000.0, vel: 0.65]},
+     {25.0, 91.0, [release: 0.3, sustain: 1000.0, vel: 0.65]},
+     {25.5, 96.0, [release: 0.3, sustain: 1000.0, vel: 0.65]},
+     {26.0, 100.0, [release: 0.3, sustain: 1000.0, vel: 0.65]},
+     {26.5, 103.0, [release: 0.3, sustain: 1000.0, vel: 0.65]},
+     {27.0, 108.0, [release: 0.3, sustain: 1000.0, vel: 0.65]},
+     {27.5, 112.0, [release: 0.3, sustain: 1000.0, vel: 0.65]}
+   ], 32}
+}

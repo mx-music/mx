@@ -1,0 +1,10 @@
+%%rokot-abc 0.1
+X:1
+M:2/4
+L:1/8
+Q:1/4=100
+K:Ab
+V:1 clef=treble
+V:2 clef=bass
+[V:1] "^EC""^AS=100"!f!z |: "^Tempo Di Marcia"z/2 A/2 [Ee]/2 A/2 c/2 [Ee] G/2 | [Ee]/2 G/2 B/2 [Ee]/2- [Ee]2 | z/2 A/2 [Ee]/2 A/2 c/2 [Ee] G/2 | [Ee]/2 G/2 B/2 [Ee]/2- [Ee] z/2 [Ee]/2 |
+[V:2] [E,,E,] |: [A,,A,] [E,A,C] [E,A,C] [=A,,=A,] | [B,,B,] [E,G,D] [E,G,D] [E,,E,] | [A,,A,] [E,A,C] [E,A,C] [=A,,=A,] | [B,,B,] [E,G,D] [E,G,D] [E,,E,] |
