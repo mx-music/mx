@@ -4,13 +4,14 @@ defmodule Mx.Instrument do
 
   A module that uses `Mx.Instrument` declares each synth's options with `attr` lines, as a Phoenix function component declares its assigns, and `envelope_attrs/1` for the seven options of the note's envelope.
   `defsynth` defines a synth as a function of one map, the note's options, with clauses that match on it; `defsound` and `defsoundp` define pieces a synth calls.
+  `defeffect` defines an effect as a function of the sound coming in, one channel, and a map of its options, and a song applies it by name with `fx:`.
 
   When the module compiles, each clause runs once with the note's options as placeholders, and what its body does with them is recorded as a graph.
   Data written in the module takes any Elixir, while a placeholder takes only arithmetic, comparisons, `select/3` and the vocabulary of `Mx.Instrument.Vocabulary`.
   An `if` on a placeholder fails then, with its file and line, and so does a synth that ends with neither `note_envelope/2` nor `rings/2`.
   A module compiled outside mix's own compilation, such as one a song file defines, becomes known to mx as it compiles: songs play its synths by name, and mxs builds them from then on, so a `defsynth` saved in a song plays without restarting mx.
 
-  In this first version an option is read once, when the note starts, so a change to it does not reach a playing note.
+  An option is read once, when the note starts, unless the synth reads it with `follow/1`, which glides with each change the song makes while the note sounds.
   """
 
   alias Mx.Instrument.{Expr, Ops}
@@ -48,6 +49,7 @@ defmodule Mx.Instrument do
           envelope_attrs: 0,
           envelope_attrs: 1,
           defsynth: 2,
+          defeffect: 2,
           defsound: 2,
           defsoundp: 2
         ]
@@ -55,6 +57,7 @@ defmodule Mx.Instrument do
       import Mx.Instrument.Vocabulary
       Module.register_attribute(__MODULE__, :mx_pending_attrs, accumulate: true)
       Module.register_attribute(__MODULE__, :mx_synths, accumulate: true)
+      Module.register_attribute(__MODULE__, :mx_effects, accumulate: true)
       @before_compile Mx.Instrument
       @after_compile Mx.Instrument
     end
@@ -173,6 +176,29 @@ defmodule Mx.Instrument do
   end
 
   @doc """
+  Defines an effect, a function of the sound coming in and a map of its options, which returns the sound going out.
+
+  `attr` lines before it declare its options, as for a synth.
+  The effect shapes each channel on its own, so the sound coming in is one channel, and a song applies it by name with `fx:`.
+
+  ## Examples
+
+      attr :level, :float, default: 0.5, range: 0..1, doc: "How loud the sound comes out."
+      defeffect quieter(sound, opts) do
+        sound |> gain(opts.level)
+      end
+  """
+  defmacro defeffect(call, do: body) do
+    {name, [sound, pattern]} = Macro.decompose_call(call)
+    line = __CALLER__.line
+
+    quote do
+      Mx.Instrument.__defeffect__(__MODULE__, unquote(name), unquote(line))
+      def unquote(name)(unquote(sound), unquote(pattern)), do: unquote(rewrite(body, __CALLER__))
+    end
+  end
+
+  @doc """
   Defines a piece of sound other modules' synths can call.
 
   It is a public function whose body takes the same arithmetic as a synth's.
@@ -225,6 +251,17 @@ defmodule Mx.Instrument do
     end
   end
 
+  @doc false
+  def __defeffect__(module, name, line) do
+    attrs = module |> Module.get_attribute(:mx_pending_attrs) |> Enum.reverse()
+    Module.delete_attribute(module, :mx_pending_attrs)
+    Module.put_attribute(module, :mx_effects, {name, attrs, line})
+
+    with {doc_line, doc} when is_binary(doc) and attrs != [] <- Module.get_attribute(module, :doc) do
+      Module.put_attribute(module, :doc, {doc_line, doc <> options_doc(attrs)})
+    end
+  end
+
   defp options_doc(attrs) do
     lines = Enum.map(attrs, &option_doc/1)
     joined = Enum.join(lines, "\n")
@@ -250,15 +287,21 @@ defmodule Mx.Instrument do
 
   defmacro __before_compile__(env) do
     synths = env.module |> Module.get_attribute(:mx_synths) |> Enum.reverse() |> Macro.escape()
+    effects = env.module |> Module.get_attribute(:mx_effects) |> Enum.reverse() |> Macro.escape()
 
     quote do
       @doc false
       def __synths__, do: Mx.Instrument.trace(__MODULE__, unquote(synths), unquote(env.file))
+
+      @doc false
+      def __effects__,
+        do: Mx.Instrument.trace_effects(__MODULE__, unquote(effects), unquote(env.file))
     end
   end
 
   def __after_compile__(env, _bytecode) do
     env.module.__synths__()
+    env.module.__effects__()
     unless Code.can_await_module_compilation?(), do: known(env.module)
   end
 
@@ -363,13 +406,51 @@ defmodule Mx.Instrument do
     end)
   end
 
-  @doc """
-  Registers each synth of `module` with the mxs engine `engine`, as `Mx.Engine.Mxs.Native` starts it.
+  @doc false
+  def trace_effects(module, effects, file) do
+    for {name, attrs, line} <- effects do
+      placeholders =
+        Map.new(attrs, fn {option, _, _} -> {option, %Expr{op: :option, args: [option]}} end)
 
-  Returns `:ok` once every synth is registered, or `{:error, reason}` at the first the engine refuses; the synths after it are not registered.
+      sound = apply(module, name, [%Expr{op: :input, args: []}, placeholders])
+
+      if match?(%Expr{op: op} when op in [:note_envelope, :rings], sound) do
+        raise CompileError,
+          file: file,
+          line: line,
+          description:
+            "#{name} is an effect, so it returns its sound, without note_envelope or rings"
+      end
+
+      %{name: name, attrs: attrs, sound: sound}
+    end
+  end
+
+  @doc """
+  Registers each synth and effect of `module` with the mxs engine `engine`, as `Mx.Engine.Mxs.Native` starts it.
+
+  Returns `:ok` once every one is registered, or `{:error, reason}` at the first the engine refuses; the ones after it are not registered.
   `known/1` calls it for a running engine, so call it yourself only with an engine you started.
   """
   def register(engine, module) do
+    with :ok <- register_synths(engine, module) do
+      Enum.reduce_while(module.__effects__(), :ok, fn effect, :ok ->
+        name = Atom.to_string(effect.name)
+
+        case Mx.Engine.Mxs.Native.register_effect_graph(
+               engine,
+               name,
+               specs(effect),
+               encode(effect.sound)
+             ) do
+          :ok -> {:cont, :ok}
+          {:error, reason} -> {:halt, {:error, reason}}
+        end
+      end)
+    end
+  end
+
+  defp register_synths(engine, module) do
     Enum.reduce_while(module.__synths__(), :ok, fn synth, :ok ->
       clauses =
         for {matches, sound} <- synth.clauses,

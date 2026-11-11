@@ -8,6 +8,10 @@ defmodule Mx.Engine.Mxs.Native do
   def now(_engine), do: :erlang.nif_error(:nif_not_loaded)
   def seconds_at(_engine, _unix_us), do: :erlang.nif_error(:nif_not_loaded)
   def register_graph(_engine, _name, _specs, _clauses), do: :erlang.nif_error(:nif_not_loaded)
+
+  def register_effect_graph(_engine, _name, _specs, _graph),
+    do: :erlang.nif_error(:nif_not_loaded)
+
   def rate(_engine), do: :erlang.nif_error(:nif_not_loaded)
   def inputs(_engine), do: :erlang.nif_error(:nif_not_loaded)
   def play(_engine, _events), do: :erlang.nif_error(:nif_not_loaded)

@@ -41,7 +41,7 @@ defmodule Mx.Engine.Mxs do
           {"live_audio_mono", Map.put(playing, :input, 1)},
           {"live_audio_stereo", Map.put(playing, :input, 1)}
         ] ++
-        Enum.map(effects, fn {name, specs} ->
+        Enum.map(effects ++ effect_specs(), fn {name, specs} ->
           {"fx_" <> name, Map.merge(defaults(specs), defaults(effect))}
         end)
 
@@ -63,6 +63,12 @@ defmodule Mx.Engine.Mxs do
 
   defp limit(%{low: low, high: high}) when low != nil or high != nil, do: {:range, low, high}
   defp limit(_spec), do: nil
+
+  defp effect_specs do
+    for module <- Mx.Instrument.modules(),
+        effect <- module.__effects__(),
+        do: {Atom.to_string(effect.name), Mx.Instrument.specs(effect)}
+  end
 
   defp synth_specs do
     {synths, _note, _sample, _effects, _effect} = Native.catalog()

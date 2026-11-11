@@ -4,6 +4,7 @@ locals_without_parens = [
   attr: 3,
   envelope_attrs: 1,
   defsynth: 2,
+  defeffect: 2,
   defsound: 2,
   defsoundp: 2
 ]

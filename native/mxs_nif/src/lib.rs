@@ -1,7 +1,7 @@
 //! mx's NIF onto mxs: it turns Elixir terms into the engine's types and calls its public API.
 
 use mxs::graph::{Clause, Graph};
-use mxs::{Engine, Event, Kind, Source, Spec, Synth, Target, Value, effects, synths};
+use mxs::{Effect, Engine, Event, Kind, Source, Spec, Synth, Target, Value, effects, synths};
 use rustler::types::tuple::get_tuple;
 use rustler::{Atom, Binary, Encoder, Env, NifResult, OwnedBinary, ResourceArc, Term};
 use std::sync::Mutex;
@@ -197,6 +197,19 @@ fn register_graph<'a>(env: Env<'a>, resource: ResourceArc<EngineResource>, name:
     match Synth::graph(&name, specs, clauses) {
         Ok(synth) => {
             lock(&resource).register(synth);
+            Ok(ok().encode(env))
+        }
+        Err(reason) => Ok((error(), reason).encode(env)),
+    }
+}
+
+/// Registers an effect traced by defeffect: its options' declarations, and the graph of one channel.
+#[rustler::nif]
+fn register_effect_graph<'a>(env: Env<'a>, resource: ResourceArc<EngineResource>, name: String, specs: Vec<SpecTerm>, graph: Term<'a>) -> NifResult<Term<'a>> {
+    let specs = specs.into_iter().map(spec).collect();
+    match Effect::graph(&name, specs, graph_of(graph)?) {
+        Ok(effect) => {
+            lock(&resource).register_effect(effect);
             Ok(ok().encode(env))
         }
         Err(reason) => Ok((error(), reason).encode(env)),
