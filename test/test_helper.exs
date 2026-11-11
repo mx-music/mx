@@ -7,6 +7,7 @@ ExUnit.start(
     :vcsl,
     :audiveris,
     :transcriber,
-    :bench
+    :bench,
+    :philharmonia
   ]
 )
