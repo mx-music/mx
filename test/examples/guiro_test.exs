@@ -55,7 +55,7 @@ defmodule Mx.Examples.GuiroTest do
     Process.group_leader(self(), input)
 
     try do
-      Mix.Tasks.Mx.Play.run([@song, "--record", out, "--port", "57190"])
+      Mix.Tasks.Mx.Play.run([@song, "--record", out])
     after
       Process.group_leader(self(), leader)
     end
