@@ -118,6 +118,12 @@ defmodule Mx.Synths do
     String.to_atom(effect)
   end
 
+  @doc "Whether an option picks a synth's sound when the note starts, so it cannot change while the note sounds: one that takes names, or one a clause of a synth written in Elixir matches on."
+  def fixed?(synth, option) do
+    match?({:names, _}, limits() |> Map.get(synth, %{}) |> Map.get(option)) or
+      option in Mx.Instrument.matched(synth)
+  end
+
   @doc "Refuses a number outside the range a synth's option takes, or a name it does not take, naming what it takes."
   def check_value(synth, option, value) do
     limit = limits() |> Map.get(synth, %{}) |> Map.get(option)

@@ -263,14 +263,20 @@ defmodule Mx.Pass do
   @doc "Records a control step that changes the sounds or effect a handle names, refusing an option they do not take."
   def record_control(%Handle{target: {:effect, _} = target, synth: effect}, opts)
       when is_list(opts) do
-    check_control(opts, &Synths.effect_option?(effect, &1), "effect #{effect} has")
+    check_control(
+      opts,
+      &Synths.effect_option?(effect, &1),
+      fn _ -> false end,
+      "effect #{effect} has"
+    )
+
     record({{:control, target, Synths.effect_synth(effect)}, control_values(opts)})
     :ok
   end
 
   def record_control(%Handle{target: target, synth: synth}, opts) when is_list(opts) do
     owner = if synth == :stereo_player, do: "samples have", else: "synth #{synth} has"
-    check_control(opts, &Synths.option?(synth, &1), owner)
+    check_control(opts, &Synths.option?(synth, &1), &Synths.fixed?(synth, &1), owner)
     record({{:control, target, synth}, control_values(opts)})
     :ok
   end
@@ -282,13 +288,19 @@ defmodule Mx.Pass do
 
   @doc "Refuses a change to a sound of a synth, or with `{:effect, effect}` to an effect, that it cannot take."
   def check_change({:effect, effect}, opts) when is_list(opts) do
-    check_control(opts, &Synths.effect_option?(effect, &1), "effect #{effect} has")
+    check_control(
+      opts,
+      &Synths.effect_option?(effect, &1),
+      fn _ -> false end,
+      "effect #{effect} has"
+    )
+
     :ok
   end
 
   def check_change(synth, opts) when is_atom(synth) and is_list(opts) do
     owner = if synth == :stereo_player, do: "samples have", else: "synth #{synth} has"
-    check_control(opts, &Synths.option?(synth, &1), owner)
+    check_control(opts, &Synths.option?(synth, &1), &Synths.fixed?(synth, &1), owner)
     :ok
   end
 
@@ -300,12 +312,17 @@ defmodule Mx.Pass do
     :ok
   end
 
-  defp check_control(opts, option?, owner) do
+  defp check_control(opts, option?, fixed?, owner) do
     for {option, _} <- opts do
       cond do
-        option in @envelope -> raise ArgumentError, "#{option} cannot change once a sound plays"
-        not option?.(option) -> raise ArgumentError, "#{owner} no option #{option}"
-        true -> :ok
+        option in @envelope or fixed?.(option) ->
+          raise ArgumentError, "#{option} cannot change once a sound plays"
+
+        not option?.(option) ->
+          raise ArgumentError, "#{owner} no option #{option}"
+
+        true ->
+          :ok
       end
     end
   end

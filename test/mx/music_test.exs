@@ -211,6 +211,20 @@ defmodule Mx.MusicTest do
     end
 
     @tag :tmp_dir
+    test "a change to the option that picks a synth's sound is refused, as it cannot change while the note sounds",
+         ctx do
+      path =
+        write(
+          ctx,
+          "song(music: part(:drums, note(:c3, 2, bol: :ghe, changes: [{1, bol: :na}]), synth: :tabla))"
+        )
+
+      assert Song.load(path) ==
+               {:error,
+                "#{path}:3: part drums: bol cannot change once a sound plays, in note(48, 2, bol: :ghe, changes: [{1, [bol: :na]}])"}
+    end
+
+    @tag :tmp_dir
     test "a value outside its range in a part's defaults is refused", ctx do
       path =
         write(ctx, "song(music: part(:lead, note(:c5, 1), synth: :flute, defaults: [vel: -0.5]))")

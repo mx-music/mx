@@ -335,6 +335,16 @@ defmodule Mx.Instrument do
   """
   def modules, do: :persistent_term.get({__MODULE__, :modules}, [])
 
+  @doc "The options the clauses of a known synth written in Elixir match on."
+  def matched(synth) do
+    for module <- modules(),
+        %{name: ^synth, clauses: clauses} <- module.__synths__(),
+        {matches, _sound} <- clauses,
+        {option, _value} <- matches,
+        uniq: true,
+        do: option
+  end
+
   defp matches({:=, _, [left, right]}), do: matches(left) ++ matches(right)
 
   defp matches({:%{}, _, pairs}),
