@@ -6,9 +6,9 @@ defmodule Mx.Paired.Marimba do
   use Mx.Instrument
 
   @doc "A marimba note, which rings until it fades by itself unless `sustain` and `release` damp it."
-  attr(:note, :note, default: 52, doc: "The pitch.")
-  attr(:vel, :float, default: 0.6, range: 0.05..1, doc: "How hard the bar is struck.")
-  envelope_attrs(sustain: 1000, release: 0.3)
+  attr :note, :note, default: 52, doc: "The pitch."
+  attr :vel, :float, default: 0.6, range: 0.05..1, doc: "How hard the bar is struck."
+  envelope_attrs sustain: 1000, release: 0.3
 
   defsynth marimba(hit) do
     freq = hz(hit.note)
@@ -49,7 +49,11 @@ defmodule Mx.Paired.Marimba do
       end
 
     strike = impulse()
-    bar = mix(for {n, level, fade} <- modes, do: strike |> mode(hz: freq * n, level: level, fade: fade))
+
+    bar =
+      mix(
+        for {n, level, fade} <- modes, do: strike |> mode(hz: freq * n, level: level, fade: fade)
+      )
 
     low_tap =
       noise(:white)
@@ -80,6 +84,6 @@ defmodule Mx.Paired.Marimba do
     |> rings(seconds: silent)
   end
 
-  defsoundp(mallet(hz, corner, slope), do: slope * above(hz, corner) + 24 * above(hz, 3000))
-  defsoundp(above(hz, corner), do: max(log2(hz / corner), 0))
+  defsoundp mallet(hz, corner, slope), do: slope * above(hz, corner) + 24 * above(hz, 3000)
+  defsoundp above(hz, corner), do: max(log2(hz / corner), 0)
 end

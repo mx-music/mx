@@ -9,16 +9,15 @@ defmodule Mx.Instruments.Flute do
   use Mx.Instrument
 
   @doc "A flute note."
-  attr(:note, :note, default: 52, doc: "The pitch.")
-  attr(:vel, :float, default: 0.6, range: 0..1, doc: "How hard the note is blown.")
+  attr :note, :note, default: 52, doc: "The pitch."
+  attr :vel, :float, default: 0.6, range: 0..1, doc: "How hard the note is blown."
 
-  attr(:vibrato, :float,
+  attr :vibrato, :float,
     default: 0.25,
     range: 0..1,
     doc: "The vibrato's depth in semitones, reached as the note holds."
-  )
 
-  envelope_attrs(sustain: 0.5, release: 0.2)
+  envelope_attrs sustain: 0.5, release: 0.2
 
   defsynth flute(played) do
     vel = played.vel

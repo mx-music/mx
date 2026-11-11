@@ -9,9 +9,9 @@ defmodule Mx.Instruments.Marimba do
   use Mx.Instrument
 
   @doc "A marimba note, which rings until it fades by itself unless `sustain` and `release` damp it."
-  attr(:note, :note, default: 52, doc: "The pitch.")
-  attr(:vel, :float, default: 0.6, range: 0.05..1, doc: "How hard the bar is struck.")
-  envelope_attrs(sustain: 1000, release: 0.3)
+  attr :note, :note, default: 52, doc: "The pitch."
+  attr :vel, :float, default: 0.6, range: 0.05..1, doc: "How hard the bar is struck."
+  envelope_attrs sustain: 1000, release: 0.3
 
   defsynth marimba(hit) do
     freq = hz(hit.note)
@@ -78,7 +78,6 @@ defmodule Mx.Instruments.Marimba do
     |> rings(seconds: ring * 4 / 3)
   end
 
-  defsoundp(mallet(hz, corner, slope),
+  defsoundp mallet(hz, corner, slope),
     do: slope * max(log2(hz / corner), 0) + 24 * max(log2(hz / 3000), 0)
-  )
 end

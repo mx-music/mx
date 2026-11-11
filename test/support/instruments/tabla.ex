@@ -11,9 +11,9 @@ defmodule Mx.Instruments.Tabla do
   @bands [113, 200, 316, 502, 794, 1265, 2000, 2900, 5019, 7937, 12649]
 
   @doc "A tabla stroke, by its bol, at the bol's own pitch unless the song gives one."
-  attr(:note, :note, doc: "The pitch; the bol's own pitch when not given.")
-  attr(:vel, :float, default: 0.6, range: 0..1, doc: "How hard the stroke is.")
-  attr(:bol, :atom, values: [:na, :tun, :te, :tas, :ghe, :ke], default: :na, doc: "The stroke.")
+  attr :note, :note, doc: "The pitch; the bol's own pitch when not given."
+  attr :vel, :float, default: 0.6, range: 0..1, doc: "How hard the stroke is."
+  attr :bol, :atom, values: [:na, :tun, :te, :tas, :ghe, :ke], default: :na, doc: "The stroke."
 
   defsynth tabla(%{bol: :na} = hit) do
     hit
