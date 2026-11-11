@@ -50,6 +50,17 @@ defmodule Mx.InstrumentTest do
     assert sustain[:default] == 0.5
   end
 
+  test "a synth's documentation lists its options with their defaults and ranges" do
+    {:docs_v1, _, _, _, _, _, docs} = Code.fetch_docs(Mx.Instruments.Flute)
+    {_, _, _, %{"en" => doc}, _} = List.keyfind(docs, {:function, :flute, 1}, 0)
+    assert doc =~ "A flute note."
+    assert doc =~ "- `note`, note, 52 by default: The pitch."
+    assert doc =~ "- `vel`, float, 0.6 by default, from 0 to 1: How hard the note is blown."
+    assert doc =~ "- `vibrato`, float, 0.25 by default, from 0 to 1"
+    assert doc =~ "- `sustain`, beats, 0.5 by default"
+    assert doc =~ "- `release`, beats, 0.2 by default"
+  end
+
   test "an if on a note's option fails when the module compiles, naming the file, the line and select" do
     source = """
     defmodule Mx.InstrumentTest.Iffy do

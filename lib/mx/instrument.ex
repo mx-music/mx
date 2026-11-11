@@ -87,13 +87,12 @@ defmodule Mx.Instrument do
   @doc "Defines a clause of a synth, a function of the note's options that returns its sound."
   defmacro defsynth(call, do: body) do
     {name, [pattern]} = Macro.decompose_call(call)
-    hidden = hidden(name)
     matches = Macro.escape(matches(pattern))
     line = __CALLER__.line
 
     quote do
       Mx.Instrument.__defsynth__(__MODULE__, unquote(name), unquote(matches), unquote(line))
-      def unquote(hidden)(unquote(pattern)), do: unquote(rewrite(body, __CALLER__))
+      def unquote(name)(unquote(pattern)), do: unquote(rewrite(body, __CALLER__))
     end
   end
 
@@ -116,6 +115,40 @@ defmodule Mx.Instrument do
     attrs = module |> Module.get_attribute(:mx_pending_attrs) |> Enum.reverse()
     Module.delete_attribute(module, :mx_pending_attrs)
     Module.put_attribute(module, :mx_synths, {name, attrs, matches, line})
+
+    case {attrs, Module.get_attribute(module, :doc)} do
+      {[], _} ->
+        :ok
+
+      {_, {doc_line, doc}} when is_binary(doc) ->
+        Module.put_attribute(module, :doc, {doc_line, doc <> options_doc(attrs)})
+
+      {_, _} ->
+        Module.put_attribute(module, :doc, {line, String.trim_leading(options_doc(attrs))})
+    end
+  end
+
+  defp options_doc(attrs) do
+    lines = Enum.map(attrs, &option_doc/1)
+    joined = Enum.join(lines, "\n")
+    "\n\n## Options\n\n#{joined}\n"
+  end
+
+  defp option_doc({name, type, opts}) do
+    parts =
+      [
+        if(Keyword.has_key?(opts, :default), do: inspect(opts[:default]) <> " by default"),
+        with({low, high} <- opts[:range], do: "from #{low} to #{high}"),
+        with(
+          [_ | _] = values <- opts[:values],
+          do: "one of " <> Enum.map_join(values, ", ", &inspect/1)
+        )
+      ]
+      |> Enum.reject(&is_nil/1)
+
+    described = Enum.join([type | parts], ", ")
+    doc = if opts[:doc], do: ": " <> opts[:doc], else: ""
+    "- `#{name}`, #{described}#{doc}"
   end
 
   defmacro __before_compile__(env) do
@@ -145,9 +178,6 @@ defmodule Mx.Instrument do
 
   @doc "The modules whose synths mx knows, in the order they became known."
   def modules, do: :persistent_term.get({__MODULE__, :modules}, [])
-
-  @doc false
-  def hidden(name), do: :"__synth_#{name}__"
 
   defp matches({:=, _, [left, right]}), do: matches(left) ++ matches(right)
 
@@ -203,7 +233,7 @@ defmodule Mx.Instrument do
 
       traced =
         for {_, _, matches, line} <- clauses do
-          sound = apply(module, hidden(name), [Map.merge(placeholders, Map.new(matches))])
+          sound = apply(module, name, [Map.merge(placeholders, Map.new(matches))])
 
           unless match?(%Expr{op: op} when op in [:note_envelope, :rings], sound) do
             raise CompileError,
