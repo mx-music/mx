@@ -3468,8 +3468,8 @@ defmodule Mx.DesignsTest do
   # Measured with a YIN pitch tracker every 5 ms over reinsamba's pack "Cuica" on Freesound, 85 low strokes with the head free and 36 high ones with it pressed:
   # the pitch the stroke settles at, its second and third harmonics against the fundamental, how far under the note it starts and by when it is within 50 cents of it, and how long it lasts above 25 dB under its peak.
   @cuica_strokes %{
-    65 => %{hz: 353, harmonics: [-15, -30], under: 100..250, reached: 0.12, lasts: {0.18, 0.25}},
-    79 => %{hz: 784, harmonics: [-25, -28], under: 60..160, reached: 0.08, lasts: {0.14, 0.22}}
+    65 => %{hz: 353, harmonics: [-19, -34], under: 100..250, reached: 0.12, lasts: {0.18, 0.25}},
+    79 => %{hz: 784, harmonics: [-22, -21], under: 60..160, reached: 0.08, lasts: {0.14, 0.22}}
   }
 
   for {note, stroke} <- @cuica_strokes do
