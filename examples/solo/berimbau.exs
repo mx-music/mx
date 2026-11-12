@@ -49,9 +49,11 @@ defmodule Berimbau do
     |> String.split()
     |> Enum.flat_map_reduce(0, fn word, beat ->
       {cell, length} =
-        if String.starts_with?(word, "["),
-          do: {String.trim(word, "[") |> String.trim("]"), 2},
-          else: {word, 1}
+        if String.starts_with?(word, "[") do
+          {String.trim(word, "[") |> String.trim("]"), 2}
+        else
+          {word, 1}
+        end
 
       symbols = String.graphemes(cell)
       step = if cell == "xx", do: 0.25, else: length / length(symbols)

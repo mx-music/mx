@@ -26,11 +26,14 @@ defmodule Surdos do
   def segunda do
     strokes =
       for bar <- 0..7 do
-        [{2 * bar, hit(note: segunda_note(), vel: 0.65)}] ++
-          if(rem(bar, 2) == 1,
-            do: [{2 * bar + 1.75, hit(note: segunda_note(), muted: 1, vel: 0.4)}],
-            else: []
-          )
+        pickup =
+          if rem(bar, 2) == 1 do
+            [{2 * bar + 1.75, hit(note: segunda_note(), muted: 1, vel: 0.4)}]
+          else
+            []
+          end
+
+        [{2 * bar, hit(note: segunda_note(), vel: 0.65)} | pickup]
       end
 
     at(List.flatten(strokes), 16)
@@ -57,8 +60,9 @@ defmodule Surdos do
     at(strokes, 16)
   end
 
-  def section(parts),
-    do: together(for {name, music} <- parts, do: part(name, music, synth: :surdo))
+  def section(parts) do
+    together(for {name, music} <- parts, do: part(name, music, synth: :surdo))
+  end
 
   def form do
     seq([

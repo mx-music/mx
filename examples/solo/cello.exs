@@ -26,11 +26,12 @@ defmodule Cello do
           do: {beat, change}
 
     {start, swell} =
-      if opts[:swell],
-        do:
-          {[amp: 0.6],
-           [{0, amp: 1, amp_slide: beats / 2}, {beats / 2, amp: 0.5, amp_slide: beats / 2}]},
-        else: {[], []}
+      if opts[:swell] do
+        {[amp: 0.6],
+         [{0, amp: 1, amp_slide: beats / 2}, {beats / 2, amp: 0.5, amp_slide: beats / 2}]}
+      else
+        {[], []}
+      end
 
     note(
       first,

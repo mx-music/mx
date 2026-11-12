@@ -27,11 +27,12 @@ defmodule Violin do
           do: {beat, change}
 
     {start, swell} =
-      if opts[:swell],
-        do:
-          {[amp: 0.6],
-           [{0, amp: 1, amp_slide: beats / 2}, {beats / 2, amp: 0.5, amp_slide: beats / 2}]},
-        else: {[], []}
+      if opts[:swell] do
+        {[amp: 0.6],
+         [{0, amp: 1, amp_slide: beats / 2}, {beats / 2, amp: 0.5, amp_slide: beats / 2}]}
+      else
+        {[], []}
+      end
 
     note(
       first,
@@ -78,8 +79,8 @@ defmodule Violin do
     down = [86, 84, 82, 81, 79, 77, 76, 74, 72, 70, 69, 67, 65, 64, 62, 62]
 
     slurs =
-      for {group, i} <- Enum.with_index(Enum.chunk_every(up ++ down, 8)) do
-        bow(Enum.map(group, &{&1, 0.25}), Enum.at([0.5, 0.65, 0.7, 0.55], i))
+      for {group, index} <- Enum.with_index(Enum.chunk_every(up ++ down, 8)) do
+        bow(Enum.map(group, &{&1, 0.25}), Enum.at([0.5, 0.65, 0.7, 0.55], index))
       end
 
     arpeggios = [62, 65, 69, 74, 67, 70, 74, 79, 69, 73, 76, 79, 74, 77, 81, 86]

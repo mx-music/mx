@@ -73,8 +73,7 @@ defmodule Syrinx do
     {[{:vel, {String.to_float(vel), over}, 0, false}], last}
   end
 
-  def read("^" <> name, _stretch, last),
-    do: {[{:grace, pitch(String.to_atom(name)), 0, false}], last}
+  def read("^" <> name, _stretch, last), do: {[{:grace, Mx.Notes.parse(name), 0, false}], last}
 
   def read(token, stretch, last) do
     [_, tongued, name, length, fermata, tie, breath] =
@@ -90,7 +89,7 @@ defmodule Syrinx do
         true -> :note
       end
 
-    pitch = if name == "r", do: nil, else: pitch(String.to_atom(name))
+    pitch = if name == "r", do: nil, else: Mx.Notes.parse(name)
     breath = if breath == ",", do: [{:breath, nil, 0, false}], else: []
     {[{kind, pitch, held, tongued == "+"} | breath], beats}
   end
@@ -127,14 +126,7 @@ defmodule Syrinx do
   def breath(events, {vel, target, until}) do
     [{start, _} | _] = events
 
-    first =
-      Enum.find_value(events, fn {_, {kind, pitch, _, _}} -> kind in [:note, :grace] && pitch end)
-
-    graces =
-      Enum.count(
-        Enum.take_while(events, fn {_, {kind, _, _, _}} -> kind in [:grace, :vel] end),
-        &match?({_, {:grace, _, _, _}}, &1)
-      )
+    graces = graces(events)
 
     {changes, {_, state}} =
       events
@@ -142,7 +134,7 @@ defmodule Syrinx do
       |> Enum.flat_map_reduce({graces, {vel, target, until}}, fn {{beat, token}, index},
                                                                  {skip, {vel, target, until}} ->
         at = Float.round(beat - start, 3)
-        led = index > 0 and match?({_, {:grace, _, _, _}}, Enum.at(events, index - 1))
+        led = after_grace?(events, index)
 
         case token do
           {:vel, {to, 0}, _, _} ->
@@ -169,14 +161,7 @@ defmodule Syrinx do
 
           {:note, note, _, tongued} ->
             slide = Float.round(max(until - beat, 0.025), 3)
-
-            dip =
-              if tongued and not led,
-                do: [{max(at - 0.025, 0), vel: target * 0.25, vel_slide: 0.02}],
-                else: []
-
-            back = if tongued and not led, do: [vel: target, vel_slide: slide], else: []
-            {dip ++ [{at, [note: note, note_slide: 0] ++ back}], {skip, {vel, target, until}}}
+            {attack(tongued and not led, at, note, target, slide), {skip, {vel, target, until}}}
         end
       end)
 
@@ -184,15 +169,17 @@ defmodule Syrinx do
     length = Float.round(last_beat + held - start, 3)
 
     changes =
-      if graces > 0,
-        do: [{0.05 * graces, note: first_note(events), note_slide: 0} | changes],
-        else: changes
+      if graces > 0 do
+        [{0.05 * graces, note: first_note(events), note_slide: 0} | changes]
+      else
+        changes
+      end
 
     {at_start, later} = Enum.split_with(changes, fn {at, _} -> at <= 0 end)
     vel = Enum.reduce(at_start, vel, fn {_, change}, vel -> Keyword.get(change, :vel, vel) end)
 
     {{start,
-      note(first, length,
+      note(first_pitch(events), length,
         vel: vel,
         sustain: Float.round(length - 0.1, 3),
         release: 0.3,
@@ -200,8 +187,32 @@ defmodule Syrinx do
       )}, state}
   end
 
-  def first_note(events),
-    do: Enum.find_value(events, fn {_, {kind, pitch, _, _}} -> kind == :note && pitch end)
+  def graces(events) do
+    events
+    |> Enum.take_while(fn {_, {kind, _, _, _}} -> kind in [:grace, :vel] end)
+    |> Enum.count(&match?({_, {:grace, _, _, _}}, &1))
+  end
+
+  def after_grace?(events, index) do
+    index > 0 and match?({_, {:grace, _, _, _}}, Enum.at(events, index - 1))
+  end
+
+  def attack(true, at, note, target, slide) do
+    [
+      {max(at - 0.025, 0), vel: target * 0.25, vel_slide: 0.02},
+      {at, note: note, note_slide: 0, vel: target, vel_slide: slide}
+    ]
+  end
+
+  def attack(false, at, note, _target, _slide), do: [{at, note: note, note_slide: 0}]
+
+  def first_pitch(events) do
+    Enum.find_value(events, fn {_, {kind, pitch, _, _}} -> kind in [:note, :grace] && pitch end)
+  end
+
+  def first_note(events) do
+    Enum.find_value(events, fn {_, {kind, pitch, _, _}} -> kind == :note && pitch end)
+  end
 
   def flute do
     {breaths, length} = breaths()
