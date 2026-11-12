@@ -16,7 +16,7 @@ defmodule Mix.Tasks.Mx.Print do
 
   use Mix.Task
 
-  alias Mx.{Pass, Song, Tempo}
+  alias Mx.{Pass, Samples, Song, Tempo}
 
   @impl true
   def run(args) when is_list(args) do
@@ -67,6 +67,7 @@ defmodule Mix.Tasks.Mx.Print do
     last = tuple_size(sections) - 1
     {timeline, _} = Tempo.through(song.tempos, song.tempo, last, elem(sections, last).beats)
     tempo = Tempo.describe(timeline, 0, beats)
+    events = with_rates(events, timeline, 0)
     "#{name}, #{length} #{unit} at #{tempo}#{fx}#{again}\n" <> format_events(events)
   end
 
@@ -79,7 +80,9 @@ defmodule Mix.Tasks.Mx.Print do
         length = format_beat(beats)
         unit = if beats == 1, do: "beat", else: "beats"
         fx = format_fx(loop.fx)
-        tempo = describe_tempo(song, loop, pass, beats)
+        {timeline, start} = pass_timeline(song, loop, pass)
+        tempo = Tempo.describe(timeline, start, start + beats)
+        events = with_rates(events, timeline, start)
         "#{name}, pass #{pass}, #{length} #{unit} at #{tempo}#{fx}\n" <> format_events(events)
 
       {:error, message} ->
@@ -87,11 +90,27 @@ defmodule Mix.Tasks.Mx.Print do
     end
   end
 
-  defp describe_tempo(song, loop, pass, beats) do
+  defp pass_timeline(song, loop, pass) do
     sections = loop.music.sections
     window = elem(sections, tuple_size(sections) - 1).beats
-    {timeline, start} = Tempo.through(song.tempos, song.tempo, pass, window)
-    Tempo.describe(timeline, start, start + beats)
+    Tempo.through(song.tempos, song.tempo, pass, window)
+  end
+
+  # A sample fitted to beats also shows the rate that fits it, at the tempo where it starts.
+  defp with_rates(events, timeline, start) do
+    Enum.map(events, fn
+      {beat, {:sample, _ref, path} = step, opts} = event ->
+        if opts[:beats] do
+          tempo = Tempo.tempo_at(timeline, start + beat)
+          rate = Samples.cut(opts, Samples.seconds(path), tempo)[:rate]
+          {beat, step, opts ++ [rate: Float.round(rate, 4)]}
+        else
+          event
+        end
+
+      event ->
+        event
+    end)
   end
 
   defp format_trigger({:osc, address}), do: "OSC message to #{address}"

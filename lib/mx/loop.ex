@@ -370,6 +370,7 @@ defmodule Mx.Loop do
 
       # Both sample players take the same options.
       sample ->
+        opts = Mx.Samples.cut(opts, sample[:seconds], tempo)
         {:ok, [{:sample, id, sample, Synths.to_seconds(:mono_player, opts, tempo), fx}]}
     end
   end

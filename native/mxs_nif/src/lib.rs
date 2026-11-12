@@ -280,9 +280,9 @@ fn load_sample(resource: ResourceArc<EngineResource>, path: String) -> Result<(u
     Ok((id, engine.sample_channels(id).unwrap_or(1)))
 }
 
-/// Whether mxs can play the file at `path`, reading only its headers.
+/// The length in seconds of the file at `path`, reading only its headers, or why mxs cannot play it.
 #[rustler::nif(schedule = "DirtyIo")]
-fn check_sample(path: String) -> Result<(), String> {
+fn check_sample(path: String) -> Result<f64, String> {
     mxs::check_sample(std::path::Path::new(&path))
 }
 

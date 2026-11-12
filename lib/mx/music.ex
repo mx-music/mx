@@ -133,15 +133,21 @@ defmodule Mx.Music do
     check_beats("sample", beats)
     check_keyword("sample", opts)
 
-    case Enum.find(Keyword.keys(opts), &(not Synths.option?(:stereo_player, &1))) do
+    case Enum.find(Keyword.keys(opts), &(not sample_option?(&1))) do
       nil -> :ok
       option -> raise ArgumentError, "samples have no option #{option}"
     end
 
-    case Mx.Samples.path(ref) do
-      {:ok, _path} -> %Sample{ref: ref, beats: beats, opts: opts}
+    with {:ok, path} <- Mx.Samples.path(ref),
+         :ok <- Mx.Samples.check_cut(ref, path, opts) do
+      %Sample{ref: ref, beats: beats, opts: opts}
+    else
       {:error, message} -> raise ArgumentError, message
     end
+  end
+
+  defp sample_option?(option) do
+    Synths.option?(:stereo_player, option) or Mx.Samples.cut_option?(option)
   end
 
   @doc "A MIDI note on, and its note off after some beats, taking `velocity:` and `channel:`."

@@ -428,7 +428,8 @@ defmodule Mx.Engine.Mxs do
     else
       case Native.load_sample(state.engine, path) do
         {:ok, {sample, channels}} ->
-          put_in(state.samples[path], %{sample: sample, channels: channels})
+          seconds = Mx.Samples.seconds(path)
+          put_in(state.samples[path], %{sample: sample, channels: channels, seconds: seconds})
 
         {:error, message} ->
           IO.puts(:stderr, "mxs could not load sample #{path}: #{message}")

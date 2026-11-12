@@ -164,15 +164,17 @@ defmodule Mx.Pass do
 
   @doc "Records a sample step at the current beat, and returns a handle to it."
   def record_sample(ref, opts) when (is_atom(ref) or is_binary(ref)) and is_list(opts) do
-    case Enum.find(Keyword.keys(opts), &(not Synths.option?(:stereo_player, &1))) do
+    case Enum.find(
+           Keyword.keys(opts),
+           &(not (Synths.option?(:stereo_player, &1) or Samples.cut_option?(&1)))
+         ) do
       nil ->
-        case Samples.path(ref) do
-          {:ok, path} ->
-            index = record({{:sample, ref, path}, opts})
-            %Handle{target: {:sounds, [index]}, synth: :stereo_player}
-
-          {:error, message} ->
-            raise ArgumentError, message
+        with {:ok, path} <- Samples.path(ref),
+             :ok <- Samples.check_cut(ref, path, opts) do
+          index = record({{:sample, ref, path}, opts})
+          %Handle{target: {:sounds, [index]}, synth: :stereo_player}
+        else
+          {:error, message} -> raise ArgumentError, message
         end
 
       option ->
