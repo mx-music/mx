@@ -373,6 +373,12 @@ mx examples/solo/sitar.exs
 mx examples/solo/harmonium.exs
 ```
 
+`examples/solo/accordion.exs` is the accordion's right hand on its own, a bal-musette waltz in A minor: a low theme with the musette reeds beating, the theme an octave up played short and dry on one reed, the waltz's chords struck on the first beat and short on the second and third, and the theme again with an ending on a long A.
+
+```sh
+mx examples/solo/accordion.exs
+```
+
 `examples/solo/drums.exs` is the drum kit on its own: a rock beat that opens on a crash, the hi-hat opening and the pedal closing it, ghost notes on the snare between its hardest strokes, a fill down the toms, and a crash that is choked.
 
 ```sh
@@ -714,7 +720,7 @@ macOS may ask once whether the terminal can use the microphone.
 
 ## Synths
 
-acid, bandolim, bassoon, berimbau, brass, cabasa, cajon, cavaquinho, cello, clap, clarinet, clave, closed_hihat, cowbell, crash, double_bass, flute, fm, ganza, glockenspiel, guiro, guitar, harmonium, harp, high_agogo, high_bongo, high_conga, high_timbale, high_tom, horn, kick, low_agogo, low_bongo, low_conga, low_timbale, low_tom, marimba, mid_conga, mid_tom, noise, oboe, open_hihat, organ, pandeiro, pandeiro_heel, pandeiro_jingles, pandeiro_slap, pandeiro_thumb, piano, pluck, pulse, rimshot, saw, shaker, sitar, snare, square, supersaw, tabla, tabla_ghe, tabla_ke, tabla_na, tabla_tas, tabla_te, tabla_tun, tambourine, tambourine_shake, tanpura, tenor_sax, timbale_shell, timpani, tri, triangle, trombone, trumpet, tuba, vibraphone, viola, violin, xylophone.
+accordion, acid, bandolim, bassoon, berimbau, brass, cabasa, cajon, cavaquinho, cello, clap, clarinet, clave, closed_hihat, cowbell, crash, double_bass, flute, fm, ganza, glockenspiel, guiro, guitar, harmonium, harp, high_agogo, high_bongo, high_conga, high_timbale, high_tom, horn, kick, low_agogo, low_bongo, low_conga, low_timbale, low_tom, marimba, mid_conga, mid_tom, noise, oboe, open_hihat, organ, pandeiro, pandeiro_heel, pandeiro_jingles, pandeiro_slap, pandeiro_thumb, piano, pluck, pulse, rimshot, saw, shaker, sitar, snare, square, supersaw, tabla, tabla_ghe, tabla_ke, tabla_na, tabla_tas, tabla_te, tabla_tun, tambourine, tambourine_shake, tanpura, tenor_sax, timbale_shell, timpani, tri, triangle, trombone, trumpet, tuba, vibraphone, viola, violin, xylophone.
 
 They are mx's own designs, in mxs's `src/synths`.
 mx ships none of Sonic Pi's synths, its sc808 drum kit or its effects.
@@ -768,6 +774,7 @@ band          recordings          sitar at vel 0.6    difference
 10000-16000 Hz       -  -39.7 dB
 ```
 - `harmonium` is the reed organ pumped by hand that accompanies Hindustani singing, and takes `vel` as the guitar does; it has no vibrato and holds its note for its `sustain`. Its harmonics stand within 7 dB of the fundamental up to 2.5 kHz and fall away above, with the reeds' breathy noise between them about 27 dB below, and it speaks in about a quarter of a second. It is measured from the "Harmonium" pack by cabled_mess on Freesound, cut from "Harmonium Samples - All Keys and Drones" by donyaquick, at C2, C3, A3, C4 and D5, with every band of harmonics and of noise from 80 Hz to 4 kHz within 1 dB of the recordings', as `mix mx.fit --check` scores it.
+- `accordion` is an accordion's right hand, the free reeds pressed by bellows that carry the melody in tango, musette and forró, and takes `vel` as the guitar does; it holds its note for its `sustain`. Each note sounds two reeds, the second `detune` Hz above the first, 4 by default, so they beat about four times a second; `detune: 0` sounds one reed, dry. Its harmonics stand up to 9 dB above the fundamental from 250 Hz to 1 kHz and fall away above 1.6 kHz, with the reeds' noise between them 23 to 37 dB below, and it speaks in about 0.05 seconds. It is measured from "Accordeon master" by hammondman on Freesound, at C3, E3, G3, C4, E4, G4, B4 and D5, with every band of harmonics and of noise from 130 Hz to 4 kHz within 4 dB of the recordings' and its attack within 20 percent, as `mix mx.fit --check` scores it, and its beating compared with "Accordion wav samples" by hammondman.
 - `clarinet` is a Bb clarinet at the pitch it sounds, and takes `vel` as the guitar does and `vibrato` as the flute does, 0 by default. Its low notes are hollow, strong in the odd harmonics, and its notes from A4 up are brighter and louder; a soft note is almost a pure tone. The clarinet is measured from the University of Iowa's Bb clarinet, from D3 to C7, and compared with VSCO 2's clarinet.
 - `oboe` takes `vel` as the guitar does and `vibrato` as the clarinet does, 0 by default. Its harmonics are loudest around 1.3 kHz whatever the note, which gives it its nasal sound; the oboe is measured from the University of Iowa's oboe, from Bb3 to Ab6, and compared with VSCO 2's oboe.
 - `bassoon` takes `vel` as the guitar does and `vibrato` as the clarinet does, 0 by default. Its harmonics are loudest from 400 to 630 Hz whatever the note; the bassoon is measured from the University of Iowa's bassoon, from Bb1 to D5, and its vibrato from VSCO 2's bassoon.

@@ -4963,6 +4963,67 @@ defmodule Mx.DesignsTest do
     assert rms(hard, 0.5, 1) > rms(soft, 0.5, 1) * 2
   end
 
+  # Measured with mix mx.measure --held from Freesound's previews of "Accordeon master" by hammondman, at C3, E3, G3, C4, E4, G4, B4 and D5:
+  # the seconds a note takes to speak, the reeds' beating as a vibrato, and each band's level of harmonics and of the noise between them, against C3's fundamental.
+  @accordion %{
+    notes: [48, 52, 55, 60, 64, 67, 71, 74],
+    attack: 0.05,
+    vibrato: %{rate: 4.5, depth: 15},
+    bands: %{
+      {160, 250} => {1.8, -32.7},
+      {250, 400} => {9.2, -35.7},
+      {400, 630} => {7.7, -36.5},
+      {630, 1000} => {2.4, -33.9},
+      {1000, 1600} => {0.5, -27.9},
+      {1600, 2500} => {-1.5, -26.2},
+      {2500, 4000} => {-4.8, -22.9}
+    }
+  }
+
+  test "accordion speaks, beats and holds its harmonics and noise as hammondman's accordion does",
+       ctx do
+    notes =
+      for note <- @accordion.notes do
+        held = Held.note(render(ctx, :accordion, [note: note, sustain: 1.5], 2), @rate, note)
+        cents = 1200 * :math.log2(held.pitch / Signal.hz(note))
+        assert abs(cents) < 10, "note #{note} is #{cents} cents off"
+        held
+      end
+
+    summary = Held.summary(notes)
+    measured = Map.new(summary.bands, &{&1.band, &1})
+    assert_in_delta summary.attack / @accordion.attack, 1, 0.3, "speaks in #{summary.attack} s"
+    assert_in_delta summary.vibrato.rate / @accordion.vibrato.rate, 1, 0.3
+    assert_in_delta summary.vibrato.depth / @accordion.vibrato.depth, 1, 0.3
+
+    for {band, {level, noise}} <- @accordion.bands do
+      assert_in_delta measured[band].level,
+                      level,
+                      6,
+                      "#{inspect(band)} at #{measured[band].level} dB"
+
+      assert_in_delta measured[band].noise,
+                      noise,
+                      6,
+                      "#{inspect(band)} noise at #{measured[band].noise} dB"
+    end
+  end
+
+  test "accordion with detune 0 sounds one reed, with no beating", ctx do
+    for note <- [48, 60, 74] do
+      held =
+        Held.note(render(ctx, :accordion, [note: note, detune: 0, sustain: 1.5], 2), @rate, note)
+
+      assert held.vibrato == nil, "note #{note} beats"
+    end
+  end
+
+  test "accordion is louder at vel 1 than at vel 0.3", ctx do
+    soft = render(ctx, :accordion, [note: 60, vel: 0.3, sustain: 1], 1)
+    hard = render(ctx, :accordion, [note: 60, vel: 1, sustain: 1], 1)
+    assert rms(hard, 0.5, 1) > rms(soft, 0.5, 1) * 2
+  end
+
   # The seconds until the last 10 ms that is within 20 dB of the loudest.
   defp scraping(sound) do
     levels =
