@@ -2,7 +2,7 @@
 
 Notes from mx-00120, written on 10 November 2026.
 They check the ticket's claims, recommend a scheduler, describe how Elixir and Rust talk and how a panic is contained, propose an exact-beat notation, and score a prototype that plays three of mx's instruments through FunDSP.
-The prototype lives outside mx, in ~/code/vcrl/mx-engine, a Rust crate on fundsp 0.23.0, cpal 0.18.2 and hound, built with rustc 1.99.1.
+The prototype lives outside mx, in ~/code/vcrl/mxs, a Rust crate on fundsp 0.23.0, cpal 0.18.2 and hound, built with rustc 1.99.1.
 Every instrument in it is built from FunDSP's own units after mx's designs in priv/synthdefs; no SuperCollider source was read or ported, and it is compared with today's mx only by measuring scsynth's renders.
 
 ## The claims, checked
@@ -113,7 +113,7 @@ song(tempo: 84, music: seq([repeat(seq([triplet, dotted, rest(1)]), 2), run]))
 The ticket asked for one held, one struck and one sampled instrument.
 mx has none built on samples, the piano included, so the prototype plays the piano, struck; cello.bowed, held, on a bowed waveguide; and the berimbau, about 115 modes with noise and a gourd that swings its harmonics.
 Each is measured as mx's designs test measures it, through mx's own Mx.Measure, beside scsynth's render of the same notes and the recordings' medians from test/mx/designs_test.exs.
-The comparisons run with mix run ../mx-engine/measure/compare.exs piano berimbau and mix run ../mx-engine/measure/fit_cello.exs score, from mx.
+The comparisons run with mix run ../mxs/measure/compare.exs piano berimbau and mix run ../mxs/measure/fit_cello.exs score, from mx.
 
 ### Piano
 
