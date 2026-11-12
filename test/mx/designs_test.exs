@@ -3513,6 +3513,60 @@ defmodule Mx.DesignsTest do
     assert rms(hard, 0, 0.2) > rms(soft, 0, 0.2) * 2
   end
 
+  # Measured with mix mx.measure --hits --partials 6 from the Commons recording "Tamborim Sound.ogg" by Samba-x, converted to WAV, 45 strokes:
+  # each band's level at the strike against the loudest band, the seconds it fades 60 dB in, and its level 50 and 100 ms after the loudest moment.
+  @tamborim %{
+    {160, 250} => {-25.4, 0.68, -29, -36},
+    {250, 400} => {-15.7, 0.58, -19, -23},
+    {400, 630} => {-0.5, 0.50, -5, -15},
+    {630, 1000} => {-1.3, 0.91, -4, -9},
+    {1000, 1600} => {-3.7, 0.92, -6, -9},
+    {1600, 2500} => {-4.4, 0.80, -9, -12},
+    {2500, 4000} => {-5.0, 0.73, -11, -15},
+    {4000, 6300} => {-9.1, 0.60, -18, -21},
+    {6300, 10000} => {-14.2, 0.48, -24, -28}
+  }
+
+  test "the tamborim follows the Commons recording's bands, fades and levels after the strike",
+       ctx do
+    hit = Hits.hit(render(ctx, :tamborim, [], 1.5), @rate, nil)
+    measured = Map.new(hit.bands, &{&1.band, &1})
+    moments = Map.new(hit.moments, &{&1.band, &1.levels})
+
+    for {band, {level, fade, at_50, at_100}} <- @tamborim do
+      %{level: synth_level, fade: synth_fade} = measured[band]
+      assert_in_delta synth_level, level, 6, "#{inspect(band)} at #{synth_level} dB"
+      assert_in_delta synth_fade / fade, 1, 0.3, "#{inspect(band)} fades in #{synth_fade} s"
+      [_, synth_50, synth_100 | _] = moments[band]
+      assert_in_delta synth_50, at_50, 6, "#{inspect(band)} at #{synth_50} dB after 50 ms"
+      assert_in_delta synth_100, at_100, 6, "#{inspect(band)} at #{synth_100} dB after 100 ms"
+    end
+  end
+
+  # The recording's strokes ring on 524.3 Hz in the median, with strong peaks near 1.8 and 2.5 times it.
+  test "the tamborim rings on 524 Hz with peaks near 1.8 and 2.5 times it, and an octave up with a note 12 higher",
+       ctx do
+    peaks = Hits.hit(render(ctx, :tamborim, [], 1.5), @rate, nil, partials: 6).partials
+    [lowest | _] = peaks
+    assert_in_delta lowest.hz / 524.3, 1, 0.03
+
+    for ratio <- [1.8, 2.5] do
+      assert Enum.any?(peaks, &(abs(&1.hz / (ratio * lowest.hz) - 1) < 0.03)),
+             "no peak near #{ratio}"
+    end
+
+    [octave | _] =
+      Hits.hit(render(ctx, :tamborim, [note: 84.03], 1.5), @rate, nil, partials: 6).partials
+
+    assert_in_delta octave.hz / (2 * lowest.hz), 1, 0.03
+  end
+
+  test "the tamborim is louder struck harder", ctx do
+    soft = render(ctx, :tamborim, [vel: 0.3], 1)
+    hard = render(ctx, :tamborim, [vel: 1], 1)
+    assert rms(hard, 0, 0.3) > rms(soft, 0, 0.3) * 2
+  end
+
   test "a harder bongo stroke is louder by as much as VCSL's, and brighter", ctx do
     for {{drum, muted}, expected} <- @bongos_louder do
       soft = render(ctx, drum, [muted: muted, vel: 0.3], 1)
