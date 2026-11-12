@@ -1,6 +1,6 @@
 defmodule Mx.Instrument do
   @moduledoc """
-  Synths written in Elixir, as `defsynth`, which mxs builds when a note starts; the design is in the guide "Instruments defined in Elixir".
+  Synths written in Elixir, as `defsynth`, which mxs builds when a note starts; the guide "Instruments" introduces them.
 
   A module that uses `Mx.Instrument` declares each synth's options with `attr` lines, as a Phoenix function component declares its assigns, and `envelope_attrs/1` for the seven options of the note's envelope.
   `defsynth` defines a synth as a function of one map, the note's options, with clauses that match on it; `defsound` and `defsoundp` define pieces a synth calls.
