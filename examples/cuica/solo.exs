@@ -11,9 +11,11 @@ defmodule Cuica do
   # One bar's eight strokes, high on the sixteenths given and low between.
   def bar(highs) do
     for sixteenth <- 0..7 do
-      if sixteenth in highs,
-        do: {sixteenth / 4, hit(note: @high, vel: 0.8)},
-        else: {sixteenth / 4, hit(note: @low, vel: 0.55)}
+      if sixteenth in highs do
+        {sixteenth / 4, hit(note: @high, vel: 0.8)}
+      else
+        {sixteenth / 4, hit(note: @low, vel: 0.55)}
+      end
     end
   end
 

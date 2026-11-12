@@ -3501,23 +3501,22 @@ defmodule Mx.DesignsTest do
 
       assert_in_delta median(nears), 0, 50, "at #{reached} s #{median(nears)} cents off"
 
-      for {level, k} <- Enum.with_index(harmonics, 2) do
+      for {level, harmonic} <- Enum.with_index(harmonics, 2) do
         measured =
           for {sound, at} <- Enum.zip(strokes, settled) do
             steady = window(sound, reached + 0.01, reached + 0.06)
-            10 * :math.log10(peak_near(steady, k * at) / peak_near(steady, at))
+            10 * :math.log10(peak_near(steady, harmonic * at) / peak_near(steady, at))
           end
 
-        assert_in_delta median(measured), level, 4, "harmonic #{k} at #{median(measured)} dB"
+        db = median(measured)
+        assert_in_delta db, level, 4, "harmonic #{harmonic} at #{db} dB"
       end
 
       envelopes =
-        for sound <- strokes,
-            do:
-              for(
-                c <- Enum.chunk_every(sound, 240),
-                do: 20 * :math.log10(rms(c, 0, 0.005) + 1.0e-9)
-              )
+        for sound <- strokes do
+          for chunk <- Enum.chunk_every(sound, 240),
+              do: 20 * :math.log10(rms(chunk, 0, 0.005) + 1.0e-9)
+        end
 
       lasts =
         for levels <- envelopes,
@@ -5323,7 +5322,7 @@ defmodule Mx.DesignsTest do
 
   # The second the sound first rises within 25 dB of its loudest, in 5 ms steps.
   defp speaks(sound) do
-    levels = for c <- Enum.chunk_every(sound, 240), do: rms(c, 0, 0.005)
+    levels = for chunk <- Enum.chunk_every(sound, 240), do: rms(chunk, 0, 0.005)
     loudest = Enum.max(levels)
     Enum.find_index(levels, &(&1 > loudest / 17.8)) * 0.005
   end
@@ -5348,7 +5347,7 @@ defmodule Mx.DesignsTest do
     {at, _} = :binary.match(wav, "data")
     data = binary_part(wav, at + 8, byte_size(wav) - at - 8)
     left = for <<x::little-float-32, _::little-float-32 <- data>>, do: x
-    for i <- 0..14, do: window(left, i * 0.5, i * 0.5 + 0.45)
+    for stroke <- 0..14, do: window(left, stroke * 0.5, stroke * 0.5 + 0.45)
   end
 
   defp render(ctx, synth, opts, seconds \\ 2, later \\ []) do
