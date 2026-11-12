@@ -182,7 +182,7 @@ mx examples/solo/cello.exs
 mx examples/solo/double_bass.exs
 ```
 
-`examples/solo/flute.exs` is the flute on its own: a lyrical melody in D major with vibrato, fast runs in sixteenths, the melody again in its low register, softly, and a last phrase high in its range, loud.
+`examples/solo/flute.exs` is the flute on its own: Debussy's Syrinx, from its first edition of 1927, each breath of the score one held note that its later notes move, and the notes that start a slur tongued.
 
 ```sh
 mx examples/solo/flute.exs

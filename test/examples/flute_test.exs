@@ -6,31 +6,23 @@ defmodule Mx.Examples.FluteTest do
   @song "examples/solo/flute.exs"
 
   test "the solo plays only the flute" do
-    for pass <- 0..4 do
-      assert Regex.scan(~r/^(\w+), pass /m, print(pass), capture: :all_but_first) == [["flute"]]
-    end
-
+    assert Regex.scan(~r/^(\w+), /m, print(0), capture: :all_but_first) == [["flute"]]
     refute print(0) =~ "sample "
   end
 
-  test "the lyrical melody holds its notes with vibrato" do
-    assert print(0) =~
-             ~r/\nbeat 4 +play 79 vel: 0.6, sustain: 1.85, release: 0.2, vibrato: 0.25\n/
+  test "Syrinx opens on one breath from B flat 5 through the fermata, its later notes moving the held note" do
+    assert print(0) =~ ~r/\nbeat 0 +play 82 vel: 0.5, sustain: 7.4, release: 0.3\n/
+    assert print(0) =~ ~r/\nbeat 0.75 +control note: 81, note_slide: 0\n/
+    assert print(0) =~ ~r/\nbeat 7.5 +play 82 vel: 0.5, sustain: 4.4, release: 0.3\n/
   end
 
-  test "the runs climb in sixteenths without vibrato, the second time from A4" do
-    assert print(1) =~
-             ~r/\nbeat 0.25 +play 64 vel: 0.6, sustain: 0.15, release: 0.05, vibrato: 0\n/
-
-    assert print(2) =~ ~r/\nbeat 0 +play 69 vel: 0.75, sustain: 0.15, release: 0.05, vibrato: 0\n/
+  test "a note starting a slur is tongued, dipping the breath to a quarter and bringing it back" do
+    assert print(0) =~ ~r/\nbeat 0.975 +control vel: 0.125, vel_slide: 0.02\n/
+    assert print(0) =~ ~r/\nbeat 1 +control note: 80, note_slide: 0, vel: 0.5, vel_slide: 0.025\n/
   end
 
-  test "the melody comes back softly down to the low B, and the last phrase climbs loud to A6" do
-    assert print(3) =~
-             ~r/\nbeat 10 +play 59 vel: 0.35, sustain: 0.85, release: 0.2, vibrato: 0.25\n/
-
-    assert print(4) =~
-             ~r/\nbeat 3 +play 93 vel: 0.9, sustain: 5.85, release: 0.4, vibrato: 0.25\n/
+  test "the last breath slows to the end and holds the low D flat" do
+    assert print(0) =~ ~r/\nbeat 101.31 +play 71 vel: 0.35, sustain: 14.7, release: 0.3\n/
   end
 
   test "the README points to the solo, and the synth designs license names the recordings" do
