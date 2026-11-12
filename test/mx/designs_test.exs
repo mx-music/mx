@@ -3567,6 +3567,69 @@ defmodule Mx.DesignsTest do
     assert rms(hard, 0, 0.3) > rms(soft, 0, 0.3) * 2
   end
 
+  # Caxixi.ogg by Freddythehat on Wikimedia Commons, measured with mix mx.measure --hits: each band's level and fade, and its level 50 and 100 ms after the loudest moment.
+  @caxixi %{
+    {1000, 1600} => {-13.2, 4.41, -23, -27},
+    {1600, 2500} => {-5.3, 2.68, -15, -19},
+    {2500, 4000} => {-2.4, 2.28, -13, -20},
+    {4000, 6300} => {-3.6, 1.86, -15, -23},
+    {6300, 10000} => {-0.6, 1.39, -16, -23},
+    {10000, 16000} => {-3.0, 1.69, -20, -26}
+  }
+
+  test "the caxixi follows the Commons recording's bands, fades and levels after the shake",
+       ctx do
+    hit = Hits.hit(render(ctx, :caxixi, [], 4), @rate, nil)
+    measured = Map.new(hit.bands, &{&1.band, &1})
+    moments = Map.new(hit.moments, &{&1.band, &1.levels})
+
+    for {band, {level, fade, at_50, at_100}} <- @caxixi do
+      %{level: synth_level, fade: synth_fade} = measured[band]
+      assert_in_delta synth_level, level, 6, "#{inspect(band)} at #{synth_level} dB"
+      assert_in_delta synth_fade / fade, 1, 0.3, "#{inspect(band)} fades in #{synth_fade} s"
+      [_, synth_50, synth_100 | _] = moments[band]
+      assert_in_delta synth_50, at_50, 6, "#{inspect(band)} at #{synth_50} dB after 50 ms"
+      assert_in_delta synth_100, at_100, 6, "#{inspect(band)} at #{synth_100} dB after 100 ms"
+    end
+  end
+
+  test "ten caxixi shakes have their strongest peak at five or more frequencies", ctx do
+    song = Path.join(ctx.tmp_dir, "shakes.exs")
+    out = Path.join(ctx.tmp_dir, "shakes.wav")
+
+    File.write!(song, """
+    import Mx
+    song(tempo: 120, music: part(:caxixi, at(for(i <- 0..9, do: {i, hit()}), 10), synth: :caxixi))
+    """)
+
+    ExUnit.CaptureIO.capture_io(fn -> assert :ok = Mx.Render.render(song, out, seconds: 6) end)
+    wav = File.read!(out)
+    {at, _} = :binary.match(wav, "data")
+    data = binary_part(wav, at + 8, byte_size(wav) - at - 8)
+    left = for <<x::little-float-32, _::little-float-32 <- data>>, do: x
+    hits = Hits.hits(left, @rate, nil, partials: 6)
+    assert length(hits) == 10
+
+    strongest = for %{partials: partials} <- hits, do: Enum.max_by(partials, & &1.level).hz
+
+    distinct =
+      strongest
+      |> Enum.sort()
+      |> Enum.reduce([], fn
+        hz, [last | _] = kept when hz / last < 1.03 -> kept
+        hz, kept -> [hz | kept]
+      end)
+
+    rounded = Enum.map(strongest, &round/1)
+    assert length(distinct) >= 5, "strongest peaks at #{inspect(rounded)} Hz"
+  end
+
+  test "the caxixi is louder shaken harder", ctx do
+    soft = render(ctx, :caxixi, [vel: 0.3], 1)
+    hard = render(ctx, :caxixi, [vel: 1], 1)
+    assert rms(hard, 0, 0.3) > rms(soft, 0, 0.3) * 2
+  end
+
   test "a harder bongo stroke is louder by as much as VCSL's, and brighter", ctx do
     for {{drum, muted}, expected} <- @bongos_louder do
       soft = render(ctx, drum, [muted: muted, vel: 0.3], 1)
