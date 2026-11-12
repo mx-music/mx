@@ -158,13 +158,7 @@ defmodule ClairDeLune do
 
       held = min(max(length, pedal - beat), again - beat)
 
-      {touch, lag} =
-        cond do
-          staff == :upper and tops[beat] == note -> {1.25 + (note - 72) * 0.006, 0}
-          staff == :lower and basses[beat] == note -> {1.05, 0.04}
-          true -> {0.8, 0.04}
-        end
-
+      {touch, lag} = touch(staff, note, tops[beat], basses[beat])
       start = warp(bar, beat + lag)
 
       {Float.round(start, 3), note, Float.round(min(base * touch, 1.0), 2),
@@ -172,6 +166,10 @@ defmodule ClairDeLune do
     end
     |> Enum.sort()
   end
+
+  def touch(:upper, note, top, _bass) when note == top, do: {1.25 + (note - 72) * 0.006, 0}
+  def touch(:lower, note, _top, bass) when note == bass, do: {1.05, 0.04}
+  def touch(_staff, _note, _top, _bass), do: {0.8, 0.04}
 
   # Each bar as {number, right hand, left hand}, a hand being chords of {eighth, notes, eighths held}, as engraved for each staff.
   def score do

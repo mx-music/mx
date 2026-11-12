@@ -20,15 +20,16 @@ defmodule Cuica do
 
   # Eight bars of the figure, the accents raised a fourth when `raised`.
   def groove(raised) do
-    at(for(bar <- 0..7, {beat, stroke} <- figure(raised), do: {2 * bar + beat, stroke}), 16)
+    strokes = for bar <- 0..7, {beat, stroke} <- figure(raised), do: {2 * bar + beat, stroke}
+    at(strokes, 16)
   end
 
   # A bar of the figure, then a run of seven sixteenths that swells from soft to an accent raised a fourth, four times over.
   def phrases do
     run =
-      for i <- 0..6 do
-        {2 + i / 4,
-         hit(note: if(i == 6, do: @high, else: @low), vel: Float.round(0.4 + 0.08 * i, 2))}
+      for step <- 0..6 do
+        note = if step == 6, do: @high, else: @low
+        {2 + step / 4, hit(note: note, vel: Float.round(0.4 + 0.08 * step, 2))}
       end
 
     strokes =

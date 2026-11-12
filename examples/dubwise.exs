@@ -120,7 +120,11 @@ defmodule Dubwise do
 
   def kick(:one_drop), do: at([{2, hit()}], 4)
   def kick(:rockers), do: at([{0, hit()}, {2, hit()}], 4)
-  def kick(:steppers), do: at(for(beat <- 0..3, do: {beat, hit()}), 4)
+
+  def kick(:steppers) do
+    hits = for beat <- 0..3, do: {beat, hit()}
+    at(hits, 4)
+  end
 
   # The rimshot on the drop, with ghost strokes around it that change from bar to bar.
   def rimshot(bar) do
@@ -149,9 +153,11 @@ defmodule Dubwise do
     drop = if style == :steppers, do: [{2, hit(vel: 0.5)}], else: []
 
     pickup =
-      if rem(bar, 8) == 4,
-        do: [{3.25, hit(vel: 0.35)}, {3.5, hit(vel: 0.5)}, {3.75, hit(vel: 0.7)}],
-        else: []
+      if rem(bar, 8) == 4 do
+        [{3.25, hit(vel: 0.35)}, {3.5, hit(vel: 0.5)}, {3.75, hit(vel: 0.7)}]
+      else
+        []
+      end
 
     at(drop ++ pickup, 4)
   end
@@ -204,7 +210,8 @@ defmodule Dubwise do
   def skank(bar) do
     chord = voicing(bar)
     beats = if rem(bar, 4) == 0, do: [1, 3, 3.25], else: [1, 3]
-    at(for(beat <- beats, do: {beat, note(chord, 0.25)}), 4)
+    chords = for beat <- beats, do: {beat, note(chord, 0.25)}
+    at(chords, 4)
   end
 
   # The bubble's left hand: the root and fifth on every offbeat, with the skank's chord on 2 and 4.
@@ -286,17 +293,17 @@ defmodule Dubwise do
   end
 
   # The vibraphone's answers, as {beat, notes}, each left to ring under its motor.
-  def vibes(entries, length),
-    do: at(for({beat, notes} <- entries, do: {beat, note(notes, 2)}), length)
+  def vibes(entries, length) do
+    chords = for {beat, notes} <- entries, do: {beat, note(notes, 2)}
+    at(chords, length)
+  end
 
   def hiss(length) do
-    at(
-      for(
-        beat <- 0..(length - 8)//8,
-        do: {beat, sample(:vinyl_hiss, 8, amp: 0.35, sustain: 7, release: 2)}
-      ),
-      length
-    )
+    loops =
+      for beat <- 0..(length - 8)//8,
+          do: {beat, sample(:vinyl_hiss, 8, amp: 0.35, sustain: 7, release: 2)}
+
+    at(loops, length)
   end
 
   # The dark woosh backwards, swelling into the downbeat after the given beat.
@@ -495,6 +502,7 @@ defmodule Dubwise do
   # The kick and bass out under the drone, the hi-hat deep in the flanger and the dub snare's echo running away and bending up; then a boom, the bass back, and the organ's chords cut up by the slicer.
   def section(:deep) do
     snare_echo = fn opts -> change({:dub_snare, :ping_pong}, opts) end
+    snares = for beat <- [2, 6, 10, 14], do: {beat, sample(:sn_dub, 1, amp: 0.7)}
 
     together(
       [
@@ -514,7 +522,7 @@ defmodule Dubwise do
         play(
           :dub_snare,
           together([
-            at(for(beat <- [2, 6, 10, 14], do: {beat, sample(:sn_dub, 1, amp: 0.7)}), 16),
+            at(snares, 16),
             at(
               [
                 {0, snare_echo.(feedback: 0.85, feedback_slide: 4, mix: 0.6)},

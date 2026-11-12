@@ -64,24 +64,14 @@ defmodule Bhupali do
   # One breath as a note: the first swara starts it and each later one is a change at its beat.
   # A tongued swara dips the breath to a quarter over about 30 ms and brings it back, at 240 beats a minute.
   def breath(text, vel, last \\ nil) do
-    tokens =
-      for token <- String.split(text) do
-        [body | swell] = String.split(token, "@")
-        [name, beats] = String.split(body, ":")
-        {beats, ""} = Float.parse(beats)
-        swell = Enum.map(swell, &elem(Float.parse(&1), 0)) |> List.first()
+    tokens = Enum.map(String.split(text), &token/1)
 
-        case name do
-          "~" <> swara -> {:glide, swara, beats, swell}
-          "_" <> swara -> {:slur, swara, beats, swell}
-          swara -> {:tongue, swara, beats, swell}
-        end
+    tokens =
+      if last do
+        List.update_at(tokens, -1, fn {kind, swara, _, _} -> {kind, swara, last, 0.5} end)
+      else
+        tokens
       end
-
-    tokens =
-      if last,
-        do: List.update_at(tokens, -1, fn {k, s, _, _} -> {k, s, last, 0.5} end),
-        else: tokens
 
     [{_, first, held, swell} | rest] = tokens
     opening = if swell, do: [{0, vel: swell, vel_slide: held}], else: []
@@ -89,23 +79,7 @@ defmodule Bhupali do
     {changes, {_, length}} =
       Enum.flat_map_reduce(rest, {swell || vel, held}, fn {kind, swara, beats, swell},
                                                           {now, at} ->
-        note = swara(swara)
-
-        moves =
-          case kind do
-            :tongue ->
-              [
-                {max(at - 0.12, 0), vel: now * 0.25, vel_slide: 0.08},
-                {at, note: note, note_slide: 0, vel: now, vel_slide: 0.12}
-              ]
-
-            :slur ->
-              [{at, note: note, note_slide: 0}]
-
-            :glide ->
-              [{at, note: note, note_slide: min(beats * 0.5, 1.2)}]
-          end
-
+        moves = moves(kind, swara(swara), beats, now, at)
         swells = if swell, do: [{at + 0.14, vel: swell, vel_slide: beats}], else: []
         {moves ++ swells, {swell || now, at + beats}}
       end)
@@ -119,9 +93,37 @@ defmodule Bhupali do
      )}
   end
 
+  def token(text) do
+    [body | swell] = String.split(text, "@")
+    [name, beats] = String.split(body, ":")
+    {beats, ""} = Float.parse(beats)
+    swell = Enum.map(swell, &elem(Float.parse(&1), 0)) |> List.first()
+
+    case name do
+      "~" <> swara -> {:glide, swara, beats, swell}
+      "_" <> swara -> {:slur, swara, beats, swell}
+      swara -> {:tongue, swara, beats, swell}
+    end
+  end
+
+  def moves(:tongue, note, _beats, now, at) do
+    [
+      {max(at - 0.12, 0), vel: now * 0.25, vel_slide: 0.08},
+      {at, note: note, note_slide: 0, vel: now, vel_slide: 0.12}
+    ]
+  end
+
+  def moves(:slur, note, _beats, _now, at), do: [{at, note: note, note_slide: 0}]
+
+  def moves(:glide, note, beats, _now, at) do
+    [{at, note: note, note_slide: min(beats * 0.5, 1.2)}]
+  end
+
   # A section's breaths one after another from its first beat, at the vel given.
-  def flute(:alap, _pass),
-    do: at(for({beat, vel, text} <- alap(), do: {beat, elem(breath(text, vel), 1)}), 160)
+  def flute(:alap, _pass) do
+    breaths = for {beat, vel, text} <- alap(), do: {beat, elem(breath(text, vel), 1)}
+    at(breaths, 160)
+  end
 
   def flute(:gat, _pass), do: run(breaths(:gat), 0.6, 0, 16)
 
@@ -158,8 +160,10 @@ defmodule Bhupali do
   # A section's theka, every cycle of it, louder on sam; the alap has none, and the last sam only its dha.
   def tabla(:alap, _synth), do: rest(160)
 
-  def tabla(:sam, synth),
-    do: at(if(synth in strokes("dha"), do: [{0, hit(vel: 0.85)}], else: []), 16)
+  def tabla(:sam, synth) do
+    hits = if synth in strokes("dha"), do: [{0, hit(vel: 0.85)}], else: []
+    at(hits, 16)
+  end
 
   def tabla(section, synth) do
     cycles = if section == :taans, do: 3, else: 1

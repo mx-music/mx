@@ -17,19 +17,17 @@ defmodule TranquilityBase do
   vcsl = fn path -> {:github, @repo, @commit, path} end
 
   @kick vcsl.("#{@drums}/Bass Drum 1")
-  @snare for v <- [3, 5, 6],
-             rr <- [1, 2],
-             do: vcsl.("#{@drums}/Snare Drum, Modern 1/Snare2_HitSN_v#{v}_rr#{rr}_Mid.wav")
+  @snare for layer <- [3, 5, 6],
+             take <- [1, 2],
+             do: vcsl.("#{@drums}/Snare Drum, Modern 1/Snare2_HitSN_v#{layer}_rr#{take}_Mid.wav")
+  @hat_takes for layer <- [2, 3, 4],
+                 take <- [1, 2],
+                 do: vcsl.("#{@cymbals}/HiHat_HitC_v#{layer}_rr#{take}_Mid.wav")
   # The softest hi-hat stroke was recorded once.
-  @hat [vcsl.("#{@cymbals}/HiHat_HitC_v1_rr1_Mid.wav")] ++
-         for(
-           v <- [2, 3, 4],
-           rr <- [1, 2],
-           do: vcsl.("#{@cymbals}/HiHat_HitC_v#{v}_rr#{rr}_Mid.wav")
-         )
-  @frame for v <- [2, 3],
-             rr <- [1, 2],
-             do: vcsl.("#{@drums}/Frame Drum/HDrumL_Hit_v#{v}_rr#{rr}_Sum.wav")
+  @hat [vcsl.("#{@cymbals}/HiHat_HitC_v1_rr1_Mid.wav") | @hat_takes]
+  @frame for layer <- [2, 3],
+             take <- [1, 2],
+             do: vcsl.("#{@drums}/Frame Drum/HDrumL_Hit_v#{layer}_rr#{take}_Sum.wav")
   @ocean vcsl.("Membranophones/Other Membranophones/Ocean Drum/OceanDrum_Sus_1_Mid.wav")
   @glass_fs4 vcsl.("#{@glasses}/glass2_F#4_Slow_1_Main.wav")
   @glass_ds4 vcsl.("#{@glasses}/glass1_D#4_Slow_1_Main.wav")
@@ -46,9 +44,9 @@ defmodule TranquilityBase do
     steps = pattern |> String.replace(" ", "") |> String.graphemes()
 
     hits =
-      for {c, i} <- Enum.with_index(steps),
-          c != ".",
-          do: {i / 6, hit(vel: if(c == "x", do: loud, else: soft))}
+      for {step, index} <- Enum.with_index(steps),
+          step != ".",
+          do: {index / 6, hit(vel: if(step == "x", do: loud, else: soft))}
 
     at(hits, length(steps) / 6)
   end
@@ -63,22 +61,22 @@ defmodule TranquilityBase do
   end
 
   # Sputnik's beep, one stretch of four of its periods fitted to a bar.
-  def beeps(beats, amp),
-    do:
-      seq(
-        for _ <- 1..div(beats, 4),
-            do: sample(@sputnik, 4, from: 0.3, to: 2.06, beats: 4, amp: amp)
-      )
+  def beeps(beats, amp) do
+    seq(
+      for _ <- 1..div(beats, 4),
+          do: sample(@sputnik, 4, from: 0.3, to: 2.06, beats: 4, amp: amp)
+    )
+  end
 
-  def ocean(beats),
-    do:
-      sample(@ocean, beats,
-        normalize: true,
-        amp: 0.43,
-        attack: 4,
-        sustain: beats - 8,
-        release: 4
-      )
+  def ocean(beats) do
+    sample(@ocean, beats,
+      normalize: true,
+      amp: 0.43,
+      attack: 4,
+      sustain: beats - 8,
+      release: 4
+    )
+  end
 
   # The two wine glasses, tuned down to E4 and C4.
   def glasses(beats) do
@@ -126,8 +124,8 @@ defmodule TranquilityBase do
   # The drop: "The Eagle has landed" cut and repeated, pitched down, then played backwards, over liftoff backwards.
   def drop do
     stutter =
-      for i <- 0..7,
-          do: {i * 0.5, landing(0.5, from: 2.0, to: 2.3, amp: 0.8, rate: 1 - i * 0.05)}
+      for cut <- 0..7,
+          do: {cut * 0.5, landing(0.5, from: 2.0, to: 2.3, amp: 0.8, rate: 1 - cut * 0.05)}
 
     section(
       voice:
@@ -165,48 +163,51 @@ defmodule TranquilityBase do
     )
   end
 
+  def form, do: [intro(), first(), drop(), second(), outro()]
+
   def section(parts), do: together(Enum.map(parts, fn {name, music} -> play(name, music) end))
 
-  defp play(:kick, music),
-    do: part(:kick, music, synth: sampled(@kick), defaults: [amp: 0.6, sustain: 1, release: 1])
+  defp play(:kick, music) do
+    part(:kick, music, synth: sampled(@kick), defaults: [amp: 0.6, sustain: 1, release: 1])
+  end
 
-  defp play(:snare, music),
-    do: part(:snare, music, synth: sampled(@snare), defaults: [amp: 0.6, sustain: 1, release: 1])
+  defp play(:snare, music) do
+    part(:snare, music, synth: sampled(@snare), defaults: [amp: 0.6, sustain: 1, release: 1])
+  end
 
-  defp play(:hat, music),
-    do:
-      part(:hat, music,
-        synth: sampled(@hat),
-        defaults: [amp: 0.6, sustain: 1, release: 1],
-        fx: [hpf: [cutoff: 80]]
-      )
+  defp play(:hat, music) do
+    part(:hat, music,
+      synth: sampled(@hat),
+      defaults: [amp: 0.6, sustain: 1, release: 1],
+      fx: [hpf: [cutoff: 80]]
+    )
+  end
 
-  defp play(:frame, music),
-    do:
-      part(:frame, music,
-        synth: sampled(@frame),
-        defaults: [amp: 0.6, sustain: 1, release: 1],
-        fx: [reverb: [room: 0.5, mix: 0.25]]
-      )
+  defp play(:frame, music) do
+    part(:frame, music,
+      synth: sampled(@frame),
+      defaults: [amp: 0.6, sustain: 1, release: 1],
+      fx: [reverb: [room: 0.5, mix: 0.25]]
+    )
+  end
 
   defp play(:ocean, music), do: part(:ocean, music)
   defp play(:glass, music), do: part(:glass, music, fx: [reverb: [room: 0.9, mix: 0.4]])
   defp play(:liftoff, music), do: part(:liftoff, music, fx: [reverb: [room: 0.9, mix: 0.4]])
 
-  defp play(:sputnik, music),
-    do: part(:sputnik, music, fx: [lpf: [cutoff: 100], echo: [phase: 1.5, decay: 4, mix: 0.25]])
+  defp play(:sputnik, music) do
+    part(:sputnik, music, fx: [lpf: [cutoff: 100], echo: [phase: 1.5, decay: 4, mix: 0.25]])
+  end
 
-  defp play(:voice, music),
-    do:
-      part(:voice, music,
-        fx: [
-          hpf: [cutoff: 50],
-          echo: [phase: 0.75, decay: 6, mix: 0.3],
-          reverb: [room: 0.7, mix: 0.3]
-        ]
-      )
+  defp play(:voice, music) do
+    part(:voice, music,
+      fx: [
+        hpf: [cutoff: 50],
+        echo: [phase: 0.75, decay: 6, mix: 0.3],
+        reverb: [room: 0.7, mix: 0.3]
+      ]
+    )
+  end
 end
 
-alias TranquilityBase, as: T
-
-song(tempo: 136, music: seq([T.intro(), T.first(), T.drop(), T.second(), T.outro()]))
+song(tempo: 136, music: seq(TranquilityBase.form()))

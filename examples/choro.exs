@@ -70,59 +70,54 @@ defmodule Choro do
       Enum.filter(64..96, &(rem(&1, 12) in (kept ++ tones)))
     end
 
-    rising = fn notes, from -> notes |> Enum.filter(&(&1 >= from)) |> Enum.take(4) end
-
-    falling = fn notes, from ->
-      notes |> Enum.filter(&(&1 <= from)) |> Enum.reverse() |> Enum.take(4)
-    end
-
     Enum.map_reduce(0..15, 76, fn beat, current ->
       chord = Enum.at(beats, beat)
       arpeggio = Enum.filter(64..96, &(rem(&1, 12) in classes.(chord)))
       near = Enum.min_by(arpeggio -- [current], &abs(&1 - current))
-
-      cell =
-        cond do
-          beat in [7, 15] -> :land
-          current > 86 -> pick([:run_down, :arpeggio_down, :neighbour])
-          current < 70 -> pick([:arpeggio_up, :run_up, :neighbour])
-          true -> pick([:arpeggio_up, :arpeggio_down, :run_down, :run_down, :run_up, :neighbour])
-        end
-
-      notes =
-        case cell do
-          :land -> [near]
-          :arpeggio_up -> rising.(arpeggio, near)
-          :arpeggio_down -> falling.(arpeggio, near)
-          :run_up -> rising.(line.(chord), near)
-          :run_down -> falling.(line.(chord), near)
-          :neighbour -> [near, near - 1, near, Enum.find(arpeggio, near, &(&1 > near))]
-        end
-
-      notes =
-        if length(notes) < 4 and cell != :land, do: falling.(line.(chord), near), else: notes
-
-      music =
-        if cell == :land do
-          note(near, 1, vel: 0.7, sustain: 0.75, release: 0.2)
-        else
-          sixteenths =
-            Enum.with_index(notes, fn note, index ->
-              {index * 0.25,
-               note(note, 0.25,
-                 vel: if(index == 0, do: 0.75, else: 0.55),
-                 sustain: 0.17,
-                 release: 0.08
-               )}
-            end)
-
-          at(sixteenths, 1)
-        end
-
-      {music, List.last(notes)}
+      run = line.(chord)
+      cell = cell(beat, current)
+      notes = cell_notes(cell, near, arpeggio, run)
+      notes = if length(notes) < 4 and cell != :land, do: falling(run, near), else: notes
+      {cell_music(cell, near, notes), List.last(notes)}
     end)
     |> elem(0)
     |> seq()
+  end
+
+  def cell(beat, _current) when beat in [7, 15], do: :land
+  def cell(_beat, current) when current > 86, do: pick([:run_down, :arpeggio_down, :neighbour])
+  def cell(_beat, current) when current < 70, do: pick([:arpeggio_up, :run_up, :neighbour])
+
+  def cell(_beat, _current) do
+    pick([:arpeggio_up, :arpeggio_down, :run_down, :run_down, :run_up, :neighbour])
+  end
+
+  def cell_notes(:land, near, _arpeggio, _run), do: [near]
+  def cell_notes(:arpeggio_up, near, arpeggio, _run), do: rising(arpeggio, near)
+  def cell_notes(:arpeggio_down, near, arpeggio, _run), do: falling(arpeggio, near)
+  def cell_notes(:run_up, near, _arpeggio, run), do: rising(run, near)
+  def cell_notes(:run_down, near, _arpeggio, run), do: falling(run, near)
+
+  def cell_notes(:neighbour, near, arpeggio, _run) do
+    [near, near - 1, near, Enum.find(arpeggio, near, &(&1 > near))]
+  end
+
+  def rising(notes, from), do: notes |> Enum.filter(&(&1 >= from)) |> Enum.take(4)
+
+  def falling(notes, from) do
+    notes |> Enum.filter(&(&1 <= from)) |> Enum.reverse() |> Enum.take(4)
+  end
+
+  def cell_music(:land, near, _notes), do: note(near, 1, vel: 0.7, sustain: 0.75, release: 0.2)
+
+  def cell_music(_cell, _near, notes) do
+    sixteenths =
+      Enum.with_index(notes, fn note, index ->
+        vel = if index == 0, do: 0.75, else: 0.55
+        {index * 0.25, note(note, 0.25, vel: vel, sustain: 0.17, release: 0.08)}
+      end)
+
+    at(sixteenths, 1)
   end
 
   # The cavaquinho keeps the rhythm: close four-note chords strummed down on the beat and up off it.

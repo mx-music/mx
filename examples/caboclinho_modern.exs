@@ -208,8 +208,9 @@ defmodule CaboclinhoModern do
   def hihat(_toque, _bar), do: [{0.5, []}, {1.5, [vel: 0.35]}]
 
   # The bass's notes as {beat of the toque, semitones above G, beats of the toque}.
-  def bass_bar(:guerra, bar) when rem(bar, 4) == 3,
-    do: [{0, 0, 0.5}, {0.75, 0, 0.25}, {1, 12, 0.25}, {1.25, 10, 0.25}, {1.5, 7, 0.5}]
+  def bass_bar(:guerra, bar) when rem(bar, 4) == 3 do
+    [{0, 0, 0.5}, {0.75, 0, 0.25}, {1, 12, 0.25}, {1.25, 10, 0.25}, {1.5, 7, 0.5}]
+  end
 
   def bass_bar(:guerra, _bar), do: [{0, 0, 0.5}, {0.75, 0, 0.25}, {1, 7, 0.5}, {1.5, 10, 0.5}]
   def bass_bar(:perre, _bar), do: [{0, 0, 1}, {1, 7, 0.5}, {1.5, 5, 0.5}]

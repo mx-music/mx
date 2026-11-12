@@ -39,8 +39,8 @@ defmodule Tamborim do
       end
 
     run =
-      for i <- 0..15 do
-        {14 + i / 8, hit(note: @note, vel: Float.round(0.3 + 0.03 * i, 2))}
+      for step <- 0..15 do
+        {14 + step / 8, hit(note: @note, vel: Float.round(0.3 + 0.03 * step, 2))}
       end
 
     at(figure ++ run, 16)
