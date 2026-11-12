@@ -1,8 +1,8 @@
 defmodule Mx.EffectsTest do
   use ExUnit.Case, async: true
 
-  alias Mx.Synths
   alias Mx.Engine.Mxs
+  alias Mx.Synths
 
   @moduletag :engine
   @moduletag :tmp_dir
@@ -101,8 +101,10 @@ defmodule Mx.EffectsTest do
         left |> levels(0.025) |> Enum.take(10) |> normalise()
       end
 
-    for {a, i} <- Enum.with_index(shapes), {b, j} <- Enum.with_index(shapes), i < j do
-      assert Enum.sum(Enum.zip_with(a, b, &abs(&1 - &2))) > 0.5
+    for {shape, index} <- Enum.with_index(shapes),
+        {other, other_index} <- Enum.with_index(shapes),
+        index < other_index do
+      assert Enum.sum(Enum.zip_with(shape, other, &abs(&1 - &2))) > 0.5
     end
   end
 
@@ -113,13 +115,13 @@ defmodule Mx.EffectsTest do
     {left, right} =
       Mxs.render_through(:closed_hihat, [vel: 1.0], 1.2, ctx.tmp_dir, chain)
 
-    [_, l1, l2, l3 | _] = left |> levels(0.25)
-    [_, r1, r2, r3 | _] = right |> levels(0.25)
+    [_, left1, left2, left3 | _] = left |> levels(0.25)
+    [_, right1, right2, right3 | _] = right |> levels(0.25)
 
-    assert r1 > 4 * l1
-    assert l2 > 4 * r2
-    assert r3 > 4 * l3
-    assert r1 > l2 and l2 > r3
+    assert right1 > 4 * left1
+    assert left2 > 4 * right2
+    assert right3 > 4 * left3
+    assert right1 > left2 and left2 > right3
   end
 
   test "a flanger then a reverb sounds through both, in that order", ctx do
@@ -166,15 +168,18 @@ defmodule Mx.EffectsTest do
 
   defp peak(samples), do: samples |> Enum.map(&abs/1) |> Enum.max()
 
-  defp difference(samples, reference),
-    do: db(rms(Enum.zip_with(samples, reference, &(&1 - &2))) / rms(reference))
+  defp difference(samples, reference) do
+    db(rms(Enum.zip_with(samples, reference, &(&1 - &2))) / rms(reference))
+  end
 
   # The level of the left minus the right against the level of their sum: 0 for a centred sound.
-  defp width(left, right),
-    do: rms(Enum.zip_with(left, right, &(&1 - &2))) / rms(Enum.zip_with(left, right, &(&1 + &2)))
+  defp width(left, right) do
+    rms(Enum.zip_with(left, right, &(&1 - &2))) / rms(Enum.zip_with(left, right, &(&1 + &2)))
+  end
 
-  defp levels(samples, seconds),
-    do: samples |> Enum.chunk_every(round(seconds * @rate)) |> Enum.map(&rms/1)
+  defp levels(samples, seconds) do
+    samples |> Enum.chunk_every(round(seconds * @rate)) |> Enum.map(&rms/1)
+  end
 
   # The amplitude at a note's frequency over the held part of the sound.
   defp strength(samples, note) do

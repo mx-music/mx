@@ -4,8 +4,8 @@ defmodule Mix.Tasks.Mx.FitTest do
 
   import ExUnit.CaptureIO
 
-  alias Mx.Fit
   alias Mx.Engine.Mxs
+  alias Mx.Fit
 
   @moduletag :tmp_dir
 

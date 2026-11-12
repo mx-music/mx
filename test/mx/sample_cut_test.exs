@@ -4,8 +4,8 @@ defmodule Mx.SampleCutTest do
 
   import ExUnit.CaptureIO
 
-  alias Mx.{Pass, Samples, Song}
   alias Mx.Engine.Mxs.Native
+  alias Mx.{Pass, Samples, Song}
 
   @moduletag :tmp_dir
 
@@ -145,7 +145,9 @@ defmodule Mx.SampleCutTest do
   # A mono 16-bit WAV at 48 kHz rising from 0 to 0.9 over one second.
   defp ramp(path) do
     data =
-      for i <- 0..47_999, into: <<>>, do: <<round(i / 48_000 * 0.9 * 32_767)::little-signed-16>>
+      for frame <- 0..47_999,
+          into: <<>>,
+          do: <<round(frame / 48_000 * 0.9 * 32_767)::little-signed-16>>
 
     size = byte_size(data)
 
@@ -169,7 +171,9 @@ defmodule Mx.SampleCutTest do
     :ok = Native.play(engine, [{0.0, event}])
     {:ok, {left, _right}} = Native.render(engine, 0.5)
 
-    for(<<x::float-32-native <- left>>, do: x)
+    samples = for <<sample::float-32-native <- left>>, do: sample
+
+    samples
     |> Enum.drop_while(&(&1 == 0.0))
     |> Enum.reverse()
     |> Enum.drop_while(&(&1 == 0.0))

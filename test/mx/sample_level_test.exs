@@ -30,8 +30,8 @@ defmodule Mx.SampleLevelTest do
   # Half a second of a 440 Hz sine at `level`, in `channels`.
   defp tone(path, level, channels \\ 2) do
     frames =
-      for i <- 0..23_999,
-          do: List.duplicate(level * :math.sin(2 * :math.pi() * 440 * i / 48_000), channels)
+      for frame <- 0..23_999,
+          do: List.duplicate(level * :math.sin(2 * :math.pi() * 440 * frame / 48_000), channels)
 
     wav(path, frames)
   end
@@ -87,9 +87,12 @@ defmodule Mx.SampleLevelTest do
 
   test "a cut is scaled by the loudest moment of the whole file", %{tmp_dir: dir} do
     frames =
-      for i <- 0..47_999,
+      for frame <- 0..47_999,
           do:
-            [if(i < 24_000, do: 0.1, else: 0.5) * :math.sin(2 * :math.pi() * 440 * i / 48_000)]
+            [
+              if(frame < 24_000, do: 0.1, else: 0.5) *
+                :math.sin(2 * :math.pi() * 440 * frame / 48_000)
+            ]
             |> then(&(&1 ++ &1))
 
     path = wav(Path.join(dir, "steps.wav"), frames)

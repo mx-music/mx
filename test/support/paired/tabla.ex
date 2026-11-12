@@ -7,7 +7,7 @@ defmodule Mx.Paired.Tabla do
 
   use Mx.Instrument
 
-  @bands [113, 200, 316, 502, 794, 1265, 2000, nil, 5019, 7937, 12649]
+  @bands [113, 200, 316, 502, 794, 1265, 2000, nil, 5019, 7937, 12_649]
 
   @bols %{
     na: %{

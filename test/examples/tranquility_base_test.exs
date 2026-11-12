@@ -50,9 +50,11 @@ defmodule Mx.Examples.TranquilityBaseTest do
         Application.put_env(:mx, key, value)
 
         on_exit(fn ->
-          if previous,
-            do: Application.put_env(:mx, key, previous),
-            else: Application.delete_env(:mx, key)
+          if previous do
+            Application.put_env(:mx, key, previous)
+          else
+            Application.delete_env(:mx, key)
+          end
         end)
       end
 

@@ -184,8 +184,9 @@ defmodule Mx.RenderTest do
     # A recording starts as the engine does, before the song has loaded its samples, so both are compared from their first sound.
     assert_in_delta seconds(recorded), seconds(rendered), 0.25
 
-    for {a, b} <- Enum.zip(levels(recorded), levels(rendered)), a > -60 or b > -60 do
-      assert_in_delta a, b, 1
+    for {recorded_level, rendered_level} <- Enum.zip(levels(recorded), levels(rendered)),
+        recorded_level > -60 or rendered_level > -60 do
+      assert_in_delta recorded_level, rendered_level, 1
     end
   end
 

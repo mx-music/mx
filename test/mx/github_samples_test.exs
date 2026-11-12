@@ -142,7 +142,10 @@ defmodule Mx.GitHubSamplesTest do
     """)
 
     assert {{:ok, song}, output} = load(file)
-    assert output =~ ~r/^Downloaded 2 files to .*, and #{@repo}@#{@commit}:#{@folder} is complete\.\n$/
+
+    assert output =~
+             ~r/^Downloaded 2 files to .*, and #{@repo}@#{@commit}:#{@folder} is complete\.\n$/
+
     assert {:ok, %{events: events}} = Pass.events(hd(song.loops), 0)
     played = for {_, {:sample, _, path}, _} <- events, do: Path.basename(path)
     assert played == ["Agogo_High_v1_rr1_Mid.wav", "Agogo_Low_v1_rr1_Mid.wav"]
@@ -168,7 +171,9 @@ defmodule Mx.GitHubSamplesTest do
     assert output =~ "Downloading #{drum} from #{@repo}"
     assert {:ok, %{events: events}} = Pass.events(hd(song.loops), 0)
 
-    assert for({_, {:sample, _, path}, _} <- events, do: Path.basename(path)) == [
+    names = for {_, {:sample, _, path}, _} <- events, do: Path.basename(path)
+
+    assert names == [
              "BDrumNew_hit_v2_rr1_Sum.wav",
              "Agogo_High_v1_rr1_Mid.wav"
            ]
@@ -292,9 +297,11 @@ defmodule Mx.GitHubSamplesTest do
         Application.put_env(:mx, key, value)
 
         on_exit(fn ->
-          if previous,
-            do: Application.put_env(:mx, key, previous),
-            else: Application.delete_env(:mx, key)
+          if previous do
+            Application.put_env(:mx, key, previous)
+          else
+            Application.delete_env(:mx, key)
+          end
         end)
       end
 

@@ -25,23 +25,23 @@ defmodule Mx.Timeline do
     with_song(path, fn song ->
       for loop <- song.loops, loop.on == nil, into: %{} do
         span = Map.get(spans, loop.name, 0)
-
-        events =
-          Stream.iterate(0, &(&1 + 1))
-          |> Enum.reduce_while({[], 0}, fn pass, {events, start} ->
-            if start >= span or (loop.passes != nil and pass >= loop.passes) do
-              {:halt, {events, start}}
-            else
-              {played, beats} = pass_events(loop, pass)
-              {:cont, {events ++ shift(played, start), start + beats}}
-            end
-          end)
-          |> elem(0)
-          |> Enum.filter(fn {beat, _, _} -> beat < span end)
-
-        {loop.name, {normalize(events, loop), span}}
+        {loop.name, {normalize(events_until(loop, span), loop), span}}
       end
     end)
+  end
+
+  defp events_until(loop, span) do
+    Stream.iterate(0, &(&1 + 1))
+    |> Enum.reduce_while({[], 0}, fn pass, {events, start} ->
+      if start >= span or (loop.passes != nil and pass >= loop.passes) do
+        {:halt, {events, start}}
+      else
+        {played, beats} = pass_events(loop, pass)
+        {:cont, {events ++ shift(played, start), start + beats}}
+      end
+    end)
+    |> elem(0)
+    |> Enum.filter(fn {beat, _, _} -> beat < span end)
   end
 
   defp with_song(path, fun) do

@@ -115,10 +115,10 @@ defmodule Mx.Paired.Violin do
     soft = max((1 - vel) / 0.7, 0)
 
     modes =
-      for n <- 1..32 do
-        octave = log2(freq * n / 333)
+      for harmonic <- 1..32 do
+        octave = log2(freq * harmonic / 333)
         level = min(octave, 0) * (18 + 6 * soft ** 3) - max(octave, 0) * (12 + 3 * soft)
-        {n, select(freq * n < 16000, db(level), 0), 2.1 * 2 ** (octave * -0.55)}
+        {harmonic, select(freq * harmonic < 16_000, db(level), 0), 2.1 * 2 ** (octave * -0.55)}
       end
 
     strike = impulse()

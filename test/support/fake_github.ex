@@ -83,17 +83,17 @@ defmodule Mx.FakeGitHub do
         respond(404, ~s({"message": "Not Found"}))
 
       files ->
-        respond(
-          200,
-          JSON.encode!(%{tree: for(path <- Map.keys(files), do: %{path: path, type: "blob"})})
-        )
+        tree = for path <- Map.keys(files), do: %{path: path, type: "blob"}
+        respond(200, JSON.encode!(%{tree: tree}))
     end
   end
 
   defp answer(["api", "repos", owner, repo], %{repos: repos}) do
-    if Map.has_key?(repos, "#{owner}/#{repo}"),
-      do: respond(200, "{}"),
-      else: respond(404, ~s({"message": "Not Found"}))
+    if Map.has_key?(repos, "#{owner}/#{repo}") do
+      respond(200, "{}")
+    else
+      respond(404, ~s({"message": "Not Found"}))
+    end
   end
 
   defp answer(_segments, _state), do: respond(404, "")

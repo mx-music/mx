@@ -54,7 +54,7 @@ defmodule Mx.Instruments.Marimba do
             strike
             |> mode(
               hz: freq * n,
-              level: select(freq * n < 15000, db(level), 0),
+              level: select(freq * n < 15_000, db(level), 0),
               fade: ring * fade * min(1500 / (freq * n), 1) ** 0.8
             )
           end

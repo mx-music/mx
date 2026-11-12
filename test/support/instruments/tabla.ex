@@ -8,7 +8,7 @@ defmodule Mx.Instruments.Tabla do
 
   use Mx.Instrument
 
-  @bands [113, 200, 316, 502, 794, 1265, 2000, 2900, 5019, 7937, 12649]
+  @bands [113, 200, 316, 502, 794, 1265, 2000, 2900, 5019, 7937, 12_649]
 
   @doc "A tabla stroke, by its bol, at the bol's own pitch unless the song gives one."
   attr :note, :note, doc: "The pitch; the bol's own pitch when not given."

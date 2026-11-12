@@ -99,11 +99,14 @@ defmodule Mx.WindsTest do
       ours = sound |> windows(div(@rate, 2), div(@rate, 20)) |> Enum.map(&db/1)
       ours_peak = Enum.max(ours)
 
-      for {{theirs, mine}, i} <- Enum.with_index(Enum.zip(relative, ours)), i > 0 do
-        assert_in_delta mine - ours_peak,
+      for {{theirs, mine}, index} <- Enum.with_index(Enum.zip(relative, ours)), index > 0 do
+        seconds = index * 0.5
+        relative_db = mine - ours_peak
+
+        assert_in_delta relative_db,
                         theirs,
                         3,
-                        "at #{i * 0.5} s #{mine - ours_peak} dB against the recording's #{theirs} dB"
+                        "at #{seconds} s #{relative_db} dB against the recording's #{theirs} dB"
       end
     end
   end
@@ -133,8 +136,8 @@ defmodule Mx.WindsTest do
       levels = sound |> windows(div(@rate, 200), div(@rate, 100)) |> Enum.map(&db/1)
 
       dips =
-        for i <- 1..(length(steps) - 1) do
-          at = round(i * 0.3 * 200)
+        for slur <- 1..(length(steps) - 1) do
+          at = round(slur * 0.3 * 200)
           before = levels |> Enum.slice((at - 40)..(at - 10)) |> median()
           Enum.min(Enum.slice(levels, (at - 16)..(at + 16))) - before
         end
@@ -290,9 +293,11 @@ defmodule Mx.WindsTest do
   defp vel_at([{vel, level} | _], wanted) when wanted <= level, do: vel
 
   defp vel_at([{low, below}, {high, above} | rest], wanted) do
-    if wanted <= above,
-      do: low + (high - low) * (wanted - below) / max(above - below, 1.0e-9),
-      else: vel_at([{high, above} | rest], wanted)
+    if wanted <= above do
+      low + (high - low) * (wanted - below) / max(above - below, 1.0e-9)
+    else
+      vel_at([{high, above} | rest], wanted)
+    end
   end
 
   defp vel_at([{vel, _}], _), do: vel

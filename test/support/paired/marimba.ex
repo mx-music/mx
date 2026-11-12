@@ -37,15 +37,15 @@ defmodule Mx.Paired.Marimba do
         ] ++ tube
 
     modes =
-      for {{n, level, fade}, index} <- Enum.with_index(modes) do
+      for {{ratio, level, fade}, index} <- Enum.with_index(modes) do
         fade =
           case index do
             0 -> ring
             1 -> swell
-            _ -> ring * fade * min(1500 / (freq * n), 1) ** 0.8
+            _ -> ring * fade * min(1500 / (freq * ratio), 1) ** 0.8
           end
 
-        {n, select(freq * n < 15000, level, 0), fade}
+        {ratio, select(freq * ratio < 15_000, level, 0), fade}
       end
 
     strike = impulse()

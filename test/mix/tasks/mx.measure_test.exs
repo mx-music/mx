@@ -4,8 +4,8 @@ defmodule Mix.Tasks.Mx.MeasureTest do
 
   import ExUnit.CaptureIO
 
-  alias Mx.Measure
   alias Mx.Engine.Mxs
+  alias Mx.Measure
   alias Mx.Measure.{Held, Hits}
 
   @moduletag :tmp_dir

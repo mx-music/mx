@@ -1282,8 +1282,9 @@ defmodule Mx.BandTest do
     Map.new(pitch ++ params, fn {key, value} -> {key, value / 1} end)
   end
 
-  defp params_map({:sample, _, _, params, _}),
-    do: Map.new(params, fn {key, value} -> {key, value / 1} end)
+  defp params_map({:sample, _, _, params, _}) do
+    Map.new(params, fn {key, value} -> {key, value / 1} end)
+  end
 
   @tag :tmp_dir
   test "a song written as music ends after its last section, and says so", ctx do

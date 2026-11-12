@@ -29,14 +29,19 @@ defmodule Mx.Instruments.Flute do
 
     tone =
       mix(
-        for n <- 1..16 do
+        for harmonic <- 1..16 do
           overtone =
-            if n == 1, do: 0, else: Enum.at([1, 0, -8], min(n - 2, 2)) - 12 * max(log2(n / 4), 0)
+            if harmonic == 1 do
+              0
+            else
+              Enum.at([1, 0, -8], min(harmonic - 2, 2)) - 12 * max(log2(harmonic / 4), 0)
+            end
 
-          level = fundamental + overtone + 0.05 * register * log2(n) - soft ** 3.5 * 11 * log2(n)
+          octave = log2(harmonic)
+          level = fundamental + overtone + 0.05 * register * octave - soft ** 3.5 * 11 * octave
 
-          sine(hz: pitch * n, phase: :math.pi() * n * (n - 1) / 24)
-          |> gain(select(hz(played.note) * n < 16000, db(level), 0))
+          sine(hz: pitch * harmonic, phase: :math.pi() * harmonic * (harmonic - 1) / 24)
+          |> gain(select(hz(played.note) * harmonic < 16_000, db(level), 0))
         end
       )
 

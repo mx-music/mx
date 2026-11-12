@@ -25,11 +25,11 @@ defmodule Mx.InstrumentTest do
   end
 
   test "the tabla plays the clause its bol matches, at the bol's own pitch unless the note gives one" do
-    na = render(Mx.Instruments.Tabla, :tabla, bol: :na)
-    assert na == render(Mx.Instruments.Tabla, :tabla, [])
+    na_stroke = render(Mx.Instruments.Tabla, :tabla, bol: :na)
+    assert na_stroke == render(Mx.Instruments.Tabla, :tabla, [])
     assert peak(render(Mx.Instruments.Tabla, :tabla, bol: :ghe)) > 0.01
-    refute render(Mx.Instruments.Tabla, :tabla, bol: :ghe) == na
-    refute render(Mx.Instruments.Tabla, :tabla, bol: :na, note: 58) == na
+    refute render(Mx.Instruments.Tabla, :tabla, bol: :ghe) == na_stroke
+    refute render(Mx.Instruments.Tabla, :tabla, bol: :na, note: 58) == na_stroke
   end
 
   test "a value outside an option's range plays held to it, and is reported once" do

@@ -78,9 +78,11 @@ defmodule Mx.Voice do
     samples
     |> Enum.with_index(start)
     |> Enum.reduce(sound, fn {sample, index}, sound ->
-      if index < :array.size(sound),
-        do: :array.set(index, :array.get(index, sound) + sample, sound),
-        else: sound
+      if index < :array.size(sound) do
+        :array.set(index, :array.get(index, sound) + sample, sound)
+      else
+        sound
+      end
     end)
   end
 

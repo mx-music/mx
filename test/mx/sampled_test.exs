@@ -92,7 +92,8 @@ defmodule Mx.SampledTest do
 
     loop = hd(song.loops)
     {:ok, %{events: events}} = Pass.events(loop, 0)
-    assert for({_, {:sample, _, _}, opts} <- events, do: opts[:amp]) == [0, 0.3, 0.5, 0.7, 0.5]
+    amps = for {_, {:sample, _, _}, opts} <- events, do: opts[:amp]
+    assert amps == [0, 0.3, 0.5, 0.7, 0.5]
   end
 
   test "repeated notes play their key's takes in turn, carrying on from pass to pass", %{
@@ -140,7 +141,9 @@ defmodule Mx.SampledTest do
     loop = hd(song.loops)
     {:ok, %{events: events}} = Pass.events(loop, 0)
 
-    assert for({beat, {:sample, path, _}, _} <- events, do: {beat, Path.basename(path)}) == [
+    played = for {beat, {:sample, path, _}, _} <- events, do: {beat, Path.basename(path)}
+
+    assert played == [
              {0, "K_E3.wav"},
              {0.05, "K_G#3.wav"},
              {0.1, "K_B3.wav"}

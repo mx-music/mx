@@ -2,8 +2,8 @@ defmodule Mx.DesignsTest do
   # Measuring keeps every core busy, so it runs after the tests that depend on timing.
   use ExUnit.Case, async: false
 
-  alias Mx.{Measure, Signal, Synths}
   alias Mx.Engine.Mxs
+  alias Mx.{Measure, Signal, Synths}
   alias Mx.Measure.{Held, Hits}
 
   @moduletag :engine
@@ -3563,7 +3563,7 @@ defmodule Mx.DesignsTest do
     {1600, 2500} => {-4.4, 0.80, -9, -12},
     {2500, 4000} => {-5.0, 0.73, -11, -15},
     {4000, 6300} => {-9.1, 0.60, -18, -21},
-    {6300, 10000} => {-14.2, 0.48, -24, -28}
+    {6300, 10_000} => {-14.2, 0.48, -24, -28}
   }
 
   test "the tamborim follows the Commons recording's bands, fades and levels after the strike",
@@ -3612,8 +3612,8 @@ defmodule Mx.DesignsTest do
     {1600, 2500} => {-5.3, 2.68, -15, -19},
     {2500, 4000} => {-2.4, 2.28, -13, -20},
     {4000, 6300} => {-3.6, 1.86, -15, -23},
-    {6300, 10000} => {-0.6, 1.39, -16, -23},
-    {10000, 16000} => {-3.0, 1.69, -20, -26}
+    {6300, 10_000} => {-0.6, 1.39, -16, -23},
+    {10_000, 16_000} => {-3.0, 1.69, -20, -26}
   }
 
   test "the caxixi follows the Commons recording's bands, fades and levels after the shake",
@@ -3638,7 +3638,7 @@ defmodule Mx.DesignsTest do
 
     File.write!(song, """
     import Mx
-    song(tempo: 120, music: part(:caxixi, at(for(i <- 0..9, do: {i, hit()}), 10), synth: :caxixi))
+    song(tempo: 120, music: part(:caxixi, at(Enum.map(0..9, &{&1, hit()}), 10), synth: :caxixi))
     """)
 
     ExUnit.CaptureIO.capture_io(fn -> assert :ok = Mx.Render.render(song, out, seconds: 6) end)
