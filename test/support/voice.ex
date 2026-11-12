@@ -7,7 +7,7 @@ defmodule Mx.Voice do
   The wandering and the noise are seeded, so a voice rendered twice is the same.
 
   Events are `{:note, at, seconds, note, opts}`, `{:breath, at, seconds}` and `{:click, at}`, with times in seconds.
-  A note takes `vibrato:` in semitones either side (0.3 by default), `scoop:` in semitones below (0.6 by default), `cents:` off its pitch, and `slide_to:` with `slide_at:` and `slide:` in seconds, to glide to another note.
+  A note takes `vibrato:` in semitones either side (0.3 by default), `scoop:` in semitones below (0.6 by default), `cents:` off its pitch, and `slide_to:` with `slide_at:` and `slide:` in seconds, to glide to another note, and `slide_back_at:` to glide back from it.
   """
 
   @doc "Renders the events over some seconds at a sample rate, as samples from -1 to 1."
@@ -29,6 +29,7 @@ defmodule Mx.Voice do
     slide_to = Keyword.get(opts, :slide_to)
     slide_at = Keyword.get(opts, :slide_at, 0)
     slide = Keyword.get(opts, :slide, 0.05)
+    slide_back_at = Keyword.get(opts, :slide_back_at)
     wander = :rand.uniform() * 2 * :math.pi()
     count = round(seconds * rate)
 
@@ -36,6 +37,10 @@ defmodule Mx.Voice do
       Enum.map_reduce(0..(count - 1), 0.0, fn index, phase ->
         time = index / rate
         glide = if slide_to, do: (slide_to - note) * clamp((time - slide_at) / slide), else: 0
+
+        glide =
+          if slide_back_at, do: glide * (1 - clamp((time - slide_back_at) / slide)), else: glide
+
         settled = clamp((time - 0.15) / 0.2)
 
         pitch =

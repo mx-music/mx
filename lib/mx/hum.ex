@@ -6,7 +6,7 @@ defmodule Mx.Hum do
   A frame has a pitch when pYIN finds it voiced and the 10 ms at its middle are no more than 35 dB below the loudest frame and 20 dB below the loudest within 200 ms, so breath, clicks and noise have none, and neither does a dip between two notes sung at one pitch.
 
   The pitch curve is cut into notes by the cheapest path through silence and the semitones, frame by frame, as Tony's note model does.
-  A frame costs the square of its distance from the semitone, up to a cap, and moving to another note costs more than a vibrato or a quick slide spends away from it, so a note held with vibrato stays one note, at the semitone it centres on, and a slide is the note it starts on and the note it lands on.
+  A frame costs the square of its distance from the semitone, up to a cap, and moving to another note, directly or through silence, costs more than a vibrato, a quick slide or a drift of about 100 ms spends away from it, so a note held with vibrato or a drifting voice stays one note, at the semitone it centres on, and a slide is the note it starts on and the note it lands on.
   A frame without pitch costs a note more than it costs silence, so a break of 30 ms or more in the voice ends a note, and two notes at one pitch with a break between them are two notes.
   A note starts with the pitched frames just before it that are on their way to it, as when a voice scoops up into a note.
 
@@ -33,8 +33,8 @@ defmodule Mx.Hum do
   @spread 0.35
   @cap 4.0
   @unpitched 2.5
-  @pitched_silence 4.0
-  @change 10.0
+  @pitched_silence 20.0
+  @change 25.0
   @let_go 0.1
   @silence_change 3.0
 

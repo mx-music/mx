@@ -45,6 +45,31 @@ defmodule Mix.Tasks.Mx.HumTest do
              transcribe([first, second], 1.0, 48_000, 90)
   end
 
+  test "a held note that drifts a semitone sharp for 100 ms is one note" do
+    beat = 60 / 90
+    drift = [slide_to: 63, slide_at: 0.5, slide: 0.03, slide_back_at: 0.6]
+
+    assert {[{+0.0, 62, 2.0}], 4} =
+             transcribe([{:note, 0, 1.9 * beat, 62, drift}], 1.5, 48_000, 90)
+  end
+
+  test "a run of sixteenth notes keeps every note from 90 to 140 bpm" do
+    melody = [60, 62, 64, 65, 67, 65, 64, 62]
+
+    for tempo <- [90, 100, 120, 140] do
+      sixteenth = 60 / tempo / 4
+
+      run =
+        melody
+        |> Enum.with_index()
+        |> Enum.map(fn {note, index} -> {:note, index * sixteenth, sixteenth, note, []} end)
+
+      {notes, _} = transcribe(run, 8 * sixteenth + 0.3, 48_000, tempo)
+
+      assert Enum.map(notes, &elem(&1, 1)) == melody
+    end
+  end
+
   test "a note hummed 30 cents sharp is the semitone below" do
     assert {[{+0.0, 55, 1.0}], 4} = transcribe([{:note, 0, 0.6, 55, cents: 30}], 0.8, 48_000, 100)
   end
