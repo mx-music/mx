@@ -74,7 +74,7 @@ defmodule Mx.Hum.Recorder do
   defp click(start_us, beat_us, beat) do
     at_us = start_us + beat * beat_us
     Process.sleep(max(div(at_us - @ahead_us - System.os_time(:microsecond), 1000), 0))
-    vel = if rem(beat, 4) == 0, do: 1.0, else: 0.5
+    vel = if rem(beat, 4) == 0, do: 0.4, else: 0.25
     Mxs.play(at_us, [{:note, nil, :closed_hihat, nil, [vel: vel], nil}])
     click(start_us, beat_us, beat + 1)
   end
