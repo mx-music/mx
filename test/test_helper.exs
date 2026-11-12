@@ -8,6 +8,7 @@ ExUnit.start(
     :audiveris,
     :transcriber,
     :bench,
-    :philharmonia
+    :philharmonia,
+    :nasa
   ]
 )

@@ -280,6 +280,12 @@ fn load_sample(resource: ResourceArc<EngineResource>, path: String) -> Result<(u
     Ok((id, engine.sample_channels(id).unwrap_or(1)))
 }
 
+/// Whether mxs can play the file at `path`, reading only its headers.
+#[rustler::nif(schedule = "DirtyIo")]
+fn check_sample(path: String) -> Result<(), String> {
+    mxs::check_sample(std::path::Path::new(&path))
+}
+
 #[rustler::nif]
 fn start_effects(resource: ResourceArc<EngineResource>, effects: Vec<(String, Term)>) -> NifResult<Result<u64, String>> {
     let effects = effects.into_iter().map(|(name, opts)| Ok((name, options(opts)?))).collect::<NifResult<Vec<_>>>()?;

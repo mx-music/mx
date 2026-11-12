@@ -1133,6 +1133,38 @@ defmodule Mx.BandTest do
   end
 
   @tag :tmp_dir
+  test "a new version whose loop plays a sample file mx cannot read is refused, naming the loop, the file and why, and the previous version keeps playing",
+       ctx do
+    kick = Path.join(ctx.tmp_dir, "kick.wav")
+    File.write!(kick, "not a sound\n")
+
+    first =
+      load(
+        ctx,
+        "import Mx\nsong(tempo: 6000, music: part(:melody, loop(1, fn _, _ -> seq([note(60, 0), rest(1)]) end)))\n"
+      )
+
+    broken =
+      load(
+        ctx,
+        "import Mx\nsong(tempo: 6000, music: part(:melody, loop(1, fn _, _ -> seq([sample(#{inspect(kick)}, 0), rest(1)]) end)))\n"
+      )
+
+    {band, _} = start(first, ctx)
+    receive_notes(1)
+
+    output =
+      capture_io(:stderr, fn ->
+        Band.switch(band, broken)
+        assert Enum.map(receive_notes(5), &elem(&1, 1)) == List.duplicate(60.0, 5)
+      end)
+
+    assert output =~ "sample file #{kick} cannot play: it is not a FLAC, WAV or AIFF file"
+    assert output =~ "melody"
+    assert output =~ "keeps playing"
+  end
+
+  @tag :tmp_dir
   test "a new version whose pass fails is refused, and the previous version keeps playing", ctx do
     first =
       load(

@@ -851,6 +851,16 @@ defmodule Mx.MusicTest do
     end
 
     @tag :tmp_dir
+    test "a sample file mx cannot read is refused when the song loads, naming the file and why",
+         ctx do
+      kick = Path.join(ctx.tmp_dir, "kick.wav")
+      File.write!(kick, "not a sound\n")
+      path = write(ctx, "song(music: part(:drums, sample(#{inspect(kick)}, 1)))")
+      assert {:error, message} = Song.load(path)
+      assert message =~ "sample file #{kick} cannot play: it is not a FLAC, WAV or AIFF file"
+    end
+
+    @tag :tmp_dir
     test "an option samples do not have is refused", ctx do
       path = write(ctx, "song(music: part(:drums, sample(:bd_haus, 1, relase: 1)))")
       assert {:error, message} = Song.load(path)

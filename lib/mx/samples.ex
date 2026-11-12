@@ -43,7 +43,15 @@ defmodule Mx.Samples do
 
   def path(file, dir) when is_binary(file) and is_binary(dir) do
     path = Path.expand(file)
-    if File.exists?(path), do: {:ok, path}, else: {:error, "sample file #{file} does not exist"}
+
+    if File.exists?(path) do
+      case Mx.Engine.Mxs.Native.check_sample(path) do
+        {:ok, {}} -> {:ok, path}
+        {:error, reason} -> {:error, "sample file #{file} cannot play: #{reason}"}
+      end
+    else
+      {:error, "sample file #{file} does not exist"}
+    end
   end
 
   @doc "Downloads the files of the pack that are missing, with its licence, and returns `{:ok, count}` or `{:error, file, reason, count}`."
