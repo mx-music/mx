@@ -108,6 +108,43 @@ defmodule Mx.WindsTest do
     end
   end
 
+  # The median dip in dB at a slur over the Philharmonia's legato phrases, with a note mid-range to slur from; the clarinet's and oboe's from the bass clarinet's and cor anglais', the trumpet's from the trombone's and horn's.
+  # The tuba, whose lowest notes dip 6 dB at most, is left out.
+  @dips %{
+    clarinet: {-6.0, 62},
+    oboe: {-6.7, 69},
+    bassoon: {-6.8, 50},
+    tenor_sax: {-8.9, 62},
+    trumpet: {-13.7, 67},
+    trombone: {-14.0, 55},
+    horn: {-13.4, 60}
+  }
+
+  for {synth, {dip, note}} <- @dips do
+    @synth synth
+    @dip dip
+    @note note
+
+    test "#{synth} dips within 3 dB of the Philharmonia's legato phrases at each slur", ctx do
+      steps =
+        for step <- [0, 2, 4, 2, 7, 5, 4, 0, -3, 0, 5, 2, 9, 7, 4, 0], do: {@note + step, 0.3}
+
+      sound = slurred(ctx, @synth, steps, 0.6, 0)
+      levels = sound |> windows(div(@rate, 200), div(@rate, 100)) |> Enum.map(&db/1)
+
+      dips =
+        for i <- 1..(length(steps) - 1) do
+          at = round(i * 0.3 * 200)
+          before = levels |> Enum.slice((at - 40)..(at - 10)) |> median()
+          Enum.min(Enum.slice(levels, (at - 16)..(at + 16))) - before
+        end
+
+      assert_in_delta median(dips), @dip, 3, "median dip #{median(dips)} dB at #{inspect(dips)}"
+    end
+  end
+
+  defp median(values), do: Enum.at(Enum.sort(values), div(length(values), 2))
+
   defp steps(words) do
     words
     |> Enum.chunk_every(2)
@@ -117,12 +154,14 @@ defmodule Mx.WindsTest do
     end)
   end
 
-  defp slurred(ctx, synth, [{first, held} | rest], vel) do
+  defp slurred(ctx, synth, steps, vel, slide \\ 0.02)
+
+  defp slurred(ctx, synth, [{first, held} | rest], vel, slide) do
     total = held + Enum.sum(Enum.map(rest, &elem(&1, 1)))
 
     {changes, _} =
       Enum.map_reduce(rest, held, fn {note, seconds}, at ->
-        {{at, note: note / 1, note_slide: 0.02}, at + seconds}
+        {{at, note: note / 1, note_slide: slide}, at + seconds}
       end)
 
     Mxs.render_note(
