@@ -38,18 +38,21 @@ The horn and the tuba are measured from VSCO 2's held notes, so their scores are
 
 | Instrument | Recordings | Before | Physical model |
 | --- | --- | --- | --- |
-| clarinet | Iowa | 139.95 | 68.53 |
-| flute | Iowa | 46.56 | 431.50 |
-| oboe | Iowa | 109.31 | 46.08 |
-| bassoon | Iowa | 175.65 | 149.29 |
-| trumpet | Iowa | 292.58 | 181.10 |
-| trombone | Iowa | 477.61 | 330.43 |
-| horn | VSCO 2 | 1561 | 250 |
-| tuba | VSCO 2 | 1569 | 384 |
-| tenor_sax | VCSL | 29.53 | 78.78 |
+| clarinet | Iowa | 139.95 | 68.45 |
+| flute | Iowa | 46.56 | 432.38 |
+| oboe | Iowa | 109.31 | 42.20 |
+| bassoon | Iowa | 175.65 | 36.29 |
+| trumpet | Iowa | 292.58 | 5.89 |
+| trombone | Iowa | 477.61 | 36.62 |
+| horn | VSCO 2 | 1561 | 185 |
+| tuba | VSCO 2 | 1569 | 163 |
+| tenor_sax | VCSL | 29.53 | 12.13 |
 
 - The flute was fitted to VSCO 2's flute and to played flutes from Wikimedia Commons, and judged by ear, so it reads 10 to 20 dB quieter than Iowa's from 400 Hz to 2.5 kHz and up to 35 dB quieter in Iowa's breath noise.
-- The tenor sax speaks 94 percent slower than VCSL's at mf and 223 percent at ff, as a conical reed grows slowly from its threshold; a stronger tongue, a faster breath or a stronger breath each scored worse.
+- The conical winds' missing apex is 0.3 of their length; at 0.15, as first, most of their notes fell into a regime with two closings of the reed a period, their fundamental 20 to 40 dB under the second harmonic, and the trumpet's high notes measured up to 140 cents off.
+- With the apex at 0.3, every conical wind's bands, noise and rise were fitted again at each dynamic, the breath too where the attack missed, and the levels set back to the loudness each had before.
+- The tenor sax's attack is within 20 percent of VCSL's, and its short notes sound.
+- The trombone's fundamental from C3 to B3 is 9 to 13 dB weaker against its second harmonic than Iowa's, as its fundamentals from E2 to Eb3 share the 80 to 160 Hz band with the lowest note the fit measures against.
 
 ## The cello with a convolved body and recorded onsets
 
