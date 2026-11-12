@@ -2030,10 +2030,13 @@ defmodule Mx.DesignsTest do
     end
   end
 
+  # The reed and brass winds, their attacks fitted to their recordings', take up to half a second to settle, so their pitch is compared from after that.
+  @spoken 0.5
+
   test "a clarinet has no vibrato by default, and vibrato grows as the note holds", ctx do
     still = render(ctx, :clarinet, [note: 69, sustain: 4], 4.5)
     held = render(ctx, :clarinet, [note: 69, sustain: 4, vibrato: 0.25], 4.5)
-    assert wobble(held, 3.0, 3.9) > wobble(held, 0.05, 0.9) * 2
+    assert wobble(held, 3.0, 3.9) > wobble(held, @spoken, 0.9) * 2
     assert Held.note(held, @rate, 69).vibrato != nil
     assert Held.note(still, @rate, 69).vibrato == nil
   end
@@ -2126,7 +2129,7 @@ defmodule Mx.DesignsTest do
   test "an oboe has no vibrato by default, and vibrato grows as the note holds", ctx do
     still = render(ctx, :oboe, [note: 69, sustain: 4], 4.5)
     held = render(ctx, :oboe, [note: 69, sustain: 4, vibrato: 0.25], 4.5)
-    assert wobble(held, 3.0, 3.9) > wobble(held, 0.05, 0.9) * 2
+    assert wobble(held, 3.0, 3.9) > wobble(held, @spoken, 0.9) * 2
     assert Held.note(held, @rate, 69).vibrato != nil
     assert Held.note(still, @rate, 69).vibrato == nil
   end
@@ -2237,7 +2240,7 @@ defmodule Mx.DesignsTest do
   test "a bassoon has no vibrato by default, and vibrato grows as the note holds", ctx do
     still = render(ctx, :bassoon, [note: 50, sustain: 4], 4.5)
     held = render(ctx, :bassoon, [note: 50, sustain: 4, vibrato: 0.25], 4.5)
-    assert wobble(held, 3.0, 3.9) > wobble(held, 0.05, 0.9) * 2
+    assert wobble(held, 3.0, 3.9) > wobble(held, @spoken, 0.9) * 2
     assert Held.note(held, @rate, 50).vibrato != nil
     assert Held.note(still, @rate, 50).vibrato == nil
   end
@@ -2390,7 +2393,7 @@ defmodule Mx.DesignsTest do
   test "a tenor_sax has no vibrato by default, and vibrato grows as the note holds", ctx do
     still = render(ctx, :tenor_sax, [note: 56, sustain: 4], 4.5)
     held = render(ctx, :tenor_sax, [note: 56, sustain: 4, vibrato: 1], 4.5)
-    assert wobble(held, 3.0, 3.9) > wobble(held, 0.05, 0.9) * 2
+    assert wobble(held, 3.0, 3.9) > wobble(held, @spoken, 0.9) * 2
     assert Held.note(held, @rate, 56).vibrato != nil
     assert Held.note(still, @rate, 56).vibrato == nil
   end
@@ -2495,7 +2498,7 @@ defmodule Mx.DesignsTest do
   test "a trumpet has no vibrato by default, and vibrato grows as the note holds", ctx do
     still = render(ctx, :trumpet, [note: 65, sustain: 4], 4.5)
     held = render(ctx, :trumpet, [note: 65, sustain: 4, vibrato: 0.1], 4.5)
-    assert wobble(held, 3.0, 3.9) > wobble(held, 0.05, 0.9) * 2
+    assert wobble(held, 3.0, 3.9) > wobble(held, @spoken, 0.9) * 2
     assert Held.note(held, @rate, 65).vibrato != nil
     assert Held.note(still, @rate, 65).vibrato == nil
   end
@@ -2605,7 +2608,7 @@ defmodule Mx.DesignsTest do
   test "a trombone has no vibrato by default, and vibrato grows as the note holds", ctx do
     still = render(ctx, :trombone, [note: 53, sustain: 4], 4.5)
     held = render(ctx, :trombone, [note: 53, sustain: 4, vibrato: 0.2], 4.5)
-    assert wobble(held, 3.0, 3.9) > wobble(held, 0.05, 0.9) * 2
+    assert wobble(held, 3.0, 3.9) > wobble(held, @spoken, 0.9) * 2
     assert Held.note(held, @rate, 53).vibrato != nil
     assert Held.note(still, @rate, 53).vibrato == nil
   end
@@ -2725,7 +2728,7 @@ defmodule Mx.DesignsTest do
   test "a horn has no vibrato by default, and vibrato grows as the note holds", ctx do
     still = render(ctx, :horn, [note: 53, sustain: 4], 4.5)
     held = render(ctx, :horn, [note: 53, sustain: 4, vibrato: 0.1], 4.5)
-    assert wobble(held, 3.0, 3.9) > wobble(held, 0.05, 0.9) * 2
+    assert wobble(held, 3.0, 3.9) > wobble(held, @spoken, 0.9) * 2
     assert Held.note(held, @rate, 53).vibrato != nil
     assert Held.note(still, @rate, 53).vibrato == nil
   end
@@ -2833,7 +2836,7 @@ defmodule Mx.DesignsTest do
   test "a tuba has no vibrato by default, and vibrato grows as the note holds", ctx do
     still = render(ctx, :tuba, [note: 41, sustain: 4], 4.5)
     held = render(ctx, :tuba, [note: 41, sustain: 4, vibrato: 0.1], 4.5)
-    assert wobble(held, 3.0, 3.9) > wobble(held, 0.05, 0.9) * 2
+    assert wobble(held, 3.0, 3.9) > wobble(held, @spoken, 0.9) * 2
     assert Held.note(held, @rate, 41).vibrato != nil
     assert Held.note(still, @rate, 41).vibrato == nil
   end
