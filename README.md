@@ -294,6 +294,12 @@ mx examples/solo/cabasa.exs
 mx examples/solo/bongos.exs
 ```
 
+`examples/surdo/solo.exs` is the three surdos of a samba bateria on their own, in 2/4: the surdo de primeira holds the marcação, muted on the first beat of each bar and open on the second, the surdo de segunda answers it open on the first beat, and the surdo de terceira cuts across them in sixteenths.
+
+```sh
+mx examples/surdo/solo.exs
+```
+
 `examples/solo/cajon.exs` is the cajón on its own in a festejo of mx's own in 12/8, with bass tones, slaps and ghost strokes.
 
 ```sh
@@ -720,7 +726,7 @@ macOS may ask once whether the terminal can use the microphone.
 
 ## Synths
 
-accordion, acid, bandolim, bassoon, berimbau, brass, cabasa, cajon, cavaquinho, cello, clap, clarinet, clave, closed_hihat, cowbell, crash, double_bass, flute, fm, ganza, glockenspiel, guiro, guitar, harmonium, harp, high_agogo, high_bongo, high_conga, high_timbale, high_tom, horn, kick, low_agogo, low_bongo, low_conga, low_timbale, low_tom, marimba, mid_conga, mid_tom, noise, oboe, open_hihat, organ, pandeiro, pandeiro_heel, pandeiro_jingles, pandeiro_slap, pandeiro_thumb, piano, pluck, pulse, rimshot, saw, shaker, sitar, snare, square, supersaw, tabla, tabla_ghe, tabla_ke, tabla_na, tabla_tas, tabla_te, tabla_tun, tambourine, tambourine_shake, tanpura, tenor_sax, timbale_shell, timpani, tri, triangle, trombone, trumpet, tuba, vibraphone, viola, violin, xylophone.
+accordion, acid, bandolim, bassoon, berimbau, brass, cabasa, cajon, cavaquinho, cello, clap, clarinet, clave, closed_hihat, cowbell, crash, double_bass, flute, fm, ganza, glockenspiel, guiro, guitar, harmonium, harp, high_agogo, high_bongo, high_conga, high_timbale, high_tom, horn, kick, low_agogo, low_bongo, low_conga, low_timbale, low_tom, marimba, mid_conga, mid_tom, noise, oboe, open_hihat, organ, pandeiro, pandeiro_heel, pandeiro_jingles, pandeiro_slap, pandeiro_thumb, piano, pluck, pulse, rimshot, saw, shaker, sitar, snare, square, supersaw, surdo, tabla, tabla_ghe, tabla_ke, tabla_na, tabla_tas, tabla_te, tabla_tun, tambourine, tambourine_shake, tanpura, tenor_sax, timbale_shell, timpani, tri, triangle, trombone, trumpet, tuba, vibraphone, viola, violin, xylophone.
 
 They are mx's own designs, in mxs's `src/synths`.
 mx ships none of Sonic Pi's synths, its sc808 drum kit or its effects.
@@ -788,7 +794,7 @@ band          recordings          sitar at vel 0.6    difference
 - `cavaquinho` and `bandolim` have steel strings, brighter and shorter.
 - `bandolim` takes `tremolo`, how many times a held note is picked per beat; 0 picks it once.
 
-The drums are kick, snare, clap, closed_hihat, open_hihat, low_tom, mid_tom, high_tom, rimshot and the crash cymbal, crash, the tambourine, struck as tambourine or shaken as tambourine_shake, the triangle, triangle, for Latin music cowbell, clave, low_conga, mid_conga, high_conga, low_bongo, high_bongo, low_timbale, high_timbale, timbale_shell, played on the timbale's shell for cáscara, and guiro, for samba and maracatu the agogô's two bells, low_agogo and high_agogo, and the ganza and a large shaker, the cabasa, the cajón, cajon, and for choro the pandeiro, played four ways: pandeiro_thumb for its low tone, pandeiro_jingles, pandeiro_slap and pandeiro_heel, and for Hindustani music the tabla, its dayan played as tabla_na, tabla_tun, tabla_te and tabla_tas and its bayan as tabla_ghe and tabla_ke, and for capoeira the berimbau, berimbau.
+The drums are kick, snare, clap, closed_hihat, open_hihat, low_tom, mid_tom, high_tom, rimshot and the crash cymbal, crash, the tambourine, struck as tambourine or shaken as tambourine_shake, the triangle, triangle, for Latin music cowbell, clave, low_conga, mid_conga, high_conga, low_bongo, high_bongo, low_timbale, high_timbale, timbale_shell, played on the timbale's shell for cáscara, and guiro, for samba and maracatu the surdo, surdo, the agogô's two bells, low_agogo and high_agogo, and the ganza and a large shaker, the cabasa, the cajón, cajon, and for choro the pandeiro, played four ways: pandeiro_thumb for its low tone, pandeiro_jingles, pandeiro_slap and pandeiro_heel, and for Hindustani music the tabla, its dayan played as tabla_na, tabla_tun, tabla_te and tabla_tas and its bayan as tabla_ghe and tabla_ke, and for capoeira the berimbau, berimbau.
 - A drum plays its own pitch with `hit()`, or `hit(amp: 0.5)` with options, and takes `note` to retune it, `amp` and `pan`.
 - `low_conga`, `mid_conga` and `high_conga` take `vel`, how hard the drum is struck: harder is louder and brighter, as on the tumba, conga and quinto of Versilian Studios' VSCO 2 Community Edition they are measured from. They take `mute`, from 0 for an open tone to 1 for a stroke damped as the recordings' finger taps are, 24 to 32 dB quieter and ringing mostly above 400 Hz, and `slap`, from 0 for an open tone to 1 for a slap, which the recordings don't have.
 - `low_agogo` and `high_agogo` take `vel`, from 0 to 1, how hard the bell is struck: harder is louder and brighter, as on the Versilian Community Sample Library's agogô they are measured from.
@@ -801,6 +807,7 @@ The drums are kick, snare, clap, closed_hihat, open_hihat, low_tom, mid_tom, hig
 - `cabasa` takes `vel`, how hard it is struck, and `rub: 1` to turn the beads against the cylinder for its `sustain` instead of striking them; it is measured from the cabasa of the Versilian Community Sample Library.
 - `cajon` takes `vel`, how hard it is played, and `slap`, from 0 for the bass tone to 1 for the slap, as the congas do; it is measured from the cajón of the Versilian Community Sample Library.
 - `low_bongo` and `high_bongo` take `vel`, how hard the drum is struck, and `muted: 1` for a muted stroke; they are measured from the bongos of the Versilian Community Sample Library, whose muted strokes ring about as long as the open ones.
+- `surdo` is the large drum that holds samba's beat, struck with a felt mallet, and takes `vel`, how hard it is struck, and `muted: 1` for the stroke with the hand on the head, which loses the drum's lowest ring, sounds higher and fades in half the time. With no `note` it is the surdo de primeira, ringing on 66.6 Hz with a ring at twice that 10 dB down; `note` tunes it, so `note: 41` and `note: 45` are the higher surdos de segunda and de terceira. It is measured from three loops by plotzki on Freesound, and compared with igorfiche01's surdo, a higher drum.
 - `snare` takes `vel`, how hard it is struck: harder is louder, puts more into the head and less into the wires, and the softest strokes are dark; it is measured from the snare of Versilian Studios' VSCO 2 Community Edition with its snares on.
 - `crash` takes `vel`, how hard it is struck: harder is louder and dies sooner below 1.2 kHz, as on the crash cymbal of Versilian Studios' VSCO 2 Community Edition it is measured from; it rings for 9 seconds and fades over one, and a shorter `sustain` and `release` choke it.
 - `closed_hihat` and `open_hihat` take `vel`, how hard the hi-hat is struck: harder is louder and brighter, as on the hi-hat of the Versilian Community Sample Library they are measured from; the open one rings for 5 seconds, and a shorter `sustain` and `release` close it, as the pedal does.

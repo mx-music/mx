@@ -3409,6 +3409,59 @@ defmodule Mx.DesignsTest do
     end
   end
 
+  # Measured with mix mx.measure --hits --partials 4 from Freesound's preview of plotzki's "X Surdo 2Barb.aiff", four open strokes:
+  # each band's level as struck against the loudest band, and the seconds it fades 60 dB in.
+  @surdo %{
+    {80, 160} => {-3.7, 1.37},
+    {160, 250} => {0.0, 1.18},
+    {250, 400} => {-8.8, 1.23},
+    {400, 630} => {-8.1, 1.81},
+    {630, 1000} => {-12.6, 2.42},
+    {1000, 1600} => {-19.3, 2.40},
+    {1600, 2500} => {-29.3, 2.49},
+    {2500, 4000} => {-36.2, 3.41}
+  }
+
+  test "the surdo's open stroke follows plotzki's bands and fades", ctx do
+    hit = Hits.hit(render(ctx, :surdo, [], 4), @rate, nil)
+    measured = Map.new(hit.bands, &{&1.band, &1})
+
+    for {band, {level, fade}} <- @surdo do
+      %{level: synth_level, fade: synth_fade} = measured[band]
+      assert_in_delta synth_level, level, 6, "#{inspect(band)} at #{synth_level} dB"
+      assert_in_delta synth_fade / fade, 1, 0.3, "#{inspect(band)} fades in #{synth_fade} s"
+    end
+  end
+
+  # plotzki's open strokes ring on 66.4 to 67.5 Hz in 36127 and 36110, with a peak at twice it about 10 dB down.
+  test "the surdo's open stroke rings on 66.6 Hz with a peak at twice it, and the muted one higher and shorter",
+       ctx do
+    [lowest, twice | _] = Hits.hit(render(ctx, :surdo, [], 4), @rate, 36, partials: 6).partials
+    assert_in_delta lowest.hz / 66.6, 1, 0.03
+    assert_in_delta twice.hz / (2 * lowest.hz), 1, 0.03
+    assert twice.level < -6 and twice.level > -14, "twice the lowest at #{twice.level} dB"
+
+    muted = Hits.hit(render(ctx, :surdo, [muted: 1], 4), @rate, 36, partials: 6)
+    assert Enum.all?(muted.partials, &(&1.hz > 110))
+
+    open_fade =
+      Enum.find(Hits.hit(render(ctx, :surdo, [], 4), @rate, nil).bands, &(&1.band == {80, 160})).fade
+
+    muted_fade = Enum.find(muted.bands, &(&1.band == {80, 160})).fade
+    assert muted_fade <= open_fade / 2, "the muted stroke fades in #{muted_fade} s"
+  end
+
+  # igorfiche01's surdo, "AKG 414 Surdo Processed.wav", rings on 85.9 Hz in the median of its 18 open strokes.
+  test "the surdo tuned to F2 rings as igorfiche01's higher surdo does, and is louder struck harder",
+       ctx do
+    [lowest | _] = Hits.hit(render(ctx, :surdo, [note: 41], 4), @rate, 41, partials: 6).partials
+    assert_in_delta lowest.hz / 85.9, 1, 0.03
+
+    soft = render(ctx, :surdo, [vel: 0.3], 1)
+    hard = render(ctx, :surdo, [vel: 1], 1)
+    assert rms(hard, 0, 0.5) > rms(soft, 0, 0.5) * 2
+  end
+
   test "a harder bongo stroke is louder by as much as VCSL's, and brighter", ctx do
     for {{drum, muted}, expected} <- @bongos_louder do
       soft = render(ctx, drum, [muted: muted, vel: 0.3], 1)

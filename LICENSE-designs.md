@@ -32,6 +32,7 @@ The ganza and the shaker are measured from the small and the large shaker record
 The cabasa is measured from the cabasa recordings of the same library, under CC0; no audio from them is part of mx.
 The cajon is measured from the cajón recordings of the same library, under CC0; no audio from them is part of mx.
 The bongos, low_bongo and high_bongo, are measured from the bongo recordings of the same library, under CC0; no audio from them is part of mx.
+The surdo is measured from three loops by plotzki on Freesound, "X Surdo 4Bar D.aiff", https://freesound.org/people/plotzki/sounds/36127/, "X  Surdo 4BAR F.aiff", https://freesound.org/people/plotzki/sounds/36110/, and "X Surdo 2Barb.aiff", https://freesound.org/people/plotzki/sounds/36126/, and compared with "AKG 414 Surdo Processed.wav" by igorfiche01 on Freesound, https://freesound.org/people/igorfiche01/sounds/394583/, all under Creative Commons 0; no audio from them is part of mx.
 The snare is measured from the snare drum recordings of Versilian Studios' VSCO 2 Community Edition, https://github.com/sgossner/VSCO-2-CE, with its snares on, under CC0; no audio from them is part of mx.
 The crash cymbal, crash, is measured from the crash cymbal recordings of Versilian Studios' VSCO 2 Community Edition, https://github.com/sgossner/VSCO-2-CE, under CC0; no audio from them is part of mx.
 The hi-hats, closed_hihat and open_hihat, are measured from the hi-hat recordings of Versilian Studios' Versilian Community Sample Library, https://github.com/sgossner/VCSL, under CC0; no audio from them is part of mx.
