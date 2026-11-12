@@ -70,6 +70,14 @@ mx prints the same report as for a recording, and refuses a file that exists unl
 A render sends no MIDI or OSC and has no input, so mx names each part that sends MIDI or OSC, or waits for input, and leaves it out.
 `--render` cannot go with `--record`, nor with a song that has `live_audio`.
 
+`examples/tranquility_base.exs` is made only of public recordings, with no synth: VCSL's mbira dzaVadzimu plays two interlocking lines as a sampled instrument, its drums choose strengths and alternate takes, its ocean drum and wine glasses play normalized underneath, and NASA's Apollo and Sputnik recordings are cut at seconds, sliced and fitted to the beat over it. It needs two of VCSL's folders downloaded once, 1.5 GB together, and NASA's recordings ship beside it:
+
+```sh
+mx samples download "sgossner/VCSL@c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e:Idiophones"
+mx samples download "sgossner/VCSL@c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e:Membranophones"
+mx examples/tranquility_base.exs
+```
+
 `examples/ambient.exs` is a demo to start from, a slow ambient piece of pads, keys, bells and samples through reverb and echo:
 
 ```sh
@@ -648,7 +656,7 @@ These are music too, placed like notes:
 - Repeated notes on one key and strength play its takes in turn, starting again after the last. Each pass carries on the count as though the passes before it played the key as often, so a pass plays the same takes every time and `mix mx.print` shows the ones that play. Files of one note and strength are the takes of one key, in the order of their take and then their name.
 - An instrument with no notes in its file names, such as a drum, plays with `hit`, choosing strength and take the same way.
 - A note lasts its length, then fades over its `release`, and a note longer than its recording ends with the recording. A sampled instrument takes `vel`, `amp`, `pan`, `attack`, `decay`, `sustain`, `release` and the levels, and slides for `amp` and `pan`, and plays in chords, with `strum`, `defaults:` and `fx:`; it works out `rate`, `start` and `finish` itself.
-- `sampled([{"low.wav", note: :c2}, {"high.wav", note: :c3, strength: 2, take: 1}])` lists the files of a collection named otherwise, each with its note, strength and take.
+- `sampled([{"low.wav", note: :c2}, {"high.wav", note: :c3, strength: 2, take: 1}])` lists the files of a collection named otherwise, each with its note, strength and take, and reads what a file does not give from its name. `sampled({:github, repo, ref, folder})` plays a folder of a GitHub repository, downloaded when the song loads if it is not in the cache yet, and a listed file can be `{:github, repo, ref, path}` too.
 - A folder with no files whose names carry a note, a strength or a take, and a listed file that does not exist, are refused when the song loads, naming the part and the folder or file.
 - The samples a song's music names are checked and loaded before it plays, so the first note is on time, and an unknown name, a missing file or a file mx cannot read is refused with its line and the reason; a sample a loop names only while a pass runs is loaded then, and plays from its next pass.
 - `midi(60, 1, velocity: 90, channel: 2)` sends a note on and, a beat later, its note off, to the port the part's `midi:` names; `velocity` goes from 0 to 127 and is 100 by default, and `channel` from 1 to 16 and is 1 by default.

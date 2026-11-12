@@ -16,13 +16,25 @@ defmodule Mx.Sampled do
   # The sample players' options, but for the rate, start and finish a sampled instrument works out itself, and with vel.
   @not_options [:rate, :rate_slide, :start, :finish]
 
-  @doc "The instrument whose recordings are in the files of `folder`, or listed as `{path, note: note, strength: strength, take: take}`, each given or not; its files are read by `load/1`."
+  @doc """
+  The instrument whose recordings are in the files of `folder`, a folder of a GitHub repository as `{:github, repo, ref, folder}`, or listed as `{file, note: note, strength: strength, take: take}`; its files are read by `load/1`.
+  A listed file is a path or `{:github, repo, ref, path}`, and what it does not give is read from its name.
+  """
   def new(folder) when is_binary(folder), do: %__MODULE__{source: folder}
 
+  def new({:github, _repo, _ref, _folder} = folder) do
+    case Mx.Samples.check_github(folder) do
+      :ok -> %__MODULE__{source: folder}
+      {:error, message} -> raise ArgumentError, message
+    end
+  end
+
   def new(files) when is_list(files) and files != [] do
+    files = Enum.map(files, &if(match?({_, opts} when is_list(opts), &1), do: &1, else: {&1, []}))
+
     for file <- files do
       case file do
-        {path, opts} when is_binary(path) and is_list(opts) ->
+        {path, opts} when is_binary(path) or (is_tuple(path) and elem(path, 0) == :github) ->
           case Enum.find(Keyword.keys(opts), &(&1 not in [:note, :strength, :take])) do
             nil -> :ok
             option -> raise ArgumentError, "sampled lists a file with no option #{option}"
@@ -45,9 +57,57 @@ defmodule Mx.Sampled do
   end
 
   @doc "Reads the instrument's files into its keys, or returns `{:error, message}` naming the folder or the file."
-  def load(%__MODULE__{source: folder} = sampled) when is_binary(folder) do
-    dir = Path.expand(folder)
+  def load(%__MODULE__{source: {:github, repo, ref, folder}} = sampled) do
+    dir = Mx.GitHub.local(repo, ref, folder)
 
+    downloaded =
+      if File.ls(dir) in [{:ok, []}, {:error, :enoent}],
+        do: Mx.Samples.download_source("#{repo}@#{ref}:#{folder}"),
+        else: {:ok, nil}
+
+    case downloaded do
+      {:ok, message} ->
+        if message, do: IO.puts(message)
+        load_folder(sampled, dir, "#{folder} of #{repo}")
+
+      {:error, message} ->
+        {:error, "cannot download folder #{folder} of #{repo}: #{message}"}
+    end
+  end
+
+  def load(%__MODULE__{source: folder} = sampled) when is_binary(folder) do
+    load_folder(sampled, Path.expand(folder), folder)
+  end
+
+  def load(%__MODULE__{source: files} = sampled) when is_list(files) do
+    found =
+      Enum.reduce_while(files, [], fn {file, opts}, found ->
+        case local(file) do
+          {:ok, path} ->
+            {:cont, [{path, Map.merge(describe(Path.basename(path)), listed(opts))} | found]}
+
+          {:error, message} ->
+            {:halt, {:error, message}}
+        end
+      end)
+
+    case found do
+      {:error, message} -> {:error, message}
+      found -> {:ok, %{sampled | keys: keys(Enum.reverse(found))}}
+    end
+  end
+
+  defp local({:github, _, _, _} = file) do
+    with {:error, message} <- Mx.Samples.path(file), do: {:error, message}
+  end
+
+  defp local(path) do
+    if File.regular?(Path.expand(path)),
+      do: {:ok, Path.expand(path)},
+      else: {:error, "sampled file #{path} does not exist"}
+  end
+
+  defp load_folder(sampled, dir, folder) do
     files =
       for path <- dir |> Path.join("*") |> Path.wildcard() |> Enum.sort(),
           File.regular?(path),
@@ -61,17 +121,6 @@ defmodule Mx.Sampled do
 
       files ->
         {:ok, %{sampled | keys: keys(files)}}
-    end
-  end
-
-  def load(%__MODULE__{source: files} = sampled) when is_list(files) do
-    case Enum.find(files, fn {path, _} -> not File.regular?(Path.expand(path)) end) do
-      nil ->
-        files = for {path, opts} <- files, do: {Path.expand(path), listed(opts)}
-        {:ok, %{sampled | keys: keys(files)}}
-
-      {path, _} ->
-        {:error, "sampled file #{path} does not exist"}
     end
   end
 
@@ -163,6 +212,10 @@ defmodule Mx.Sampled do
 
   defimpl String.Chars do
     def to_string(%{source: folder}) when is_binary(folder), do: "sampled instrument #{folder}"
+
+    def to_string(%{source: {:github, repo, _ref, folder}}),
+      do: "sampled instrument #{folder} of #{repo}"
+
     def to_string(_sampled), do: "sampled instrument"
   end
 end

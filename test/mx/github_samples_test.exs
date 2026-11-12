@@ -132,6 +132,62 @@ defmodule Mx.GitHubSamplesTest do
     assert output =~ "beat 0  sample #{@repo} #{@agogo}\n"
   end
 
+  test "a sampled instrument from a GitHub folder downloads it when the song loads, then plays it",
+       %{tmp_dir: dir} do
+    file = Path.join(dir, "song.exs")
+
+    File.write!(file, """
+    import Mx
+    song(music: part(:agogo, seq([hit(), rest(1), hit(), rest(1)]), synth: sampled({:github, #{inspect(@repo)}, #{inspect(@commit)}, #{inspect(@folder)}})))
+    """)
+
+    assert {{:ok, song}, output} = load(file)
+    assert output =~ ~r/^Downloaded 2 files to .*, and #{@repo}@#{@commit}:#{@folder} is complete\.\n$/
+    assert {:ok, %{events: events}} = Pass.events(hd(song.loops), 0)
+    played = for {_, {:sample, _, path}, _} <- events, do: Path.basename(path)
+    assert played == ["Agogo_High_v1_rr1_Mid.wav", "Agogo_Low_v1_rr1_Mid.wav"]
+    assert File.exists?(Mx.GitHub.local(@repo, @commit, @low))
+
+    cut_network()
+    Application.put_env(:mx, :github_api_url, "http://127.0.0.1:1")
+    assert {{:ok, _}, ""} = load(file)
+  end
+
+  test "a sampled instrument lists GitHub files, reading what they do not give from their names",
+       %{tmp_dir: dir} do
+    file = Path.join(dir, "song.exs")
+    drum = "Membranophones/Bass Drum 1/BDrumNew_hit_v2_rr1_Sum.wav"
+
+    File.write!(file, """
+    import Mx
+    files = [{:github, #{inspect(@repo)}, #{inspect(@commit)}, #{inspect(drum)}}, {{:github, #{inspect(@repo)}, #{inspect(@commit)}, #{inspect(@agogo)}}, strength: 9}]
+    song(music: part(:drum, seq([hit(vel: 0), rest(1), hit(vel: 1), rest(1)]), synth: sampled(files)))
+    """)
+
+    assert {{:ok, song}, output} = load(file)
+    assert output =~ "Downloading #{drum} from #{@repo}"
+    assert {:ok, %{events: events}} = Pass.events(hd(song.loops), 0)
+
+    assert for({_, {:sample, _, path}, _} <- events, do: Path.basename(path)) == [
+             "BDrumNew_hit_v2_rr1_Sum.wav",
+             "Agogo_High_v1_rr1_Mid.wav"
+           ]
+  end
+
+  test "a GitHub folder that cannot be downloaded is refused, naming the part", %{tmp_dir: dir} do
+    file = Path.join(dir, "song.exs")
+
+    File.write!(
+      file,
+      "import Mx\nsong(music: part(:x, hit(), synth: sampled({:github, #{inspect(@repo)}, \"no-such-ref\", \"Drums\"})))\n"
+    )
+
+    assert {{:error, message}, _} = load(file)
+
+    assert message =~
+             "part x: cannot download folder Drums of #{@repo}: #{@repo} has no ref no-such-ref"
+  end
+
   describe "downloading a collection" do
     test "a folder downloads every file into the cache a song plays from, then nothing", %{
       tmp_dir: dir

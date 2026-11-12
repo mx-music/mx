@@ -77,3 +77,9 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+## Recordings the examples play
+
+examples/tranquility_base.exs plays recordings of Versilian Studios' Versilian Community Sample Library, https://github.com/sgossner/VCSL, under CC0, which mx downloads from GitHub and does not ship.
+It also plays five of NASA's recordings, courtesy of NASA, from https://nssdc.gsfc.nasa.gov/planetary/sound/index.html, which ship in examples/tranquility_base as nasa.gov serves them: a11landing.aiff, a11step.aiff, a11liftoff.aiff, sputnik.wav and apollo_13_problem.wav.
+NASA's media guidelines, https://www.nasa.gov/nasa-brand-center/images-and-media/, say its media "generally are not subject to copyright in the United States", that "NASA should be acknowledged as the source of the material", and that commercial use may not "explicitly or implicitly convey NASA's endorsement of commercial goods or services"; for commercial use with an identifiable person, such as the astronauts' voices, "permission should be obtained from the person."
