@@ -138,7 +138,8 @@ defmodule Mix.Tasks.Mx.HumTest do
     end
   end
 
-  test "refuses a file it cannot read, and a file with no pitched sound", ctx do
+  test "refuses a file it cannot read, a file with no pitched sound, and one too short to follow",
+       ctx do
     missing = Path.join(ctx.tmp_dir, "missing.wav")
 
     assert_raise Mix.Error, "cannot read #{missing}", fn ->
@@ -156,6 +157,13 @@ defmodule Mix.Tasks.Mx.HumTest do
 
     assert_raise Mix.Error, "found no notes in #{noisy}", fn ->
       Mix.Tasks.Mx.Hum.run([noisy, "--tempo", "100"])
+    end
+
+    tone = for index <- 0..479, do: 0.5 * :math.sin(2 * :math.pi() * 440 * index / 48_000)
+    short = write_wav(ctx, "short.wav", tone, 48_000)
+
+    assert_raise Mix.Error, "found no notes in #{short}", fn ->
+      Mix.Tasks.Mx.Hum.run([short, "--tempo", "100"])
     end
   end
 

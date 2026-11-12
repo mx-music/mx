@@ -18,6 +18,9 @@ defmodule Mx.Engine.Mxs.Native do
   def load_sample(_engine, _path), do: :erlang.nif_error(:nif_not_loaded)
   def check_sample(_path), do: :erlang.nif_error(:nif_not_loaded)
   def sample_peak(_path), do: :erlang.nif_error(:nif_not_loaded)
+
+  def pitches(_samples, _rate, _lowest, _highest, _frame, _hop),
+    do: :erlang.nif_error(:nif_not_loaded)
   def start_effects(_engine, _effects), do: :erlang.nif_error(:nif_not_loaded)
   def stop_effects(_engine, _chain, _at), do: :erlang.nif_error(:nif_not_loaded)
   def render(_engine, _seconds), do: :erlang.nif_error(:nif_not_loaded)

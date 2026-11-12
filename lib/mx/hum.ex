@@ -2,8 +2,8 @@ defmodule Mx.Hum do
   @moduledoc """
   Turns a recording of one voice humming, singing or whistling a melody into notes on beats, and writes them as a song.
 
-  The recording is filtered below 7 kHz and resampled to 16 kHz, and its pitch is followed every 10 ms over 30 ms frames, from 60 Hz to 2500 Hz, which takes in a low hum and a high whistle, with YIN, from de Cheveigné and Kawahara's paper of 2002.
-  A frame has a pitch when YIN finds it periodic and the 10 ms at its middle are no more than 35 dB below the loudest frame and 20 dB below the loudest within 200 ms, so breath, clicks and noise have none, and neither does a dip between two notes sung at one pitch.
+  The recording is filtered below 7 kHz and resampled to 16 kHz, and its pitch is followed every 10 ms over 64 ms frames, from 60 Hz to 2500 Hz, which takes in a low hum and a high whistle, with pYIN, from Mauch and Dixon's paper of 2014, as the pyin crate implements it.
+  A frame has a pitch when pYIN finds it voiced and the 10 ms at its middle are no more than 35 dB below the loudest frame and 20 dB below the loudest within 200 ms, so breath, clicks and noise have none, and neither does a dip between two notes sung at one pitch.
 
   The pitch curve is cut into notes by the cheapest path through silence and the semitones, frame by frame, as Tony's note model does.
   A frame costs the square of its distance from the semitone, up to a cap, and moving to another note costs more than a vibrato or a quick slide spends away from it, so a note held with vibrato stays one note, at the semitone it centres on, and a slide is the note it starts on and the note it lands on.
@@ -17,14 +17,15 @@ defmodule Mx.Hum do
   """
 
   alias Mx.{Measure, Signal}
+  alias Mx.Engine.Mxs.Native
 
   @rate 16_000
   @hop 160
   @window 480
   @lowest_hz 60
+  @search_hz 50
   @highest_hz 2500
-  @threshold 0.15
-  @aperiodic 0.35
+  @frame 1024
   @floor_db -35
   @dip_db -20
   @around 20
@@ -54,7 +55,6 @@ defmodule Mx.Hum do
   def pitches(samples, rate) when is_list(samples) and is_integer(rate) do
     sound = samples |> resample(rate) |> List.to_tuple()
     longest = div(@rate, @lowest_hz)
-    shortest = div(@rate, @highest_hz)
     starts = 0..(tuple_size(sound) - @window - longest - 1)//@hop
 
     levels = Enum.map(starts, &level(sound, &1 + div(@window - @hop, 2)))
@@ -62,10 +62,19 @@ defmodule Mx.Hum do
     floor = loudest * 10 ** (@floor_db / 20)
     around = levels |> List.to_tuple() |> nearby_peaks()
 
-    [starts, levels, around]
-    |> Enum.zip_with(fn [start, level, peak] ->
-      if level > 0 and level >= floor and level >= peak * 10 ** (@dip_db / 20),
-        do: pitch(sound, start, shortest, longest)
+    # pYIN centres frame i on sample i * hop, so dropping half a window centres it on frame i's level.
+    # A frame with no clear period lands on pYIN's longest period, so it searches below the lowest pitch kept.
+    voiced =
+      sound
+      |> Tuple.to_list()
+      |> Enum.drop(div(@window, 2))
+      |> Native.pitches(@rate, @search_hz * 1.0, @highest_hz * 1.0, @frame, @hop)
+
+    [levels, around, voiced]
+    |> Enum.zip_with(fn [level, peak, hz] ->
+      if hz != nil and hz >= @lowest_hz and level > 0 and level >= floor and
+           level >= peak * 10 ** (@dip_db / 20),
+         do: 69 + 12 * :math.log2(hz / 440)
     end)
   end
 
@@ -166,55 +175,6 @@ defmodule Mx.Hum do
       )
     end
   end
-
-  # YIN: the difference between the frame and itself shifted by each lag, each normalized by the mean of the differences up to it; the pitch is the first lag whose normalized difference dips below the threshold, refined between samples.
-  defp pitch(sound, start, shortest, longest) do
-    frame = for index <- start..(start + @window + longest - 1), do: elem(sound, index)
-    own = Enum.take(frame, @window)
-
-    {differences, _} =
-      Enum.map_reduce(1..longest, tl(frame), fn _, shifted ->
-        difference = Enum.zip_reduce(own, shifted, 0.0, fn a, b, sum -> sum + (a - b) ** 2 end)
-        {difference, tl(shifted)}
-      end)
-
-    {normalized, _} =
-      differences
-      |> Enum.with_index(1)
-      |> Enum.map_reduce(0.0, fn {difference, lag}, sum ->
-        sum = sum + difference
-        {if(sum > 0, do: difference * lag / sum, else: 1.0), sum}
-      end)
-
-    normalized = List.to_tuple([1.0 | normalized])
-    lag = dip(normalized, shortest, longest)
-
-    if elem(normalized, lag) <= @aperiodic do
-      lag = refine(normalized, lag, longest)
-      69 + 12 * :math.log2(@rate / lag / 440)
-    end
-  end
-
-  defp dip(normalized, shortest, longest) do
-    case Enum.find(shortest..longest, &(elem(normalized, &1) < @threshold)) do
-      nil -> Enum.min_by(shortest..longest, &elem(normalized, &1))
-      lag -> descend(normalized, lag, longest)
-    end
-  end
-
-  defp descend(normalized, lag, longest) do
-    if lag < longest and elem(normalized, lag + 1) < elem(normalized, lag),
-      do: descend(normalized, lag + 1, longest),
-      else: lag
-  end
-
-  defp refine(normalized, lag, longest) when lag > 1 and lag < longest do
-    {a, b, c} = {elem(normalized, lag - 1), elem(normalized, lag), elem(normalized, lag + 1)}
-    curve = a - 2 * b + c
-    if curve > 0, do: lag + (a - c) / (2 * curve), else: lag
-  end
-
-  defp refine(_normalized, lag, _longest), do: lag
 
   # Viterbi through the states, keeping for each frame the cheapest way to reach each state.
   defp path(pitches, states) do

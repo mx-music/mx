@@ -292,6 +292,14 @@ fn sample_peak(path: String) -> Result<f64, String> {
     mxs::sample_peak(std::path::Path::new(&path)).map(f64::from)
 }
 
+/// The pitch in Hz of each frame of `samples` with pYIN, or nil where it finds the frame unvoiced; frame i is centred on sample `i * hop`.
+#[rustler::nif(schedule = "DirtyCpu")]
+fn pitches(samples: Vec<f64>, rate: u32, lowest: f64, highest: f64, frame: usize, hop: usize) -> Vec<Option<f64>> {
+    let mut executor = pyin::PYINExecutor::new(lowest, highest, rate, frame, None, Some(hop), None);
+    let (_, hz, voiced, _) = executor.pyin(&samples, f64::NAN, pyin::Framing::Center(pyin::PadMode::Constant(0.0)));
+    hz.into_iter().zip(voiced).map(|(hz, voiced)| voiced.then_some(hz)).collect()
+}
+
 #[rustler::nif]
 fn start_effects(resource: ResourceArc<EngineResource>, effects: Vec<(String, Term)>) -> NifResult<Result<u64, String>> {
     let effects = effects.into_iter().map(|(name, opts)| Ok((name, options(opts)?))).collect::<NifResult<Vec<_>>>()?;
