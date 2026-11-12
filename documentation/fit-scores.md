@@ -31,6 +31,26 @@ The harmonium's and the tanpura's are Freesound's public previews, as their desi
 The winds, brass, organ and harmonium score within 1% of scsynth, so they kept their designs and were not refitted.
 The bowed strings were refitted on mxs, as mx-00124 bows them on a waveguide of mxs's own instead of sc3-plugins' DWGBowed.
 
+## The winds as physical models
+
+mx-00127 plays the winds through physical models, and on 12 November 2026 they were scored again with mix mx.fit --check against each wind's reference recordings, at every dynamic they have.
+The horn and the tuba are measured from VSCO 2's held notes, so their scores are VSCO 2's, summed over pp, mf and ff, against 1561 and 1569 for the design before; the others are against the same recordings as the table above.
+
+| Instrument | Recordings | Before | Physical model |
+| --- | --- | --- | --- |
+| clarinet | Iowa | 139.95 | 68.53 |
+| flute | Iowa | 46.56 | 431.50 |
+| oboe | Iowa | 109.31 | 46.08 |
+| bassoon | Iowa | 175.65 | 149.29 |
+| trumpet | Iowa | 292.58 | 181.10 |
+| trombone | Iowa | 477.61 | 330.43 |
+| horn | VSCO 2 | 1561 | 250 |
+| tuba | VSCO 2 | 1569 | 384 |
+| tenor_sax | VCSL | 29.53 | 78.78 |
+
+- The flute was fitted to VSCO 2's flute and to played flutes from Wikimedia Commons, and judged by ear, so it reads 10 to 20 dB quieter than Iowa's from 400 Hz to 2.5 kHz and up to 35 dB quieter in Iowa's breath noise.
+- The tenor sax speaks 94 percent slower than VCSL's at mf and 223 percent at ff, as a conical reed grows slowly from its threshold; a stronger tongue, a faster breath or a stronger breath each scored worse.
+
 ## Worse on mxs
 
 - The flute's breath noise is 1 to 2 dB quieter between its harmonics from 250 to 400 Hz at pp and mf; its harmonics match scsynth's within 0.25 dB.
