@@ -162,10 +162,14 @@ defmodule Mx.RenderTest do
   @tag :timing
   @tag timeout: 600_000
   test "a render of dubwise holds what a recording of it holds", %{tmp_dir: dir} do
+    samples = Application.get_env(:mx, :samples_dir)
+    Application.put_env(:mx, :samples_dir, Mx.Samples.default_dir())
+    on_exit(fn -> Application.put_env(:mx, :samples_dir, samples) end)
     recorded = Path.join(dir, "recorded.wav")
     rendered = Path.join(dir, "rendered.wav")
-    # The song ends by itself, so Enter is never pressed.
-    silent = spawn(fn -> Process.sleep(:infinity) end)
+
+    # The song ends by itself, so Enter is never pressed: what the player prints is taken, and its wait for a line is never answered.
+    silent = spawn(&quiet/0)
     leader = Process.group_leader()
     Process.group_leader(self(), silent)
 
@@ -176,24 +180,48 @@ defmodule Mx.RenderTest do
     end
 
     assert {:ok, _} = render("examples/dubwise.exs", rendered)
-    assert_in_delta Recording.seconds(recorded), Recording.seconds(rendered), 0.25
+
+    # A recording starts as the engine does, before the song has loaded its samples, so both are compared from their first sound.
+    assert_in_delta seconds(recorded), seconds(rendered), 0.25
 
     for {a, b} <- Enum.zip(levels(recorded), levels(rendered)), a > -60 or b > -60 do
       assert_in_delta a, b, 1
     end
   end
 
+  defp quiet do
+    receive do
+      {:io_request, from, ref, {:put_chars, _, _}} -> send(from, {:io_reply, ref, :ok})
+      {:io_request, from, ref, {:put_chars, _, _, _, _}} -> send(from, {:io_reply, ref, :ok})
+      _ -> :ok
+    end
+
+    quiet()
+  end
+
+  # The seconds of a 32-bit float WAV file from its first sound on.
+  defp seconds(path) do
+    {samples, second} = sounding(path)
+    length(samples) / second
+  end
+
   # The level of each second of a 32-bit float WAV file in dB, from its first sound on.
   defp levels(path) do
+    {samples, second} = sounding(path)
+
+    for chunk <- Enum.chunk_every(samples, second, second, :discard) do
+      mean = Enum.sum(Enum.map(chunk, &(&1 * &1))) / second
+      10 * :math.log10(max(mean, 1.0e-12))
+    end
+  end
+
+  # The samples from the first sound on, and how many make a second; a recording is at the sound card's rate, a render at 48 kHz.
+  defp sounding(path) do
+    %{channels: channels, rate: rate} = Recording.read_wav(path)
     wav = File.read!(path)
     {at, _} = :binary.match(wav, "data")
     data = binary_part(wav, at + 8, byte_size(wav) - at - 8)
     samples = for <<x::little-float-32 <- data>>, do: x
-    samples = Enum.drop_while(samples, &(abs(&1) < 1.0e-4))
-
-    for second <- Enum.chunk_every(samples, 96_000, 96_000, :discard) do
-      mean = Enum.sum(Enum.map(second, &(&1 * &1))) / 96_000
-      10 * :math.log10(max(mean, 1.0e-12))
-    end
+    {Enum.drop_while(samples, &(abs(&1) < 1.0e-4)), rate * channels}
   end
 end
