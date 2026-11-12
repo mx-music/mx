@@ -213,6 +213,14 @@ defmodule Mx do
   defdelegate part(name, music, opts \\ []), to: Mx.Music
 
   @doc """
+  A sampled instrument, for a part's `synth:`: a folder of recordings whose names carry their note, strength and take, as VCSL names them, or a list of files, each with its own.
+
+      part(:mbira, seq(e4: 1, fs4: 1), synth: sampled("VCSL/Idiophones/Plucked Idiophones/Mbira dzaVadzimu Nyamaropa, Zimbabwe, Low B"))
+      part(:kick, steps("x.x.", 1), synth: sampled([{"kick_soft.wav", strength: 1}, {"kick_hard.wav", strength: 2}]))
+  """
+  defdelegate sampled(source), to: Mx.Sampled, as: :new
+
+  @doc """
   The song, which a song file ends with: its `music:`, its `tempo:`, 60 by default, and `live_audio:`, `osc_to:` and `osc_from:`.
 
       import Mx

@@ -626,6 +626,19 @@ These are music too, placed like notes:
 
 - `sample(:bd_haus, 1)` plays a sample of the pack by name, and `sample("kick.wav", 1)` a WAV, AIFF or FLAC file by path, then a beat passes. It takes `amp`, `pan`, `rate`, `start`, `finish`, `attack`, `decay`, `sustain`, `release`, `attack_level`, `decay_level` and `sustain_level`, and slides for `amp`, `pan` and `rate`: `rate: 0.5` plays at half speed an octave lower, a negative rate plays backwards, and `start` and `finish` pick a part of the sound from 0 to 1.
 - mx reads WAV files as 8, 16, 24 and 32-bit PCM and 32 and 64-bit float, AIFF and AIFF-C files as 8, 16, 24 and 32-bit PCM and 32 and 64-bit float, and FLAC files, mono or stereo at any sample rate; it knows each by its contents, not its name.
+- `synth: sampled(folder)` plays a part on a sampled instrument, recorded one key at a time, with `note` and `hit` as on a synth. mx reads each file's note, strength and take from its name, as Versilian Studios' VCSL names them: a note such as `C#3` or `Bb2`, a strength as `v` or `vl` and a number, and a take as `rr` and a number, so `MBira4_pluck_Main_E4_19_50_100_rr2.wav` is the mbira's E4, take 2. VCSL is under Creative Commons 0, at https://github.com/sgossner/VCSL:
+
+  ```elixir
+  mbira = sampled("VCSL/Idiophones/Plucked Idiophones/Mbira dzaVadzimu Nyamaropa, Zimbabwe, Low B")
+  part(:mbira, seq([note(:e4, 1), note(:fs4, 1), note(chord(:e3, :major), 2, strum: 0.05)]), synth: mbira)
+  ```
+
+- A note plays the recorded key nearest to it, the lower one on a tie, sped up or slowed down to sound at its pitch, cents included. `vel` from 0 to 1 picks a strength, the softest at 0 and the hardest at 1, spread evenly over the strengths recorded, and also scales the level as `amp` does; it is 1 unless given.
+- Repeated notes on one key and strength play its takes in turn, starting again after the last. Each pass carries on the count as though the passes before it played the key as often, so a pass plays the same takes every time and `mix mx.print` shows the ones that play. Files of one note and strength are the takes of one key, in the order of their take and then their name.
+- An instrument with no notes in its file names, such as a drum, plays with `hit`, choosing strength and take the same way.
+- A note lasts its length, then fades over its `release`, and a note longer than its recording ends with the recording. A sampled instrument takes `vel`, `amp`, `pan`, `attack`, `decay`, `sustain`, `release` and the levels, and slides for `amp` and `pan`, and plays in chords, with `strum`, `defaults:` and `fx:`; it works out `rate`, `start` and `finish` itself.
+- `sampled([{"low.wav", note: :c2}, {"high.wav", note: :c3, strength: 2, take: 1}])` lists the files of a collection named otherwise, each with its note, strength and take.
+- A folder with no files whose names carry a note, a strength or a take, and a listed file that does not exist, are refused when the song loads, naming the part and the folder or file.
 - The samples a song's music names are checked and loaded before it plays, so the first note is on time, and an unknown name, a missing file or a file mx cannot read is refused with its line and the reason; a sample a loop names only while a pass runs is loaded then, and plays from its next pass.
 - `midi(60, 1, velocity: 90, channel: 2)` sends a note on and, a beat later, its note off, to the port the part's `midi:` names; `velocity` goes from 0 to 127 and is 100 by default, and `channel` from 1 to 16 and is 1 by default.
 - `midi_cc(74, 64)` sends a controller change on `channel`, and `osc("/hello", [1, "a"])` an OSC message to the song's `osc_to:`, its arguments numbers and strings; neither takes time. A destination that cannot be reached prints one warning.

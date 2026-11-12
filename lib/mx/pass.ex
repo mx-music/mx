@@ -43,7 +43,7 @@ defmodule Mx.Pass do
       %{beat: beats, events: events} = Process.get(@key)
 
       if beats > 0 do
-        {:ok, %{events: Enum.reverse(events), beats: beats}}
+        {:ok, %{events: events |> Enum.reverse() |> take_turns(pass), beats: beats}}
       else
         {:error, "loop #{loop.name} never waits, so its pass has no length"}
       end
@@ -54,8 +54,26 @@ defmodule Mx.Pass do
     end
   end
 
+  # A sampled key plays its takes in turn, each pass carrying on as though the passes before it played the key as often, so a pass always plays the same takes.
+  defp take_turns(events, pass) do
+    played = Enum.frequencies(for {_, {:sampled, takes, _}, _} <- events, do: takes)
+
+    {events, _} =
+      Enum.map_reduce(events, %{}, fn
+        {beat, {:sampled, takes, rate}, opts}, turns ->
+          turn = Map.get(turns, takes, 0)
+          path = Enum.at(takes, rem(pass * played[takes] + turn, length(takes)))
+          {{beat, {:sample, path, path}, opts ++ [rate: rate]}, Map.put(turns, takes, turn + 1)}
+
+        event, turns ->
+          {event, turns}
+      end)
+
+    events
+  end
+
   @doc "Whether notes with these options would play on a synth with these defaults, as `:ok` or `{:error, message}`, checked as a play step checks them."
-  def check_play(synth, defaults, notes, opts) when is_atom(synth) and is_list(opts) do
+  def check_play(synth, defaults, notes, opts) when is_list(opts) do
     previous = Process.get(@key)
     Process.put(@key, %{beat: 0, events: [], count: 0, synth: synth, defaults: defaults})
 
@@ -82,7 +100,8 @@ defmodule Mx.Pass do
 
     case notes != [] && Enum.find(Keyword.keys(opts), &(not Synths.option?(synth, &1))) do
       option when is_atom(option) and option not in [nil, false] ->
-        raise ArgumentError, "synth #{synth} has no option #{option}"
+        owner = Synths.owner(synth)
+        raise ArgumentError, "#{owner} has no option #{option}"
 
       _ ->
         :ok
@@ -92,10 +111,30 @@ defmodule Mx.Pass do
       notes
       |> Enum.zip(note_opts(opts, length(notes), chord?))
       |> strum_order(strum)
-      |> Enum.with_index(fn {note, opts}, i -> record({note, opts}, i * abs(strum)) end)
+      |> Enum.with_index(fn {note, opts}, i ->
+        record(step(synth, note, opts), i * abs(strum))
+      end)
 
-    %Handle{target: {:sounds, indexes}, synth: synth}
+    %Handle{target: {:sounds, indexes}, synth: player(synth)}
   end
+
+  defp step(%Mx.Sampled{} = sampled, note, opts) do
+    {vel, opts} = Keyword.pop(opts, :vel, 1)
+
+    case Mx.Sampled.pick(sampled, note, vel) do
+      {:ok, {_key, takes, rate}} ->
+        {{:sampled, takes, rate}, Keyword.put(opts, :amp, Keyword.get(opts, :amp, 1) * vel)}
+
+      {:error, message} ->
+        raise ArgumentError, message
+    end
+  end
+
+  defp step(_synth, note, opts), do: {note, opts}
+
+  # A sampled instrument's notes play as samples, so changes reach them as they reach samples.
+  defp player(%Mx.Sampled{}), do: :stereo_player
+  defp player(synth), do: synth
 
   # Each note's options, taking its own value from an option given a list, one value per note as written.
   defp note_opts(opts, count, chord?) do
@@ -298,8 +337,8 @@ defmodule Mx.Pass do
     :ok
   end
 
-  def check_change(synth, opts) when is_atom(synth) and is_list(opts) do
-    owner = if synth == :stereo_player, do: "samples have", else: "synth #{synth} has"
+  def check_change(synth, opts) when is_list(opts) do
+    owner = if synth == :stereo_player, do: "samples have", else: Synths.owner(synth) <> " has"
     check_control(opts, &Synths.option?(synth, &1), &Synths.fixed?(synth, &1), owner)
     :ok
   end
@@ -308,7 +347,7 @@ defmodule Mx.Pass do
   def record_change(opts) when is_list(opts) do
     %{synth: synth} = Process.get(@key)
     check_change(synth, opts)
-    record({{:control, :part, synth}, control_values(opts)})
+    record({{:control, :part, player(synth)}, control_values(opts)})
     :ok
   end
 

@@ -322,8 +322,14 @@ defmodule Mx.Song do
     end
   end
 
+  defp sampled_files(%Mx.Sampled{keys: keys}) do
+    for {_note, strengths} <- keys, takes <- Tuple.to_list(strengths), path <- takes, do: path
+  end
+
+  defp sampled_files(_synth), do: []
+
   defp find_loop_samples(loop) do
-    found = Enum.map(loop.samples, &Samples.path/1)
+    found = Enum.map(loop.samples ++ sampled_files(loop.synth), &Samples.path/1)
 
     case Enum.find(found, &match?({:error, _}, &1)) do
       nil ->

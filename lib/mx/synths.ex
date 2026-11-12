@@ -17,13 +17,17 @@ defmodule Mx.Synths do
   @effect_buses [:in_bus, :out_bus]
   @not_playable [:live_audio_mono, :live_audio_stereo, :mono_player, :stereo_player, :recorder]
 
-  @doc "Whether a loop can play a synth."
+  @doc "Whether a loop can play a synth, a sampled instrument among them."
+  def exists?(%Mx.Sampled{}), do: true
+
   def exists?(synth) do
     is_atom(synth) and synth not in @not_playable and not effect_name?(synth) and
       Map.has_key?(catalog(), synth)
   end
 
   @doc "Whether a synth takes an option."
+  def option?(%Mx.Sampled{}, option) when is_atom(option), do: Mx.Sampled.option?(option)
+
   def option?(synth, option) when is_atom(synth) and is_atom(option) do
     Map.has_key?(Map.fetch!(catalog(), synth), option)
   end
@@ -114,23 +118,34 @@ defmodule Mx.Synths do
   end
 
   @doc "Whether an option picks a synth's sound when the note starts, so it cannot change while the note sounds: one that takes names, or one a clause of a synth written in Elixir matches on."
+  def fixed?(%Mx.Sampled{}, option), do: fixed?(:stereo_player, option)
+
   def fixed?(synth, option) do
     match?({:names, _}, limits() |> Map.get(synth, %{}) |> Map.get(option)) or
       option in Mx.Instrument.matched(synth)
   end
 
+  @doc "How messages name a synth or a sampled instrument."
+  def owner(%Mx.Sampled{} = sampled), do: to_string(sampled)
+  def owner(synth), do: "synth #{synth}"
+
   @doc "Refuses a number outside the range a synth's option takes, or a name it does not take, naming what it takes."
   def check_value(synth, option, value) do
-    limit = limits() |> Map.get(synth, %{}) |> Map.get(option)
+    limit = limit(synth, option)
 
     if within?(limit, value) do
       :ok
     else
       takes = takes(limit)
       value = inspect(value) |> String.trim_leading(":")
-      {:error, "synth #{synth} takes #{option} #{takes}, not #{value}"}
+      owner = owner(synth)
+      {:error, "#{owner} takes #{option} #{takes}, not #{value}"}
     end
   end
+
+  defp limit(%Mx.Sampled{}, :vel), do: {:range, 0, 1}
+  defp limit(%Mx.Sampled{}, option), do: limit(:stereo_player, option)
+  defp limit(synth, option), do: limits() |> Map.get(synth, %{}) |> Map.get(option)
 
   defp within?({:range, low, high}, value) when is_number(value),
     do: (low == nil or value >= low) and (high == nil or value <= high)

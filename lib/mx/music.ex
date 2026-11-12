@@ -406,6 +406,7 @@ defmodule Mx.Music do
     end
 
     part = struct(%Part{name: name, music: item(music)}, opts)
+    part = %{part | synth: load_sampled(name, part.synth)}
     synth = part.synth
 
     if not Synths.exists?(synth) do
@@ -451,6 +452,15 @@ defmodule Mx.Music do
 
     %{part | music: held(part.music, synth, part.defaults)}
   end
+
+  defp load_sampled(name, %Mx.Sampled{} = sampled) do
+    case Mx.Sampled.load(sampled) do
+      {:ok, sampled} -> sampled
+      {:error, message} -> raise ArgumentError, "part #{name}: #{message}"
+    end
+  end
+
+  defp load_sampled(_name, synth), do: synth
 
   defp check_defaults(%Part{name: name, synth: synth, defaults: defaults}) do
     if not Keyword.keyword?(defaults) do

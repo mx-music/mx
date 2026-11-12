@@ -187,7 +187,7 @@ defmodule Mx.RenderTest do
   defp levels(path) do
     wav = File.read!(path)
     {at, _} = :binary.match(wav, "data")
-    <<_::binary-size(at + 8), data::binary>> = wav
+    data = binary_part(wav, at + 8, byte_size(wav) - at - 8)
     samples = for <<x::little-float-32 <- data>>, do: x
     samples = Enum.drop_while(samples, &(abs(&1) < 1.0e-4))
 
