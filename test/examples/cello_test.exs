@@ -13,6 +13,18 @@ defmodule Mx.Examples.CelloTest do
     refute print(0) =~ "sample "
   end
 
+  test "the licence notes name the Iowa recordings the cello's onsets and body come from" do
+    notes = File.read!("LICENSE-designs.md")
+
+    assert notes =~
+             "https://theremin.music.uiowa.edu/MIScello.html, which may be downloaded and used for any projects, without restrictions"
+
+    assert notes =~ "mxs plays eighteen onsets cut from Iowa's bowed cello notes"
+
+    assert notes =~
+             "the cello body's impulse response, measured from the noise Iowa's bowed notes hold between their harmonics"
+  end
+
   test "the prelude breaks each chord across the strings over the open G, eight notes to a bow, without sliding" do
     assert print(0) =~
              ~r/\nbeat 0 +play 43 vel: 0.65, sustain: 1.9, release: 0.2, vibrato: 0\nbeat 0.25 +control note: 50, note_slide: 0.01\nbeat 0.5 +control note: 59, note_slide: 0.01\n/

@@ -1579,6 +1579,22 @@ defmodule Mx.DesignsTest do
     end
   end
 
+  # The cello's onsets were recorded at C2, G2, D3, A3, C4 and B4 at pp, so E2 and F4 play two of them faster.
+  test "cello starts E2 and F4 at their pitch, between the notes its onsets were recorded at",
+       ctx do
+    for note <- [40, 65] do
+      with = render(ctx, :cello, [note: note, vel: 0.3, vibrato: 0, sustain: 1], 1)
+      without = render(ctx, :cello, [note: note, vel: 0.3, vibrato: 0, sustain: 1, onset: 0], 1)
+      onset = Enum.zip_with(with, without, &(&1 - &2))
+      assert rms(onset, 0.02, 0.2) > 0.2 * rms(without, 0.02, 0.2), "note #{note} has no onset"
+      assert rms(onset, 0.3, 1) == 0
+
+      freq = 440 * :math.pow(2, (note - 69) / 12)
+      cents = 1200 * :math.log2(pitch(window(onset, 0.02, 0.2), freq) / freq)
+      assert abs(cents) < 15, "note #{note} starts #{cents} cents off"
+    end
+  end
+
   # Measured from the University of Iowa's cello, plucked on every string from C2 to Bb5,
   # at pp, mf and ff against vel 0.3, 0.6 and 1, as medians over its notes by the harmonic's frequency:
   # the seconds a harmonic takes to fade 60 dB, and its level against C2's fundamental.
@@ -4998,6 +5014,26 @@ defmodule Mx.DesignsTest do
   end
 
   defp peak(sound, from, to), do: sound |> window(from, to) |> Enum.map(&abs/1) |> Enum.max()
+
+  # The frequency within a fifth of `near` whose period the samples repeat best at, by autocorrelation, refined between lags.
+  defp pitch(samples, near) do
+    tuple = List.to_tuple(samples)
+    count = tuple_size(tuple)
+    lowest = floor(@rate / (near * 1.5))
+    highest = ceil(@rate / (near / 1.5))
+
+    correlate = fn lag ->
+      Enum.reduce(0..(count - highest - 1), 0.0, fn i, sum ->
+        sum + elem(tuple, i) * elem(tuple, i + lag)
+      end)
+    end
+
+    scores = Map.new(lowest..highest, &{&1, correlate.(&1)})
+    {lag, _} = Enum.max_by(scores, &elem(&1, 1))
+    {before, at, next} = {scores[lag - 1], scores[lag], scores[lag + 1]}
+    shift = if before && next, do: 0.5 * (before - next) / (before - 2 * at + next), else: 0
+    @rate / (lag + shift)
+  end
 
   # Level above a frequency, through two one-pole high-pass filters.
   defp highs(sound, hz, from, to) do

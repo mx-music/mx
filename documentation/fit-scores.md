@@ -51,6 +51,24 @@ The horn and the tuba are measured from VSCO 2's held notes, so their scores are
 - The flute was fitted to VSCO 2's flute and to played flutes from Wikimedia Commons, and judged by ear, so it reads 10 to 20 dB quieter than Iowa's from 400 Hz to 2.5 kHz and up to 35 dB quieter in Iowa's breath noise.
 - The tenor sax speaks 94 percent slower than VCSL's at mf and 223 percent at ff, as a conical reed grows slowly from its threshold; a stronger tongue, a faster breath or a stronger breath each scored worse.
 
+## The cello with a convolved body and recorded onsets
+
+mx-00125 passes the cello's bowed hiss through the body's impulse response, measured from the noise Iowa's bowed notes hold between their harmonics, and plays the first quarter second of one of Iowa's bowed notes under each note's swell.
+On 12 November 2026 the cello was scored with mix mx.fit --check against Iowa's arco files at pp, mf and ff.
+Each row fitted the rosin and the hiss's level at each dynamic, and the last row the onset's level too.
+
+| Cello | Score |
+| --- | --- |
+| Before, unfitted | 83.33 |
+| Hiss through a high-pass, as before, rosin and hiss fitted | 81.34 |
+| Hiss through the body's response, rosin and hiss fitted | 25.70 |
+| Hiss through the body's response, and the onsets, all three fitted | 24.56 |
+
+- The body's response does nearly all of the gain: below 400 Hz the noise was up to 15 dB loud and above 1.6 kHz up to 11 dB quiet, and the hiss through the response fills the cello's bridge hill from 1.6 to 2.5 kHz.
+- The onsets gain 1 at pp and 0.2 at ff, and at mf any onset level scored worse, as it adds noise from 80 to 160 Hz, so the mf notes play none.
+- With the body's response and the onsets left out, the fitted values score 159.30, as the hiss's level was fitted to pass through the response.
+- The cello still speaks 24 to 35 percent faster than the recordings, as the onsets are too quiet to slow its swell.
+
 ## Worse on mxs
 
 - The flute's breath noise is 1 to 2 dB quieter between its harmonics from 250 to 400 Hz at pp and mf; its harmonics match scsynth's within 0.25 dB.
