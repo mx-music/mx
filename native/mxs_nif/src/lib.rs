@@ -286,6 +286,12 @@ fn check_sample(path: String) -> Result<f64, String> {
     mxs::check_sample(std::path::Path::new(&path))
 }
 
+/// The loudest sample of the file at `path`, as a level from 0, read from all of it.
+#[rustler::nif(schedule = "DirtyCpu")]
+fn sample_peak(path: String) -> Result<f64, String> {
+    mxs::sample_peak(std::path::Path::new(&path)).map(f64::from)
+}
+
 #[rustler::nif]
 fn start_effects(resource: ResourceArc<EngineResource>, effects: Vec<(String, Term)>) -> NifResult<Result<u64, String>> {
     let effects = effects.into_iter().map(|(name, opts)| Ok((name, options(opts)?))).collect::<NifResult<Vec<_>>>()?;

@@ -30,7 +30,7 @@ defmodule Mx.Song do
     defstruct [:name, input: 1, stereo: false, opts: [], fx: []]
   end
 
-  defstruct tempo: 60, tempos: nil, osc_to: nil, osc_from: nil, loops: [], live: []
+  defstruct tempo: 60, tempos: nil, osc_to: nil, osc_from: nil, loops: [], live: [], played: []
 
   @key :mx_song
 
@@ -58,7 +58,8 @@ defmodule Mx.Song do
            {:ok, live} <- check_live(live, path),
            {:ok, loops} <- find_effects(loops),
            {:ok, loops} <- find_samples(loops) do
-        {:ok, %{song | loops: loops, live: live}}
+        Enum.each(level_warnings(song.played), &IO.puts(:stderr, &1))
+        {:ok, %{song | loops: loops, live: live, played: []}}
       end
     rescue
       error -> {:error, Exception.message(error)}
@@ -138,6 +139,24 @@ defmodule Mx.Song do
     }
 
     update(&%{&1 | loops: [loop | &1.loops]})
+  end
+
+  @doc "Records a sample the song being loaded plays, and whether it plays normalized, so a silent or quiet file is named once it has loaded."
+  def put_played(ref, path, normalized?) do
+    if Process.get(@key), do: update(&%{&1 | played: [{ref, path, normalized?} | &1.played]})
+    :ok
+  end
+
+  # One line for each file that is silent, or too quiet to hear where it plays without normalize.
+  defp level_warnings(played) do
+    played
+    |> Enum.reverse()
+    |> Enum.group_by(fn {_ref, path, _} -> path end)
+    |> Enum.sort_by(fn {_path, [{ref, _, _} | _]} -> to_string(ref) end)
+    |> Enum.flat_map(fn {path, [{ref, _, _} | _] = uses} ->
+      normalized? = Enum.all?(uses, fn {_, _, normalized?} -> normalized? end)
+      List.wrap(Samples.level_warning(ref, Samples.peak(path), normalized?))
+    end)
   end
 
   @doc "Records the tempo of the song being loaded."

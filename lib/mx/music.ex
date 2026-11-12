@@ -140,6 +140,7 @@ defmodule Mx.Music do
 
     with {:ok, path} <- Mx.Samples.path(ref),
          :ok <- Mx.Samples.check_cut(ref, path, opts) do
+      Mx.Song.put_played(ref, path, Keyword.get(opts, :normalize, false) == true)
       %Sample{ref: ref, beats: beats, opts: opts}
     else
       {:error, message} -> raise ArgumentError, message

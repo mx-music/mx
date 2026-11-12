@@ -138,6 +138,28 @@ defmodule Mx.Samples do
     {start + piece * slice, start + piece * (slice + 1)}
   end
 
+  @doc "The loudest moment of a sample file mx can play, as a level from 0, read from the whole file."
+  def peak(path) when is_binary(path) do
+    {:ok, peak} = Mx.Engine.Mxs.Native.sample_peak(path)
+    peak
+  end
+
+  @doc "The line mx prints when the song loads for a sample file played at `peak`, silent or too quiet to hear without normalize, or nil."
+  def level_warning(ref, peak, normalized?)
+
+  def level_warning(ref, peak, _normalized?) when peak == 0, do: "sample #{ref} is silent"
+
+  def level_warning(ref, peak, false) do
+    below = -20 * :math.log10(peak)
+
+    if below > 40 do
+      below = :erlang.float_to_binary(below, decimals: 1)
+      "sample #{ref} peaks #{below} dB below full scale; normalize: true plays it at full scale"
+    end
+  end
+
+  def level_warning(_ref, _peak, true), do: nil
+
   @doc "The length in seconds of a sample file mx can play."
   def seconds(path) when is_binary(path) do
     {:ok, seconds} = Mx.Engine.Mxs.Native.check_sample(path)
