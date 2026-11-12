@@ -6,21 +6,20 @@ defmodule Mx.Examples.CuicaTest do
 
   @song "examples/cuica/solo.exs"
 
-  test "the solo plays only the cuíca, strokes on sixteenths accented off the beat" do
+  test "the solo plays only the cuíca, a stroke every sixteenth, high on the beats and low between" do
     output = print()
     assert Regex.scan(~r/^(\w+), 64 beats/m, output, capture: :all_but_first) == [["cuica"]]
     refute output =~ "sample "
-    assert output =~ ~r/^beat 0 +play note: 49.79, vel: 0.5$/m
-    assert output =~ ~r/^beat 0.5 +play note: 49.79, vel: 0.85$/m
-    assert output =~ ~r/^beat 1.25 +play note: 49.79, vel: 0.85$/m
+    assert output =~ ~r/^beat 0 +play note: 79, vel: 0.8$/m
+    assert output =~ ~r/^beat 0.25 +play note: 65, vel: 0.55$/m
   end
 
-  test "the accents rise a fourth, and the runs swell into a raised accent" do
+  test "the high strokes cross the beat, and the phrases climb from the low note to the high one" do
     output = print()
-    assert output =~ ~r/^beat 16.5 +play note: 54.79, vel: 0.85$/m
-    assert output =~ ~r/^beat 34 +play note: 49.79, vel: 0.4$/m
-    assert output =~ ~r/^beat 35.25 +play note: 49.79, vel: 0.8$/m
-    assert output =~ ~r/^beat 35.5 +play note: 54.79, vel: 0.88$/m
+    assert output =~ ~r/^beat 16.75 +play note: 79, vel: 0.8$/m
+    assert output =~ ~r/^beat 32 +play note: 65, vel: 0.45$/m
+    assert output =~ ~r/^beat 33 +play note: 73, vel: 0.65$/m
+    assert output =~ ~r/^beat 33.75 +play note: 79, vel: 0.8$/m
   end
 
   test "the README points to the solo and lists the cuíca, and the synth designs license names its recordings" do
@@ -28,8 +27,8 @@ defmodule Mx.Examples.CuicaTest do
     assert readme =~ "examples/cuica/solo.exs"
     assert readme =~ "- `cuica` is the friction drum of samba"
     notes = File.read!("LICENSE-designs.md")
-    assert notes =~ "uploaded to Wikimedia Commons by っ in 2005 under CC BY-SA 3.0"
-    assert notes =~ "by jackpatrick889 on Freesound"
+    assert notes =~ "reinsamba's pack \"Cuica\" on Freesound"
+    refute notes =~ "Cuica01.ogg"
   end
 
   @tag :tmp_dir

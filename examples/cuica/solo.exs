@@ -1,53 +1,50 @@
 import Mx
 
 # A piece for the cuíca alone written for mx: its part in a samba batucada, in 2/4, two beats to the bar.
-# Strokes fall on sixteenths with accents off the beat; the thumb pressing the head raises the accented strokes a fourth; longer phrases run strokes close together and swell.
+# Every sixteenth is a stroke of the stick, push or pull; the finger pressing the head raises a stroke from the low note to the high one, on the beats or across them, and some phrases climb from one to the other.
 defmodule Cuica do
   import Mx
 
-  @low 49.79
-  @high @low + 5
+  @low 65
+  @high 79
 
-  # One bar's strokes as {sixteenth, accented?}: on the beat, then off it on the second and fourth sixteenths of the second beat.
-  @figure [{0, false}, {2, true}, {3, false}, {5, true}, {6, false}]
-
-  def figure(raised) do
-    for {sixteenth, accented} <- @figure do
-      note = if accented and raised, do: @high, else: @low
-      {sixteenth / 4, hit(note: note, vel: if(accented, do: 0.85, else: 0.5))}
+  # One bar's eight strokes, high on the sixteenths given and low between.
+  def bar(highs) do
+    for sixteenth <- 0..7 do
+      if sixteenth in highs,
+        do: {sixteenth / 4, hit(note: @high, vel: 0.8)},
+        else: {sixteenth / 4, hit(note: @low, vel: 0.55)}
     end
   end
 
-  # Eight bars of the figure, the accents raised a fourth when `raised`.
-  def groove(raised) do
-    strokes = for bar <- 0..7, {beat, stroke} <- figure(raised), do: {2 * bar + beat, stroke}
+  # Eight bars, high on the beats, or across them on the first, fourth and seventh sixteenths.
+  def groove(highs) do
+    strokes = for bar <- 0..7, {beat, stroke} <- bar(highs), do: {2 * bar + beat, stroke}
     at(strokes, 16)
   end
 
-  # A bar of the figure, then a run of seven sixteenths that swells from soft to an accent raised a fourth, four times over.
+  # A bar climbing from the low note to the high one, swelling as it goes, then a bar high on the beats, four times over.
   def phrases do
-    run =
-      for step <- 0..6 do
-        note = if step == 6, do: @high, else: @low
-        {2 + step / 4, hit(note: note, vel: Float.round(0.4 + 0.08 * step, 2))}
-      end
+    climb =
+      for step <- 0..7,
+          do: {step / 4, hit(note: @low + 2 * step, vel: Float.round(0.45 + 0.05 * step, 2))}
+
+    answer = for {beat, stroke} <- bar([0, 4]), do: {2 + beat, stroke}
 
     strokes =
-      for start <- [0, 4, 8, 12],
-          {beat, stroke} <- figure(false) ++ run,
-          do: {start + beat, stroke}
+      for start <- [0, 4, 8, 12], {beat, stroke} <- climb ++ answer, do: {start + beat, stroke}
 
     at(strokes, 16)
   end
 
   def form do
     seq([
-      part(:cuica, groove(false), synth: :cuica),
-      part(:cuica, groove(true), synth: :cuica),
+      part(:cuica, groove([0, 4]), synth: :cuica),
+      part(:cuica, groove([0, 3, 6]), synth: :cuica),
       part(:cuica, phrases(), synth: :cuica),
-      part(:cuica, groove(true), synth: :cuica)
+      part(:cuica, groove([0, 3, 6]), synth: :cuica)
     ])
   end
 end
 
-song(tempo: 100, music: repeat(Cuica.form()))
+song(tempo: 88, music: repeat(Cuica.form()))

@@ -300,7 +300,7 @@ mx examples/solo/bongos.exs
 mx examples/surdo/solo.exs
 ```
 
-`examples/cuica/solo.exs` is the cuíca on its own, its part in a samba batucada in 2/4: strokes on sixteenths accented off the beat, the accents then raised a fourth as the thumb presses the head, and runs of seven sixteenths that swell into a raised accent.
+`examples/cuica/solo.exs` is the cuíca on its own, its part in a samba batucada in 2/4: a stroke every sixteenth, high on the beats and low between, then high across the beats, and phrases that climb from the low note to the high one.
 
 ```sh
 mx examples/cuica/solo.exs
@@ -826,7 +826,7 @@ The drums are kick, snare, clap, closed_hihat, open_hihat, low_tom, mid_tom, hig
 - `cajon` takes `vel`, how hard it is played, and `slap`, from 0 for the bass tone to 1 for the slap, as the congas do; it is measured from the cajón of the Versilian Community Sample Library.
 - `low_bongo` and `high_bongo` take `vel`, how hard the drum is struck, and `muted: 1` for a muted stroke; they are measured from the bongos of the Versilian Community Sample Library, whose muted strokes ring about as long as the open ones.
 - `surdo` is the large drum that holds samba's beat, struck with a felt mallet, and takes `vel`, how hard it is struck, and `muted: 1` for the stroke with the hand on the head, which loses the drum's lowest ring, sounds higher and fades in half the time. With no `note` it is the surdo de primeira, ringing on 66.6 Hz with a ring at twice that 10 dB down; `note` tunes it, so `note: 41` and `note: 45` are the higher surdos de segunda and de terceira. It is measured from three loops by plotzki on Freesound, and compared with igorfiche01's surdo, a higher drum.
-- `cuica` is the friction drum of samba, and takes `vel`, how hard the stick inside it is rubbed. Each stroke grips for 30 ms, then its pitch arches about 8 semitones up and back down in 0.17 seconds, its second harmonic topping at 290 Hz; `note` is the arch's top, 145 Hz with no `note`, and tunes it, keeping the arch's span. It is measured from "Cuica01.ogg" and "Cuica02.ogg" by っ on Wikimedia Commons, and compared with jackpatrick889's cuíca, whose strokes hold a steady pitch.
+- `cuica` is the friction drum of samba, and takes `vel`, how hard the stick inside it is rubbed. Each stroke scoops up into its note, nearly a pure tone, and lasts about a fifth of a second; `note` is the note it settles at, 65 with no `note`, as a stroke with the head free, and 79 is a stroke with the head pressed, shorter and quicker to speak. It is measured from reinsamba's pack "Cuica" on Freesound.
 - `tamborim` is the small high drum of samba struck with a stick, and takes `vel`, how hard it is struck. It rings on 524 Hz with no `note`, with peaks at 1.8 and 2.5 times it and a crack of noise above 3 kHz; `note` tunes it. It is measured from "Tamborim Sound.ogg" by Samba-x on Wikimedia Commons.
 - `caxixi` is the woven basket shaker that a capoeira berimbau player shakes in the bowing hand, and takes `vel`, how hard it is shaken, and no `note`. Each shake is loudest above 2.5 kHz and falls 10 to 17 dB in its first 50 ms, and its strongest peak moves from shake to shake, between about 1.7 and 9.6 kHz. It is measured from "Caxixi.ogg" by Freddythehat on Wikimedia Commons, a large and a small caxixi shaken together.
 - `snare` takes `vel`, how hard it is struck: harder is louder, puts more into the head and less into the wires, and the softest strokes are dark; it is measured from the snare of Versilian Studios' VSCO 2 Community Edition with its snares on.

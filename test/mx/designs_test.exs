@@ -3465,49 +3465,52 @@ defmodule Mx.DesignsTest do
     assert rms(hard, 0, 0.5) > rms(soft, 0, 0.5) * 2
   end
 
-  # Measured with mix mx.measure --hits from the Commons recording "Cuica02.ogg" by っ, converted to WAV: each band's level at the stroke's start against the loudest band.
-  @cuica %{
-    {80, 160} => -9.2,
-    {160, 250} => 0.0,
-    {250, 400} => -0.5,
-    {400, 630} => -10.4,
-    {630, 1000} => -11.2,
-    {1000, 1600} => -18.8,
-    {1600, 2500} => -26.8,
-    {2500, 4000} => -32.6
+  # Measured with a YIN pitch tracker every 5 ms over reinsamba's pack "Cuica" on Freesound, 85 low strokes with the head free and 36 high ones with it pressed:
+  # the pitch the stroke settles at, its second and third harmonics against the fundamental, how far under the note it starts and by when it is within 50 cents of it, and how long it lasts above 25 dB under its peak.
+  @cuica_strokes %{
+    65 => %{hz: 353, harmonics: [-15, -30], under: 100..250, reached: 0.12, lasts: {0.18, 0.25}},
+    79 => %{hz: 784, harmonics: [-25, -28], under: 60..160, reached: 0.08, lasts: {0.14, 0.22}}
   }
 
-  test "the cuíca's stroke starts with the bands of the Commons recordings", ctx do
-    hit = Hits.hit(render(ctx, :cuica, [], 1), @rate, nil)
-    measured = Map.new(hit.bands, &{&1.band, &1.level})
+  for {note, stroke} <- @cuica_strokes do
+    @note note
+    @stroke stroke
 
-    for {band, level} <- @cuica do
-      assert_in_delta measured[band], level, 6, "#{inspect(band)} at #{measured[band]} dB"
+    test "the cuíca's stroke at note #{note} scoops up into #{stroke.hz} Hz with its harmonics and length",
+         ctx do
+      %{hz: hz, harmonics: harmonics, under: under, reached: reached, lasts: {shortest, longest}} =
+        @stroke
+
+      sound = render(ctx, :cuica, [note: @note], 0.4)
+      settled = pitch(window(sound, reached + 0.01, reached + 0.06), hz)
+      assert_in_delta 1200 * :math.log2(settled / hz), 0, 30, "settles at #{settled} Hz"
+
+      start = pitch(window(sound, 0.005, 0.03), hz / 1.1)
+      cents_under = round(1200 * :math.log2(settled / start))
+      assert cents_under in under, "starts #{cents_under} cents under"
+
+      near = pitch(window(sound, reached - 0.01, reached + 0.01), hz)
+      assert_in_delta 1200 * :math.log2(near / settled), 0, 50, "at #{reached} s #{near} Hz"
+
+      steady = window(sound, reached + 0.01, reached + 0.06)
+      fundamental = goertzel(steady, settled)
+
+      for {level, k} <- Enum.with_index(harmonics, 2) do
+        measured = 10 * :math.log10(goertzel(steady, k * settled) / fundamental)
+        assert_in_delta measured, level, 4, "harmonic #{k} at #{measured} dB"
+      end
+
+      levels =
+        for c <- Enum.chunk_every(sound, 240), do: 20 * :math.log10(rms(c, 0, 0.005) + 1.0e-9)
+
+      loudest = Enum.max(levels)
+      lasts = Enum.count(levels, &(&1 > loudest - 25)) * 0.005
+      assert lasts >= shortest and lasts <= longest, "lasts #{lasts} s"
+
+      if @note == 65 do
+        for level <- Enum.slice(levels, 6..24), do: assert(level > loudest - 6)
+      end
     end
-  end
-
-  # っ's strokes, drawn with mix mx.spectrogram, arch from about 175 to 195 Hz up to about 290 Hz and back in 0.15 to 0.2 seconds.
-  test "the cuíca's strongest partial arches up to 290 Hz and back within a quarter of a second, and a note an octave up doubles it",
-       ctx do
-    track = arch(render(ctx, :cuica, [], 0.4), 130, 330)
-    {top_at, top} = Enum.max_by(track, &elem(&1, 1))
-    assert_in_delta top / 290, 1, 0.05
-    {start, _} = Enum.find(track, fn {_, hz} -> hz < 200 end)
-
-    {rising, _} =
-      Enum.find(Enum.reverse(Enum.filter(track, &(elem(&1, 0) < top_at))), fn {_, hz} ->
-        hz < 200
-      end)
-
-    {falling, _} = Enum.find(track, fn {at, hz} -> at > top_at and hz < 200 end)
-    assert start <= rising
-
-    assert falling - rising >= 0.12 and falling - rising <= 0.25,
-           "arches from #{rising} to #{falling} s"
-
-    octave = arch(render(ctx, :cuica, [note: 61.79], 0.4), 260, 660)
-    {_, octave_top} = Enum.max_by(octave, &elem(&1, 1))
-    assert_in_delta octave_top / (2 * top), 1, 0.03
   end
 
   test "the cuíca is louder struck harder", ctx do
@@ -5299,41 +5302,6 @@ defmodule Mx.DesignsTest do
   end
 
   defp peak(sound, from, to), do: sound |> window(from, to) |> Enum.map(&abs/1) |> Enum.max()
-
-  # The strongest frequency from `low` to `high` Hz, in 2 Hz steps, in each 40 ms window every 10 ms while the sound is within 30 dB of its loudest window, as {seconds, hz}.
-  defp arch(sound, low, high) do
-    window = round(0.04 * @rate)
-    hop = round(0.01 * @rate)
-    tuple = List.to_tuple(sound)
-
-    windows =
-      for start <- 0..(tuple_size(tuple) - window)//hop do
-        samples = for i <- start..(start + window - 1), do: elem(tuple, i)
-        {start / @rate, samples}
-      end
-
-    level = fn samples -> :math.sqrt(Enum.sum(Enum.map(samples, &(&1 * &1))) / window) end
-    loudest = windows |> Enum.map(&level.(elem(&1, 1))) |> Enum.max()
-
-    for {at, samples} <- windows, level.(samples) > loudest / 31.6 do
-      strongest =
-        Enum.max_by(low..high//2, fn hz ->
-          w = 2 * :math.pi() * hz / @rate
-
-          {re, im} =
-            samples
-            |> Enum.with_index()
-            |> Enum.reduce({0.0, 0.0}, fn {x, i}, {re, im} ->
-              hann = 0.5 - 0.5 * :math.cos(2 * :math.pi() * i / window)
-              {re + x * hann * :math.cos(w * i), im + x * hann * :math.sin(w * i)}
-            end)
-
-          re * re + im * im
-        end)
-
-      {at + 0.02, strongest}
-    end
-  end
 
   # The frequency within a fifth of `near` whose period the samples repeat best at, by autocorrelation, refined between lags.
   defp pitch(samples, near) do
