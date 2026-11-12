@@ -53,6 +53,18 @@ The horn and the tuba are measured from VSCO 2's held notes, so their scores are
 - With the apex at 0.3, every conical wind's bands, noise and rise were fitted again at each dynamic, the breath too where the attack missed, and the levels set back to the loudness each had before.
 - The tenor sax's attack is within 20 percent of VCSL's, and its short notes sound.
 - The trombone's fundamental from C3 to B3 is 9 to 13 dB weaker against its second harmonic than Iowa's, as its fundamentals from E2 to Eb3 share the 80 to 160 Hz band with the lowest note the fit measures against.
+- At a slur the reed and brass breath catches as far as the Philharmonia's legato phrases dip, within 3 dB, but for the tuba, which dips 6 dB at most against their 14, and the brass recover in 35 to 50 ms against their 65.
+- These winds design tests are left failing, as the winds were judged by ear and passing them would change what was judged; each test stops at its first miss, given here against its target:
+  - the flute speaks in 0.049 s at vel 1 against 0.2, and its vibrato measures none, against Iowa's 4.83 Hz and 8 cents at vel 0.3;
+  - the flute's A4 swings 3.0 Hz from 3 to 3.9 s against 2.3 Hz as it speaks, where the test wants more than twice that and more than 5 Hz;
+  - the clarinet speaks in 0.2 s at vel 1 against 0.32;
+  - the oboe speaks in 0.083 s at vel 0.6 against 0.25;
+  - the bassoon's 630 to 1000 Hz band reads 3.5 dB at vel 1 against -5.0;
+  - the tenor sax's 1.6 to 2.5 kHz band reads -25.3 dB at vel 1 against -18.1, and its staccato's 160 to 250 Hz band -1.8 dB at vel 0.3 against -10.5;
+  - the trumpet speaks in 0.309 s at vel 0.3 against 0.22;
+  - the trombone's 250 to 400 Hz band reads 24.0 dB at vel 1 against 16.8;
+  - the horn's 80 to 160 Hz band reads 15.0 dB at vel 1 against 0.0, and it grows 0.7 dB from C4 to C5 against Iowa's 7.3;
+  - the tuba speaks in 0.108 s at vel 1 against 0.19.
 
 ## The cello with a convolved body and recorded onsets
 
