@@ -28,15 +28,17 @@ defmodule Mx.Render do
     end
   end
 
-  defp check(%Song{live: [_ | _]}, _seconds),
-    do: {:error, "a song with live_audio cannot render, as it plays the sound card's input"}
+  defp check(%Song{live: [_ | _]}, _seconds) do
+    {:error, "a song with live_audio cannot render, as it plays the sound card's input"}
+  end
 
   defp check(%Song{loops: loops}, nil) do
-    if Enum.any?(loops, &(&1.on == nil and &1.passes == nil)),
-      do:
-        {:error,
-         "the song's music plays until mx stops it; give --seconds to say how long to render"},
-      else: :ok
+    if Enum.any?(loops, &(&1.on == nil and &1.passes == nil)) do
+      {:error,
+       "the song's music plays until mx stops it; give --seconds to say how long to render"}
+    else
+      :ok
+    end
   end
 
   defp check(_song, seconds) when is_number(seconds) and seconds > 0, do: :ok
@@ -46,9 +48,9 @@ defmodule Mx.Render do
     for loop <- song.loops, line = left_out_line(loop), do: line
   end
 
-  defp left_out_line(%{on: on, name: name}) when on != nil,
-    do:
-      "part #{name} waits for MIDI or OSC input, which a render does not have, so it plays nothing"
+  defp left_out_line(%{on: on, name: name}) when on != nil do
+    "part #{name} waits for MIDI or OSC input, which a render does not have, so it plays nothing"
+  end
 
   defp left_out_line(_loop), do: nil
 

@@ -294,8 +294,9 @@ defmodule Mx.Instrument do
       def __synths__, do: Mx.Instrument.trace(__MODULE__, unquote(synths), unquote(env.file))
 
       @doc false
-      def __effects__,
-        do: Mx.Instrument.trace_effects(__MODULE__, unquote(effects), unquote(env.file))
+      def __effects__ do
+        Mx.Instrument.trace_effects(__MODULE__, unquote(effects), unquote(env.file))
+      end
     end
   end
 
@@ -347,8 +348,9 @@ defmodule Mx.Instrument do
 
   defp matches({:=, _, [left, right]}), do: matches(left) ++ matches(right)
 
-  defp matches({:%{}, _, pairs}),
-    do: for({key, value} <- pairs, is_atom(value) or is_number(value), do: {key, value})
+  defp matches({:%{}, _, pairs}) do
+    for {key, value} <- pairs, is_atom(value) or is_number(value), do: {key, value}
+  end
 
   defp matches(_pattern), do: []
 
@@ -478,8 +480,9 @@ defmodule Mx.Instrument do
     end)
   end
 
-  defp encode_match({key, value}) when is_atom(value),
-    do: {Atom.to_string(key), Atom.to_string(value)}
+  defp encode_match({key, value}) when is_atom(value) do
+    {Atom.to_string(key), Atom.to_string(value)}
+  end
 
   defp encode_match({key, value}), do: {Atom.to_string(key), value / 1}
 

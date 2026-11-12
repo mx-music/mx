@@ -8,13 +8,13 @@ defmodule Mx.GitHub do
   """
 
   @doc "The folder GitHub files are cached in: the `:github_dir` setting, or a folder in the user's cache."
-  def dir,
-    do:
-      Application.get_env(
-        :mx,
-        :github_dir,
-        Path.join(:filename.basedir(:user_cache, "mx"), "github")
-      )
+  def dir do
+    Application.get_env(
+      :mx,
+      :github_dir,
+      Path.join(:filename.basedir(:user_cache, "mx"), "github")
+    )
+  end
 
   @doc "Where a file of a repository at a ref is kept in the cache."
   def local(repo, ref, path), do: Path.join([dir(), repo, URI.encode_www_form(ref), path])

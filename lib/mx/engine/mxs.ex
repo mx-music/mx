@@ -33,9 +33,11 @@ defmodule Mx.Engine.Mxs do
       defaults = defaults(specs)
 
       defaults =
-        if name in ~w(live_audio_mono live_audio_stereo),
-          do: Map.put(defaults, :input, 1),
-          else: defaults
+        if name in ~w(live_audio_mono live_audio_stereo) do
+          Map.put(defaults, :input, 1)
+        else
+          defaults
+        end
 
       {String.to_atom(name), defaults}
     end)
@@ -69,8 +71,9 @@ defmodule Mx.Engine.Mxs do
     end)
   end
 
-  defp limit(%{kind: "name", values: [_ | _] = values}),
-    do: {:names, Enum.map(values, &String.to_atom/1)}
+  defp limit(%{kind: "name", values: [_ | _] = values}) do
+    {:names, Enum.map(values, &String.to_atom/1)}
+  end
 
   defp limit(%{low: low, high: high}) when low != nil or high != nil, do: {:range, low, high}
   defp limit(_spec), do: nil
@@ -153,8 +156,9 @@ defmodule Mx.Engine.Mxs do
   def prepare(song), do: GenServer.call(__MODULE__, {:prepare, song}, 60_000)
 
   @doc "Renders an engine started with `live: false` on to the Unix time `at_us`, and returns whether a sound still plays."
-  def render_to(at_us) when is_integer(at_us),
-    do: GenServer.call(__MODULE__, {:render_to, at_us}, :infinity)
+  def render_to(at_us) when is_integer(at_us) do
+    GenServer.call(__MODULE__, {:render_to, at_us}, :infinity)
+  end
 
   @impl Mx.Engine
   def load_sample(path, loop), do: GenServer.cast(__MODULE__, {:load_sample, path, loop})
@@ -183,8 +187,9 @@ defmodule Mx.Engine.Mxs do
   def set_live(lives, tempo), do: GenServer.call(__MODULE__, {:set_live, lives, tempo})
 
   @impl Mx.Engine
-  def record_input(path, source, at_us),
-    do: GenServer.call(__MODULE__, {:record_input, path, source, at_us}, 15_000)
+  def record_input(path, source, at_us) do
+    GenServer.call(__MODULE__, {:record_input, path, source, at_us}, 15_000)
+  end
 
   @impl Mx.Engine
   def stop_input, do: GenServer.call(__MODULE__, :stop_input, 15_000)
@@ -256,8 +261,9 @@ defmodule Mx.Engine.Mxs do
     {:note, id, Atom.to_string(synth), options(pitch ++ params), key(chain)}
   end
 
-  def event({:sample, id, %{sample: sample}, params, chain}),
-    do: {:sample, id, sample, options(params), key(chain)}
+  def event({:sample, id, %{sample: sample}, params, chain}) do
+    {:sample, id, sample, options(params), key(chain)}
+  end
 
   def event({:set, target, params}) do
     changes = for {name, value} <- params, do: {Atom.to_string(name), value / 1}
@@ -381,8 +387,9 @@ defmodule Mx.Engine.Mxs do
     end
   end
 
-  defp recorded({:input, input}, state) when is_integer(input) and input > 0,
-    do: {:ok, {:input, input - 1}, state}
+  defp recorded({:input, input}, state) when is_integer(input) and input > 0 do
+    {:ok, {:input, input - 1}, state}
+  end
 
   defp recorded({:sample, path}, state) when is_binary(path) do
     state = load(path, state)

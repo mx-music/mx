@@ -147,8 +147,9 @@ defmodule Mx.Synths do
   defp limit(%Mx.Sampled{}, option), do: limit(:stereo_player, option)
   defp limit(synth, option), do: limits() |> Map.get(synth, %{}) |> Map.get(option)
 
-  defp within?({:range, low, high}, value) when is_number(value),
-    do: (low == nil or value >= low) and (high == nil or value <= high)
+  defp within?({:range, low, high}, value) when is_number(value) do
+    (low == nil or value >= low) and (high == nil or value <= high)
+  end
 
   defp within?({:names, names}, value) when is_atom(value), do: value in names
   defp within?(_limit, _value), do: true

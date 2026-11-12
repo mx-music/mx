@@ -93,14 +93,16 @@ defmodule Mx.Instrument.Vocabulary do
   end
 
   @doc "`x`, held between `low` and `high`."
-  def clamp(x, low, high) when is_number(x) and is_number(low) and is_number(high),
-    do: x |> Kernel.max(low) |> Kernel.min(high)
+  def clamp(x, low, high) when is_number(x) and is_number(low) and is_number(high) do
+    x |> Kernel.max(low) |> Kernel.min(high)
+  end
 
   def clamp(x, low, high), do: Expr.call(:clamp, [x, low, high])
 
   @doc "`then` where `condition` holds, and `otherwise` elsewhere."
-  def select(condition, then, otherwise) when is_boolean(condition),
-    do: if(condition, do: then, else: otherwise)
+  def select(condition, then, otherwise) when is_boolean(condition) do
+    if(condition, do: then, else: otherwise)
+  end
 
   def select(condition, then, otherwise), do: Expr.call(:select, [condition, then, otherwise])
 

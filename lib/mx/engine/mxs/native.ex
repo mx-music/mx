@@ -9,8 +9,9 @@ defmodule Mx.Engine.Mxs.Native do
   def seconds_at(_engine, _unix_us), do: :erlang.nif_error(:nif_not_loaded)
   def register_graph(_engine, _name, _specs, _clauses), do: :erlang.nif_error(:nif_not_loaded)
 
-  def register_effect_graph(_engine, _name, _specs, _graph),
-    do: :erlang.nif_error(:nif_not_loaded)
+  def register_effect_graph(_engine, _name, _specs, _graph) do
+    :erlang.nif_error(:nif_not_loaded)
+  end
 
   def rate(_engine), do: :erlang.nif_error(:nif_not_loaded)
   def inputs(_engine), do: :erlang.nif_error(:nif_not_loaded)
@@ -19,8 +20,10 @@ defmodule Mx.Engine.Mxs.Native do
   def check_sample(_path), do: :erlang.nif_error(:nif_not_loaded)
   def sample_peak(_path), do: :erlang.nif_error(:nif_not_loaded)
 
-  def pitches(_samples, _rate, _lowest, _highest, _frame, _hop),
-    do: :erlang.nif_error(:nif_not_loaded)
+  def pitches(_samples, _rate, _lowest, _highest, _frame, _hop) do
+    :erlang.nif_error(:nif_not_loaded)
+  end
+
   def start_effects(_engine, _effects), do: :erlang.nif_error(:nif_not_loaded)
   def stop_effects(_engine, _chain, _at), do: :erlang.nif_error(:nif_not_loaded)
   def render(_engine, _seconds), do: :erlang.nif_error(:nif_not_loaded)

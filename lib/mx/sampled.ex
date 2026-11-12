@@ -61,9 +61,11 @@ defmodule Mx.Sampled do
     dir = Mx.GitHub.local(repo, ref, folder)
 
     downloaded =
-      if File.ls(dir) in [{:ok, []}, {:error, :enoent}],
-        do: Mx.Samples.download_source("#{repo}@#{ref}:#{folder}"),
-        else: {:ok, nil}
+      if File.ls(dir) in [{:ok, []}, {:error, :enoent}] do
+        Mx.Samples.download_source("#{repo}@#{ref}:#{folder}")
+      else
+        {:ok, nil}
+      end
 
     case downloaded do
       {:ok, message} ->
@@ -102,9 +104,11 @@ defmodule Mx.Sampled do
   end
 
   defp local(path) do
-    if File.regular?(Path.expand(path)),
-      do: {:ok, Path.expand(path)},
-      else: {:error, "sampled file #{path} does not exist"}
+    if File.regular?(Path.expand(path)) do
+      {:ok, Path.expand(path)}
+    else
+      {:error, "sampled file #{path} does not exist"}
+    end
   end
 
   defp load_folder(sampled, dir, folder) do
@@ -177,9 +181,9 @@ defmodule Mx.Sampled do
   end
 
   @doc "Whether a sampled instrument takes an option."
-  def option?(option),
-    do:
-      option == :vel or (option not in @not_options and Mx.Synths.option?(:stereo_player, option))
+  def option?(option) do
+    option == :vel or (option not in @not_options and Mx.Synths.option?(:stereo_player, option))
+  end
 
   @doc "The takes of the key and strength a note or `:own_note` at `vel` plays, with the rate it plays them at, or `{:error, message}`."
   def pick(%__MODULE__{keys: keys} = sampled, note, vel) do
@@ -213,8 +217,9 @@ defmodule Mx.Sampled do
   defimpl String.Chars do
     def to_string(%{source: folder}) when is_binary(folder), do: "sampled instrument #{folder}"
 
-    def to_string(%{source: {:github, repo, _ref, folder}}),
-      do: "sampled instrument #{folder} of #{repo}"
+    def to_string(%{source: {:github, repo, _ref, folder}}) do
+      "sampled instrument #{folder} of #{repo}"
+    end
 
     def to_string(_sampled), do: "sampled instrument"
   end

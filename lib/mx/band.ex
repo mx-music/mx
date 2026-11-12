@@ -92,9 +92,11 @@ defmodule Mx.Band do
       state = %{state | joining: %{}}
 
       state =
-        if pass > state.tempo_pass and sections?(state.song, name),
-          do: put_changes(state, beat, pass),
-          else: state
+        if pass > state.tempo_pass and sections?(state.song, name) do
+          put_changes(state, beat, pass)
+        else
+          state
+        end
 
       {:reply, state.timeline, state}
     else

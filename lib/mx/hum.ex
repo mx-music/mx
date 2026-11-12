@@ -117,9 +117,11 @@ defmodule Mx.Hum do
 
   @doc "Checks a song can be written to a path: `:ok`, or `{:error, message}` naming it when it exists without `force`."
   def check(out, force) when is_binary(out) and is_boolean(force) do
-    if File.exists?(out) and not force,
-      do: {:error, "#{out} already exists; give --force to write over it"},
-      else: :ok
+    if File.exists?(out) and not force do
+      {:error, "#{out} already exists; give --force to write over it"}
+    else
+      :ok
+    end
   end
 
   @doc "Writes notes to a song file, and returns the line saying where, how many notes, and their lowest and highest."

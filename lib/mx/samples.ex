@@ -146,9 +146,11 @@ defmodule Mx.Samples do
       cut = [start: start, finish: finish]
 
       cut =
-        if beats = opts[:beats],
-          do: cut ++ [rate: abs(finish - start) * seconds * tempo / (60 * beats)],
-          else: cut
+        if beats = opts[:beats] do
+          cut ++ [rate: abs(finish - start) * seconds * tempo / (60 * beats)]
+        else
+          cut
+        end
 
       Keyword.drop(opts, @cut ++ [:start, :finish]) ++ cut
     else
