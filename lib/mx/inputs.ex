@@ -19,7 +19,7 @@ defmodule Mx.Inputs do
 
   alias Mx.OSC
 
-  @doc "Starts listening to the MIDI inputs, under the name in `opts`, or `Mx.Inputs` unless `name: nil`."
+  @doc "Starts listening to the MIDI inputs, unless `midi: false`, under the name in `opts`, or `Mx.Inputs` unless `name: nil`."
   def start_link(opts) when is_list(opts) do
     name = Keyword.get(opts, :name, __MODULE__)
     GenServer.start_link(__MODULE__, opts, if(name, do: [name: name], else: []))
@@ -36,7 +36,7 @@ defmodule Mx.Inputs do
   """
   def snapshot_at(inputs \\ __MODULE__, beat, until_us)
       when (is_pid(inputs) or is_atom(inputs)) and is_number(beat) and is_integer(until_us) do
-    wait_ms = div(max(until_us - System.os_time(:microsecond), 0), 1000)
+    wait_ms = div(max(until_us - Mx.Clock.now(), 0), 1000)
     GenServer.call(inputs, {:snapshot_at, beat, until_us}, wait_ms + 5000)
   end
 
@@ -72,7 +72,7 @@ defmodule Mx.Inputs do
     inputs = self()
 
     # A port midiex cannot connect to stops its listener, which is trapped and leaves the other ports listening.
-    for port <- Midiex.ports(:input) do
+    for port <- if(Keyword.get(opts, :midi, true), do: Midiex.ports(:input), else: []) do
       {:ok, listener} = Midiex.Listener.start_link(port: port)
       Midiex.Listener.add_handler(listener, fn msg -> send(inputs, {:midi_in, msg.data}) end)
 
@@ -95,7 +95,7 @@ defmodule Mx.Inputs do
 
   @impl true
   def handle_call(:snapshot, {_, _}, %{} = state) do
-    now = System.os_time(:microsecond)
+    now = Mx.Clock.now()
     {:reply, values(state, fn {_, at_us} -> at_us <= now end), state}
   end
 
@@ -103,7 +103,7 @@ defmodule Mx.Inputs do
     if ready?(state, pid, beat) do
       {:reply, values_at(state, beat), state}
     else
-      wait_ms = div(max(until_us - System.os_time(:microsecond), 0), 1000)
+      wait_ms = div(max(until_us - Mx.Clock.now(), 0), 1000)
       timer = Process.send_after(self(), {:give_up, from}, wait_ms)
       {:noreply, %{state | waiting: [{from, beat, timer} | state.waiting]}}
     end
@@ -221,7 +221,7 @@ defmodule Mx.Inputs do
   # Keeps each value a snapshot may still read: those set from the earliest beat a followed loop has not worked out, and the last before it that has played.
   defp prune(state) do
     earliest = state.loops |> Map.values() |> Enum.map(&elem(&1, 0)) |> Enum.min(fn -> nil end)
-    now = System.os_time(:microsecond)
+    now = Mx.Clock.now()
 
     shared =
       Map.new(state.shared, fn {name, sets} ->

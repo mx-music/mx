@@ -31,6 +31,9 @@ defmodule Mx.Band do
     GenServer.cast(band, {:switch, song})
   end
 
+  @doc "The processes of the loops playing, stopping or waiting to join."
+  def loops(band) when is_pid(band) or is_atom(band), do: GenServer.call(band, :loops)
+
   @doc "The tempo timeline, the latest entry first."
   def timeline(band) when is_pid(band) or is_atom(band), do: GenServer.call(band, :timeline)
 
@@ -77,6 +80,11 @@ defmodule Mx.Band do
 
   @impl true
   def handle_call(:timeline, {_, _}, %{} = state), do: {:reply, state.timeline, state}
+
+  def handle_call(:loops, {_, _}, %{} = state) do
+    pids = Map.values(state.loops) ++ Map.values(state.stopping) ++ Map.values(state.joining)
+    {:reply, pids, state}
+  end
 
   def handle_call({:cue, name, beat, pass}, {_, _}, %{} = state) do
     if music?(state.song, name) do
@@ -177,7 +185,9 @@ defmodule Mx.Band do
 
     pids = for {loop, start} <- starts, do: {state.loops[loop.name], start, loop.on}
     for {pid, start, nil} <- pids, is_number(start), do: worked_out.(pid, start)
-    for {pid, _, _} <- pids, do: send(pid, :tick)
+
+    # A render ticks every loop itself, one at a time, so their notes reach the engine in the same order on every run.
+    unless Mx.Clock.rendering?(), do: for({pid, _, _} <- pids, do: send(pid, :tick))
     state
   end
 
@@ -230,5 +240,5 @@ defmodule Mx.Band do
     floor(beat_at(state.timeline, now() + state.ahead_us)) + 1
   end
 
-  defp now, do: System.os_time(:microsecond)
+  defp now, do: Mx.Clock.now()
 end

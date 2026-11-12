@@ -12,6 +12,10 @@ case Mx.Player.parse(System.argv()) do
     end
 
   _ ->
-    IO.puts(:stderr, "usage: mx song.exs [--record session.wav [--force]]")
+    IO.puts(
+      :stderr,
+      "usage: mx song.exs [--record session.wav | --render song.wav [--seconds 60]] [--force]"
+    )
+
     System.halt(1)
 end

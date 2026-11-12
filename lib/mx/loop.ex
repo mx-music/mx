@@ -92,7 +92,8 @@ defmodule Mx.Loop do
 
   @impl true
   def handle_info({:join, beat, pass}, %{next_start: nil, pass_end: nil} = state) do
-    {:noreply, tick(%{state | next_start: beat, pass: pass})}
+    state = %{state | next_start: beat, pass: pass}
+    {:noreply, if(Mx.Clock.rendering?(), do: state, else: tick(state))}
   end
 
   def handle_info({:join, _beat, _pass}, %{} = state), do: {:noreply, state}
@@ -390,8 +391,13 @@ defmodule Mx.Loop do
   end
 
   # Waits at most half the lead, so a faster tempo set meanwhile still leaves time to send.
+  # A render ticks every loop in turn itself, so a timer of its own would tick it out of turn.
   defp schedule(state, timeline, now) do
     if state.timer, do: Process.cancel_timer(state.timer)
+    if Mx.Clock.rendering?(), do: %{state | timer: nil}, else: schedule_tick(state, timeline, now)
+  end
+
+  defp schedule_tick(state, timeline, now) do
     beats = Enum.map(state.queue, &elem(&1, 0)) ++ List.wrap(state.next_start)
     max_ms = div(state.ahead_us, 2000)
 
@@ -408,5 +414,5 @@ defmodule Mx.Loop do
 
   defp warn(message), do: IO.puts(:stderr, message)
 
-  defp now, do: System.os_time(:microsecond)
+  defp now, do: Mx.Clock.now()
 end

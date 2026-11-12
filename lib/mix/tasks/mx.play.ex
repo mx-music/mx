@@ -6,6 +6,7 @@ defmodule Mix.Tasks.Mx.Play do
 
       mix mx.play song.exs
       mix mx.play song.exs --record session.wav
+      mix mx.play song.exs --render song.wav --seconds 60
 
   Saving the file makes each changed loop take over at the end of its current
   pass. A version that does not load prints its error, and the previous
@@ -13,6 +14,7 @@ defmodule Mix.Tasks.Mx.Play do
 
   `--record` writes everything mx plays to a stereo WAV file, and `--force` records over a file that exists.
   After recording it prints the recording's length and peak, and warns when the recording clipped.
+  `--render` writes the song to a stereo WAV file offline instead of playing it, for `--seconds` when its music does not end, and prints the same report.
   """
 
   use Mix.Task

@@ -114,7 +114,7 @@ defmodule Mx.Engine.Mxs do
     with {:ok, engine} <- Native.start(live, input),
          :ok <- instruments(engine),
          :ok <- record(engine, opts[:record]) do
-      origin = System.os_time(:microsecond) - round(Native.now(engine) * 1_000_000)
+      origin = Mx.Clock.now() - round(Native.now(engine) * 1_000_000)
       :persistent_term.put(__MODULE__, {engine, origin})
       :persistent_term.put({__MODULE__, :ids}, :atomics.new(1, []))
 
@@ -151,6 +151,10 @@ defmodule Mx.Engine.Mxs do
 
   @impl Mx.Engine
   def prepare(song), do: GenServer.call(__MODULE__, {:prepare, song}, 60_000)
+
+  @doc "Renders an engine started with `live: false` on to the Unix time `at_us`, and returns whether a sound still plays."
+  def render_to(at_us) when is_integer(at_us),
+    do: GenServer.call(__MODULE__, {:render_to, at_us}, :infinity)
 
   @impl Mx.Engine
   def load_sample(path, loop), do: GenServer.cast(__MODULE__, {:load_sample, path, loop})
@@ -291,6 +295,13 @@ defmodule Mx.Engine.Mxs do
     {:reply, %{song | loops: loops}, state}
   end
 
+  def handle_call({:render_to, at_us}, _from, state) do
+    {engine, origin} = :persistent_term.get(__MODULE__)
+    seconds = (at_us - origin) / 1_000_000 - Native.now(engine)
+    if seconds > 0, do: {:ok, _} = Native.render(engine, seconds)
+    {:reply, Native.sounding(engine), state}
+  end
+
   def handle_call({:set_live, [_ | _], _tempo}, _from, state)
       when state.live == %{} and state.inputs == 0 do
     IO.puts(
@@ -303,7 +314,7 @@ defmodule Mx.Engine.Mxs do
 
   def handle_call({:set_live, lives, tempo}, _from, state) do
     {engine, origin} = :persistent_term.get(__MODULE__)
-    now = seconds(engine, System.os_time(:microsecond), origin)
+    now = seconds(engine, Mx.Clock.now(), origin)
     names = Enum.map(lives, & &1.name)
 
     for {name, playing} <- state.live, name not in names do

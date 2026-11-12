@@ -5,13 +5,27 @@ defmodule Mx.Player do
 
   alias Mx.{Session, Song}
 
-  @switches [record: :string, force: :boolean]
+  @switches [record: :string, render: :string, seconds: :float, force: :boolean]
 
   @doc "The options `play/2` takes, parsed from command line arguments, and the arguments left."
   def parse(args) when is_list(args), do: OptionParser.parse!(args, strict: @switches)
 
-  @doc "Plays a song file with `record:` and `force:`, and returns `:ok` once it stops, or `{:error, message}`."
+  @doc "Plays a song file with `record:` and `force:`, or renders it offline with `render:`, `seconds:` and `force:`, and returns `:ok` once it stops, or `{:error, message}`."
   def play(path, opts) when is_binary(path) and is_list(opts) do
+    cond do
+      opts[:render] && opts[:record] ->
+        {:error,
+         "--render and --record cannot go together: a render writes its file without playing"}
+
+      out = opts[:render] ->
+        Mx.Render.render(path, out, Keyword.take(opts, [:seconds, :force]))
+
+      true ->
+        play_aloud(path, opts)
+    end
+  end
+
+  defp play_aloud(path, opts) do
     record = opts[:record]
 
     with :ok <- check_record(record, Keyword.get(opts, :force, false)),
