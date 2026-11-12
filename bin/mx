@@ -4,18 +4,28 @@
 dep = if path = System.get_env("MX_PATH"), do: {:mx, path: path}, else: {:mx, github: "rodrigues/mx"}
 Mix.install([dep])
 
-case Mx.Player.parse(System.argv()) do
-  {opts, [path]} ->
-    case Mx.Player.play(path, opts) do
-      :ok -> :ok
+usage = """
+usage: mx song.exs [--record session.wav | --render song.wav [--seconds 60]] [--force]
+       mx samples download SOURCE
+"""
+
+case System.argv() do
+  ["samples", "download", source] ->
+    case Mx.Samples.download_source(source) do
+      {:ok, message} -> IO.puts(message)
       {:error, message} -> IO.puts(:stderr, message) && System.halt(1)
     end
 
-  _ ->
-    IO.puts(
-      :stderr,
-      "usage: mx song.exs [--record session.wav | --render song.wav [--seconds 60]] [--force]"
-    )
+  argv ->
+    case Mx.Player.parse(argv) do
+      {opts, [path]} ->
+        case Mx.Player.play(path, opts) do
+          :ok -> :ok
+          {:error, message} -> IO.puts(:stderr, message) && System.halt(1)
+        end
 
-    System.halt(1)
+      _ ->
+        IO.write(:stderr, usage)
+        System.halt(1)
+    end
 end

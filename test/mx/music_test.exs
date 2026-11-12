@@ -847,7 +847,7 @@ defmodule Mx.MusicTest do
       path = write(ctx, "song(music: part(:pad, sample(:ambi_choir, 1)))")
       assert {:error, message} = Song.load(path)
       assert message =~ "sample ambi_choir"
-      assert message =~ "mix mx.samples"
+      assert message =~ "run mx samples download sonic_pi"
     end
 
     @tag :tmp_dir

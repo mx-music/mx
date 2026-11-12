@@ -14,10 +14,10 @@ defmodule Mx.SamplesTest do
       assert Samples.path(:bd_hause, @dir) == {:error, "unknown sample bd_hause"}
     end
 
-    test "says to run mix mx.samples for a sample of the pack not downloaded yet" do
+    test "says to run mx samples download sonic_pi for a sample of the pack not downloaded yet" do
       assert {:error, message} = Samples.path(:ambi_choir, @dir)
       assert message =~ "ambi_choir"
-      assert message =~ "mix mx.samples"
+      assert message =~ "run mx samples download sonic_pi"
     end
 
     test "finds a file by path, and refuses a path that does not exist" do

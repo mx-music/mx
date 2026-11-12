@@ -163,7 +163,8 @@ defmodule Mx.Pass do
   defp strum_order(notes, _strum), do: notes
 
   @doc "Records a sample step at the current beat, and returns a handle to it."
-  def record_sample(ref, opts) when (is_atom(ref) or is_binary(ref)) and is_list(opts) do
+  def record_sample(ref, opts)
+      when (is_atom(ref) or is_binary(ref) or is_tuple(ref)) and is_list(opts) do
     case Enum.find(
            Keyword.keys(opts),
            &(not (Synths.option?(:stereo_player, &1) or Samples.cut_option?(&1)))

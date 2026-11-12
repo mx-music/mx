@@ -385,6 +385,7 @@ defmodule Mx.Loop do
       state
     else
       name = state.loop.name
+      ref = Mx.Samples.name(ref)
       warn("loop #{name} loads sample #{ref}, which plays from its next pass")
       state.load_sample.(path, self())
       %{state | requested: MapSet.put(state.requested, path)}

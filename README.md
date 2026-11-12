@@ -23,14 +23,15 @@ cp bin/mx ~/.local/bin/mx
 
 The first time it runs, it installs mx with `Mix.install`, and after that it uses Mix's cache.
 Give it a clone of mx, with mxs beside it, as `MX_PATH=~/code/mx mx song.exs`; mx installed from GitHub cannot find mxs.
-To play Sonic Pi's samples, download its sample pack once, from a clone of mx:
+To play Sonic Pi's samples, download its sample pack once:
 
 ```sh
-mix mx.samples
+mx samples download sonic_pi
 ```
 
 The pack is 35 MB, under Creative Commons 0, and goes to your cache folder rather than the repository.
 Run the command again to finish an interrupted download.
+In a clone of mx, `mix mx.samples.download sonic_pi` does the same.
 
 ## Play a song
 
@@ -628,6 +629,13 @@ These are music too, placed like notes:
 - `from` and `to` cut a sample at seconds into its file, whatever its rate, in place of `start` and `finish`: `sample(:loop_amen, 1, from: 0.5, to: 1.0)` plays half a second of the loop from 0.5 seconds in, and a negative `rate` plays that half second backwards. `beats: 4` plays the sample, or the part of it cut, faster or slower so it lasts 4 beats at the tempo where it starts, changing its pitch with its speed as `rate` does, in place of `rate`: `sample(:loop_amen, 4, beats: 4)` fits the loop to a bar at any tempo. `slices: 8, slice: 3` plays the fourth of eight equal pieces, counted from 0, and with `beats` each piece lasts its share. `mix mx.print` shows them as written, with the rate `beats` works out.
 - `normalize: true` scales a sample so the loudest moment of its whole file reaches full scale, before `amp`, so `amp` sets its level from the same starting point for every file, from collections recorded at very different levels; a mono file reaches full scale in both channels at the centre. A file whose loudest moment is more than 40 dB below full scale, played without it, makes mx print one line when the song loads, naming the file and its peak, and a silent file is named as silent and plays silence.
 - A `from` or `to` outside the file, naming its length in seconds, a `start` or `finish` outside 0 to 1, a `slice` outside 0 to `slices` minus 1, and a sample given both `start` or `finish` and `from` or `to`, or both `beats` and `rate`, are refused when the song loads, with the line.
+- `sample({:github, "sgossner/VCSL", "c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e", "Idiophones/Struck Idiophones/Agogo Bells/Agogo_High_v1_rr1_Mid.wav"}, 1)` plays a file of a public GitHub repository at a commit, tag or branch, here an agogô of Versilian Studios' VCSL, under Creative Commons 0. mx downloads it into your cache when the song loads, printing a line naming it, so no pass waits for the network, and plays it from the cache with no network access after that. Each repository and ref has its own folder in the cache. A file that cannot be downloaded is refused when the song loads, naming the loop, the repository, the path and the reason, and the previous version keeps playing.
+- `mx samples download SOURCE` downloads a whole collection ahead of time into the same cache, so songs play it with no network access, and `mix mx.samples.download SOURCE` does the same in a clone of mx. SOURCE is `sonic_pi` for Sonic Pi's pack, or a GitHub repository as `owner/repo@ref`, optionally followed by `:folder` for only that folder. It prints how many files it downloaded, skips those it has, and names a file that fails; run it again to finish. GitHub lists a folder's files only so many times an hour without a login, and mx says when that limit resets:
+
+  ```sh
+  mx samples download "sgossner/VCSL@c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e:Idiophones/Struck Idiophones/Agogo Bells"
+  ```
+
 - mx reads WAV files as 8, 16, 24 and 32-bit PCM and 32 and 64-bit float, AIFF and AIFF-C files as 8, 16, 24 and 32-bit PCM and 32 and 64-bit float, and FLAC files, mono or stereo at any sample rate; it knows each by its contents, not its name.
 - `synth: sampled(folder)` plays a part on a sampled instrument, recorded one key at a time, with `note` and `hit` as on a synth. mx reads each file's note, strength and take from its name, as Versilian Studios' VCSL names them: a note such as `C#3` or `Bb2`, a strength as `v` or `vl` and a number, and a take as `rr` and a number, so `MBira4_pluck_Main_E4_19_50_100_rr2.wav` is the mbira's E4, take 2. VCSL is under Creative Commons 0, at https://github.com/sgossner/VCSL:
 

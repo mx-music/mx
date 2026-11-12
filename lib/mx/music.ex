@@ -128,8 +128,8 @@ defmodule Mx.Music do
     %Note{pitch: pitch(pitch), beats: beats, opts: opts}
   end
 
-  @doc "A sample of the pack by name, or a WAV, AIFF or FLAC file by path, lasting some beats, refusing a sample mx cannot find and an option samples do not take."
-  def sample(ref, beats, opts \\ []) when is_atom(ref) or is_binary(ref) do
+  @doc "A sample of the pack by name, a WAV, AIFF or FLAC file by path, or a file of a GitHub repository as `{:github, repo, ref, path}`, lasting some beats, refusing a sample mx cannot find and an option samples do not take."
+  def sample(ref, beats, opts \\ []) when is_atom(ref) or is_binary(ref) or is_tuple(ref) do
     check_beats("sample", beats)
     check_keyword("sample", opts)
 
@@ -138,12 +138,25 @@ defmodule Mx.Music do
       option -> raise ArgumentError, "samples have no option #{option}"
     end
 
-    with {:ok, path} <- Mx.Samples.path(ref),
-         :ok <- Mx.Samples.check_cut(ref, path, opts) do
-      Mx.Song.put_played(ref, path, Keyword.get(opts, :normalize, false) == true)
+    with :ok <- check_ref(ref, opts) do
       %Sample{ref: ref, beats: beats, opts: opts}
     else
       {:error, message} -> raise ArgumentError, message
+    end
+  end
+
+  # A GitHub sample is downloaded once the song has loaded, where the loop playing it can be named, and its cut checked as it plays.
+  defp check_ref({:github, _repo, _ref, _path} = ref, _opts), do: Mx.Samples.check_github(ref)
+
+  defp check_ref(ref, _opts) when is_tuple(ref) do
+    ref = inspect(ref)
+    {:error, "sample takes a name, a path or {:github, repo, ref, path}, not #{ref}"}
+  end
+
+  defp check_ref(ref, opts) do
+    with {:ok, path} <- Mx.Samples.path(ref),
+         :ok <- Mx.Samples.check_cut(ref, path, opts) do
+      Mx.Song.put_played(ref, path, Keyword.get(opts, :normalize, false) == true)
     end
   end
 

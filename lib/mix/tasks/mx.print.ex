@@ -168,7 +168,7 @@ defmodule Mix.Tasks.Mx.Print do
     end)
   end
 
-  defp format_step({:sample, ref, _path}), do: "sample #{ref}"
+  defp format_step({:sample, ref, _path}), do: "sample #{Samples.name(ref)}"
   defp format_step({:control, _target, _synth}), do: "control"
   defp format_step({:midi_note, note}), do: "midi #{note}"
   defp format_step({:midi_cc, number, value}), do: "midi_cc #{number}, #{value}"
