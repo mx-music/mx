@@ -47,4 +47,4 @@ defmodule Cuica do
   end
 end
 
-song(tempo: 88, music: repeat(Cuica.form()))
+song(tempo: 62, music: repeat(Cuica.form()))

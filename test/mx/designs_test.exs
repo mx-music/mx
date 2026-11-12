@@ -3476,41 +3476,74 @@ defmodule Mx.DesignsTest do
     @note note
     @stroke stroke
 
-    test "the cuíca's stroke at note #{note} scoops up into #{stroke.hz} Hz with its harmonics and length",
+    test "the cuíca's strokes at note #{note} scoop up into #{stroke.hz} Hz with their harmonics and length, by their median",
          ctx do
       %{hz: hz, harmonics: harmonics, under: under, reached: reached, lasts: {shortest, longest}} =
         @stroke
 
-      sound = render(ctx, :cuica, [note: @note], 0.4)
-      settled = pitch(window(sound, reached + 0.01, reached + 0.06), hz)
-      assert_in_delta 1200 * :math.log2(settled / hz), 0, 30, "settles at #{settled} Hz"
+      strokes = cuica_strokes(ctx, @note)
+      settled = Enum.map(strokes, &pitch(window(&1, reached + 0.01, reached + 0.06), hz))
+      cents = fn a, b -> 1200 * :math.log2(a / b) end
+      assert_in_delta cents.(median(settled), hz), 0, 30, "settles at #{median(settled)} Hz"
 
-      start = pitch(window(sound, 0.005, 0.03), hz / 1.1)
-      cents_under = round(1200 * :math.log2(settled / start))
-      assert cents_under in under, "starts #{cents_under} cents under"
+      # Over 5 to 60 ms from where the stroke rises within 25 dB of its peak, the span the recordings' first five pitch frames covered.
+      starts =
+        for {sound, at} <- Enum.zip(strokes, settled) do
+          from = speaks(sound)
+          cents.(at, pitch(window(sound, from + 0.005, from + 0.06), hz / 1.1))
+        end
 
-      near = pitch(window(sound, reached - 0.01, reached + 0.01), hz)
-      assert_in_delta 1200 * :math.log2(near / settled), 0, 50, "at #{reached} s #{near} Hz"
+      assert round(median(starts)) in under, "starts #{median(starts)} cents under"
 
-      steady = window(sound, reached + 0.01, reached + 0.06)
-      fundamental = goertzel(steady, settled)
+      nears =
+        for {sound, at} <- Enum.zip(strokes, settled),
+            do: cents.(pitch(window(sound, reached - 0.01, reached + 0.01), hz), at)
+
+      assert_in_delta median(nears), 0, 50, "at #{reached} s #{median(nears)} cents off"
 
       for {level, k} <- Enum.with_index(harmonics, 2) do
-        measured = 10 * :math.log10(goertzel(steady, k * settled) / fundamental)
-        assert_in_delta measured, level, 4, "harmonic #{k} at #{measured} dB"
+        measured =
+          for {sound, at} <- Enum.zip(strokes, settled) do
+            steady = window(sound, reached + 0.01, reached + 0.06)
+            10 * :math.log10(peak_near(steady, k * at) / peak_near(steady, at))
+          end
+
+        assert_in_delta median(measured), level, 4, "harmonic #{k} at #{median(measured)} dB"
       end
 
-      levels =
-        for c <- Enum.chunk_every(sound, 240), do: 20 * :math.log10(rms(c, 0, 0.005) + 1.0e-9)
+      envelopes =
+        for sound <- strokes,
+            do:
+              for(
+                c <- Enum.chunk_every(sound, 240),
+                do: 20 * :math.log10(rms(c, 0, 0.005) + 1.0e-9)
+              )
 
-      loudest = Enum.max(levels)
-      lasts = Enum.count(levels, &(&1 > loudest - 25)) * 0.005
-      assert lasts >= shortest and lasts <= longest, "lasts #{lasts} s"
+      lasts =
+        for levels <- envelopes,
+            do: Enum.count(levels, &(&1 > Enum.max(levels) - 25)) * 0.005
+
+      assert median(lasts) >= shortest and median(lasts) <= longest, "lasts #{median(lasts)} s"
 
       if @note == 65 do
-        for level <- Enum.slice(levels, 6..24), do: assert(level > loudest - 6)
+        held = for levels <- envelopes, do: Enum.max(levels) - Enum.min(Enum.slice(levels, 6..24))
+        assert median(held) < 6, "falls #{median(held)} dB from 30 to 120 ms"
       end
     end
+  end
+
+  # reinsamba's strokes vary from one to the next: the scoop by about two thirds of itself and the pitch they settle at by 77 cents.
+  test "no two cuíca strokes match: their scoops and the pitches they settle at vary", ctx do
+    strokes = cuica_strokes(ctx, 65)
+    settled = Enum.map(strokes, &pitch(window(&1, 0.13, 0.18), 353))
+    starts = Enum.map(strokes, &pitch(window(&1, 0.005, 0.03), 320))
+
+    spread = fn hz ->
+      hz |> Enum.map(&(1200 * :math.log2(&1 / median(hz)))) |> Enum.map(&abs/1) |> median()
+    end
+
+    assert spread.(settled) > 10, "settled pitches within #{spread.(settled)} cents"
+    assert spread.(starts) > 40, "starting pitches within #{spread.(starts)} cents"
   end
 
   test "the cuíca is louder struck harder", ctx do
@@ -5286,6 +5319,36 @@ defmodule Mx.DesignsTest do
 
       re * re + im * im
     end)
+  end
+
+  # The second the sound first rises within 25 dB of its loudest, in 5 ms steps.
+  defp speaks(sound) do
+    levels = for c <- Enum.chunk_every(sound, 240), do: rms(c, 0, 0.005)
+    loudest = Enum.max(levels)
+    Enum.find_index(levels, &(&1 > loudest / 17.8)) * 0.005
+  end
+
+  # The strongest energy within 2 percent of `hz`, as the pitch's wobble spreads each harmonic.
+  defp peak_near(samples, hz) do
+    Enum.max(for step <- -4..4, do: goertzel(samples, hz * (1 + step * 0.005)))
+  end
+
+  # Fifteen cuíca strokes at `note`, rendered half a second apart in a song, each cut to its 0.45 seconds.
+  defp cuica_strokes(ctx, note) do
+    song = Path.join(ctx.tmp_dir, "strokes.exs")
+    out = Path.join(ctx.tmp_dir, "strokes.wav")
+
+    File.write!(song, """
+    import Mx
+    song(tempo: 120, music: part(:cuica, at(Enum.map(0..14, &{&1, hit(note: #{note})}), 15), synth: :cuica))
+    """)
+
+    ExUnit.CaptureIO.capture_io(fn -> assert :ok = Mx.Render.render(song, out, seconds: 8) end)
+    wav = File.read!(out)
+    {at, _} = :binary.match(wav, "data")
+    data = binary_part(wav, at + 8, byte_size(wav) - at - 8)
+    left = for <<x::little-float-32, _::little-float-32 <- data>>, do: x
+    for i <- 0..14, do: window(left, i * 0.5, i * 0.5 + 0.45)
   end
 
   defp render(ctx, synth, opts, seconds \\ 2, later \\ []) do
