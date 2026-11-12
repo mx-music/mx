@@ -70,7 +70,7 @@ mx prints the same report as for a recording, and refuses a file that exists unl
 A render sends no MIDI or OSC and has no input, so mx names each part that sends MIDI or OSC, or waits for input, and leaves it out.
 `--render` cannot go with `--record`, nor with a song that has `live_audio`.
 
-`examples/tranquility_base.exs` is made only of public recordings, with no synth: VCSL's mbira dzaVadzimu plays two interlocking lines as a sampled instrument, its drums choose strengths and alternate takes, its ocean drum and wine glasses play normalized underneath, and NASA's Apollo and Sputnik recordings are cut at seconds, sliced and fitted to the beat over it. It needs two of VCSL's folders downloaded once, 1.5 GB together, and NASA's recordings ship beside it:
+`examples/tranquility_base.exs` is made only of public recordings, with no synth: VCSL's drums play as sampled instruments, choosing strengths and alternating takes, its ocean drum and wine glasses play normalized underneath, and NASA's Apollo and Sputnik recordings are cut at seconds, stuttered, reversed and fitted to the beat over it. It needs two of VCSL's folders downloaded once, 1.5 GB together, and NASA's recordings ship beside it:
 
 ```sh
 mx samples download "sgossner/VCSL@c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e:Idiophones"

@@ -63,25 +63,19 @@ defmodule Mx.Examples.TranquilityBaseTest do
       {output, errors} = print()
       assert errors == ""
       refute output =~ ~r/^beat \S+\s+play/m
-      assert output =~ ~r/^kushaura, 128 beats at 136 bpm/m
+      assert output =~ ~r/^hat, 144 beats at 136 bpm/m
 
-      kushaura = part(output, "kushaura")
+      assert part(output, "kick") =~
+               "beat 32   sample sgossner/VCSL Membranophones/Struck Membranophones/Bass Drum 1/BDrumNew_hit_v7_rr1_Sum.wav amp: 0.54"
 
-      assert kushaura =~
-               "beat 0        sample sgossner/VCSL Idiophones/Plucked Idiophones/Mbira dzaVadzimu Nyamaropa, Zimbabwe, Low B/MBira4_pluck_Main_B2_13_50_100_rr3.wav"
-
-      # The lead's D#5 is above the mbira's highest key, so it plays from C#5 two semitones faster.
-      assert kushaura =~
-               "MBira4_pluck_Main_C#5_24_50_100_rr5.wav amp: 1.5, pan: -0.3, sustain: 3, release: 1, rate: 1.122462048309373"
-
-      hats = for [_, take] <- Regex.scan(~r/HiHat_HitC_v4_(rr\d)/, part(output, "hat")), do: take
+      hats = for [_, take] <- Regex.scan(~r/HiHat_HitC_v3_(rr\d)/, part(output, "hat")), do: take
       assert Enum.take(hats, 4) == ~w(rr1 rr2 rr1 rr2)
 
       assert part(output, "voice") =~
-               "apollo_13_problem.wav from: 0.0, to: 1.6, slices: 4, slice: 0, beats: 1"
+               "a11landing.aiff from: 2.0, to: 2.3, amp: 0.8, rate: 0.95"
 
       assert part(output, "sputnik") =~
-               "sputnik.wav from: 0.0, to: 0.4366, beats: 1, amp: 0.25, rate: 0.9896"
+               "sputnik.wav from: 0.3, to: 2.06, beats: 4, amp: 0.25, rate: 0.9973"
     end
 
     @tag timeout: 300_000
