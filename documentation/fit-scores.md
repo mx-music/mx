@@ -43,7 +43,7 @@ The horn and the tuba are measured from VSCO 2's held notes, so their scores are
 | oboe | Iowa | 109.31 | 42.20 |
 | bassoon | Iowa | 175.65 | 36.29 |
 | trumpet | Iowa | 292.58 | 5.89 |
-| trombone | Iowa | 477.61 | 36.62 |
+| trombone | Iowa | 477.61 | 32.09 |
 | horn | VSCO 2 | 1561 | 185 |
 | tuba | VSCO 2 | 1569 | 163 |
 | tenor_sax | VCSL | 29.53 | 12.13 |
