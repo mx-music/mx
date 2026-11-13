@@ -57,8 +57,8 @@ defmodule Mx.Examples.CajonTest do
     assert strokes(print(17)) == [{0.0, 0, 0.95}]
   end
 
-  test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/solo/cajon.exs"
+  test "the examples guide points to the solo, and the synth designs license names the recordings" do
+    assert File.read!("documentation/examples.md") =~ "examples/solo/cajon.exs"
     assert File.read!("LICENSE-designs.md") =~ "cajón recordings"
   end
 

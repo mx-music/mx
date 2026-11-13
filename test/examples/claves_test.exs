@@ -41,8 +41,8 @@ defmodule Mx.Examples.ClavesTest do
     assert print(9) =~ ~r/\nbeat 6 +play vel: 1, amp: 0.5\n/
   end
 
-  test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/solo/claves.exs"
+  test "the examples guide points to the solo, and the synth designs license names the recordings" do
+    assert File.read!("documentation/examples.md") =~ "examples/solo/claves.exs"
     assert File.read!("LICENSE-designs.md") =~ "claves recordings"
   end
 

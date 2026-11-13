@@ -28,8 +28,8 @@ defmodule Mx.Examples.OboeTest do
     assert print(4) =~ ~r/\nbeat 12 +play 77 vel: 0.75, sustain: 3.9, release: 0.8\n/
   end
 
-  test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/solo/oboe.exs"
+  test "the examples guide points to the solo, and the synth designs license names the recordings" do
+    assert File.read!("documentation/examples.md") =~ "examples/solo/oboe.exs"
     assert File.read!("LICENSE-designs.md") =~ "The oboe is measured"
   end
 

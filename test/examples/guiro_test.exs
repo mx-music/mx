@@ -29,8 +29,8 @@ defmodule Mx.Examples.GuiroTest do
     assert scrapes(7) == [{0, "0.18"}, {1, "0.18"}, {2, "0.18"}, {3, "0.6"}]
   end
 
-  test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/solo/guiro.exs"
+  test "the examples guide points to the solo, and the synth designs license names the recordings" do
+    assert File.read!("documentation/examples.md") =~ "examples/solo/guiro.exs"
     assert File.read!("LICENSE-designs.md") =~ "güiro recordings"
   end
 

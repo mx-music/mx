@@ -39,8 +39,8 @@ defmodule Mx.Examples.AgogoTest do
     assert three =~ ~r/low_agogo, pass 18.*\nbeat 1 +play .*\nbeat 1.75 +play /s
   end
 
-  test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/solo/agogo.exs"
+  test "the examples guide points to the solo, and the synth designs license names the recordings" do
+    assert File.read!("documentation/examples.md") =~ "examples/solo/agogo.exs"
     assert File.read!("LICENSE-designs.md") =~ "Versilian Community Sample Library"
   end
 

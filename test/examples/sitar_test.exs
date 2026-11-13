@@ -22,8 +22,8 @@ defmodule Mx.Examples.SitarTest do
     assert print(4) =~ ~r/^beat 8.5 +play 63.04 /m
   end
 
-  test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/solo/sitar.exs"
+  test "the examples guide points to the solo, and the synth designs license names the recordings" do
+    assert File.read!("documentation/examples.md") =~ "examples/solo/sitar.exs"
     assert File.read!("LICENSE-designs.md") =~ "sitar01.flac"
     assert File.read!("LICENSE-designs.md") =~ "sitar j"
   end

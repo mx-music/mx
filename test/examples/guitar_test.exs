@@ -32,8 +32,8 @@ defmodule Mx.Examples.GuitarTest do
     end
   end
 
-  test "the README points to the guitar examples" do
-    assert File.read!("README.md") =~ "examples/guitar"
+  test "the examples guide points to the guitar examples" do
+    assert File.read!("documentation/examples.md") =~ "examples/guitar"
   end
 
   @tag :timing

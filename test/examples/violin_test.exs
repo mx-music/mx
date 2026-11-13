@@ -50,8 +50,8 @@ defmodule Mx.Examples.ViolinTest do
              ~r/\nbeat 4 +play 98 vel: 0.7, amp: 0.6, sustain: 7.9, release: 0.15, vibrato: 0.1\n/
   end
 
-  test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/solo/violin.exs"
+  test "the examples guide points to the solo, and the synth designs license names the recordings" do
+    assert File.read!("documentation/examples.md") =~ "examples/solo/violin.exs"
     assert File.read!("LICENSE-designs.md") =~ "The violin is measured"
   end
 

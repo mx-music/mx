@@ -72,8 +72,8 @@ defmodule Mx.Examples.BerimbauTest do
     assert print(32) =~ "8 beats at 108 bpm"
   end
 
-  test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/solo/berimbau.exs"
+  test "the examples guide points to the solo, and the synth designs license names the recordings" do
+    assert File.read!("documentation/examples.md") =~ "examples/solo/berimbau.exs"
     assert File.read!("LICENSE-designs.md") =~ "Berimbau jam without caxixi"
   end
 

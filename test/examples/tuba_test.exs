@@ -30,8 +30,8 @@ defmodule Mx.Examples.TubaTest do
     assert print(4) =~ ~r/\nbeat 3 +play 29 vel: 0.85, sustain: 12.5, release: 0.5\n/
   end
 
-  test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/solo/tuba.exs"
+  test "the examples guide points to the solo, and the synth designs license names the recordings" do
+    assert File.read!("documentation/examples.md") =~ "examples/solo/tuba.exs"
 
     assert File.read!("LICENSE-designs.md") =~
              "The tuba is measured"

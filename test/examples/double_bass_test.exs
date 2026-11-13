@@ -33,8 +33,8 @@ defmodule Mx.Examples.DoubleBassTest do
              ~r/\nbeat 8 +play 29 vel: 0.8, sustain: 6, release: 1, vibrato: 0.08, amp: 0.6\nbeat 8 +control amp: 1, amp_slide: 3\n/
   end
 
-  test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/solo/double_bass.exs"
+  test "the examples guide points to the solo, and the synth designs license names the recordings" do
+    assert File.read!("documentation/examples.md") =~ "examples/solo/double_bass.exs"
     assert File.read!("LICENSE-designs.md") =~ "The double bass is measured"
   end
 

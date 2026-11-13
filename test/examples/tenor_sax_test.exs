@@ -33,8 +33,8 @@ defmodule Mx.Examples.TenorSaxTest do
              ~r/\nbeat 4.75 +play 44 vel: 0.8, sustain: 10.75, release: 0.4, vibrato: 1\n/
   end
 
-  test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/solo/tenor_sax.exs"
+  test "the examples guide points to the solo, and the synth designs license names the recordings" do
+    assert File.read!("documentation/examples.md") =~ "examples/solo/tenor_sax.exs"
 
     assert File.read!("LICENSE-designs.md") =~
              "The tenor saxophone, tenor_sax, is measured"

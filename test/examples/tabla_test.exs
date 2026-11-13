@@ -31,8 +31,8 @@ defmodule Mx.Examples.TablaTest do
     assert print(4) =~ ~r/^beat 1 +play vel: 0.65, note_slide: 0.5\nbeat 1 +control note: 44.25$/m
   end
 
-  test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/solo/tabla.exs"
+  test "the examples guide points to the solo, and the synth designs license names the recordings" do
+    assert File.read!("documentation/examples.md") =~ "examples/solo/tabla.exs"
     assert File.read!("LICENSE-designs.md") =~ "tabla bols"
   end
 

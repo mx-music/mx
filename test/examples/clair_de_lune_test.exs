@@ -56,8 +56,8 @@ defmodule Mx.Examples.ClairDeLuneTest do
     assert loudest.(40) > 2 * loudest.(0)
   end
 
-  test "the README points to the performance" do
-    assert File.read!("README.md") =~ @song
+  test "the examples guide points to the performance" do
+    assert File.read!("documentation/examples.md") =~ @song
   end
 
   @tag :timing

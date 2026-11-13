@@ -35,8 +35,8 @@ defmodule Mx.Examples.GanzaTest do
     refute ganza =~ ~r/^beat 0.5 /m
   end
 
-  test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/solo/ganza.exs"
+  test "the examples guide points to the solo, and the synth designs license names the recordings" do
+    assert File.read!("documentation/examples.md") =~ "examples/solo/ganza.exs"
     assert File.read!("LICENSE-designs.md") =~ "large shaker recordings"
   end
 

@@ -34,8 +34,8 @@ defmodule Mx.Examples.TrumpetTest do
     assert print(4) =~ ~r/\nbeat 3 +play 82 vel: 0.9, sustain: 12.5, release: 0.4, vibrato: 0.1\n/
   end
 
-  test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/solo/trumpet.exs"
+  test "the examples guide points to the solo, and the synth designs license names the recordings" do
+    assert File.read!("documentation/examples.md") =~ "examples/solo/trumpet.exs"
 
     assert File.read!("LICENSE-designs.md") =~
              "The trumpet is measured"

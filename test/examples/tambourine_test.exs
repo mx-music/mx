@@ -48,8 +48,8 @@ defmodule Mx.Examples.TambourineTest do
     assert ending =~ ~r/tambourine, pass 7, [^\n]*\nbeat 3 +play vel: 1, amp: 0.5\n/
   end
 
-  test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/solo/tambourine.exs"
+  test "the examples guide points to the solo, and the synth designs license names the recordings" do
+    assert File.read!("documentation/examples.md") =~ "examples/solo/tambourine.exs"
     assert File.read!("LICENSE-designs.md") =~ "tambourine recordings"
   end
 

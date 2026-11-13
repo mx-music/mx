@@ -67,8 +67,8 @@ defmodule Mx.Examples.BongosTest do
     assert ending =~ ~r/low_bongo, pass 20, [^\n]*\nbeat 0 +play vel: 0.85, amp: 1.05\n/
   end
 
-  test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/solo/bongos.exs"
+  test "the examples guide points to the solo, and the synth designs license names the recordings" do
+    assert File.read!("documentation/examples.md") =~ "examples/solo/bongos.exs"
     assert File.read!("LICENSE-designs.md") =~ "bongo recordings"
   end
 

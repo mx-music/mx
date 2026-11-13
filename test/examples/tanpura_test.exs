@@ -33,8 +33,8 @@ defmodule Mx.Examples.TanpuraTest do
     assert drones |> Enum.map(&elem(&1, 2)) |> Enum.max() >= 60
   end
 
-  test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/solo/tanpura.exs"
+  test "the examples guide points to the solo, and the synth designs license names the recordings" do
+    assert File.read!("documentation/examples.md") =~ "examples/solo/tanpura.exs"
 
     assert File.read!("LICENSE-designs.md") =~
              ~s(The tanpura is measured from the recording "Tanpura 10")

@@ -53,8 +53,8 @@ defmodule Mx.Examples.CelloTest do
              ~r/\nbeat 12 +play 43 vel: 0.7, amp: 0.6, sustain: 3.9, release: 0.2, vibrato: 0.08\n/
   end
 
-  test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/solo/cello.exs"
+  test "the examples guide points to the solo, and the synth designs license names the recordings" do
+    assert File.read!("documentation/examples.md") =~ "examples/solo/cello.exs"
     assert File.read!("LICENSE-designs.md") =~ "The cello is measured"
   end
 

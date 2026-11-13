@@ -23,8 +23,8 @@ defmodule Mx.Examples.OrganTest do
     assert print(2) =~ ~r/\nbeat 0 +play 60 loud: 1, sustain: 3.8\n/
   end
 
-  test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/solo/organ.exs"
+  test "the examples guide points to the solo, and the synth designs license names the recordings" do
+    assert File.read!("documentation/examples.md") =~ "examples/solo/organ.exs"
     assert File.read!("LICENSE-designs.md") =~ "Simon Dalzell"
   end
 

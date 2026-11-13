@@ -25,8 +25,8 @@ defmodule Mx.Examples.VibraphoneTest do
              ~r/\nbeat 0 +play 53 vel: 0.4, motor: 0, release: 0.1, sustain: 1.9\nbeat 0 +play 69 vel: 0.6, motor: 0, release: 0.05, sustain: 0.2\n/
   end
 
-  test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/solo/vibraphone.exs"
+  test "the examples guide points to the solo, and the synth designs license names the recordings" do
+    assert File.read!("documentation/examples.md") =~ "examples/solo/vibraphone.exs"
     assert File.read!("LICENSE-designs.md") =~ "The vibraphone is measured"
   end
 

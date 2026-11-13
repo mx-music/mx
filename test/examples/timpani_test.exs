@@ -39,8 +39,8 @@ defmodule Mx.Examples.TimpaniTest do
     assert print(4) =~ ~r/\nbeat 8 +play 50 vel: 1, amp: 0.5\n$/
   end
 
-  test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/solo/timpani.exs"
+  test "the examples guide points to the solo, and the synth designs license names the recordings" do
+    assert File.read!("documentation/examples.md") =~ "examples/solo/timpani.exs"
     assert File.read!("LICENSE-designs.md") =~ "The timpani is measured"
   end
 

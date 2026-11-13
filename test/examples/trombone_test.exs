@@ -36,8 +36,8 @@ defmodule Mx.Examples.TromboneTest do
     assert print(4) =~ ~r/\nbeat 4 +control note: 65\n/
   end
 
-  test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/solo/trombone.exs"
+  test "the examples guide points to the solo, and the synth designs license names the recordings" do
+    assert File.read!("documentation/examples.md") =~ "examples/solo/trombone.exs"
 
     assert File.read!("LICENSE-designs.md") =~
              "The trombone is measured"

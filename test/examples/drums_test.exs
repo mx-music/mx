@@ -73,8 +73,8 @@ defmodule Mx.Examples.DrumsTest do
              ~r/crash, pass 20, [^\n]*\nbeat 0 +play vel: 1, sustain: 3, release: 0.1, amp: 0.5\n/
   end
 
-  test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/solo/drums.exs"
+  test "the examples guide points to the solo, and the synth designs license names the recordings" do
+    assert File.read!("documentation/examples.md") =~ "examples/solo/drums.exs"
     license = File.read!("LICENSE-designs.md")
     assert license =~ "snare drum recordings"
     assert license =~ "crash cymbal recordings"

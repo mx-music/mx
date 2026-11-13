@@ -25,8 +25,8 @@ defmodule Mx.Examples.FluteTest do
     assert print(0) =~ ~r/\nbeat 101.31 +play 71 vel: 0.35, sustain: 14.7, release: 0.3\n/
   end
 
-  test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/solo/flute.exs"
+  test "the examples guide points to the solo, and the synth designs license names the recordings" do
+    assert File.read!("documentation/examples.md") =~ "examples/solo/flute.exs"
     assert File.read!("LICENSE-designs.md") =~ "The flute is measured"
   end
 

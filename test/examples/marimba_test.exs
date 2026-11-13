@@ -29,8 +29,8 @@ defmodule Mx.Examples.MarimbaTest do
     assert print(3) =~ ~r/\nbeat 0 +play 36 vel: 0.7\n.*\nbeat 4 +play 84 vel: 0.7\n/s
   end
 
-  test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/solo/marimba.exs"
+  test "the examples guide points to the solo, and the synth designs license names the recordings" do
+    assert File.read!("documentation/examples.md") =~ "examples/solo/marimba.exs"
     assert File.read!("LICENSE-designs.md") =~ "The marimba is measured"
   end
 

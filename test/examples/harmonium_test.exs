@@ -24,8 +24,8 @@ defmodule Mx.Examples.HarmoniumTest do
     assert print(2) =~ ~r/^beat 0.5 +play 56.12 vel: 0.5, sustain: 0.45/m
   end
 
-  test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/solo/harmonium.exs"
+  test "the examples guide points to the solo, and the synth designs license names the recordings" do
+    assert File.read!("documentation/examples.md") =~ "examples/solo/harmonium.exs"
     assert File.read!("LICENSE-designs.md") =~ "cabled_mess"
     assert File.read!("LICENSE-designs.md") =~ "donyaquick"
   end

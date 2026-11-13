@@ -51,8 +51,8 @@ defmodule Mx.Examples.MeditationTest do
     assert loop_part(print(16), "flute") =~ ~r/\Abeat 0 +play 62\.0 /
   end
 
-  test "the README points to the meditation" do
-    assert File.read!("README.md") =~ "examples/meditation.exs"
+  test "the examples guide points to the meditation" do
+    assert File.read!("documentation/examples.md") =~ "examples/meditation.exs"
   end
 
   @tag :timing

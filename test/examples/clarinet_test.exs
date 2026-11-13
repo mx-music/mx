@@ -30,8 +30,8 @@ defmodule Mx.Examples.ClarinetTest do
     assert print(4) =~ ~r/\nbeat 3 +play 91 vel: 0.85, sustain: 5.9, release: 0.4\n/
   end
 
-  test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/solo/clarinet.exs"
+  test "the examples guide points to the solo, and the synth designs license names the recordings" do
+    assert File.read!("documentation/examples.md") =~ "examples/solo/clarinet.exs"
     assert File.read!("LICENSE-designs.md") =~ "The clarinet is measured"
   end
 

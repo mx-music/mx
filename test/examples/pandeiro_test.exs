@@ -74,9 +74,9 @@ defmodule Mx.Examples.PandeiroTest do
              ~r/pandeiro_heel, pass 15.*\nbeat 0.333 +play vel: 0.5\nbeat 0.667 +play vel: 0.85\nbeat 1.333 +play vel: 0.85\n/s
   end
 
-  test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/solo/pandeiro.exs"
-    assert File.read!("README.md") =~ "examples/pandeiro/virtuoso.exs"
+  test "the examples guide points to the solo, and the synth designs license names the recordings" do
+    assert File.read!("documentation/examples.md") =~ "examples/solo/pandeiro.exs"
+    assert File.read!("documentation/examples.md") =~ "examples/pandeiro/virtuoso.exs"
     assert File.read!("LICENSE-designs.md") =~ "MeanRaccoon"
   end
 

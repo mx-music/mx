@@ -70,8 +70,8 @@ defmodule Mx.Examples.CongasTest do
     assert ending =~ ~r/low_conga, pass 18, [^\n]*\nbeat 0 +play vel: 0.9, amp: 1.4\n/
   end
 
-  test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/solo/congas.exs"
+  test "the examples guide points to the solo, and the synth designs license names the recordings" do
+    assert File.read!("documentation/examples.md") =~ "examples/solo/congas.exs"
     assert File.read!("LICENSE-designs.md") =~ "tumba, conga and quinto recordings"
   end
 

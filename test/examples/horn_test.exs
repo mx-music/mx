@@ -35,8 +35,8 @@ defmodule Mx.Examples.HornTest do
     assert print(4) =~ ~r/\nbeat 4.5 +play 39 vel: 0.85, sustain: 11.0, release: 0.5\n/
   end
 
-  test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/solo/horn.exs"
+  test "the examples guide points to the solo, and the synth designs license names the recordings" do
+    assert File.read!("documentation/examples.md") =~ "examples/solo/horn.exs"
 
     assert File.read!("LICENSE-designs.md") =~
              "The French horn, horn, is measured"

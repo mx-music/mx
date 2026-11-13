@@ -34,8 +34,8 @@ defmodule Mx.Examples.TriangleTest do
     assert print(6) =~ ~r/\nbeat 3.75 +play vel: 0.75, sustain: 0.2, release: 0.1, amp: 0.5\n/
   end
 
-  test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/solo/triangle.exs"
+  test "the examples guide points to the solo, and the synth designs license names the recordings" do
+    assert File.read!("documentation/examples.md") =~ "examples/solo/triangle.exs"
     assert File.read!("LICENSE-designs.md") =~ "triangle recordings"
   end
 

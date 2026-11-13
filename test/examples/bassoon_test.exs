@@ -30,8 +30,8 @@ defmodule Mx.Examples.BassoonTest do
     assert print(4) =~ ~r/\nbeat 10 +play 34 vel: 0.75, sustain: 5.5, release: 0.6\n/
   end
 
-  test "the README points to the solo, and the synth designs license names the recordings" do
-    assert File.read!("README.md") =~ "examples/solo/bassoon.exs"
+  test "the examples guide points to the solo, and the synth designs license names the recordings" do
+    assert File.read!("documentation/examples.md") =~ "examples/solo/bassoon.exs"
     assert File.read!("LICENSE-designs.md") =~ "The bassoon is measured"
   end
 
