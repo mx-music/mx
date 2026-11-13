@@ -67,7 +67,7 @@ kbd { font-family: var(--ui); font-size: 11.5px; border: 1px solid var(--line); 
 .panel { border: 1px solid var(--line); border-radius: 10px; background: var(--win); overflow: hidden; }
 
 /* transport */
-.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--win); }
+.bar { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--win); }
 .title { flex: 1 1 160px; min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
 .title h1 { font-size: 16px; font-weight: 700; letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .title span { font-size: 11.5px; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
@@ -110,29 +110,31 @@ canvas { display: block; width: 100%; touch-action: pan-y; }
 .src h2 { font-size: 12px; font-weight: 600; }
 .src .ib { height: 24px; background: transparent; color: var(--ink-2); font-size: 12px; }
 .src .ib:hover { background: var(--sel); color: var(--ink); }
-.doc { display: flex; max-height: 460px; overflow: auto; background: var(--pane); font-family: var(--mono); font-size: 12.5px; line-height: 20px; padding: 8px 0; }
+.doc { flex: 1; min-height: 0; display: flex; overflow: auto; background: var(--pane); font-family: var(--mono); font-size: 12.5px; line-height: 20px; padding: 8px 0; }
 .gut { flex: none; width: 46px; padding-right: 12px; text-align: right; color: var(--ink-3); user-select: none; white-space: pre; }
 .code { flex: none; margin: 0; padding-right: 24px; white-space: pre; font: inherit; }
 .t-k { color: var(--c-key); font-weight: 600; } .t-a, .t-s { color: var(--c-atom); } .t-n { color: var(--c-num); } .t-w { color: var(--c-word); } .t-c { color: var(--ink-3); font-style: italic; }
 .foot { font-size: 11.5px; color: var(--ink-3); }
 .foot a { color: inherit; }
 
+/* the song file over the parts, which take the rest of the window */
+.stage { display: flex; flex-direction: column; gap: 12px; height: calc(100dvh - 24px); min-height: 520px; }
+.src { flex: 0 0 30%; min-height: 0; display: flex; flex-direction: column; }
+.tracks { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.tracks .tl, .tracks .note { flex: none; }
+.tracks #lanesRow { flex: 1; min-height: 0; overflow-y: auto; }
+
 /* one panel over the whole screen */
-.stage { display: flex; flex-direction: column; gap: 12px; }
-.full { position: fixed; inset: 0; z-index: 20; width: auto; height: auto; margin: 0; border: 0; border-radius: 0; background: var(--desk); }
+.full { position: fixed; inset: 0; z-index: 20; width: auto; height: auto; min-height: 0; margin: 0; border: 0; border-radius: 0; background: var(--desk); }
 .stage.full { padding-block: max(12px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-bottom, 0px)); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
-.stage.full .bar { position: static; }
-.stage.full .panel { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-.stage.full .tl { flex: none; }
-.stage.full #lanesRow { flex: 1; min-height: 0; overflow-y: auto; }
-.src.full { display: flex; flex-direction: column; background: var(--pane); padding-top: env(safe-area-inset-top, 0px); }
-.src.full .doc { flex: 1; min-height: 0; max-height: none; }
+.stage.full .src { display: none; }
+.src.full { background: var(--pane); padding-top: env(safe-area-inset-top, 0px); }
 
 @media (max-width: 700px) {
   :root { --head: 104px; }
   .who span { display: none; }
   .lcd div { padding: 0 7px; min-width: 0; }
-  .keys, #fullTracks span { display: none; }
+  .keys { display: none; }
 }
 </style>
 
@@ -155,10 +157,15 @@ canvas { display: block; width: 100%; touch-action: pan-y; }
     <button class="ib" id="zIn" title="Show less of the song, larger" aria-label="Zoom in"><svg viewBox="0 0 16 16"><path d="M7 3h2v4h4v2H9v4H7V9H3V7h4z"/></svg></button>
     <button class="ib" id="zFit" title="Show the whole song">Whole song</button>
   </div>
-  <button class="ib" id="fullTracks" title="Show only the parts, over the whole screen (F)"><svg viewBox="0 0 16 16"><path d="M2 2h5v2H4v3H2zM14 14H9v-2h3V9h2z"/></svg><span>Full screen</span></button>
+  <button class="ib" id="fullTracks" title="Show only the parts, over the whole screen (F)" aria-label="Show only the parts, over the whole screen"><svg viewBox="0 0 16 16"><path d="M2 2h5v2H4v3H2zM14 14H9v-2h3V9h2z"/></svg></button>
 </header>
 
-<section class="panel" aria-label="Timeline">
+<section class="panel src" id="src" aria-label="Song file">
+  <div class="top"><h2 id="file"></h2><button class="ib" id="fullCode" title="Show only the song file, over the whole screen" aria-label="Show only the song file, over the whole screen"><svg viewBox="0 0 16 16"><path d="M2 2h5v2H4v3H2zM14 14H9v-2h3V9h2z"/></svg></button></div>
+  <div class="doc"><div class="gut" id="gut"></div><pre class="code" id="code"></pre></div>
+</section>
+
+<section class="panel tracks" aria-label="Timeline">
   <div class="tl">
     <div class="heads"><div class="hd lab" style="height:56px">Whole song</div></div>
     <div class="view"><canvas id="over"></canvas></div>
@@ -173,11 +180,6 @@ canvas { display: block; width: 100%; touch-action: pan-y; }
   </div>
 </section>
 </div>
-
-<section class="panel src" id="src" aria-label="Song file">
-  <div class="top"><h2 id="file"></h2><button class="ib" id="fullCode" title="Show only the song file, over the whole screen"><svg viewBox="0 0 16 16"><path d="M2 2h5v2H4v3H2zM14 14H9v-2h3V9h2z"/></svg><span>Full screen</span></button></div>
-  <div class="doc"><div class="gut" id="gut"></div><pre class="code" id="code"></pre></div>
-</section>
 
 <p class="foot">Written as code and rendered by <a href="https://github.com/rodrigues/mx">mx</a>. The sound is mx's own render of the song file above, and the marks are the notes mx worked out for each part.</p>
 
@@ -205,9 +207,9 @@ S.parts.forEach((p, i) => {
 });
 const BASE_H = lanes.reduce((sum, lane) => sum + lane.base, 0);
 let LANES_H = 0, scale = 1;
-// Over the whole screen the lanes grow to fill its height.
+// The lanes grow to fill the height they are given.
 function layout() {
-  const room = full === $("stage") ? $("lanesRow").clientHeight - SEC_H - RULER_H : 0;
+  const room = $("lanesRow").clientHeight - SEC_H - RULER_H;
   scale = clamp(room / BASE_H, 1, 2.6);
   let y = SEC_H + RULER_H;
   lanes.forEach((lane, i) => { lane.y = y; lane.h = Math.round(lane.base * scale); y += lane.h; $("hd" + i).style.height = lane.h + "px"; });
@@ -507,7 +509,10 @@ const realFull = () => document.fullscreenElement || document.webkitFullscreenEl
 function setFull(el) {
   full = el;
   for (const panel of [$("stage"), $("src")]) panel.classList.toggle("full", panel === el);
-  for (const [id, panel] of [["fullTracks", $("stage")], ["fullCode", $("src")]]) $(id).lastElementChild.textContent = panel === el ? "Leave full screen" : "Full screen";
+  for (const [id, panel, what] of [["fullTracks", $("stage"), "the parts"], ["fullCode", $("src"), "the song file"]]) {
+    const label = panel === el ? "Back to the whole page" : "Show only " + what + ", over the whole screen";
+    $(id).title = label; $(id).setAttribute("aria-label", label);
+  }
   layout(); resized();
 }
 function toggleFull(el) {
@@ -574,7 +579,7 @@ function resized() {
 }
 let seen = "";
 new ResizeObserver(() => {
-  const key = $("view").clientWidth + "x" + (full ? $("lanesRow").clientHeight : 0);
+  const key = $("view").clientWidth + "x" + $("lanesRow").clientHeight;
   if (key === seen) return;
   seen = key;
   requestAnimationFrame(() => { layout(); resized(); });
