@@ -26,35 +26,39 @@ defmodule Dub do
   @room [reverb: [room: 0.7, mix: 0.3]]
 
   @parts [
-    kick: [synth: :kick, defaults: [amp: 1]],
+    kick: [synth: :kick, defaults: [amp: 0.75]],
     rimshot: [
       synth: :rimshot,
-      defaults: [amp: 0.55],
+      defaults: [amp: 0.7],
       fx: [echo: [phase: 1, decay: 4, mix: 0.15]] ++ @room
     ],
     snare: [synth: :snare, defaults: [vel: 0.6], fx: [reverb: [room: 0.85, mix: 0.4]]],
-    hihat: [synth: :closed_hihat, defaults: [pan: 0.3]],
-    open_hihat: [synth: :open_hihat, defaults: [vel: 0.4, amp: 0.3, pan: 0.3, sustain: 0.5]],
-    tom: [synth: :mid_tom, defaults: [vel: 0.6, amp: 0.6], fx: @room],
-    crash: [synth: :crash, defaults: [vel: 0.5, amp: 0.35, pan: -0.2], fx: @room],
-    thunder: [synth: :low_conga, defaults: [amp: 0.45, pan: -0.15]],
-    funde: [synth: :mid_conga, defaults: [amp: 0.35, pan: 0.1]],
-    repeater: [synth: :high_conga, defaults: [amp: 0.3, pan: 0.4], fx: @room],
-    shaker: [synth: :shaker, defaults: [vel: 0.2, amp: 0.25, pan: -0.4]],
-    guiro: [synth: :guiro, defaults: [vel: 0.25, amp: 0.6, pan: -0.45]],
-    bass: [synth: :double_bass, defaults: [pizz: 1, vel: 0.8], fx: [lpf: [cutoff: 76]]],
+    hihat: [
+      synth: :closed_hihat,
+      defaults: [pan: 0.3],
+      fx: [flanger: [phase: 12, feedback: 0.4, mix: 0.3]]
+    ],
+    open_hihat: [synth: :open_hihat, defaults: [vel: 0.4, amp: 0.7, pan: 0.3, sustain: 0.5]],
+    tom: [synth: :mid_tom, defaults: [vel: 0.6, amp: 1.2], fx: @room],
+    crash: [synth: :crash, defaults: [vel: 0.5, amp: 0.8, pan: -0.2], fx: @room],
+    thunder: [synth: :low_conga, defaults: [amp: 0.9, pan: -0.15]],
+    funde: [synth: :mid_conga, defaults: [amp: 0.5, pan: 0.1]],
+    repeater: [synth: :high_conga, defaults: [amp: 0.45, pan: 0.4], fx: @room],
+    shaker: [synth: :shaker, defaults: [vel: 0.5, amp: 0.8, pan: -0.4]],
+    guiro: [synth: :guiro, defaults: [vel: 0.25, amp: 1, pan: -0.45]],
+    bass: [synth: :double_bass, defaults: [pizz: 1, vel: 0.8, amp: 1.6], fx: [lpf: [cutoff: 76]]],
     electric_bass: [
       synth: :saw,
-      defaults: [amp: 0.4, cutoff: 64, res: 0.1, attack: 0.02, release: 0.15]
+      defaults: [amp: 0.6, cutoff: 70, res: 0.1, attack: 0.02, release: 0.15]
     ],
     organ: [
       synth: :organ,
-      defaults: [amp: 0.3, pan: -0.3, release: 0.1],
+      defaults: [loud: 1, amp: 0.5, pan: -0.3, release: 0.1],
       fx: [hpf: [cutoff: 0]]
     ],
     harp: [
       synth: :harp,
-      defaults: [vel: 0.55, pan: 0.35, release: 0.1],
+      defaults: [vel: 0.8, amp: 1.2, pan: 0.35, release: 0.1],
       fx: [
         hpf: [cutoff: 0],
         echo: [phase: 1, decay: 3, mix: 0.15],
@@ -63,27 +67,27 @@ defmodule Dub do
     ],
     lead: [
       synth: :trombone,
-      defaults: [vel: 0.65, note_slide: 0.06, pan: 0.15],
+      defaults: [vel: 0.8, amp: 0.8, note_slide: 0.06, pan: 0.15],
       fx: [echo: [phase: 1.5, decay: 6, mix: 0.25], reverb: [room: 0.8, mix: 0.35]]
     ],
     harmonium: [
       synth: :harmonium,
-      defaults: [vel: 0.55, pan: -0.1],
+      defaults: [vel: 0.55, amp: 6, pan: -0.1],
       fx: [echo: [phase: 1.5, decay: 4, mix: 0.15]] ++ @room
     ],
     trumpet: [
       synth: :trumpet,
-      defaults: [vel: 0.6, amp: 0.8, pan: 0.2],
+      defaults: [vel: 0.75, amp: 0.9, pan: 0.2],
       fx: [echo: [phase: 1.5, decay: 4, mix: 0.15]] ++ @room
     ],
     tenor_sax: [
       synth: :tenor_sax,
-      defaults: [vel: 0.6, amp: 0.8, pan: -0.2],
+      defaults: [vel: 0.75, amp: 0.9, pan: -0.2],
       fx: [echo: [phase: 1.5, decay: 4, mix: 0.15]] ++ @room
     ],
     trombone: [
       synth: :trombone,
-      defaults: [vel: 0.6, amp: 0.7],
+      defaults: [vel: 0.75, amp: 0.8],
       fx: [echo: [phase: 1.5, decay: 4, mix: 0.15]] ++ @room
     ],
     siren: [
@@ -98,7 +102,7 @@ defmodule Dub do
     ],
     tabla: [
       synth: :tabla_ghe,
-      defaults: [vel: 0.8],
+      defaults: [vel: 0.8, amp: 0.7],
       fx: [echo: [phase: 1, decay: 4, mix: 0.35]] ++ @room
     ],
     tanpura: [
@@ -122,7 +126,7 @@ defmodule Dub do
   def throw(names, from, back, length) do
     entries =
       for name <- names,
-          {beat, mix} <- [{from, 0.5}, {back, 0.15}],
+          {beat, mix} <- [{from, 0.6}, {back, 0.15}],
           do: {beat, change({name, :echo}, mix: mix)}
 
     at(entries, length)
@@ -150,7 +154,7 @@ defmodule Dub do
   def hihat do
     entries =
       for index <- 0..3,
-          {offset, amp} <- [{0, 0.22}, {1, 0.32}],
+          {offset, amp} <- [{0, 1.0}, {1, 1.5}],
           do: {beat(index) + offset, hit(amp: amp)}
 
     at(entries, 6)
@@ -522,9 +526,9 @@ defmodule Dub do
 
   def pickup(note, length), do: at([{length - 0.5, note(note, 0.5)}], length)
 
-  def kit(range) do
+  def kit(range, kick \\ :one_drop) do
     [
-      play(:kick, bars(range, fn _ -> kick(:one_drop) end)),
+      play(:kick, bars(range, fn _ -> kick(kick) end)),
       play(:rimshot, bars(range, &rimshot/1)),
       play(:snare, bars(range, &snare/1)),
       play(:tom, bars(range, &tom/1)),
@@ -553,7 +557,7 @@ defmodule Dub do
     ]
   end
 
-  def riddim, do: kit(1..8) ++ hand_drums(1..8) ++ band(1..8)
+  def riddim(kick \\ :one_drop), do: kit(1..8, kick) ++ hand_drums(1..8) ++ band(1..8)
 
   # The siren and the hand drums, then the one drop and the bass in the echo, the horns' motto, and a tom roll into the riddim.
   def section(:intro) do
@@ -594,10 +598,10 @@ defmodule Dub do
     )
   end
 
-  # The horns sing the alto's phrase the second time.
+  # The horns sing the alto's phrase the second time, over the kick stepping on every beat.
   def section(:horn_verse) do
     together(
-      riddim() ++
+      riddim(:steppers) ++
         horns(seq([alto(), rest(24)])) ++
         [play(:lead, seq([rest(24), bars(5..8, &lead/1)]))]
     )

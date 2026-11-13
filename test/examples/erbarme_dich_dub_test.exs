@@ -75,8 +75,8 @@ defmodule Mx.Examples.ErbarmeDichDubTest do
     assert output |> part("harmonium") |> notes() |> Enum.take(6) == [66, 74, 73, 71, 70, 71]
   end
 
-  test "the README points to the dub" do
-    assert File.read!("README.md") =~ "examples/erbarme_dich/dub.exs"
+  test "the scores guide points to the dub" do
+    assert File.read!("documentation/scores.md") =~ "examples/erbarme_dich/dub.exs"
   end
 
   defp print, do: capture_io(fn -> Mix.Tasks.Mx.Print.run([@song]) end)
