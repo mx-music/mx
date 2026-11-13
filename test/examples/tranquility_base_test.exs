@@ -17,7 +17,7 @@ defmodule Mx.Examples.TranquilityBaseTest do
         do: assert(File.exists?(Path.join("examples/tranquility_base", file)))
   end
 
-  test "the licence notes name VCSL and NASA's recordings with their source, and the README lists the piece" do
+  test "the licence notes name VCSL and NASA's recordings with their source, and the examples guide lists the piece" do
     notes = File.read!("LICENSE-designs.md")
 
     assert notes =~
@@ -26,9 +26,9 @@ defmodule Mx.Examples.TranquilityBaseTest do
     assert notes =~
              "courtesy of NASA, from https://nssdc.gsfc.nasa.gov/planetary/sound/index.html"
 
-    readme = File.read!("README.md")
-    assert readme =~ "mx examples/tranquility_base.exs"
-    assert readme =~ ~s(mx samples download "sgossner/VCSL@#{@commit}:Idiophones")
+    guide = File.read!("documentation/examples.md")
+    assert guide =~ "mx examples/tranquility_base.exs"
+    assert guide =~ ~s(mx samples download "sgossner/VCSL@#{@commit}:Idiophones")
   end
 
   # Versilian Studios' Versilian Community Sample Library at the commit the piece names, in the folder MX_VCSL names, standing in for the GitHub cache, with the network cut.
