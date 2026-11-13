@@ -224,6 +224,9 @@ defmodule Mx.DesignsTest do
   # and the seconds a harmonic takes to fade 60 dB.
   # Its soft notes' harmonics above 1 kHz sit near the recordings' noise floor, which stretches their measured fades,
   # so those fades are left out.
+  # The tables are measured against the piano with `aftersound: 0, uneven: 0`: each harmonic at one rate of fade, as the tables give it, and every key on the keyboard's trend.
+  @trend [aftersound: 0, uneven: 0]
+
   @piano %{
     0.3 => %{
       {80, 160} => {6.6, 9.37},
@@ -260,7 +263,7 @@ defmodule Mx.DesignsTest do
   test "piano's harmonic levels and fades follow the Steinway's at each strength", ctx do
     for {vel, table} <- @piano do
       bands =
-        Map.new(Measure.bands(piano_notes(ctx, vel)), &{&1.band, &1})
+        Map.new(Measure.bands(piano_notes(ctx, vel, 36..96//4, @trend)), &{&1.band, &1})
 
       for {band, {level, fade}} <- table do
         %{level: synth_level, fade: synth_fade} = bands[band]
@@ -349,7 +352,12 @@ defmodule Mx.DesignsTest do
   test "piano with the pedal down follows the Steinway's harmonic levels and fades with the pedal down",
        ctx do
     for {vel, table} <- @piano_pedal do
-      bands = Map.new(Measure.bands(piano_notes(ctx, vel, 36..96//4, pedal: 1)), &{&1.band, &1})
+      bands =
+        Map.new(
+          Measure.bands(piano_notes(ctx, vel, 36..96//4, [pedal: 1] ++ @trend)),
+          &{&1.band, &1}
+        )
+
       assert_bands(bands, table, "pedal 1 vel #{vel}")
     end
   end
@@ -385,7 +393,9 @@ defmodule Mx.DesignsTest do
 
   test "piano's notes below C2 follow the Steinway's harmonic levels and fades", ctx do
     for {vel, table} <- @piano_low do
-      bands = Map.new(Measure.bands(piano_notes(ctx, vel, [22, 24, 28, 32])), &{&1.band, &1})
+      bands =
+        Map.new(Measure.bands(piano_notes(ctx, vel, [22, 24, 28, 32], @trend)), &{&1.band, &1})
+
       assert_bands(bands, table, "vel #{vel}")
     end
   end
@@ -409,6 +419,66 @@ defmodule Mx.DesignsTest do
 
     damped = render(ctx, :piano, [note: 48, sustain: 1, release: 0.1, pedal: 1], 2)
     assert last_sound(damped) < 1.5
+  end
+
+  # The Steinway's notes played mf, every fourth semitone from C2 to C6: the median note is 13.8 dB quieter one second after the strike, and 14.3 dB quieter again three seconds later.
+  test "a piano note fades fast after the strike and then slowly, as the Steinway's", ctx do
+    drops =
+      for note <- 36..84//4 do
+        sound = render(ctx, :piano, [note: note, vel: 0.6, sustain: 60], 5)
+        levels = for at <- [0.15, 1, 4], do: Signal.db(rms(sound, at - 0.1, at + 0.1))
+        levels |> Enum.chunk_every(2, 1, :discard) |> Enum.map(fn [from, to] -> to - from end)
+      end
+
+    [first, later] = for at <- 0..1, do: Signal.median(Enum.map(drops, &Enum.at(&1, at)))
+    assert_in_delta first, -13.8, 6
+    assert_in_delta later, -14.3, 6
+  end
+
+  # The Steinway's keys played mf, every second semitone from C2 to C6: the levels of harmonics 2 to 6 against the key's fundamental stand a median 5.3 dB from the mean of the keys on either side.
+  test "piano's keys differ from their neighbours as the Steinway's, and not at all with uneven 0",
+       ctx do
+    spread = fn opts ->
+      keys =
+        for note <- piano_notes(ctx, 0.6, 36..84//2, opts) do
+          [first | _] = note.harmonics
+          Map.new(note.harmonics, &{&1.number, &1.level - first.level})
+        end
+
+      misses =
+        for [below, key, above] <- Enum.chunk_every(keys, 3, 1, :discard), number <- 2..6 do
+          abs(key[number] - (below[number] + above[number]) / 2)
+        end
+
+      Signal.median(misses)
+    end
+
+    assert_in_delta spread.([]), 5.3, 2
+    assert spread.(uneven: 0) < 1
+  end
+
+  # The Steinway's C6, E6, G#6 and C7 played mf: the first 4096 samples hold a median 15.9 dB less from 40 to 600 Hz, under the lowest harmonic, than in all.
+  test "piano's hammer knocks under its high notes as loud as the Steinway's, and knock 0 leaves it out",
+       ctx do
+    knock = fn opts ->
+      levels =
+        for note <- [84, 88, 92, 96] do
+          sound = render(ctx, :piano, [note: note, vel: 0.6, sustain: 60] ++ opts, 0.5)
+          spectrum = Signal.spectrum(List.to_tuple(sound), 0, 4096)
+
+          power = fn low, high ->
+            bins = ceil(low * 4096 / @rate)..floor(high * 4096 / @rate)
+            Enum.sum(for at <- bins, do: elem(spectrum, at) ** 2)
+          end
+
+          10 * :math.log10(power.(40, 600) / power.(40, 20_000))
+        end
+
+      Signal.median(levels)
+    end
+
+    assert_in_delta knock.([]), -15.9, 6
+    assert knock.(knock: 0) < -45
   end
 
   # Measured from the organ of VSCO 2, every third key from C2 to C7 of its third manual, in its Quiet and Loud sets:
@@ -5590,7 +5660,7 @@ defmodule Mx.DesignsTest do
     Signal.db(Signal.median(loudest))
   end
 
-  defp piano_notes(ctx, vel, notes \\ 36..96//4, opts \\ []) do
+  defp piano_notes(ctx, vel, notes, opts) do
     notes
     |> Task.async_stream(
       fn note ->
