@@ -5,37 +5,63 @@ defmodule Mx.Examples.ChoroTest do
 
   @song "examples/choro.exs"
 
-  test "the regional plays flute, strummed cavaquinho, guitar and pandeiro, and no samples" do
+  test "the regional plays flute, clarinet, strummed cavaquinho, guitar and pandeiro, and no samples" do
     output = Enum.map_join(0..7, &print/1)
 
     for loop <-
-          ~w(flute cavaquinho guitar pandeiro_thumb pandeiro_jingles pandeiro_heel) do
-      assert output =~ ~r/^#{loop}, pass \d+, 16 beats/m
+          ~w(flute clarinet cavaquinho guitar pandeiro_thumb pandeiro_jingles pandeiro_heel pandeiro_slap) do
+      assert output =~ ~r/^#{loop}, pass \d+, 32 beats/m
     end
 
-    assert loop_part(print(0), "cavaquinho") =~ ~r/^beat 0.025 +play/m
+    assert loop_part(print(0), "cavaquinho") =~ ~r/^beat 0.02 +play/m
     refute output =~ "sample "
   end
 
   test "the form is A A B B A C C A, with B in the relative minor and C in the subdominant" do
     roots =
       for pass <- 0..7 do
-        [_, note] = Regex.run(~r/^beat 0 +play (\d+)/m, loop_part(print(pass), "guitar"))
+        [_, note] = Regex.run(~r/^beat 30 +play (\d+)/m, loop_part(print(pass), "guitar"))
         rem(String.to_integer(note), 12)
       end
 
     assert roots == [7, 7, 4, 4, 7, 0, 0, 7]
   end
 
-  test "a strain plays the same melody each time it comes round" do
-    melody = loop_part(print(0), "flute")
-    assert loop_part(print(1), "flute") == melody
-    assert loop_part(print(4), "flute") == melody
-    assert loop_part(print(2), "flute") != melody
+  test "the flute opens on Nazareth's first bar, E D C# D F# E D C, with a mordent on the E" do
+    assert Enum.take(notes(loop_part(print(0), "flute")), 10) == [
+             76,
+             78,
+             76,
+             74,
+             73,
+             74,
+             78,
+             76,
+             74,
+             72
+           ]
   end
 
-  test "the README points to the demo" do
-    assert File.read!("README.md") =~ "examples/choro.exs"
+  test "a strain plays the same melody each time it comes round, up to its last bar" do
+    melody = fn pass -> pass |> print() |> loop_part("flute") |> before(30) end
+
+    assert melody.(4) == melody.(0)
+    assert melody.(2) != melody.(0)
+  end
+
+  test "the clarinet takes the repeat of A while the flute waits for its pickup, and they play the last A an octave apart" do
+    assert before(loop_part(print(1), "flute"), 31) == ""
+    assert loop_part(print(0), "clarinet") == ""
+
+    opening = notes(loop_part(print(0), "flute"))
+    assert notes(loop_part(print(1), "clarinet")) |> Enum.take(100) == Enum.take(opening, 100)
+
+    flute = for note <- notes(before(loop_part(print(7), "flute"), 30)), do: note - 12
+    assert notes(before(loop_part(print(7), "clarinet"), 30)) == flute
+  end
+
+  test "the examples guide points to the demo" do
+    assert File.read!("documentation/examples.md") =~ "examples/choro.exs"
   end
 
   @tag :timing
@@ -64,6 +90,23 @@ defmodule Mx.Examples.ChoroTest do
   defp loop_part(output, loop) do
     [part | _] = output |> String.split(~r/^#{loop}, pass \d+[^\n]*\n/m) |> tl()
     part |> String.split("\n\n") |> hd()
+  end
+
+  # Every pitch a part sounds, in order: the notes it plays and the notes its breaths change to.
+  defp notes(part) do
+    for [_, note] <- Regex.scan(~r/(?:play|control note:) (\d+)/, part),
+        do: String.to_integer(note)
+  end
+
+  # A part's lines before a beat.
+  defp before(part, beat) do
+    part
+    |> String.split("\n", trim: true)
+    |> Enum.filter(fn line ->
+      [_, at] = Regex.run(~r/^beat ([\d.]+)/, line)
+      elem(Float.parse(at), 0) < beat
+    end)
+    |> Enum.join("\n")
   end
 
   # An input device that answers the first line asked for after a delay, as a person pressing Enter would.

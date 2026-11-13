@@ -17,7 +17,7 @@ mx examples/tranquility_base.exs
 `examples/salsa.exs` is a salsa band played only on mx's own synths: son clave, a tumbao on bass and congas, a piano montuno, cáscara, güiro and maracas, a horn section on filtered supersaws, and solos by the piano and the horns.
 The bongos play the martillo until the mambo, where the bongocero takes up the campana, the hand bell.
 
-`examples/choro.exs` is a Brazilian choro in 2/4, in the form A A B B A C C A: a flute running in sixteenths, cavaquinho strumming, the 7-string guitar's bass lines, and pandeiro.
+`examples/choro.exs` is Ernesto Nazareth's Apanhei-te, cavaquinho, a polca of 1914 in the public domain that choro took for its own, played by a regional on mx's measured synths, in the form A A B B A C C A. The flute slurs the pianist's right hand a bar to a breath, with its mordents and grace notes, the clarinet takes the repeats and joins it an octave below, the cavaquinho strums the left hand's rhythm, the 7-string guitar runs down to each new phrase, and the pandeiro plays as its hand rocks and strikes the trio's chords with the whole regional.
 
 `examples/odeon.exs` is the first strain of Ernesto Nazareth's Odeon, a tango brasileiro of 1909 in the public domain, played slowly by a choro regional on mx's measured synths: the trombone sings the pianist's low left-hand melody and the flute answers, then the cello and the tenor saxophone repeat it, over the 7-string guitar, cavaquinho, pandeiro and shaker. The pandeiro is written as its hand's rocking, with a muted and an open bass, ghost notes, slaps and rolls, and every other part swings where that rocking places the sixteenths.
 

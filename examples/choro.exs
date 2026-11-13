@@ -1,50 +1,77 @@
 import Mx
 
+# Ernesto Nazareth's Apanhei-te, cavaquinho, a polca of 1914 that choro took for its own, played by a regional: flute, clarinet, cavaquinho, 7-string guitar and pandeiro.
+# Its form is A A B B A C C A: A in G major, B in its relative minor, E minor, and C, the trio, in its subdominant, C major.
+# The flute and the clarinet take the pianist's right hand in turns and then together, an octave apart, and the cavaquinho strums the left hand's rhythm.
+# The melody and the harmony are transcribed from Musica Brasilis' edition, whose right hand the piano plays an octave above where it is written; the guitar's bass lines and the pandeiro are the regional's own, and the music itself is in the public domain.
 defmodule Choro do
   import Mx
 
+  # How early each sixteenth of a beat is played, in beats, as the pandeiro's rocking places them: the third and the fourth a little ahead.
+  @push [0, 0, -0.02, -0.03]
+
+  # How much louder or softer the pandeiro's jingles sound on each sixteenth: the hand swings widest into the second, and wide again on the way back.
+  @lean [0.85, 1.25, 1.0, 0.8]
+
   # Every player reads the same chart: a chord per bar, or two chords in a bar written as a pair.
-  # A is in G major, B in its relative minor, E minor, and C in its subdominant, C major.
   def chart(:a) do
-    [
-      {:g2, :major6},
-      {:gs2, :dim7},
-      {:a2, :minor7},
+    phrase = [
       {:d2, :dom7},
-      {:b2, :minor7},
-      {:e2, :dom7_flat9},
-      [{:a2, :minor7}, {:d2, :dom7}],
-      {:g2, :major6}
+      {:g2, :major},
+      {:b2, :dom7},
+      {:e2, :minor},
+      [{:a2, :minor}, {:cs2, :dim7}],
+      {:g2, :major},
+      {:d2, :dom7},
+      {:g2, :major}
     ]
+
+    phrase ++ phrase
   end
 
   def chart(:b) do
     [
       {:e2, :minor},
-      {:b2, :dom7_flat9},
+      {:fs2, :dom7},
+      {:b2, :dom7},
       {:e2, :minor},
+      {:e2, :minor},
+      {:b2, :minor},
+      {:fs2, :dom7},
+      {:b2, :dom7},
+      {:e2, :minor},
+      {:fs2, :dom7},
+      {:b2, :dom7},
       {:e2, :dom7},
-      {:a2, :minor6},
+      {:a2, :minor},
       {:e2, :minor},
-      [{:fs2, :half_dim7}, {:b2, :dom7}],
+      [{:fs2, :dom7}, {:b2, :dom7}],
       {:e2, :minor}
     ]
   end
 
   def chart(:c) do
     [
-      {:c2, :major6},
-      {:cs2, :dim7},
-      [{:d2, :minor7}, {:g2, :dom7}],
-      {:c2, :major6},
-      {:c2, :dom7},
-      {:f2, :major6},
-      {:f2, :minor6},
-      {:d2, :dom7}
+      {:c2, :major},
+      {:ds2, :dim7},
+      {:g2, :dom7},
+      {:c2, :major},
+      {:e2, :dom7},
+      {:a2, :minor},
+      {:d2, :dom7},
+      {:g2, :dom7},
+      {:c2, :major},
+      {:ds2, :dim7},
+      {:g2, :dom7},
+      {:e2, :dom7},
+      {:a2, :minor},
+      {:d2, :minor},
+      {:g2, :dom7},
+      {:c2, :major}
     ]
   end
 
-  # The chord on each of a section's sixteen beats.
+  # The chord on each of a strain's 32 beats.
   def chords(section) do
     Enum.flat_map(chart(section), fn
       {_, _} = chord -> [chord, chord]
@@ -52,75 +79,236 @@ defmodule Choro do
     end)
   end
 
-  def flute(section) do
-    keys = %{a: scale(:g3, :major), b: scale(:e3, :harmonic_minor), c: scale(:c3, :major)}
-    beats = chords(section)
+  def key(:a), do: scale(:g1, :major, octaves: 5)
+  def key(:b), do: scale(:e1, :harmonic_minor, octaves: 5)
+  def key(:c), do: scale(:c1, :major, octaves: 5)
 
-    # A strain plays the same melody every time it comes round.
-    :rand.seed(:exsss, {Enum.find_index([:a, :b, :c], &(&1 == section)), 22, 9})
+  # The melody, a bar to each line and a sixteenth to each note: a number after a colon holds a note that many sixteenths, a dot rests,
+  # ~ plays the note with a mordent, and a note in brackets is a grace note before the one it leads to.
+  def melody(:a) do
+    phrase = [
+      "~e6 d6 cs6 d6 fs6 e6 d6 c6",
+      "~c6 b5 as5 b5 e6 d6 c6 b5",
+      "~b5 a5 gs5 a5 d6 c6 b5 a5",
+      "~a5 g5 fs5 g5 c6 b5 a5 g5",
+      "~fs5 e5 ds5 e5 a5 g5 fs5 e5",
+      "~e5 d5 cs5 d5 e5 fs5 g5 a5"
+    ]
 
-    classes = fn {root, quality} -> Enum.map(chord(root, quality), &rem(&1, 12)) end
-    key = Enum.uniq(Enum.map(keys[section], &rem(&1, 12)))
-
-    # The notes to run through over a chord: the key, bent to the chord where they clash with it.
-    line = fn chord ->
-      tones = classes.(chord)
-      outside = tones -- key
-      kept = Enum.reject(key, fn pc -> Enum.any?(outside, &(abs(&1 - pc) in [1, 11])) end)
-      Enum.filter(64..96, &(rem(&1, 12) in (kept ++ tones)))
-    end
-
-    Enum.map_reduce(0..15, 76, fn beat, current ->
-      chord = Enum.at(beats, beat)
-      arpeggio = Enum.filter(64..96, &(rem(&1, 12) in classes.(chord)))
-      near = Enum.min_by(arpeggio -- [current], &abs(&1 - current))
-      run = line.(chord)
-      cell = cell(beat, current)
-      notes = cell_notes(cell, near, arpeggio, run)
-      notes = if length(notes) < 4 and cell != :land, do: falling(run, near), else: notes
-      {cell_music(cell, near, notes), List.last(notes)}
-    end)
-    |> elem(0)
-    |> seq()
+    phrase ++
+      ["b5 c6 cs6 d6 fs6 e6 d6 c6", "as5 b5 e6 d6 . g6 fs6 e6"] ++
+      phrase ++ ["b5 c6 cs6 d6 ds6 e6 f6 fs6"]
   end
 
-  def cell(beat, _current) when beat in [7, 15], do: :land
-  def cell(_beat, current) when current > 86, do: pick([:run_down, :arpeggio_down, :neighbour])
-  def cell(_beat, current) when current < 70, do: pick([:arpeggio_up, :run_up, :neighbour])
-
-  def cell(_beat, _current) do
-    pick([:arpeggio_up, :arpeggio_down, :run_down, :run_down, :run_up, :neighbour])
+  def melody(:b) do
+    [
+      "as5 b5 e6 fs6 g6 b5 g6 b5",
+      "g6 as5 cs6 fs6 fs6 as5 fs6 as5",
+      "g6 a5 b5 fs6 fs6 a5 fs6 a5",
+      "fs6 g5 b5 e6 . b5 (d6)c6 b5",
+      "as5 b5 e6 fs6 g6 b5 g6 b5",
+      "g6 b5 fs6 b5 e6 b5 d6 b5",
+      "d6 e5 fs5 cs6 cs6 e5 cs6 e5",
+      "c6 ds5 fs5 b5 . b5 (d6)c6 b5",
+      "as5 b5 e6 fs6 g6 b5 g6 b5",
+      "g6 as5 cs6 fs6 fs6 as5 fs6 as5",
+      "g6 a5 b5 fs6 fs6 a5 fs6 a5",
+      "f6 gs5 b5 e6 . ds6:2 e6",
+      "f6 a5 e6 a5 d6 a5 c6 a5",
+      "c6 e5 g5 b5 . as5:2 b5",
+      "c6 b5 as5 b5 e6 ds6 g6 fs6"
+    ]
   end
 
-  def cell_notes(:land, near, _arpeggio, _run), do: [near]
-  def cell_notes(:arpeggio_up, near, arpeggio, _run), do: rising(arpeggio, near)
-  def cell_notes(:arpeggio_down, near, arpeggio, _run), do: falling(arpeggio, near)
-  def cell_notes(:run_up, near, _arpeggio, run), do: rising(run, near)
-  def cell_notes(:run_down, near, _arpeggio, run), do: falling(run, near)
-
-  def cell_notes(:neighbour, near, arpeggio, _run) do
-    [near, near - 1, near, Enum.find(arpeggio, near, &(&1 > near))]
+  def melody(:c) do
+    [
+      "a6 g6 e6 c6 a5 g5 e5 c5",
+      "a5:3 a5 .:2 a5:2",
+      ". g5:2 a5 b5 c6:2 d6",
+      "e6:3 e6 .:2 e6:2",
+      ". e6 ds6 e6 f6 e6 ds6 e6",
+      "c6 e6 b5 e6 a5 e6 g5 e6",
+      ". d6 cs6 d6 e6 d6 cs6 d6",
+      "e6 d6 b5 g6 . g6 fs6 g6",
+      "a6 g6 e6 c6 a5 g5 e5 c5",
+      "a5:3 a5 .:2 a5:2",
+      ". g5:2 a5 b5 c6:2 d6",
+      "e6:3 e6 .:2 e6:2",
+      ". ds6:2 e6 f6 e6 ds6 e6",
+      "a6:3 a6 .:2 a6:2",
+      ". g6 f6 d6 b5 g5 f5 d5"
+    ]
   end
 
-  def rising(notes, from), do: notes |> Enum.filter(&(&1 >= from)) |> Enum.take(4)
+  # A strain's last bar lands on its tonic and picks up into the strain that follows.
+  def landing(:a), do: "g6:4"
+  def landing(:b), do: "e6:4"
+  def landing(:c), do: "c5:3 c6"
 
-  def falling(notes, from) do
-    notes |> Enum.filter(&(&1 <= from)) |> Enum.reverse() |> Enum.take(4)
+  def pickup(:c, :c), do: ". g6 fs6 g6"
+  def pickup(_section, :a), do: ". g6 fs6 e6"
+  def pickup(_section, :b), do: ". b5 (d6)c6 b5"
+  def pickup(_section, :c), do: ". g6 fs6 g6"
+
+  # The bars of the trio where the whole regional strikes the pianist's chords together.
+  def tutti, do: [1, 3, 9, 11, 13]
+
+  # A strain's notes as maps of the beat, the note, the beats held, the bar, and its ornaments.
+  def notes(section, coming) do
+    bars = melody(section) ++ [landing(section) <> " " <> pickup(section, coming)]
+
+    for {bar, index} <- Enum.with_index(bars),
+        note <- bar_notes(bar),
+        do: %{note | beat: index * 2 + note.beat} |> Map.put(:bar, index)
   end
 
-  def cell_music(:land, near, _notes), do: note(near, 1, vel: 0.7, sustain: 0.75, release: 0.2)
+  def bar_notes(bar) do
+    {notes, _} =
+      Enum.flat_map_reduce(String.split(bar), 0, fn token, slot ->
+        {name, held} =
+          case String.split(token, ":") do
+            [name] -> {name, 1}
+            [name, held] -> {name, String.to_integer(held)}
+          end
 
-  def cell_music(_cell, _near, notes) do
-    sixteenths =
-      Enum.with_index(notes, fn note, index ->
-        vel = if index == 0, do: 0.75, else: 0.55
-        {index * 0.25, note(note, 0.25, vel: vel, sustain: 0.17, release: 0.08)}
+        [_, mordent, grace, name] = Regex.run(~r/^(~?)(?:\((\w+)\))?(.+)$/, name)
+
+        note =
+          if name == "." do
+            []
+          else
+            [
+              %{
+                beat: slot / 4,
+                note: pitch(String.to_atom(name)),
+                beats: held / 4,
+                mordent: mordent == "~",
+                grace: if(grace != "", do: pitch(String.to_atom(grace)))
+              }
+            ]
+          end
+
+        {note, slot + held}
       end)
 
-    at(sixteenths, 1)
+    notes
   end
 
-  # The cavaquinho keeps the rhythm: close four-note chords strummed down on the beat and up off it.
+  # Choro's swing: a beat where the pandeiro's rocking places its sixteenth.
+  def swing(beat), do: beat + Enum.at(@push, rem(round(beat * 4), 4))
+
+  # A wind tongues the first note of each bar and slurs the rest of the bar to it, and tongues again a note it repeats or one after a rest.
+  def breaths(notes) do
+    Enum.chunk_while(
+      notes,
+      [],
+      fn note, breath ->
+        case breath do
+          [] ->
+            {:cont, [note]}
+
+          [last | _] ->
+            joined = abs(last.beat + last.beats - note.beat) < 0.001
+
+            if joined and last.bar == note.bar and last.note != note.note do
+              {:cont, [note | breath]}
+            else
+              {:cont, Enum.reverse(breath), [note]}
+            end
+        end
+      end,
+      fn breath -> {:cont, Enum.reverse(breath), []} end
+    )
+  end
+
+  # One breath as a held note whose pitch the fingers change at once, without a glide: a mordent flicks to the note above in the key and back, and a grace note is touched on the way in.
+  # The breath starts lead beats early, the time the instrument takes to speak, and plays down semitones below the written note.
+  def breath([first | _] = notes, section, vel, down, lead) do
+    start = max(swing(first.beat) - lead, 0)
+    last = List.last(notes)
+    held = last.beat + last.beats - start
+
+    changes =
+      notes
+      |> Enum.with_index()
+      |> Enum.flat_map(fn {note, index} ->
+        at = swing(note.beat) - start
+        above = Enum.find(key(section), &(&1 > note.note))
+        arrives = note.grace || note.note
+
+        arrive = if index > 0, do: [{at, note: arrives - down, note_slide: 0.005}], else: []
+
+        land =
+          if note.grace, do: [{at + 0.06, note: note.note - down, note_slide: 0.005}], else: []
+
+        mordent =
+          if note.mordent do
+            [
+              {at + 0.07, note: above - down, note_slide: 0.005},
+              {at + 0.14, note: note.note - down, note_slide: 0.005}
+            ]
+          else
+            []
+          end
+
+        arrive ++ land ++ mordent
+      end)
+
+    {start,
+     note((first.grace || first.note) - down, held,
+       vel: vel,
+       sustain: Float.round(held - 0.12, 3),
+       release: 0.04,
+       changes: changes
+     )}
+  end
+
+  # A strain's notes in breaths for a wind, louder on a breath that starts on the beat.
+  def wind(notes, section, vel, down, lead) do
+    breaths =
+      for [first | _] = breath <- breaths(notes) do
+        accent = if first.beat == trunc(first.beat), do: 0.08, else: 0
+        breath(breath, section, vel + accent, down.(first), lead)
+      end
+
+    at(breaths, 32)
+  end
+
+  # Whether a note is in the pickup to the strain that follows.
+  def pickup?(note), do: note.bar == 15 and note.beat >= 31
+
+  # The flute plays an octave below the piano, and at the piano's pitch where the clarinet joins it, in the repeat of B and the last A.
+  def flute_down(pass) when pass in [3, 7], do: 0
+  def flute_down(_pass), do: 12
+
+  # The flute leads A and B, leaves the repeat of A and of the trio to the clarinet, joining only for the tutti chords and the pickups, and plays the repeat of B and the last A above it.
+  def flute(pass, section, coming) do
+    loud = %{a: 0.75, b: 0.65, c: 0.8}
+
+    plays =
+      case pass do
+        1 -> &pickup?/1
+        6 -> &(&1.bar in tutti() or pickup?(&1))
+        _ -> fn _note -> true end
+      end
+
+    # A pickup is played where the strain it leads to is.
+    down = fn note ->
+      if pickup?(note), do: flute_down(rem(pass + 1, 8)), else: flute_down(pass)
+    end
+
+    section |> notes(coming) |> Enum.filter(plays) |> wind(section, loud[section], down, 0.08)
+  end
+
+  # The clarinet plays an octave below the piano, as the flute does when it plays alone.
+  def clarinet(pass, section, coming) when pass in [1, 3, 6, 7] do
+    section |> notes(coming) |> wind(section, 0.65, fn _note -> 12 end, 0.03)
+  end
+
+  def clarinet(_pass, _section, _coming), do: rest(32)
+
+  # The cavaquinho strums the pianist's left hand, an eighth, two sixteenths and two eighths to the bar, down on the eighths and up between,
+  # and strikes the trio's tutti chords with the flute.
   def cavaquinho(section) do
     beats = chords(section)
 
@@ -128,58 +316,60 @@ defmodule Choro do
     voicing = fn {root, quality} -> voice(chord(root, quality), from: 62, to: 73, limit: 4) end
 
     pattern = [
-      {0, 0.025, 0.7, 0.3},
-      {0.5, -0.02, 0.45, 0.12},
-      {0.75, 0.025, 0.6, 0.25},
-      {1.25, -0.02, 0.45, 0.12},
-      {1.5, 0.025, 0.65, 0.3}
+      {0, 0.02, 0.75, 0.3},
+      {0.5, 0.02, 0.5, 0.12},
+      {0.75, -0.015, 0.45, 0.12},
+      {1, 0.02, 0.6, 0.25},
+      {1.5, 0.02, 0.55, 0.25}
     ]
 
-    strums =
-      for bar <- 0..7,
-          {offset, strum, vel, length} <- pattern,
-          do: {bar * 2 + offset, strum, vel, length}
+    struck = [{0, 0.02, 0.85, 0.6}, {0.75, -0.015, 0.6, 0.15}, {1.5, 0.02, 0.8, 0.3}]
 
     strums =
-      for {beat, strum, vel, length} <- strums do
+      for bar <- 0..15,
+          {offset, strum, vel, held} <-
+            if(section == :c and bar in tutti(), do: struck, else: pattern),
+          do: {bar * 2 + offset, strum, vel, held}
+
+    strums =
+      for {beat, strum, vel, held} <- strums do
         notes = voicing.(Enum.at(beats, trunc(beat)))
 
         # The first string the pick meets sounds loudest: the lowest going down, the highest coming up.
         down = Enum.map(Enum.take([1, 0.9, 0.85, 0.8], length(notes)), &Float.round(&1 * vel, 2))
         vels = if strum > 0, do: down, else: Enum.reverse(down)
 
-        {beat,
-         note(notes, length, strum: strum, vel: vels, sustain: length, release: 0.06, amp: 0.22)}
+        {swing(beat) + abs(strum),
+         note(notes, held, strum: strum, vel: vels, sustain: held, release: 0.06, amp: 0.32)}
       end
 
-    at(strums, 16)
+    at(strums, 32)
   end
 
-  # The 7-string guitar: the root on the beat and a note leading to the next chord, and a run down to it at the end of each phrase.
+  # The 7-string guitar: the root on the beat, the chord's fifth and a note leading to the next chord, and a run down to it at the end of each phrase of four bars.
   def guitar(section, coming) do
-    keys = %{
-      a: scale(:g1, :major, octaves: 3),
-      b: scale(:e1, :harmonic_minor, octaves: 3),
-      c: scale(:c1, :major, octaves: 3)
-    }
-
     beats = chords(section)
     following = chords(coming)
 
     # The root between B1 and A#2, so the low B string of the 7-string guitar gets used.
     low = fn {root, quality} -> 35 + rem(hd(chord(root, quality)) - 35 + 120, 12) end
 
+    fifth = fn {root, quality} = chord ->
+      [first, _, third | _] = chord(root, quality)
+      low.(chord) + third - first
+    end
+
     bars =
-      for bar <- 0..7 do
+      for bar <- 0..15 do
         chord = Enum.at(beats, bar * 2)
         next = Enum.at(beats ++ following, bar * 2 + 2)
         root = low.(chord)
         target = low.(next)
 
-        if bar in [3, 7] do
+        if rem(bar, 4) == 3 do
           # A baixaria: the root, then sixteenths down the key towards the next chord's root.
           steps =
-            keys[section]
+            key(section)
             |> Enum.filter(&(&1 > target and &1 < root + 12))
             |> Enum.reverse()
             |> Enum.take(-6)
@@ -192,12 +382,16 @@ defmodule Choro do
             | Enum.map(steps, &note(&1, 0.25, vel: 0.6, sustain: 0.18, release: 0.06))
           ])
         else
-          second = low.(Enum.at(beats, bar * 2 + 1))
           leading = target + if(rem(bar, 2) == 0, do: -1, else: 1)
 
           seq([
             note(root, 1, vel: 0.7, sustain: 0.8, release: 0.1),
-            note(second + 7, 0.5, vel: 0.5, sustain: 0.35, release: 0.08, amp: 0.45),
+            note(fifth.(Enum.at(beats, bar * 2 + 1)), 0.5,
+              vel: 0.5,
+              sustain: 0.35,
+              release: 0.08,
+              amp: 0.45
+            ),
             note(leading, 0.5, vel: 0.55, sustain: 0.35, release: 0.08, amp: 0.45)
           ])
         end
@@ -206,54 +400,142 @@ defmodule Choro do
     seq(bars)
   end
 
-  # The pandeiro in sixteenths: thumb, fingertips, heel, fingertips, its bass closed on each bar's first beat and open on its second.
-  # mx's thumb has no closed bass, so the first beat is the thumb played softly.
-  def pandeiro_thumb do
-    items =
-      for _ <- 1..8,
-          do: seq([hit(vel: 0.4, amp: 0.45), rest(1), hit(vel: 0.75, amp: 0.45), rest(1)])
-
-    seq(items)
+  # The pandeiro, written as its hand's rocking, a sixteenth to each cell, as Odeon writes it.
+  # T is the thumb's bass with the head muted by the holding hand and O the open one, o the fingertips' open bass, h the wrist and f the fingertips on the rim, S a slap and R a roll;
+  # a dot is a ghost note, where the drum rocks and nothing strikes, _ is silence, > accents a cell, and several strokes in a cell split it evenly.
+  # Each phrase is two bars and its loudness: the choro groove, a slap and a push into the beat where a phrase of four bars ends, and a roll into the strain that follows.
+  def pandeiro_phrases(:a) do
+    [
+      {"T f h f  O f h f  T f h f  O f h o", 0.8},
+      {"T f h f  O ff h f  T f >h f  O f h o", 0.85},
+      {"T f h f  O f h f  T f h f  O f h o", 0.8},
+      {"T f >h f  O f h o  T o h S  O o h f", 0.9},
+      {"T f h f  O f h f  T f h f  O f h o", 0.85},
+      {"T f h f  O ff h f  T f >h f  O f h o", 0.9},
+      {"T f h f  O f h f  T f h f  O f h o", 0.85},
+      {"T f >h f  O f h o  >S _ . f  R R R R", 0.9}
+    ]
   end
 
-  def pandeiro_jingles do
-    items = for _ <- 1..32, do: seq([rest(0.25), hit(amp: 0.25), rest(0.25)])
-    seq(items)
+  # Under B it leans to samba, a slap before the second beat and the fingertips' bass pushing into each beat.
+  def pandeiro_phrases(:b) do
+    [
+      {"T f h S  O f h o  T f h o  O f h o", 0.75},
+      {"T f h S  O ff h o  T f h o  O f h o", 0.8},
+      {"T f h S  O f h o  T f h o  O f h o", 0.8},
+      {"T f >h f  O f h o  T o h S  O o h f", 0.85},
+      {"T f h S  O f h o  T f h o  O f h o", 0.8},
+      {"T f h S  O ff h o  T f h o  O f h o", 0.85},
+      {"T f >h f  O f h o  T o h S  O o >S o", 0.9},
+      {"T f h f  O f h f  >S _ . f  R R R R", 0.85}
+    ]
   end
 
-  def pandeiro_heel do
-    items = for _ <- 1..16, do: seq([rest(0.5), hit(amp: 0.35), rest(0.5)])
-    seq(items)
+  # In the trio it strikes the tutti chords with the regional: the open bass, a slap a sixteenth before the second beat, and the open bass on its off-beat.
+  def pandeiro_phrases(:c) do
+    groove = "T f h f  O f h f"
+    hit = ">O _ . >S  _ . >O f"
+
+    [
+      {groove <> "  " <> hit, 0.9},
+      {groove <> "  " <> hit, 0.9},
+      {"T f h f  O f h o  T f h f  O f h o", 0.85},
+      {"T f >h f  O f h o  T o h S  O o h f", 0.9},
+      {groove <> "  " <> hit, 0.9},
+      {groove <> "  " <> hit, 0.95},
+      {"T f h f  O f h o  " <> hit, 0.95},
+      {"T f h S  O f h o  >O _ . >S  R R R R", 0.9}
+    ]
   end
 
-  # A choro in 2/4: each pass plays one section of eight bars, in the order of the form.
+  # A letter's synth, whether the holding hand mutes the head, and its vel; a ghost note and a roll are the fingertips on the jingles, very soft.
+  def stroke("T"), do: {:pandeiro_thumb, 1, 0.6}
+  def stroke("O"), do: {:pandeiro_thumb, 0, 0.75}
+  def stroke("o"), do: {:pandeiro_thumb, 0, 0.6}
+  def stroke("h"), do: {:pandeiro_heel, 0, 0.32}
+  def stroke("f"), do: {:pandeiro_jingles, 0, 0.38}
+  def stroke("S"), do: {:pandeiro_slap, 1, 0.7}
+  def stroke("."), do: {:pandeiro_jingles, 1, 0.1}
+  def stroke("r"), do: {:pandeiro_jingles, 1, 0.2}
+
+  # A repeatable wobble between -0.5 and 0.5, so no two strokes are struck quite alike.
+  def wobble(count), do: rem(count * 31, 11) / 10 - 0.5
+
+  # Every stroke of a strain as {beat, synth, vel, muted}: only the jingles take the lean of the rocking, a stroke split from another in its cell is lighter, and a bass on the beat is a little late.
+  def pandeiro_strokes(section) do
+    cells =
+      for {phrase, loudness} <- pandeiro_phrases(section),
+          cell <- String.split(phrase),
+          do: {cell, loudness}
+
+    for {{cell, loudness}, index} <- Enum.with_index(cells),
+        accent = if(String.starts_with?(cell, ">"), do: 0.25, else: 0),
+        letters =
+          cell |> String.trim_leading(">") |> String.replace("R", "rrrr") |> String.graphemes(),
+        {letter, split} <- Enum.with_index(letters),
+        letter != "_" do
+      {synth, muted, vel} = stroke(letter)
+      place = rem(index, 4)
+      rim = synth in [:pandeiro_jingles, :pandeiro_heel]
+      lean = if rim, do: Enum.at(@lean, place), else: 1
+      lighter = if split > 0 and letter != "r", do: 0.85, else: 1
+      touch = 1 + 0.15 * wobble(index * 4 + split)
+      vel = clamp((vel * lean + accent) * lighter * loudness * touch, 0.02, 1)
+      late = if synth == :pandeiro_thumb and place == 0, do: 0.01, else: 0
+      loose = 0.008 * wobble(index * 4 + split + 1)
+      beat = (index + split / length(letters)) * 0.25 + Enum.at(@push, place) + late + loose
+      {max(beat, 0), synth, Float.round(vel, 2), muted}
+    end
+  end
+
+  # A strain of one of the pandeiro's strokes.
+  def pandeiro(section, synth) do
+    entries =
+      for {beat, ^synth, vel, muted} <- pandeiro_strokes(section),
+          do: {beat, hit(vel: vel, muted: muted)}
+
+    at(entries, 32)
+  end
+
+  # Each pass plays one strain of sixteen bars, in the order of the form.
   def form do
     sections = for {section, count} <- [a: 2, b: 2, a: 1, c: 2, a: 1], _ <- 1..count, do: section
 
     sections
     |> Enum.zip(tl(sections) ++ [hd(sections)])
-    |> Enum.map(fn {section, coming} ->
-      together([
-        part(:flute, flute(section),
-          synth: :flute,
-          defaults: [amp: 1.13],
-          fx: [reverb: [room: 0.45, mix: 0.25]]
-        ),
-        part(:cavaquinho, cavaquinho(section),
-          synth: :cavaquinho,
-          fx: [reverb: [room: 0.3, mix: 0.15]]
-        ),
-        part(:guitar, guitar(section, coming),
-          synth: :guitar,
-          defaults: [amp: 0.55],
-          fx: [reverb: [room: 0.3, mix: 0.15]]
-        ),
-        part(:pandeiro_thumb, pandeiro_thumb(), synth: :pandeiro_thumb),
-        part(:pandeiro_jingles, pandeiro_jingles(), synth: :pandeiro_jingles),
-        part(:pandeiro_heel, pandeiro_heel(), synth: :pandeiro_heel)
-      ])
+    |> Enum.with_index()
+    |> Enum.map(fn {{section, coming}, pass} ->
+      pandeiro =
+        for synth <- [:pandeiro_thumb, :pandeiro_jingles, :pandeiro_heel, :pandeiro_slap] do
+          part(synth, pandeiro(section, synth), synth: synth, defaults: [amp: 0.5])
+        end
+
+      together(
+        [
+          part(:flute, flute(pass, section, coming),
+            synth: :flute,
+            defaults: [amp: 0.9, vibrato: 0.03, pan: 0.15],
+            fx: [reverb: [room: 0.45, mix: 0.25]]
+          ),
+          part(:clarinet, clarinet(pass, section, coming),
+            synth: :clarinet,
+            defaults: [amp: 0.8, pan: -0.25],
+            fx: [reverb: [room: 0.35, mix: 0.2]]
+          ),
+          part(:cavaquinho, cavaquinho(section),
+            synth: :cavaquinho,
+            defaults: [pan: 0.35],
+            fx: [reverb: [room: 0.3, mix: 0.15]]
+          ),
+          part(:guitar, guitar(section, coming),
+            synth: :guitar,
+            defaults: [amp: 0.55, pan: -0.1],
+            fx: [reverb: [room: 0.3, mix: 0.15]]
+          )
+        ] ++ pandeiro
+      )
     end)
   end
 end
 
-song(tempo: 88, music: repeat(seq(Choro.form())))
+song(tempo: 104, music: repeat(seq(Choro.form())))
