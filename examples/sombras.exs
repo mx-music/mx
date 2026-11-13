@@ -168,21 +168,21 @@ defmodule Sombras do
         end
 
       under =
-        for {note, voice} <- Enum.with_index(second, 1), voices == :both do
-          rings = rings(held, note, Enum.at(following, voice))
+        for note <- second, voices == :both do
+          rings = rings(held, note, following)
           {part, {at, pluck(note + shift, [vel: loud * 0.72] ++ rings)}}
         end
 
       late = if under == [], do: 0, else: 0.018
-      rings = rings(held, melody, Enum.at(following, 0))
+      rings = rings(held, melody, following)
       [{part, {at + late, pluck(melody + shift, [vel: loud] ++ rings)}} | under]
     end
     |> List.flatten()
   end
 
-  # How long a note rings: on past the next note of its voice, unless that one is the same note or a step away, which is plucked on the same string and stops it.
-  defp rings(held, note, next) do
-    if next && abs(next - note) <= 2 do
+  # How long a note rings: on past the notes plucked next, unless one of them is the same note or a step away, which would beat against it.
+  defp rings(held, note, following) do
+    if Enum.any?(following, &(abs(&1 - note) <= 2)) do
       [sustain: held, release: 0.06]
     else
       [sustain: held + 0.3, release: 0.6]

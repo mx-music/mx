@@ -96,24 +96,10 @@ defmodule Paredao do
   # A voice's music after so many beats of silence.
   defp after_rest({name, music}, beats), do: {name, seq([rest(beats), music])}
 
-  # Bars of one sample in sixteenths, a character to each: a digit is a stroke of that level, a dot is silence.
-  def strokes(file, patterns, opts \\ []) do
-    seq(
-      for pattern <- List.wrap(patterns) do
-        hits =
-          for {cell, index} <- Enum.with_index(String.graphemes(pattern)), cell != "." do
-            {index / 4, sample(file, 0, [amp: String.to_integer(cell) / 9] ++ opts)}
-          end
-
-        at(hits, 4)
-      end
-    )
-  end
-
   # The kick's two bars: every beat and the last eighth, with softer strokes a sixteenth before beat four and, in the second bar, before beat two.
   def kick(rounds) do
     bars = ["9...9...9..59.7.", "9..59...9..59.7."]
-    play(:kick, repeat(strokes(@kick, bars, sustain: 0.35, release: 0.1), rounds))
+    play(:kick, repeat(steps(bars, 0.25, sample: @kick, sustain: 0.35, release: 0.1), rounds))
   end
 
   # The 808's four bars in sixteenths: where each note starts, its pitch, how many sixteenths it is held, and the notes it glides to at beats into it.
@@ -158,19 +144,8 @@ defmodule Paredao do
   ]
 
   def tamborim(rounds) do
-    bars =
-      for pattern <- @tamborim do
-        hits =
-          for {cell, step} <- Enum.with_index(String.graphemes(pattern)), cell != "." do
-            note = Enum.at(@scale, String.to_integer(cell) - 1)
-            vel = if step in @tresillo, do: 0.9, else: 0.55
-            {step / 4, hit(note: pitch(note), vel: vel)}
-          end
-
-        at(hits, 4)
-      end
-
-    play(:tamborim, repeat(seq(bars), rounds))
+    loud = fn step -> [vel: if(rem(step, 16) in @tresillo, do: 0.9, else: 0.55)] end
+    play(:tamborim, repeat(steps(@tamborim, 0.25, notes: @scale, each: loud), rounds))
   end
 
   # A roll on the tamborim in thirty-seconds that climbs the scale and grows.
@@ -187,43 +162,28 @@ defmodule Paredao do
     play(:tamborim, seq(strokes))
   end
 
-  def claps(bars), do: play(:clap, repeat(strokes(@claps, ".......7..4.9.4."), bars))
+  def claps(bars), do: play(:clap, repeat(steps(".......7..4.9.4.", 0.25, sample: @claps), bars))
 
   # The baião's triangle: four sixteenths to a beat, the hand open on the third and closed on the others.
   def triangle(bars) do
-    hits =
-      for {cell, index} <- Enum.with_index(String.graphemes("ccocccocccocccoc")) do
-        opts =
-          if cell == "o",
-            do: [vel: 0.75, sustain: 0.2, release: 0.1],
-            else: [vel: 0.5, sustain: 0.02, release: 0.15]
+    strokes = [
+      o: [vel: 0.75, sustain: 0.2, release: 0.1],
+      c: [vel: 0.5, sustain: 0.02, release: 0.15]
+    ]
 
-        {index / 4, hit(opts)}
-      end
-
-    play(:triangle, repeat(at(hits, 4), bars))
+    play(:triangle, repeat(steps("ccocccocccocccoc", 0.25, strokes: strokes), bars))
   end
 
-  # The hook's four bars in sixteenths: where each note starts, its pitch and how many sixteenths it is held.
+  # The hook's four bars, a sixteenth to a word.
   @hook [
-    [{0, :g4, 2}, {3, :g4, 1}, {4, :bb4, 2}, {7, :a4, 1}, {8, :g4, 2}, {11, :d4, 3}],
-    [{0, :g4, 2}, {3, :g4, 1}, {4, :bb4, 2}, {7, :a4, 1}, {8, :g4, 4}],
-    [{0, :f4, 2}, {3, :f4, 1}, {4, :bb4, 2}, {7, :a4, 1}, {8, :f4, 2}, {11, :d4, 3}],
-    [{0, :f4, 2}, {3, :f4, 1}, {4, :a4, 2}, {7, :g4, 1}, {8, :gb4, 4}]
+    ~MX"g4:2 _ g4 bb4:2 _ a4 g4:2 _ d4:3 _:2",
+    ~MX"g4:2 _ g4 bb4:2 _ a4 g4:4 _:4",
+    ~MX"f4:2 _ f4 bb4:2 _ a4 f4:2 _ d4:3 _:2",
+    ~MX"f4:2 _ f4 a4:2 _ g4 gb4:4 _:4"
   ]
 
   # The hook on the steel drum, so many semitones up.
-  def hook(bars, up \\ 0) do
-    bars =
-      for bar <- bars do
-        notes =
-          for {step, key, held} <- bar, do: {step / 4, note(pitch(key) + up, held / 4, vel: 0.8)}
-
-        at(notes, 4)
-      end
-
-    play(:steel_drum, seq(bars))
-  end
+  def hook(bars, up \\ 0), do: play(:steel_drum, transpose(steps(bars, 0.25, vel: 0.8), up))
 
   # The hook's last two bars with the triangle, and a roll into the beat.
   def intro do
