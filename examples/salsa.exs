@@ -118,16 +118,22 @@ defmodule Salsa do
   end
 
   # Every hit starts dark and opens, like a wah pedal.
-  def stab(notes, length) do
-    note(notes, length,
-      cutoff: 90,
-      res: 0.55,
-      detune: 0.25,
-      amp: 0.14,
-      sustain: length,
-      release: 0.15,
-      changes: [{0, cutoff: 126, cutoff_slide: min(length, 0.2)}]
-    )
+  def stab(notes, length, opts \\ []) do
+    opts =
+      Keyword.merge(
+        [
+          cutoff: 90,
+          res: 0.55,
+          detune: 0.25,
+          amp: 0.14,
+          sustain: length,
+          release: 0.15,
+          changes: [{0, cutoff: 126, cutoff_slide: min(length, 0.2)}]
+        ],
+        opts
+      )
+
+    note(notes, length, opts)
   end
 
   # The horns as a synth section: detuned saws through a resonant filter that opens on every hit, grit, a dotted echo and a slow stereo sweep.
@@ -223,13 +229,15 @@ defmodule Salsa do
   def horn_part(section) when section in [:stabs, :stabs_again] do
     chords = chords()
 
-    # Stabs, each pushing into the chord that follows.
+    # Stabs, each pushing into the chord that follows, too short to start dark: louder and brighter than the mambo's hits.
     stabs = [{2.5, 0}, {3.5, 1}, {6.5, 1}, {7.5, 2}, {10.5, 2}, {11.5, 3}, {14, 3}, {15, 3}]
 
     entries =
       for {beat, bar} <- stabs,
           chord = Enum.at(chords, bar),
-          do: {beat, stab(voicing(Enum.max(chord), chord), 0.2)}
+          do:
+            {beat,
+             stab(voicing(Enum.max(chord), chord), 0.2, cutoff: 110, amp: 0.3, release: 0.25)}
 
     at(entries, 16)
   end
