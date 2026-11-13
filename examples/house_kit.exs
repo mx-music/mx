@@ -33,9 +33,9 @@ defmodule HouseKit do
     sizzle: [{:crash, [note: 57, sustain: 34, release: 6], 0.35, 0}],
     claves: [{:clave, [pan: 0.4], 0.1, 0}],
     cowbell: [{:cowbell, [note: 76.9, pan: -0.4], 0.14, 0}],
-    conga: [{:mid_conga, [pan: -0.2], 0.45, 0}],
-    conga_muted: [{:mid_conga, [pan: -0.2], 0.125, 0}],
-    tumba: [{:low_conga, [pan: 0.1], 1.4, 0}],
+    conga: [{:mid_conga, [pan: -0.2], 0.95, 0}],
+    conga_muted: [{:mid_conga, [pan: -0.2], 0.21, 0}],
+    tumba: [{:low_conga, [pan: 0.1], 2.2, 0}],
     guiro_long: [{:guiro, [sustain: 1.75, pan: 0.5], 0.008, 0}],
     guiro_short: [{:guiro, [sustain: 0.55, pan: 0.5], 0.02, 0}]
   ]
