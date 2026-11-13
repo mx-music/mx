@@ -6,26 +6,55 @@ defmodule Mx.Examples.CajonTest do
   @song "examples/solo/cajon.exs"
 
   test "the solo plays only the cajón" do
-    for pass <- 0..10 do
+    for pass <- 0..17 do
       assert Regex.scan(~r/^(\w+), pass /m, print(pass), capture: :all_but_first) == [["cajon"]]
     end
 
     refute print(0) =~ "sample "
   end
 
-  test "the groove puts the bass tone on the first and third beats and a slap on the others, with ghost strokes" do
-    groove = print(0)
+  test "the festejo is in 12/8, with the bass tone on the first and third beats and a slap on the others" do
+    festejo = print(0)
 
-    assert groove =~
-             ~r/\nbeat 0 +play slap: 0, vel: 0.85\nbeat 0.667 +play slap: 1, vel: 0.3\nbeat 1 +play slap: 1, vel: 0.95\n/
+    assert festejo =~
+             ~r/\nbeat 0 +play slap: 0, vel: 0.8\nbeat 0.667 +play slap: 1, vel: 0.35\nbeat 1 +play slap: 1, vel: 0.9\n/
 
-    assert groove =~ ~r/\nbeat 2 +play slap: 0, vel: 0.85\n/
-    assert groove =~ ~r/\nbeat 3 +play slap: 1, vel: 0.95\n/
+    assert festejo =~ ~r/\nbeat 2 +play slap: 0, vel: 0.8\n/
+    assert length(strokes(print(2))) == 12
   end
 
-  test "the ghosts section fills every eighth, and the break ends on two bass tones" do
-    assert length(Regex.scan(~r/^beat /m, print(4))) == 12
-    assert print(10) =~ ~r/\nbeat 2 +play slap: 0, vel: 0.85\nbeat 3 +play slap: 0, vel: 0.85\n\z/
+  test "the rumba plays the bass tone on the first beat and the eighth after the second, and the slap on two and four" do
+    rumba = strokes(print(4))
+    assert rumba == [{0.0, 0, 0.8}, {1.0, 1, 0.9}, {1.5, 0, 0.8}, {3.0, 1, 0.9}]
+
+    filled = strokes(print(6))
+    assert for({beat, 0, _vel} <- filled, do: beat) == [0.0, 1.5]
+    assert for({beat, 1, 0.9} <- filled, do: beat) == [1.0, 3.0]
+  end
+
+  test "the bulerías accents 12, 3, 6, 8 and 10, then 12, 3, 7, 8 and 10, and the last cycle closes on 10" do
+    accents = fn pass ->
+      for {beat, _slap, vel} <- strokes(print(pass)), vel > 0.7, do: beat * 2
+    end
+
+    assert print(8) =~ ~r/cajon, pass 8, 6 beats/
+    assert accents.(8) == [0.0, 3.0, 6.0, 8.0, 10.0]
+    assert accents.(9) == [0.0, 3.0, 6.0, 8.0, 10.0]
+    assert accents.(10) == [0.0, 3.0, 7.0, 8.0, 10.0]
+    assert List.last(strokes(print(11))) == {5.0, 0, 0.95}
+  end
+
+  test "the rock beat adds soft slaps until every sixteenth is played, and the roll grows into the bass tone" do
+    assert strokes(print(12)) ==
+             [{0.0, 0, 0.8}, {1.0, 1, 0.9}, {2.0, 0, 0.8}, {2.5, 0, 0.8}, {3.0, 1, 0.9}]
+
+    assert length(strokes(print(13))) == 8
+    assert length(strokes(print(14))) == 16
+
+    roll = strokes(print(16))
+    assert Enum.take(roll, 2) == [{0.0, 1, 0.35}, {0.125, 1, 0.35}]
+    assert List.last(roll) == {3.0, 0, 0.95}
+    assert strokes(print(17)) == [{0.0, 0, 0.95}]
   end
 
   test "the README points to the solo, and the synth designs license names the recordings" do
@@ -50,6 +79,21 @@ defmodule Mx.Examples.CajonTest do
 
     assert %{peak: peak, clips: 0} = Mx.Recording.level(out)
     assert peak < -0.1
+  end
+
+  # The strokes of a printed pass, as {beat, slap, vel}.
+  defp strokes(printed) do
+    for [beat, slap, vel] <-
+          Regex.scan(~r/^beat (\S+) +play slap: (\d), vel: (\S+)$/m, printed,
+            capture: :all_but_first
+          ) do
+      {number(beat), String.to_integer(slap), number(vel)}
+    end
+  end
+
+  defp number(text) do
+    {value, ""} = Float.parse(text)
+    value
   end
 
   defp print(pass) do

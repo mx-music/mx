@@ -103,7 +103,7 @@ The bongos play the martillo until the mambo, where the bongocero takes up the c
 
 `examples/solo/bongos.exs` is the bongos on their own, as the bongocero plays in son and salsa: the martillo, with the hembra's open tone on its seventh stroke, a rim shot ending every second bar and heel-tip strokes, left for repiques and taken up again; the repiques accent every third sixteenth, play quarter-note triplets across the two drums, mark the offbeats and the fourth beat as in changüí, and roll the fingers into ruffs and a last roll.
 
-`examples/solo/cajon.exs` is the cajón on its own in a festejo of mx's own in 12/8, with bass tones, slaps and ghost strokes.
+`examples/solo/cajon.exs` is the cajón on its own, from Peru to flamenco and the drum kit: a festejo of mx's own in 12/8, with bass tones, slaps and ghost strokes; the rumba flamenca, its eighths grouped 3+3+2 with the slap on two and four; the bulerías, twelve counts accented on 12, 3, 6, 8 and 10, closing on 10; a rock beat moved from the kit, filled in until every sixteenth is played; and a roll of slaps that grows into the bass tone.
 
 `examples/solo/cowbell.exs` is the cowbell on its own, playing the campana, the bongocero's bell in salsa, in its two 2:3 patterns: the second gear, with the 3 side's first two strokes open and hard, and the standard third gear, open on each half bar and closed between.
 
