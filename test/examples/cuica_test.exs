@@ -6,20 +6,23 @@ defmodule Mx.Examples.CuicaTest do
 
   @song "examples/cuica/solo.exs"
 
-  test "the solo plays only the cuíca, a stroke every sixteenth, high on the beats and low between" do
+  test "the solo plays only the cuíca, four swung strokes to the beat, two low and two high" do
     output = print()
     assert Regex.scan(~r/^(\w+), 64 beats/m, output, capture: :all_but_first) == [["cuica"]]
     refute output =~ "sample "
-    assert output =~ ~r/^beat 0 +play note: 79, vel: 0.8$/m
-    assert output =~ ~r/^beat 0.25 +play note: 65, vel: 0.55$/m
+    assert output =~ ~r/^beat 8 +play note: 64.15, vel: 0.95, scoop: 0.8, sustain: 0.3$/m
+    assert output =~ ~r/^beat 8.3 +play note: 64.45, vel: 0.6, scoop: 0.3, sustain: 0.32$/m
+    assert output =~ ~r/^beat 8.62 +play note: 76.8, vel: 0.7, scoop: 1.0, sustain: 0.19$/m
+    assert output =~ ~r/^beat 8.81 +play note: 75.7, vel: 0.9, scoop: -1.1, sustain: 0.19$/m
   end
 
-  test "the high strokes cross the beat, and the phrases climb from the low note to the high one" do
+  test "every fourth beat stays low, a soft stroke leads into a high one, and the break slows to single strokes" do
     output = print()
-    assert output =~ ~r/^beat 16.75 +play note: 79, vel: 0.8$/m
-    assert output =~ ~r/^beat 32 +play note: 65, vel: 0.45$/m
-    assert output =~ ~r/^beat 33 +play note: 73, vel: 0.65$/m
-    assert output =~ ~r/^beat 33.75 +play note: 79, vel: 0.8$/m
+    assert output =~ ~r/^beat 11.62 +play note: 64.25, vel: 0.9, scoop: 0.3, sustain: 0.19$/m
+    assert output =~ ~r/^beat 21.62 +play note: 72.8, vel: 0.4, scoop: 1.0, sustain: 0.19$/m
+    assert output =~ ~r/^beat 40 +play vel: 0.8, sustain: 0.42, scoop: 3.3$/m
+    assert output =~ ~r/^beat 44 +play note: 80.5, vel: 0.9, sustain: 0.3$/m
+    refute output =~ ~r/^beat 43.5 /m
   end
 
   test "the README points to the solo and lists the cuíca, and the synth designs license names its recordings" do

@@ -3473,11 +3473,19 @@ defmodule Mx.DesignsTest do
     assert rms(hard, 0, 0.5) > rms(soft, 0, 0.5) * 2
   end
 
-  # Measured with a YIN pitch tracker every 5 ms over reinsamba's pack "Cuica" on Freesound, 85 low strokes with the head free and 36 high ones with it pressed:
-  # the pitch the stroke settles at, its second and third harmonics against the fundamental, how far under the note it starts and by when it is within 50 cents of it, and how long it lasts above 25 dB under its peak.
+  # Measured as the test below measures the synth, over the isolated strokes of reinsamba's pack "Cuica" on Freesound: 72 low ones with the head free, sounds 21715, 21719, 21723, 21724 and 21727, and 60 high ones with it pressed, sounds 21718 and 21720 to 21722, of which the 9 of 21720 stand alone.
+  # The pitch the stroke settles at, its second and third harmonics against the fundamental, how far under the note it starts and by when it is within 50 cents of it, and how long it lasts above 25 dB under its peak.
+  # The low strokes settle at 363 Hz, the synth's note with none given, start 203 cents under and last 0.2 s, their harmonics 22 and 35 dB under; the high ones standing alone start 210 cents under and last 0.14 s, their harmonics 19 and 20 dB under as the stroke dies.
+  @cuica_low 65.65
   @cuica_strokes %{
-    65 => %{hz: 353, harmonics: [-19, -34], under: 100..250, reached: 0.12, lasts: {0.18, 0.25}},
-    79 => %{hz: 784, harmonics: [-22, -21], under: 60..160, reached: 0.08, lasts: {0.14, 0.22}}
+    @cuica_low => %{
+      hz: 363,
+      harmonics: [-22, -35],
+      under: 150..300,
+      reached: 0.12,
+      lasts: {0.18, 0.25}
+    },
+    79 => %{hz: 784, harmonics: [-20, -20], under: 150..280, reached: 0.08, lasts: {0.11, 0.18}}
   }
 
   for {note, stroke} <- @cuica_strokes do
@@ -3532,7 +3540,7 @@ defmodule Mx.DesignsTest do
 
       assert median(lasts) >= shortest and median(lasts) <= longest, "lasts #{median(lasts)} s"
 
-      if @note == 65 do
+      if @note == @cuica_low do
         held = for levels <- envelopes, do: Enum.max(levels) - Enum.min(Enum.slice(levels, 6..24))
         assert median(held) < 6, "falls #{median(held)} dB from 30 to 120 ms"
       end
@@ -3541,8 +3549,8 @@ defmodule Mx.DesignsTest do
 
   # reinsamba's strokes vary from one to the next: the scoop by about two thirds of itself and the pitch they settle at by 77 cents.
   test "no two cuíca strokes match: their scoops and the pitches they settle at vary", ctx do
-    strokes = cuica_strokes(ctx, 65)
-    settled = Enum.map(strokes, &pitch(window(&1, 0.13, 0.18), 353))
+    strokes = cuica_strokes(ctx, @cuica_low)
+    settled = Enum.map(strokes, &pitch(window(&1, 0.13, 0.18), 363))
     starts = Enum.map(strokes, &pitch(window(&1, 0.005, 0.03), 320))
 
     spread = fn hz ->
@@ -3557,6 +3565,48 @@ defmodule Mx.DesignsTest do
     soft = render(ctx, :cuica, [vel: 0.3], 0.4)
     hard = render(ctx, :cuica, [vel: 1], 0.4)
     assert rms(hard, 0, 0.2) > rms(soft, 0, 0.2) * 2
+  end
+
+  test "a cuíca stroke lasts its sustain, less the stick's turn", ctx do
+    for {sustain, {shortest, longest}} <- [{0.12, {0.09, 0.16}}, {0.4, {0.36, 0.45}}] do
+      stroke = render(ctx, :cuica, [sustain: sustain], 0.7)
+      levels = for chunk <- Enum.chunk_every(stroke, 240), do: rms(chunk, 0, 0.005)
+      lasts = Enum.count(levels, &(&1 > Enum.max(levels) / 17.8)) * 0.005
+      assert lasts >= shortest and lasts <= longest, "sustain #{sustain} lasts #{lasts} s"
+    end
+  end
+
+  # The 143 low strokes of the pack's grooves, sounds 21716 and 21726, start 7 cents under the note they settle at; the second of a groove's two high strokes falls into its note from 80 cents over it.
+  test "a cuíca stroke with a scoop of 0 starts on its note, and one under 0 falls into it",
+       ctx do
+    cents = fn stroke ->
+      1200 *
+        :math.log2(
+          pitch(window(stroke, 0.005, 0.03), 330) / pitch(window(stroke, 0.08, 0.13), 330)
+        )
+    end
+
+    level = cents.(render(ctx, :cuica, [note: 64, scoop: 0, sustain: 0.19], 0.4))
+    above = cents.(render(ctx, :cuica, [note: 64, scoop: -2, sustain: 0.19], 0.4))
+    assert_in_delta level, 0, 60, "starts #{level} cents from its note"
+    assert above > 80, "starts #{above} cents over its note"
+  end
+
+  # Over the same grooves, 70 ms into a low stroke at 331 Hz, the second harmonic is 3 dB over the fundamental and the fourth 7 under, where the shell answers near 660 and 1320 Hz; the isolated strokes at 363 Hz miss both.
+  test "a cuíca's low stroke at 330 Hz rings the shell with its second and fourth harmonics",
+       ctx do
+    stroke = render(ctx, :cuica, [note: 64, vel: 0.9, scoop: 0, sustain: 0.19], 0.4)
+    steady = window(stroke, 0.04, 0.1)
+    at = pitch(steady, 330)
+
+    against = fn harmonic ->
+      10 * :math.log10(peak_near(steady, harmonic * at) / peak_near(steady, at))
+    end
+
+    assert_in_delta against.(2), 3, 4, "harmonic 2 at #{against.(2)} dB"
+    # The fourth is 4 dB under the fundamental in the strokes on the beat and 11 under in the softer ones after it.
+    assert_in_delta against.(4), -7, 5, "harmonic 4 at #{against.(4)} dB"
+    assert against.(3) < -14, "harmonic 3 at #{against.(3)} dB"
   end
 
   # Measured with mix mx.measure --hits --partials 6 from the Commons recording "Tamborim Sound.ogg" by Samba-x, converted to WAV, 45 strokes:
