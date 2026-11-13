@@ -97,11 +97,11 @@ The bongos play the martillo until the mambo, where the bongocero takes up the c
 
 ## Percussion
 
-`examples/solo/drums.exs` is the drum kit on its own: a rock beat that opens on a crash, the hi-hat opening and the pedal closing it, ghost notes on the snare between its hardest strokes, a fill down the toms, and a crash that is choked.
+`examples/solo/drums.exs` is the drum kit on its own: the beat of James Brown's "Funky Drummer" built up from the hi-hat alone to the snare's ghost notes and the hi-hat opening, a paradiddle between the hi-hat and the snare, a solo over the feet that accents every third sixteenth across the snare and the toms, runs down the drums in sextuplets, plays flams and a drag and rolls from the snare's softest stroke to its hardest, and a last crash that is choked.
 
 `examples/solo/timpani.exs` is the timpani on its own: a roll on A2 that swells from soft to loud, the tonic and dominant pounded in turn, a melody on five drums tuned to D major, the same melody at its softest, and a roll on D3 that ends on a loud stroke left to ring.
 
-`examples/solo/congas.exs` is the three congas on their own: a tumbao on the conga and the tumba, the same with a slap answered on the quinto, a solo on the quinto over muted strokes, the tumbao at its softest, and a run down the three drums to a last slap.
+`examples/solo/congas.exs` is the three congas on their own: the tumbao of son montuno on one drum, heel, tip, slap and open tones, then on two drums with the tumba's open tones on the clave's three side; the quinto over it as in rumba, in the lock, the son clave a sixteenth late with its tones and slaps changing places, and the cross, a slap on every third sixteenth for three claves; a roll of heel and tip; and a run down the three drums.
 
 `examples/solo/bongos.exs` is the bongos on their own: the martillo, with the hembra's open tone on its seventh stroke, then with heel-tip strokes, and a fill across both drums.
 
