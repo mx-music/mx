@@ -7,12 +7,13 @@ defmodule Mx.Examples.TranquilityBaseTest do
   @song "examples/tranquility_base.exs"
   @commit "c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e"
 
-  test "the piece names no absolute path, and NASA's five recordings ship beside it" do
+  test "the piece names no absolute path, and NASA's seven recordings ship beside it" do
     source = File.read!(@song)
     refute source =~ ~r/"\//
     refute source =~ "~/"
 
-    for file <- ~w(a11landing.aiff a11step.aiff a11liftoff.aiff sputnik.wav apollo_13_problem.wav),
+    for file <-
+          ~w(a11kennedy.aiff a11liftoff.aiff a11landing.aiff a11step.aiff a11magnif.aiff sputnik.wav apollo_13_problem.wav),
         do: assert(File.exists?(Path.join("examples/tranquility_base", file)))
   end
 
@@ -65,16 +66,16 @@ defmodule Mx.Examples.TranquilityBaseTest do
       {output, errors} = print()
       assert errors == ""
       refute output =~ ~r/^beat \S+\s+play/m
-      assert output =~ ~r/^hat, 144 beats at 136 bpm/m
+      assert output =~ ~r/^hat, 248 beats at 136 bpm/m
 
       assert part(output, "kick") =~
-               "beat 32   sample sgossner/VCSL Membranophones/Struck Membranophones/Bass Drum 1/BDrumNew_hit_v7_rr1_Sum.wav amp: 0.54"
+               "beat 48   sample sgossner/VCSL Membranophones/Struck Membranophones/Bass Drum 1/BDrumNew_hit_v7_rr1_Sum.wav amp: 0.54"
 
       hats = for [_, take] <- Regex.scan(~r/HiHat_HitC_v3_(rr\d)/, part(output, "hat")), do: take
       assert Enum.take(hats, 4) == ~w(rr1 rr2 rr1 rr2)
 
       assert part(output, "voice") =~
-               "a11landing.aiff from: 2.0, to: 2.3, amp: 0.8, rate: 0.95"
+               "a11landing.aiff from: 2.1, to: 2.4, amp: 0.8, rate: 1.06"
 
       assert part(output, "sputnik") =~
                "sputnik.wav from: 0.3, to: 2.06, beats: 4, amp: 0.25, rate: 0.9973"
@@ -93,7 +94,7 @@ defmodule Mx.Examples.TranquilityBaseTest do
       assert errors == ""
       assert %{peak: peak, clips: 0} = Mx.Recording.level(out)
       assert peak < -1
-      assert Mx.Recording.seconds(out) > 55
+      assert Mx.Recording.seconds(out) > 105
     end
   end
 
