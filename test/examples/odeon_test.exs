@@ -9,7 +9,7 @@ defmodule Mx.Examples.OdeonTest do
     output = Enum.map_join(0..1, &print/1)
 
     for loop <-
-          ~w(trombone cello flute tenor_sax guitar cavaquinho pandeiro_thumb pandeiro_jingles pandeiro_heel shaker) do
+          ~w(trombone cello flute tenor_sax guitar cavaquinho pandeiro_thumb pandeiro_jingles pandeiro_heel pandeiro_slap shaker) do
       assert output =~ ~r/^#{loop}, pass \d+, 32 beats at 72 bpm/m
     end
 
@@ -38,8 +38,8 @@ defmodule Mx.Examples.OdeonTest do
     assert Enum.any?(beats, fn [beat] -> rem(round(elem(Float.parse(beat), 0) * 100), 25) != 0 end)
   end
 
-  test "the README points to the demo" do
-    assert File.read!("README.md") =~ "examples/odeon.exs"
+  test "the examples guide points to the demo" do
+    assert File.read!("documentation/examples.md") =~ "examples/odeon.exs"
   end
 
   @tag :timing

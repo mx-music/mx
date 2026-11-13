@@ -18,7 +18,7 @@ mx examples/tranquility_base.exs
 
 `examples/choro.exs` is a Brazilian choro in 2/4, in the form A A B B A C C A: a flute running in sixteenths, cavaquinho strumming, the 7-string guitar's bass lines, and pandeiro.
 
-`examples/odeon.exs` is the first strain of Ernesto Nazareth's Odeon, a tango brasileiro of 1909 in the public domain, played slowly by a choro regional on mx's measured synths: the trombone sings the pianist's low left-hand melody and the flute answers, then the cello and the tenor saxophone repeat it, over the 7-string guitar, cavaquinho, pandeiro and shaker, every stroke swinging a little off the beat.
+`examples/odeon.exs` is the first strain of Ernesto Nazareth's Odeon, a tango brasileiro of 1909 in the public domain, played slowly by a choro regional on mx's measured synths: the trombone sings the pianist's low left-hand melody and the flute answers, then the cello and the tenor saxophone repeat it, over the 7-string guitar, cavaquinho, pandeiro and shaker. The pandeiro is written as its hand's rocking, with a muted and an open bass, ghost notes, slaps and rolls, and every other part swings where that rocking places the sixteenths.
 
 `examples/caboclinho.exs` is a caboclinho of Pernambuco in 2/4 on mx's measured synths: the toques guerra, perré, baião and macumba do índio in turn, with the flute as the gaita on a neutral third, the ganzá and the shaker as the caracaxás, the bongos as the tarol and the preacas, and the cajón as the atabaque.
 

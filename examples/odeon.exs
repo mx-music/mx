@@ -2,6 +2,7 @@ import Mx
 
 # Ernesto Nazareth's Odeon, a tango brasileiro of 1909 in C sharp minor: its first strain, played slowly by a choro regional.
 # The melody is the pianist's left hand, low and singing, so the trombone sings it and the flute answers with the right hand's phrases; on the repeat the cello sings and the tenor saxophone answers.
+# The pandeiro plays as its hand rocks, with a muted and an open bass, ghost notes, slaps and rolls, and every other part swings where its rocking places the sixteenths.
 # The notes are transcribed from Musica Brasilis' edition, revised against Nazareth's manuscript; the music itself is in the public domain.
 defmodule Odeon do
   import Mx
@@ -46,9 +47,15 @@ defmodule Odeon do
     opening ++ first ++ opening ++ second
   end
 
-  # Choro's swing: the second sixteenth of a beat a little late, the fourth a little early, and every stroke a few milliseconds off.
+  # How early each sixteenth of a beat is played, in beats, as the pandeiro's rocking places them: the third and the fourth a little ahead.
+  @push [0, 0, -0.03, -0.04]
+
+  # How much louder or softer the pandeiro's jingles sound on each sixteenth: the hand swings widest into the second, and wide again on the way back.
+  @lean [0.85, 1.25, 1.0, 0.8]
+
+  # Choro's swing: each sixteenth where the pandeiro's rocking places it, and every stroke a few milliseconds off.
   def feel(beat) do
-    push = Enum.at([0, 0.02, 0, -0.02], rem(round(beat * 4), 4))
+    push = Enum.at(@push, rem(round(beat * 4), 4))
     max(beat + push + between(-0.01, 0.01), 0)
   end
 
@@ -111,7 +118,7 @@ defmodule Odeon do
   def trombone(pass) when rem(pass, 2) == 0 do
     entries =
       for {beat, note, vel, held} <- phrased(low()),
-          do: {beat, note(note, held, vel: vel, sustain: held * 0.85, release: 0.15)}
+          do: {beat, note(note, held, vel: vel + 0.2, sustain: held * 0.85, release: 0.15)}
 
     at(entries, 32)
   end
@@ -177,7 +184,7 @@ defmodule Odeon do
             {beat,
              note(voice(chord(root, quality), from: from, to: from + 11), 0.35,
                strum: 0.03,
-               vel: between(0.3, 0.4),
+               vel: between(0.45, 0.55),
                sustain: 0.35,
                release: 0.1
              )}
@@ -243,49 +250,95 @@ defmodule Odeon do
     at(strums, 32)
   end
 
-  # The pandeiro, softly: thumb on the beat, its second beat stronger, fingertips on the second and fourth sixteenths, the heel on the third, now and then left out.
-  def pandeiro_thumb do
-    beats = Enum.map(0..31, &feel(&1 * 1.0))
+  # The pandeiro, written as its hand's rocking, a sixteenth to each cell, as the pandeiro solo in mxs's examples writes it.
+  # T is the thumb's bass with the head muted by the holding hand and O the open one, o the fingertips' open bass, h the wrist and f the fingertips on the rim, S a slap and R a roll;
+  # a dot is a ghost note, where the drum rocks and nothing strikes, _ is silence, > accents a cell, and several strokes in a cell split it evenly.
+  # Each phrase is two bars and its loudness: the choro groove under the trombone, with a roll of two fingers now and then, a call where the flute answers, and the tamborim's line under the sighs.
+  def pandeiro_phrases(pass) when rem(pass, 2) == 0 do
+    [
+      {"T f h f  O f h f  T f h f  O f h o", 0.7},
+      {"T f h f  O ff h f  T f h f  O f h o", 0.75},
+      {"T f h f  O f h f  T f h f  O f h o", 0.8},
+      {">O f h >S  f h >O f  T f h f  O f h o", 0.85},
+      {"T f h f  O f h f  T f h f  O f h o", 0.75},
+      {"T f h f  O ff h f  T f h f  O f h o", 0.8},
+      {"T f >h f  O f h o  T o h S  O o h f", 0.8},
+      {"T f h f  O f h f  >S _ . f  O f h o", 0.7}
+    ]
+  end
 
+  # Under the cello it leans to samba: a slap before the second beat, the fingertips' bass pushing into each beat, and a roll into the next pass.
+  def pandeiro_phrases(_pass) do
+    [
+      {"T f h S  O f h o  T f h o  O f h o", 0.85},
+      {"T f h S  O ff h o  T f h o  O f h o", 0.9},
+      {"T f >h f  O f h o  T o h S  O o h f", 0.9},
+      {">O f h >S  f h >O f  >S _ . f  O f h o", 0.95},
+      {"T f h S  O f h o  T f h o  O f h o", 0.9},
+      {"T f >h f  O f h o  T o h S  O o >S o", 0.95},
+      {"T f h f  O ff h f  T f h f  O f h o", 0.85},
+      {"T f h f  O f h f  T f h f  R R R R", 0.8}
+    ]
+  end
+
+  # A letter's synth, whether the holding hand mutes the head, and its vel; a ghost note and a roll are the fingertips on the jingles, very soft.
+  def stroke("T"), do: {:pandeiro_thumb, 1, 0.6}
+  def stroke("O"), do: {:pandeiro_thumb, 0, 0.75}
+  def stroke("o"), do: {:pandeiro_thumb, 0, 0.6}
+  def stroke("h"), do: {:pandeiro_heel, 0, 0.32}
+  def stroke("f"), do: {:pandeiro_jingles, 0, 0.38}
+  def stroke("S"), do: {:pandeiro_slap, 1, 0.7}
+  def stroke("."), do: {:pandeiro_jingles, 1, 0.1}
+  def stroke("r"), do: {:pandeiro_jingles, 1, 0.2}
+
+  # A repeatable wobble between -0.5 and 0.5, so no two strokes are struck quite alike.
+  def wobble(count), do: rem(count * 31, 11) / 10 - 0.5
+
+  # Every stroke of a pass as {beat, synth, vel, muted}: only the jingles take the lean of the rocking, a stroke split from another in its cell is lighter, and a bass on the beat is a little late.
+  def pandeiro_strokes(pass) do
+    cells =
+      for {phrase, loudness} <- pandeiro_phrases(pass),
+          cell <- String.split(phrase),
+          do: {cell, loudness}
+
+    for {{cell, loudness}, index} <- Enum.with_index(cells),
+        accent = if(String.starts_with?(cell, ">"), do: 0.25, else: 0),
+        letters =
+          cell |> String.trim_leading(">") |> String.replace("R", "rrrr") |> String.graphemes(),
+        {letter, split} <- Enum.with_index(letters),
+        letter != "_" do
+      {synth, muted, vel} = stroke(letter)
+      place = rem(index, 4)
+      rim = synth in [:pandeiro_jingles, :pandeiro_heel]
+      lean = if rim, do: Enum.at(@lean, place), else: 1
+      lighter = if split > 0 and letter != "r", do: 0.85, else: 1
+      touch = 1 + 0.15 * wobble(index * 4 + split)
+      vel = clamp((vel * lean + accent) * lighter * loudness * touch, 0.02, 1)
+      late = if synth == :pandeiro_thumb and place == 0, do: 0.01, else: 0
+      loose = 0.008 * wobble(index * 4 + split + 1)
+      beat = (index + split / length(letters)) * 0.25 + Enum.at(@push, place) + late + loose
+      {max(beat, 0), synth, Float.round(vel, 2), muted}
+    end
+  end
+
+  # A pass of one of the pandeiro's strokes.
+  def pandeiro(pass, synth) do
     entries =
-      for beat <- beats,
-          do:
-            {beat,
-             hit(
-               vel:
-                 Float.round(
-                   if(rem(round(beat), 2) == 0, do: 0.35, else: 0.6) + between(-0.05, 0.05),
-                   2
-                 )
-             )}
+      for {beat, ^synth, vel, muted} <- pandeiro_strokes(pass),
+          do: {beat, hit(vel: vel, muted: muted)}
 
     at(entries, 32)
   end
 
-  def pandeiro_jingles do
-    strokes = for beat <- 0..31, offset <- [0.25, 0.75], chance(0.9), do: feel(beat + offset)
-    entries = for beat <- strokes, do: {beat, hit(vel: between(0.35, 0.55))}
-    at(entries, 32)
-  end
-
-  def pandeiro_heel do
-    strokes = for beat <- 0..31, chance(0.85), do: feel(beat + 0.5)
-    entries = for beat <- strokes, do: {beat, hit(vel: between(0.4, 0.6))}
-    at(entries, 32)
-  end
-
-  # A shaker under it all in sixteenths, down on each eighth and up between, barely there.
+  # A shaker under it all in sixteenths, down on each eighth and up between, leaning as the pandeiro's jingles do, barely there.
   def shaker do
-    strokes = for sixteenth <- 0..127, do: {feel(sixteenth / 4), rem(sixteenth, 2)}
+    strokes =
+      for sixteenth <- 0..127,
+          do: {feel(sixteenth / 4), rem(sixteenth, 2), Enum.at(@lean, rem(sixteenth, 4))}
 
     entries =
-      for {beat, up} <- strokes,
-          do:
-            {beat,
-             hit(
-               vel: Float.round(if(up == 0, do: 0.3, else: 0.18) + between(-0.04, 0.04), 2),
-               up: up
-             )}
+      for {beat, up, lean} <- strokes,
+          do: {beat, hit(vel: Float.round(0.22 * lean + between(-0.04, 0.04), 2), up: up)}
 
     at(entries, 32)
   end
@@ -297,47 +350,57 @@ song(
     together([
       part(:trombone, loop(32, fn pass, _ -> Odeon.trombone(pass) end),
         synth: :trombone,
+        defaults: [amp: 2],
         fx: [reverb: [room: 0.6, mix: 0.3]]
       ),
       part(:cello, loop(32, fn pass, _ -> Odeon.cello(pass) end),
         synth: :cello,
+        defaults: [amp: 2],
         fx: [reverb: [room: 0.6, mix: 0.3]]
       ),
       part(:flute, loop(32, fn pass, _ -> Odeon.flute(pass) end),
         synth: :flute,
-        defaults: [amp: 1.1, pan: 0.2],
+        defaults: [amp: 1.8, pan: 0.2],
         fx: [reverb: [room: 0.6, mix: 0.3]]
       ),
       part(:tenor_sax, loop(32, fn pass, _ -> Odeon.tenor_sax(pass) end),
         synth: :tenor_sax,
-        defaults: [pan: 0.2],
+        defaults: [amp: 1.6, pan: 0.2],
         fx: [reverb: [room: 0.6, mix: 0.3]]
       ),
       part(:guitar, loop(32, fn _, _ -> Odeon.guitar() end),
         synth: :guitar,
-        defaults: [amp: 0.5, pan: -0.25],
+        defaults: [amp: 0.9, pan: -0.25],
         fx: [reverb: [room: 0.5, mix: 0.2]]
       ),
       part(:cavaquinho, loop(32, fn _, _ -> Odeon.cavaquinho() end),
         synth: :cavaquinho,
-        defaults: [amp: 0.16, pan: 0.3],
+        defaults: [amp: 0.4, pan: 0.3],
         fx: [reverb: [room: 0.5, mix: 0.2]]
       ),
-      part(:pandeiro_thumb, loop(32, fn _, _ -> Odeon.pandeiro_thumb() end),
+      part(:pandeiro_thumb, loop(32, fn pass, _ -> Odeon.pandeiro(pass, :pandeiro_thumb) end),
         synth: :pandeiro_thumb,
-        defaults: [amp: 0.35]
+        defaults: [amp: 0.6, pan: 0.1],
+        fx: [reverb: [room: 0.4, mix: 0.12]]
       ),
-      part(:pandeiro_jingles, loop(32, fn _, _ -> Odeon.pandeiro_jingles() end),
+      part(:pandeiro_jingles, loop(32, fn pass, _ -> Odeon.pandeiro(pass, :pandeiro_jingles) end),
         synth: :pandeiro_jingles,
-        defaults: [amp: 0.2]
+        defaults: [amp: 0.5, pan: 0.1],
+        fx: [reverb: [room: 0.4, mix: 0.12]]
       ),
-      part(:pandeiro_heel, loop(32, fn _, _ -> Odeon.pandeiro_heel() end),
+      part(:pandeiro_heel, loop(32, fn pass, _ -> Odeon.pandeiro(pass, :pandeiro_heel) end),
         synth: :pandeiro_heel,
-        defaults: [amp: 0.28]
+        defaults: [amp: 0.5, pan: 0.1],
+        fx: [reverb: [room: 0.4, mix: 0.12]]
+      ),
+      part(:pandeiro_slap, loop(32, fn pass, _ -> Odeon.pandeiro(pass, :pandeiro_slap) end),
+        synth: :pandeiro_slap,
+        defaults: [amp: 0.4, pan: 0.1],
+        fx: [reverb: [room: 0.4, mix: 0.12]]
       ),
       part(:shaker, loop(32, fn _, _ -> Odeon.shaker() end),
         synth: :shaker,
-        defaults: [amp: 0.22, pan: -0.35]
+        defaults: [amp: 0.35, pan: -0.35]
       )
     ])
 )
