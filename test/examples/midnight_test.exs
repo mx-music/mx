@@ -76,8 +76,8 @@ defmodule Mx.Examples.MidnightTest do
     assert beats(loop_part(shanti, "clave"), "play") == [0.0]
   end
 
-  test "the README points to the piece" do
-    assert File.read!("README.md") =~ "examples/midnight.exs"
+  test "the examples guide points to the piece" do
+    assert File.read!("documentation/examples.md") =~ "examples/midnight.exs"
   end
 
   @tag :timing

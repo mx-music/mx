@@ -439,47 +439,123 @@ defmodule Midnight do
 
   def guiro(_section, _time), do: rest(16)
 
+  # The oboe's ghost: the same breaths, heard only as their echo three beats later, in the alap, the tihai and shanti.
+  def ghost(section, time) when section in [:alap, :shanti] or {section, time} == {:drut, 8} do
+    together([oboe(section, time), desk(section, time)])
+  end
+
+  def ghost(section, time), do: together([rest(16), desk(section, time)])
+
+  # The oboe's echo pulls back for the gat and returns for the tihai.
+  def desk(:alap, 0), do: echo(0.5, 0)
+  def desk(:vilambit, 0), do: echo(0.2, 8)
+  def desk(:drut, 8), do: echo(0.5, 8)
+  def desk(_section, _time), do: rest(16)
+
+  def echo(mix, slide) do
+    at([{0, change({:oboe, :ping_pong}, mix: mix, mix_slide: slide)}], 16)
+  end
+
+  # The vibraphone, its motor turning, drops two notes of the raga into each pass outside the fast gat, and they bounce from side to side.
+  def stars(:drut, _time), do: rest(16)
+
+  def stars(section, time) do
+    pass = if section == :vilambit, do: time + 1, else: time
+    [first, second] = Enum.at([~w(S' P), ~w(R' M), ~w(P d), ~w(n S')], rem(pass, 4))
+
+    at(
+      [
+        {5, note(swara(first, sa() + 12), 5, vel: 0.3, motor: 3)},
+        {12.5, note(swara(second, sa() + 12), 3.5, vel: 0.25, motor: 3)}
+      ],
+      16
+    )
+  end
+
   # The alap opens over the drones, the slow gat brings in the tabla, the güiro and the pianos, the fast gat the claves, and shanti settles back on Sa.
   def form do
     for {section, count} <- [alap: 4, vilambit: 4, drut: 9, shanti: 2], time <- 0..(count - 1) do
       together([
         part(:tanpura, tanpura(section, time),
           synth: :tanpura,
-          defaults: [amp: 0.5, pan: -0.15]
+          defaults: [amp: 0.45, pan: -0.15],
+          fx: [flanger: [phase: 32, feedback: 0.3, mix: 0.25]]
         ),
-        part(:organ, organ(section, time), synth: :organ, fx: [reverb: [room: 0.9, mix: 0.45]]),
+        part(:organ, organ(section, time),
+          synth: :organ,
+          fx: [
+            wobble: [phase: 32, cutoff_min: 38, cutoff_max: 72, res: 0.3, wave: 3],
+            reverb: [room: 0.9, mix: 0.45]
+          ]
+        ),
         part(:chorus, chorus(section, time),
           synth: :organ,
           defaults: [amp: 0.5],
-          fx: [reverb: [room: 0.9, mix: 0.45]]
+          fx: [
+            slicer: [phase: 0.5, amp_min: 0.2, smooth: 0.03],
+            wobble: [phase: 24, cutoff_min: 70, cutoff_max: 115, res: 0.4, wave: 3],
+            reverb: [room: 0.9, mix: 0.45]
+          ]
         ),
         part(:oboe, oboe(section, time),
           synth: :oboe,
           defaults: [pan: 0.1],
-          fx: [reverb: [room: 0.85, mix: 0.4]]
+          fx: [
+            ping_pong: [phase: 1.5, feedback: 0.6, mix: 0.5],
+            reverb: [room: 0.85, mix: 0.4]
+          ]
+        ),
+        part(:ghost, ghost(section, time),
+          synth: :oboe,
+          defaults: [amp: 0.22],
+          fx: [
+            echo: [phase: 3, decay: 10, mix: 1],
+            reverb: [room: 0.95, mix: 0.7]
+          ]
+        ),
+        part(:stars, stars(section, time),
+          synth: :vibraphone,
+          defaults: [amp: 1.2],
+          fx: [
+            ping_pong: [phase: 1, feedback: 0.6, mix: 0.5],
+            reverb: [room: 0.95, mix: 0.6]
+          ]
         ),
         part(:harmonium, harmonium(section, time),
           synth: :harmonium,
-          defaults: [amp: 0.6, pan: -0.3],
-          fx: [reverb: [room: 0.8, mix: 0.35]]
+          defaults: [amp: 3, pan: -0.3],
+          fx: [
+            chorus: [mix: 0.4],
+            echo: [phase: 0.75, decay: 4, mix: 0.3],
+            reverb: [room: 0.8, mix: 0.35]
+          ]
         ),
         part(:piano, piano(section, time),
           synth: :piano,
-          defaults: [pan: -0.6],
-          fx: [reverb: [room: 0.85, mix: 0.4]]
+          defaults: [amp: 2.5, pan: -0.6],
+          fx: [
+            wobble: [phase: 24, cutoff_min: 68, cutoff_max: 118, res: 0.5, wave: 3],
+            ping_pong: [phase: 0.75, feedback: 0.4, mix: 0.25],
+            reverb: [room: 0.85, mix: 0.4]
+          ]
         ),
         part(:piano_phase, piano_phase(section, time),
           synth: :piano,
-          defaults: [pan: 0.6],
-          fx: [reverb: [room: 0.85, mix: 0.4]]
+          defaults: [amp: 2.5, pan: 0.6],
+          fx: [
+            wobble: [phase: 20, cutoff_min: 68, cutoff_max: 118, res: 0.5, wave: 3],
+            reverb: [room: 0.85, mix: 0.4]
+          ]
         ),
         part(:tabla_na, tabla(section, time, :tabla_na),
           synth: :tabla_na,
-          defaults: [note: sa(), amp: 0.7, pan: 0.2]
+          defaults: [note: sa(), amp: 0.7, pan: 0.2],
+          fx: [ping_pong: [phase: 0.75, feedback: 0.4, mix: 0.2], reverb: [room: 0.7, mix: 0.2]]
         ),
         part(:tabla_tun, tabla(section, time, :tabla_tun),
           synth: :tabla_tun,
-          defaults: [note: sa(), amp: 0.7, pan: 0.2]
+          defaults: [note: sa(), amp: 0.7, pan: 0.2],
+          fx: [ping_pong: [phase: 0.75, feedback: 0.4, mix: 0.2], reverb: [room: 0.7, mix: 0.2]]
         ),
         part(:tabla_te, tabla(section, time, :tabla_te),
           synth: :tabla_te,
@@ -489,8 +565,19 @@ defmodule Midnight do
           synth: :tabla_ghe,
           defaults: [amp: 0.5, pan: 0.15]
         ),
-        part(:clave, clave(section, time), synth: :clave, defaults: [amp: 0.5, pan: 0.45]),
-        part(:guiro, guiro(section, time), synth: :guiro, defaults: [amp: 0.6, pan: -0.45])
+        part(:clave, clave(section, time),
+          synth: :clave,
+          defaults: [amp: 0.5, pan: 0.45],
+          fx: [echo: [phase: 0.75, decay: 3, mix: 0.35], reverb: [room: 0.8, mix: 0.3]]
+        ),
+        part(:guiro, guiro(section, time),
+          synth: :guiro,
+          defaults: [amp: 0.5, pan: -0.45],
+          fx: [
+            flanger: [phase: 8, feedback: 0.3, mix: 0.3],
+            ping_pong: [phase: 0.75, feedback: 0.4, mix: 0.25]
+          ]
+        )
       ])
     end
   end
