@@ -3173,6 +3173,14 @@ defmodule Mx.DesignsTest do
     end
   end
 
+  test "the pandeiro's thumb rings higher and shorter with the head muted", ctx do
+    open = render(ctx, :pandeiro_thumb, [], 1)
+    muted = render(ctx, :pandeiro_thumb, [muted: 1], 1)
+
+    assert loudest_hz(muted) > loudest_hz(open)
+    assert rms(muted, 0.15, 0.4) < rms(open, 0.15, 0.4) / 2
+  end
+
   # Measured from the cabasa of the Versilian Community Sample Library.
   # Each band's level as a hit starts, against its loudest band, and the seconds it takes to fade 60 dB.
   @cabasa_hit %{
