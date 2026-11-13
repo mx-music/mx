@@ -1,47 +1,78 @@
 import Mx
 
-# A solo for the cowbell written for mx from the campana, the bongocero's bell in salsa, as timba.com's "Finding the clave" gives its two 2:3 patterns: the "second gear", then the standard "third gear", the second gear again, and a last open stroke.
+# A solo for two cowbells written for mx from salsa's bell patterns, as timba.com's "Finding the clave" writes them, https://www.timba.com/artist_pages/finding-the-clave, all in 2:3 clave.
+# The campana is the bongocero's bell, large and held in the hand: its "second gear", then the standard "third gear".
+# The contracampana is the timbalero's bell, smaller and higher, here the same cowbell tuned a fourth up: its pattern alone, then with the campana, the two bells against each other as in a montuno, and then the pattern the page names for Changuito over the second gear.
+# The campana plays the standard pattern of the 12/8 rhythms, which Wikipedia's article on bell patterns gives as X . X . X X . X . X . X, the two bells come back together, and both end on one open stroke.
 defmodule Cowbell do
   import Mx
 
-  # A pass is the two bars of the clave, written as sixteen cells of eighth notes.
-
+  # A pass is the two bars of the clave, written as sixteen cells of eighth notes, or for the 12/8 bell as twenty-four of triplet eighths.
   # O is an open stroke on the bell's mouth, played hard, o an open stroke, and c a closed stroke, muted by the hand.
   # The second gear: closed strokes on the 2 side, and the 3 side's first two strokes strongly open.
-  def cells(:second_gear), do: "c......cO..O...c"
+  @second_gear "c... ...c O..O ...c"
 
   # The third gear: open on each half bar, closed between, with a rest on the 2 side's second beat.
-  def cells(:third_gear), do: "O.c.o.cco.cco.cc"
-  def cells(:again), do: cells(:second_gear)
-  def cells(:ending), do: "O..............."
+  @third_gear "O.c. o.cc o.cc o.cc"
+
+  # The page writes the contracampana's strokes alike; the harder ones on the four beats are mx's own.
+  @contracampana "O.o. Oooo .ooo O.oo"
+  @changuito ".oo. .ooo .ooo .ooo"
+
+  @standard "O.o.oo.o.o.o O.o.oo.o.o.o"
+
+  def passes do
+    [
+      [campana: @second_gear],
+      [campana: @second_gear],
+      [campana: @third_gear],
+      [campana: @third_gear],
+      [contracampana: @contracampana],
+      [contracampana: @contracampana],
+      [campana: @third_gear, contracampana: @contracampana],
+      [campana: @third_gear, contracampana: @contracampana],
+      [campana: @third_gear, contracampana: @contracampana],
+      [campana: @third_gear, contracampana: @contracampana],
+      [campana: @second_gear, contracampana: @changuito],
+      [campana: @second_gear, contracampana: @changuito],
+      [campana: @standard],
+      [campana: @standard],
+      [campana: @third_gear, contracampana: @contracampana],
+      [campana: @third_gear, contracampana: @contracampana],
+      [campana: "O", contracampana: "O"]
+    ]
+  end
 
   def stroke("O"), do: [vel: 1]
   def stroke("o"), do: [vel: 0.8]
   def stroke("c"), do: [vel: 0.6, muted: 1]
 
-  # The strokes of a pass, as {beat, options}.
-  def strokes(section) do
-    for {letter, index} <- Enum.with_index(String.graphemes(cells(section))),
-        letter != ".",
-        do: {index / 2, stroke(letter)}
+  # A pass of one bell, as 8 beats.
+  def bell(cells) do
+    letters = cells |> String.replace(" ", "") |> String.graphemes()
+    per_beat = length(letters) / 8
+
+    hits =
+      for {letter, index} <- Enum.with_index(letters), letter != "." do
+        beat = Float.round(index / per_beat, 3)
+        {beat, hit(stroke(letter))}
+      end
+
+    if hits == [], do: rest(8), else: at(hits, 8)
   end
 
-  # A pass of cowbell, as 8 beats.
-  def cowbell(section, _pass) do
-    hits = for {beat, opts} <- strokes(section), do: {beat, hit(opts)}
-    at(hits, 8)
-  end
+  # The contracampana sounds a fourth above the campana, and a little under it.
+  @bells [campana: [amp: 0.4], contracampana: [amp: 0.3, note: 75]]
 
-  # The form, each of its passes a section.
+  # The form, each of its passes a clave.
   def form do
-    sections =
-      for {section, count} <- [second_gear: 2, third_gear: 4, again: 2, ending: 1],
-          _ <- 1..count,
-          do: section
-
-    Enum.with_index(sections, fn section, pass ->
-      part(:cowbell, cowbell(section, pass), synth: :cowbell, defaults: [amp: 0.5])
-    end)
+    for cells <- passes() do
+      together(
+        for {name, defaults} <- @bells do
+          part(name, bell(Keyword.get(cells, name, "")), synth: :cowbell, defaults: defaults)
+        end
+      )
+    end
   end
 end
 

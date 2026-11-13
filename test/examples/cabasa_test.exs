@@ -5,33 +5,49 @@ defmodule Mx.Examples.CabasaTest do
 
   @song "examples/solo/cabasa.exs"
 
-  test "the solo plays only the cabasa, in sixteenths" do
-    for pass <- 0..7 do
+  test "the solo plays only the cabasa" do
+    for pass <- 0..11 do
       output = print(pass)
       assert Regex.scan(~r/^(\w+), pass /m, output, capture: :all_but_first) == [["cabasa"]]
-      assert length(Regex.scan(~r/^beat /m, output)) == 32
     end
 
     refute print(0) =~ "sample "
   end
 
-  test "the pulse accents each beat, then the bossa nova figure" do
+  test "it opens on two long turns, the second harder" do
     assert print(0) =~
-             ~r/\nbeat 0 +play vel: 0.8\nbeat 0.25 +play vel: 0.4\n.*\nbeat 1 +play vel: 0.8\n/s
-
-    bossa = print(2)
-
-    assert bossa =~
-             ~r/\nbeat 1 +play vel: 0.4\n.*\nbeat 1.5 +play vel: 0.8\n.*\nbeat 3 +play vel: 0.8\n/s
-
-    assert bossa =~
-             ~r/\nbeat 4.5 +play vel: 0.8\n.*\nbeat 6 +play vel: 0.8\n.*\nbeat 7 +play vel: 0.8\n/s
+             ~r/\nbeat 0 +play vel: 0.4, rub: 1, sustain: 3, amp: 0.6\nbeat 4 +play vel: 0.6, rub: 1, sustain: 3, amp: 0.6\n/
   end
 
-  test "the turns play the figure as rubs" do
-    turns = print(6)
-    assert length(Regex.scan(~r/rub: 1, sustain: 0.25/, turns)) == 6
-    assert turns =~ ~r/\nbeat 1.5 +play vel: 0.8, rub: 1, sustain: 0.25\n/
+  test "the pulse twists the beads on every sixteenth, harder forward than back" do
+    pulse = print(1)
+    assert length(Regex.scan(~r/^beat .* rub: 1, sustain: 0.1, amp: 0.6$/m, pulse)) == 32
+
+    assert pulse =~
+             ~r/\nbeat 0 +play vel: 0.55, rub: 1, sustain: 0.1, amp: 0.6\nbeat 0.25 +play vel: 0.35, rub: 1, sustain: 0.1, amp: 0.6\nbeat 0.5 +play vel: 0.55, /
+  end
+
+  test "the bossa nova figure is struck over the pulse, in the twists' place" do
+    bossa = print(3)
+    assert length(Regex.scan(~r/^beat /m, bossa)) == 32
+
+    struck =
+      for [beat] <-
+            Regex.scan(~r/^beat (\S+) +play vel: 0.8, amp: 0.6$/m, bossa, capture: :all_but_first),
+          do: beat
+
+    assert struck == ~w(0 1.5 3 4.5 6 7)
+  end
+
+  test "the figure alone leaves the beads spinning after each stroke, and the ending's turn grows into a stroke" do
+    spinning = print(7)
+    assert length(Regex.scan(~r/^beat /m, spinning)) == 12
+
+    assert spinning =~
+             ~r/\nbeat 1.5 +play vel: 0.8, amp: 0.6\nbeat 1.5 +play vel: 0.45, rub: 1, sustain: 0.5, amp: 0.6\n/
+
+    assert print(11) =~
+             ~r/\nbeat 0 +play vel: 0.4, rub: 1, sustain: 2, amp: 0.6\nbeat 2 +play vel: 0.7, rub: 1, sustain: 1.75, amp: 0.6\nbeat 4 +play vel: 0.9, amp: 0.6\n/
   end
 
   test "the README points to the solo, and the synth designs license names the recordings" do

@@ -105,7 +105,7 @@ The bongos play the martillo until the mambo, where the bongocero takes up the c
 
 `examples/solo/cajon.exs` is the cajón on its own, from Peru to flamenco and the drum kit: a festejo of mx's own in 12/8, with bass tones, slaps and ghost strokes; the rumba flamenca, its eighths grouped 3+3+2 with the slap on two and four; the bulerías, twelve counts accented on 12, 3, 6, 8 and 10, closing on 10; a rock beat moved from the kit, filled in until every sixteenth is played; and a roll of slaps that grows into the bass tone.
 
-`examples/solo/cowbell.exs` is the cowbell on its own, playing the campana, the bongocero's bell in salsa, in its two 2:3 patterns: the second gear, with the 3 side's first two strokes open and hard, and the standard third gear, open on each half bar and closed between.
+`examples/solo/cowbell.exs` is two cowbells on their own, playing salsa's bell patterns in 2:3 clave: the campana, the bongocero's bell, in its second gear, with the 3 side's first two strokes open and hard, and the standard third gear, open on each half bar and closed between; the contracampana, the timbalero's bell, a fourth above, alone and then against the campana as in a montuno; and the campana in the standard pattern of the 12/8 rhythms.
 
 `examples/solo/claves.exs` is the claves on their own, playing the standard clave patterns: son clave 3-2 and 2-3, rumba clave, the bossa nova clave, and the 6/8 standard bell of bembé.
 
@@ -115,7 +115,7 @@ The bongos play the martillo until the mambo, where the bongocero takes up the c
 
 `examples/solo/triangle.exs` is the triangle on its own, played its standard ways: single strokes left to ring, strokes the hand damps at once, a roll inside one corner, and the forró triangle of the baião, open on the third sixteenth of each beat and closed on the others.
 
-`examples/solo/cabasa.exs` is the cabasa on its own, in the steady sixteenths of bossa nova, accenting each beat, then the bossa nova figure, then turning the beads on it.
+`examples/solo/cabasa.exs` is the cabasa on its own: two long turns of the beads, the steady sixteenth pulse of bossa nova as twists, harder forward than back, the two-bar bossa nova figure struck over it, the figure alone with the beads left to spin after each stroke, and a turn that grows into a last stroke.
 
 `examples/solo/agogo.exs` is the agogô on its own: a samba bell pattern, a partido alto one, a maracatu figure, eighths across both bells with accents, and four more samba patterns.
 
