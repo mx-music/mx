@@ -3588,6 +3588,7 @@ defmodule Mx.DesignsTest do
 
     level = cents.(render(ctx, :cuica, [note: 64, scoop: 0, sustain: 0.19], 0.4))
     above = cents.(render(ctx, :cuica, [note: 64, scoop: -2, sustain: 0.19], 0.4))
+
     assert_in_delta level, 0, 60, "starts #{level} cents from its note"
     assert above > 80, "starts #{above} cents over its note"
   end

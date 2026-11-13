@@ -29,6 +29,24 @@ defmodule Mix.Tasks.Mx.SpectrogramTest do
              div(height, 10)
   end
 
+  test "draws several recordings one above another, a stretch of each, at the pixels a second given",
+       ctx do
+    low = write_wav(ctx, "a4.wav", sine(440, 2))
+    high = write_wav(ctx, "a5.wav", sine(880, 4))
+    capture_io(fn -> Spectrogram.run([low]) end)
+    {_width, height, alone} = read_png(Path.join(ctx.tmp_dir, "a4.png"))
+
+    args = [low, high, "--from", "0.5", "--seconds", "1", "--per-second", "40", "--window", "20"]
+    assert capture_io(fn -> Spectrogram.run(args) end) =~ "Wrote #{ctx.tmp_dir}/a4.png"
+    {width, stacked, rows} = read_png(Path.join(ctx.tmp_dir, "a4.png"))
+
+    assert width == 40
+    assert stacked == 2 * height
+    {above, below} = Enum.split(rows, height)
+    assert_in_delta brightest(above, 20), brightest(alone, 100), 1
+    assert_in_delta brightest(above, 20) - brightest(below, 20), div(height, 10), 1
+  end
+
   test "refuses a file it cannot read, naming it", ctx do
     missing = Path.join(ctx.tmp_dir, "missing.wav")
 

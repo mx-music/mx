@@ -260,6 +260,27 @@ mix mx.spectrogram thumb.wav
 ```
 
 `mix mx.spectrogram FILE` draws a spectrogram of a recording into a PNG image beside it, with seconds across and octaves up the side; `--out` names the image.
+Several files are drawn into one image, one above another, so a render can be compared with a recording moment by moment.
+`--from` and `--seconds` draw a stretch of each, `--per-second` sets the pixels a second takes, and `--window` the milliseconds of sound in each column: the usual long window tells the harmonics apart, and a short one, such as 4, shows how the level moves within a note and where notes join.
+
+```sh
+mix mx.spectrogram "cuica (2).wav" solo.wav --from 1 --seconds 2.4 --per-second 400 --window 4
+```
+
+An instrument played in strokes that run into one another, such as the cuíca, takes `--strokes`, and a file needs no note after its name.
+It prints each stroke with its number, the second it starts at, its length, the note it settles at, the cents it starts from that note, and its level under the loudest.
+`--tracks` with the numbers of strokes of one file prints each one's tracks instead: its pitch in cents against its note every 8 ms, and at each of those steps the levels of its first 16 harmonics and of the noise the harmonics leave, in dB under its loudest step.
+`--alone` carries on into the ring a stroke played by itself leaves, and `--ignore` with two frequencies leaves out the harmonics between them, for a steady tone in the recording that is not the instrument's.
+
+```sh
+mix mx.measure --strokes "cuica (2).wav"
+mix mx.measure --strokes "cuica (2).wav" --tracks 17,19 --ignore 8500-9100
+```
+
+The tracks are for an instrument whose bands' levels and fades can be matched by a design that still does not sound like it.
+The cuíca's design passed its figures as a fixed set of harmonics under one envelope and sounded synthetic, because in a real stroke each harmonic moves by itself, the level holds and is then cut off, and strokes join with no gap.
+Its synth instead plays the measured strokes back: mxs's `src/synths/drums/cuica.rs` holds the tracks this command prints for 28 strokes, and the synth picks the stroke nearest the note, scoop and length asked for, and plays it at that note with harmonics that follow the tracks and filtered noise at the noise's level.
+To judge such a synth, draw a stretch of a recording above a stretch of its render with `mix mx.spectrogram`, once with the long window and once with a short one, and look at them before measuring anything.
 
 `mix mx.fit` searches for the numbers a held instrument's design needs.
 Write each unknown number in the design as a temporary control, such as `\k_odd.kr(-2)`, compile the designs, then give the synth, each dynamic as `--vel` and the files played at it, and each control with its starting value and step.

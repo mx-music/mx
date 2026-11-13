@@ -30,12 +30,21 @@ defmodule Mix.Tasks.Mx.Measure do
 
       mix mx.measure --hits "pandeiro A.wav" --synth pandeiro_thumb --compare thumb.wav
   With `--synth`, a held note renders for as long as the recordings hold it, and a hit renders once at each note given, with only the options the synth takes.
+
+      mix mx.measure --strokes "cuica (2).wav"
+      mix mx.measure --strokes "cuica (2).wav" --tracks 17,19 --ignore 8500-9100
+
+  `--strokes` measures an instrument played in strokes that run into one another, as `Mx.Measure.Strokes` describes, and a file needs no note after its name.
+  It prints each stroke with its number, the second it starts at, its length in ms, the note it settles at, the cents it starts from that note, and its level in dB under the loudest.
+  `--tracks` with the numbers of strokes of one file prints each one's tracks instead: its note, the semitones it starts under it, then its pitch in cents at every step of 8 ms, and a row for each step of the levels of its 16 harmonics and of its noise, in dB under its loudest step, with -127 for silence.
+  `--alone` with `--tracks` carries on past each stroke into the ring it leaves, for a stroke played by itself.
+  `--ignore` with `--tracks` and two frequencies, such as `--ignore 8500-9100`, leaves out the harmonics between them, for a steady tone that is not the instrument's.
   """
 
   use Mix.Task
 
   alias Mx.{Audio, Measure, Notes, Signal, Synths}
-  alias Mx.Measure.{Held, Hits}
+  alias Mx.Measure.{Held, Hits, Strokes}
   alias Mx.Engine.Mxs
 
   @example "Guitar.mf.sulA.A2B2.aif:A2"
@@ -55,7 +64,11 @@ defmodule Mix.Tasks.Mx.Measure do
       hits: :boolean,
       partials: :string,
       option: :keep,
-      compare: :string
+      compare: :string,
+      strokes: :boolean,
+      tracks: :string,
+      alone: :boolean,
+      ignore: :string
     ]
 
     {opts, files} = OptionParser.parse!(args, strict: strict)
@@ -69,6 +82,8 @@ defmodule Mix.Tasks.Mx.Measure do
 
     cond do
       opts[:held] && opts[:hits] -> Mix.raise("give --held or --hits, not both")
+      opts[:strokes] -> strokes(files, opts)
+      opts[:tracks] || opts[:alone] || opts[:ignore] -> Mix.raise("--tracks needs --strokes")
       opts[:drone] && !opts[:held] -> Mix.raise("--drone needs --held")
       opts[:held] -> held(files, synth, given, opts[:drone] || false)
       opts[:hits] -> hits(files, synth, given, count, compare)
@@ -145,6 +160,96 @@ defmodule Mix.Tasks.Mx.Measure do
       print_bands(recorded)
       IO.puts("")
       print_moments(Hits.moments(found))
+    end
+  end
+
+  defp strokes(files, opts) do
+    case {opts[:tracks], files} do
+      {nil, files} when files != [] ->
+        Enum.each(files, &print_strokes(&1, recording!(&1)))
+
+      {tracks, [path]} ->
+        given = [alone: opts[:alone] || false, ignore: ignore!(opts[:ignore])]
+        recording = recording!(path)
+        for index <- indices!(tracks, recording), do: print_tracks(path, recording, index, given)
+
+      _other ->
+        Mix.raise("--strokes takes the recordings to measure, and only one with --tracks")
+    end
+  end
+
+  defp recording!(path) do
+    case Strokes.file(path) do
+      {:ok, recording} -> recording
+      {:error, message} -> Mix.raise(message)
+    end
+  end
+
+  defp indices!(text, %{strokes: strokes}) do
+    last = length(strokes) - 1
+
+    for number <- String.split(text, ",") do
+      case Integer.parse(number) do
+        {index, ""} when index in 0..last//1 -> index
+        _other -> Mix.raise("--tracks takes strokes from 0 to #{last}, such as --tracks 0,3")
+      end
+    end
+  end
+
+  defp ignore!(nil), do: nil
+
+  defp ignore!(text) do
+    with [low, high] <- String.split(text, "-"),
+         {low, ""} <- Float.parse(low),
+         {high, ""} <- Float.parse(high) do
+      {low, high}
+    else
+      _other -> Mix.raise("--ignore takes two frequencies in Hz, such as --ignore 8500-9100")
+    end
+  end
+
+  defp print_strokes(path, %{strokes: strokes}) do
+    count = length(strokes)
+    unit = if count == 1, do: "stroke", else: "strokes"
+    name = Path.basename(path)
+    IO.puts("#{name}: #{count} #{unit}")
+    IO.puts("stroke   start     ms    note  starts   level")
+
+    for {stroke, index} <- Enum.with_index(strokes) do
+      columns = [
+        {"#{index}", 6},
+        {:erlang.float_to_binary(stroke.from, decimals: 2), 8},
+        {"#{round((stroke.to - stroke.from) * 1000)}", 7},
+        {:erlang.float_to_binary(stroke.note, decimals: 2), 8},
+        {signed(round(stroke.start), 0), 8},
+        {signed(stroke.level, 1), 8}
+      ]
+
+      IO.puts(Enum.map_join(columns, fn {text, width} -> String.pad_leading(text, width) end))
+    end
+  end
+
+  defp print_tracks(path, recording, index, given) do
+    name = Path.basename(path)
+
+    case Strokes.tracks(recording, index, given) do
+      nil ->
+        Mix.raise("stroke #{index} of #{name} has no pitch")
+
+      %{note: note, scoop: scoop, body: body, cents: cents, levels: levels} ->
+        note = :erlang.float_to_binary(note, decimals: 2)
+        scoop = :erlang.float_to_binary(scoop, decimals: 2)
+        steps = length(cents)
+        ms = round(Strokes.step() * 1000)
+        ring = if body < steps, do: ", the first #{body} the stroke and the rest its ring"
+
+        IO.puts(
+          "stroke #{index} of #{name}: note #{note}, scoop #{scoop}, #{steps} steps of #{ms} ms#{ring}"
+        )
+
+        IO.puts("cents: " <> Enum.join(cents, ", "))
+        IO.puts("levels:")
+        for row <- levels, do: IO.puts("[" <> Enum.join(row, ", ") <> "],")
     end
   end
 

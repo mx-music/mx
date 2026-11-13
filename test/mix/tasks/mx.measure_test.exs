@@ -398,6 +398,48 @@ defmodule Mix.Tasks.Mx.MeasureTest do
     end
   end
 
+  test "with --strokes, prints each stroke, and with --tracks its pitch and levels at every step",
+       ctx do
+    silence = List.duplicate(0.0, 2400)
+    path = write_wav(ctx, "rubs.wav", silence ++ rub(330) ++ rub(330) ++ silence)
+
+    output = capture_io(fn -> Mix.Tasks.Mx.Measure.run(["--strokes", path]) end)
+    assert output =~ "rubs.wav: 2 strokes"
+    assert output =~ ~r/^ +0 +0\.0\d +1\d\d +64\.0\d +-\d+ +[-+]0\.\d$/m
+    assert output =~ ~r/^ +1 +0\.2\d +1\d\d +64\.0\d/m
+
+    args = ["--strokes", path, "--tracks", "1", "--ignore", "600-700"]
+    output = capture_io(fn -> Mix.Tasks.Mx.Measure.run(args) end)
+    assert output =~ ~r/^stroke 1 of rubs\.wav: note 64\.0\d, scoop 0\.\d\d, \d+ steps of 8 ms$/m
+    assert output =~ ~r/^cents: -\d+(, -?\d+)+$/m
+    assert output =~ ~r/^\[(-1|0), -127, -[67], -127(, -?\d+){13}\],$/m
+  end
+
+  test "--strokes refuses silence and a stroke the file does not have, and --tracks needs it",
+       ctx do
+    silent = write_wav(ctx, "silent.wav", List.duplicate(0.0, 48_000))
+
+    assert_raise Mix.Error, "found no strokes in #{silent}", fn ->
+      Mix.Tasks.Mx.Measure.run(["--strokes", silent])
+    end
+
+    path = write_wav(ctx, "rub.wav", List.duplicate(0.0, 2400) ++ rub(330))
+
+    assert_raise Mix.Error, "--tracks takes strokes from 0 to 0, such as --tracks 0,3", fn ->
+      Mix.Tasks.Mx.Measure.run(["--strokes", path, "--tracks", "1"])
+    end
+
+    assert_raise Mix.Error,
+                 "--ignore takes two frequencies in Hz, such as --ignore 8500-9100",
+                 fn ->
+                   Mix.Tasks.Mx.Measure.run(["--strokes", path, "--tracks", "0", "--ignore", "x"])
+                 end
+
+    assert_raise Mix.Error, "--tracks needs --strokes", fn ->
+      Mix.Tasks.Mx.Measure.run([path, "--tracks", "0"])
+    end
+  end
+
   # The University of Iowa Electronic Music Studios' flute recordings, from https://theremin.music.uiowa.edu/MISflute.html, in the folder MX_IOWA_FLUTE names.
   describe "the Iowa flute recordings" do
     @describetag :iowa
@@ -825,6 +867,21 @@ defmodule Mix.Tasks.Mx.MeasureTest do
         Enum.sum(for number <- 1..12, do: :math.sin(2 * :math.pi() * f0 * number * time) / number) *
         10 ** -time
     end
+  end
+
+  # A stroke of 150 ms whose level rises from 34 dB down and falls back, with harmonics at 1, 1 and 0.5, starting 100 cents flat for 40 ms.
+  defp rub(hz) do
+    count = round(0.15 * 48_000)
+
+    {samples, _} =
+      Enum.map_reduce(0..(count - 1), 0.0, fn index, phase ->
+        bent = hz * 2 ** (-100 / 1200 * max(0.0, 1 - index / 48_000 / 0.04))
+        level = 0.02 + 0.48 * :math.sin(:math.pi() * index / count) ** 2
+        sample = :math.sin(phase) + :math.sin(2 * phase) + 0.5 * :math.sin(3 * phase)
+        {level * sample / 2.5, phase + 2 * :math.pi() * bent / 48_000}
+      end)
+
+    samples
   end
 
   defp write_wav(ctx, name, samples) do

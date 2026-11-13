@@ -2,17 +2,19 @@ defmodule Mx.FFT do
   @moduledoc """
   The spectrum of a stretch of samples, through a Hann window, as the magnitude of each frequency bin up to half the sample rate.
 
-  The number of samples must be a power of two.
+  The number of samples must be a power of two, unless a power of two to pad them to with silence is given, which draws a short stretch on the bins of a long one.
   """
 
   @doc "The magnitude of each frequency bin of the samples, from 0 Hz up to half the sample rate."
-  def magnitudes(samples) when is_list(samples) do
-    count = length(samples)
+  def magnitudes(samples, padded \\ nil) when is_list(samples) do
+    held = length(samples)
+    count = padded || held
 
     samples
     |> Enum.with_index(fn sample, index ->
-      sample * (0.5 - 0.5 * :math.cos(2 * :math.pi() * index / count))
+      sample * (0.5 - 0.5 * :math.cos(2 * :math.pi() * index / held))
     end)
+    |> Enum.concat(List.duplicate(0.0, count - held))
     |> fft()
     |> Enum.take(div(count, 2))
     |> Enum.map(fn {real, imaginary} -> :math.sqrt(real * real + imaginary * imaginary) end)
