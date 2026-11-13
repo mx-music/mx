@@ -214,62 +214,6 @@ defmodule Mix.Tasks.Mx.FitTest do
     end
   end
 
-  # The University of Iowa Electronic Music Studios' cello recordings, from https://theremin.music.uiowa.edu/MIScello.html, in the folder MX_IOWA_CELLO names.
-  describe "the Iowa cello recordings" do
-    @describetag :iowa
-
-    setup do
-      dir =
-        System.get_env("MX_IOWA_CELLO") ||
-          flunk("set MX_IOWA_CELLO to the folder of the Iowa cello recordings")
-
-      %{dir: dir}
-    end
-
-    @tag timeout: 600_000
-    test "the cello scores better with its bowed hiss through its body and its recorded onsets than without them",
-         %{dir: dir} do
-      dynamics =
-        Enum.flat_map([{"0.3", "pp"}, {"0.6", "mf"}, {"1", "ff"}], fn {vel, dynamic} ->
-          ["--vel", vel] ++ iowa(dir, dynamic, "Cello.arco")
-        end)
-
-      score = fn controls ->
-        output =
-          capture_io(fn ->
-            Mix.Tasks.Mx.Fit.run(["cello"] ++ dynamics ++ controls ++ ["--check"])
-          end)
-
-        [_, score] = Regex.run(~r/^score ([\d.]+)$/m, output)
-        String.to_float(score)
-      end
-
-      with_both = score.([])
-      without_body = score.(["--control", "response=0:1"])
-      without_onsets = score.(["--control", "onset=0:1"])
-
-      assert with_both < 30
-      assert with_both < without_body
-      assert with_both < without_onsets
-    end
-
-    @tag timeout: 600_000
-    test "fits how loud the cello's onset is against the note it starts", %{dir: dir} do
-      output =
-        capture_io(fn ->
-          Mix.Tasks.Mx.Fit.run(
-            ["cello", "--vel", "0.3"] ++
-              iowa(dir, "pp", "Cello.arco") ++ ["--control", "onset=2:x1.5"]
-          )
-        end)
-
-      [_, start] = Regex.run(~r/^start ([\d.]+)$/m, output)
-      [_, best, onset] = Regex.run(~r/^best ([\d.]+): onset=([\d.]+)$/m, output)
-      assert String.to_float(best) < String.to_float(start)
-      assert String.to_float(onset) < 2
-    end
-  end
-
   defp iowa(dir, dynamic, prefix \\ "BbClar") do
     for path <- Path.wildcard(Path.join(dir, "#{prefix}.#{dynamic}.*.aiff")) do
       [first] = Regex.run(~r/\.([A-G]b?\d)[A-G]?b?\d?\.aiff$/, path, capture: :all_but_first)

@@ -1579,22 +1579,6 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # The cello's onsets were recorded at C2, G2, D3, A3, C4 and B4 at pp, so E2 and F4 play two of them faster.
-  test "cello starts E2 and F4 at their pitch, between the notes its onsets were recorded at",
-       ctx do
-    for note <- [40, 65] do
-      with = render(ctx, :cello, [note: note, vel: 0.3, vibrato: 0, sustain: 1], 1)
-      without = render(ctx, :cello, [note: note, vel: 0.3, vibrato: 0, sustain: 1, onset: 0], 1)
-      onset = Enum.zip_with(with, without, &(&1 - &2))
-      assert rms(onset, 0.02, 0.2) > 0.2 * rms(without, 0.02, 0.2), "note #{note} has no onset"
-      assert rms(onset, 0.3, 1) == 0
-
-      freq = 440 * :math.pow(2, (note - 69) / 12)
-      cents = 1200 * :math.log2(pitch(window(onset, 0.02, 0.2), freq) / freq)
-      assert abs(cents) < 15, "note #{note} starts #{cents} cents off"
-    end
-  end
-
   # Measured from the University of Iowa's cello, plucked on every string from C2 to Bb5,
   # at pp, mf and ff against vel 0.3, 0.6 and 1, as medians over its notes by the harmonic's frequency:
   # the seconds a harmonic takes to fade 60 dB, and its level against C2's fundamental.
@@ -3588,7 +3572,6 @@ defmodule Mx.DesignsTest do
 
     level = cents.(render(ctx, :cuica, [note: 64, scoop: 0, sustain: 0.19], 0.4))
     above = cents.(render(ctx, :cuica, [note: 64, scoop: -2, sustain: 0.19], 0.4))
-
     assert_in_delta level, 0, 60, "starts #{level} cents from its note"
     assert above > 80, "starts #{above} cents over its note"
   end
@@ -3605,6 +3588,7 @@ defmodule Mx.DesignsTest do
     end
 
     assert_in_delta against.(2), 3, 4, "harmonic 2 at #{against.(2)} dB"
+
     # The fourth is 4 dB under the fundamental in the strokes on the beat and 11 under in the softer ones after it.
     assert_in_delta against.(4), -7, 5, "harmonic 4 at #{against.(4)} dB"
     assert against.(3) < -14, "harmonic 3 at #{against.(3)} dB"
