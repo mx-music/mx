@@ -15,7 +15,7 @@ defmodule HouseKit do
   @snare [note: 53.6]
 
   @kit [
-    kick: [{:kick, [note: 40.4], 0.24, 0}],
+    kick: [{:kick, [note: 40.4, beater: 0], 0.24, 0}],
     snare: [{:snare, @snare, 2.6, 0}],
     cross_stick: [{:cross_stick, [], 0.8, 0}],
     rimshot: [{:snare, @snare ++ [rim: 1], 0.45, 0}],
@@ -29,8 +29,8 @@ defmodule HouseKit do
     pedal: [{:pedal_hihat, [], 0.8, 0}],
     ride: [{:ride, [sustain: 4, release: 3], 1.6, 0}],
     bell: [{:ride, [bell: 1, sustain: 2, release: 2], 1.0, 0}],
-    crash: [{:crash, [sustain: 16, release: 6], 0.5, 0}],
-    sizzle: [{:crash, [note: 57, sustain: 34, release: 6], 0.4, 0}],
+    crash: [{:crash, [sustain: 16, release: 6], 0.44, 0}],
+    sizzle: [{:crash, [note: 57, sustain: 34, release: 6], 0.35, 0}],
     claves: [{:clave, [pan: 0.4], 0.1, 0}],
     cowbell: [{:cowbell, [note: 76.9, pan: -0.4], 0.14, 0}],
     conga: [{:mid_conga, [pan: -0.2], 0.45, 0}],
