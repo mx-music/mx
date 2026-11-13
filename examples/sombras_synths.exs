@@ -15,7 +15,6 @@ defmodule SombrasSynths do
       synth: :guitar,
       fx: [
         hpf: [cutoff: 93, mix: 0.5],
-        lpf: [cutoff: 114],
         level: [amp: 4.94],
         reverb: @room,
         pan: [pan: 0.3]
@@ -23,11 +22,11 @@ defmodule SombrasSynths do
     ],
     primera: [
       synth: :guitar,
-      fx: [lpf: [cutoff: 114], level: [amp: 2.59], reverb: @room, pan: [pan: 0.05]]
+      fx: [level: [amp: 2.59], reverb: @room, pan: [pan: 0.05]]
     ],
     guitarra: [
       synth: :guitar,
-      fx: [lpf: [cutoff: 114], level: [amp: 1.71], reverb: @room, pan: [pan: -0.3]]
+      fx: [level: [amp: 1.71], reverb: @room, pan: [pan: -0.3]]
     ]
   ]
 
@@ -145,27 +144,43 @@ defmodule SombrasSynths do
     min(max(vel + lift + weight + swell + (:rand.uniform() - 0.5) * 0.06, 0.1), 1)
   end
 
-  # A line on one player, as {part, {beat, sound}}: each note rings until the next is plucked, the second voice softer and a moment before the melody as the thumb leads a double stop.
+  # A line on one player, as {part, {beat, sound}}: the second voice softer and a moment before the melody as the thumb leads a double stop.
   # `voices` is :both or :melody, and `shift` moves the line by semitones.
   def line(part, notes, vel, opts \\ []) do
     voices = Keyword.get(opts, :voices, :both)
     shift = Keyword.get(opts, :shift, 0)
     middle = Enum.sum(for({_, [note | _], _} <- notes, do: note)) / max(length(notes), 1)
 
-    for {beat, [melody | second], held} <- notes do
+    for {{beat, [melody | second], held}, next} <- Enum.zip(notes, tl(notes) ++ [nil]) do
       at = placed(beat, 0.012)
       loud = plucked(vel, beat, melody, middle)
-      rings = [sustain: held + 0.3, release: 0.6]
+
+      following =
+        case next do
+          {next_beat, pitches, _} when next_beat - (beat + held) < 0.01 -> pitches
+          _ -> []
+        end
 
       under =
-        for note <- second, voices == :both do
+        for {note, voice} <- Enum.with_index(second, 1), voices == :both do
+          rings = rings(held, note, Enum.at(following, voice))
           {part, {at, pluck(note + shift, [vel: loud * 0.72] ++ rings)}}
         end
 
       late = if under == [], do: 0, else: 0.018
+      rings = rings(held, melody, Enum.at(following, 0))
       [{part, {at + late, pluck(melody + shift, [vel: loud] ++ rings)}} | under]
     end
     |> List.flatten()
+  end
+
+  # How long a note rings: on past the next note of its voice, unless that one is the same note or a step away, which is plucked on the same string and stops it.
+  defp rings(held, note, next) do
+    if next && abs(next - note) <= 2 do
+      [sustain: held, release: 0.06]
+    else
+      [sustain: held + 0.3, release: 0.6]
+    end
   end
 
   # Each chord's bass, the bass that alternates with it, and its notes on the top strings.
@@ -351,9 +366,8 @@ defmodule SombrasSynths do
   end
 
   defp lead_in(beats, vel) do
-    for {beat, notes, held} <- notes(tune(:lead_in)),
-        sound <- line(:requinto, [{beats - 0.75 + beat, notes, held}], vel),
-        do: sound
+    run = for {beat, notes, held} <- notes(tune(:lead_in)), do: {beats - 0.75 + beat, notes, held}
+    line(:requinto, run, vel)
   end
 
   # The last two chords: A minor from all three, damped, and once more left to ring.
