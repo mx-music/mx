@@ -1,7 +1,8 @@
 import Mx
 
-# A caboclinho of Pernambuco in 2/4, played only on synths measured from recordings.
-# The terno is written after Climério de Oliveira Santos, "Guerra: uma introdução ao estudo da performance dos caboclinhos Canindés" (ANPPOM, 2007), and the preacas after Jaqueline de Oliveira e Silva, "Guerra, perré e outras manobras" (Revista Dança, 2014); the melodies are mx's own.
+# A study after the caboclinhos of Pernambuco in 2/4, played only on synths measured from recordings.
+# The terno, the order of the toques and the gaita's neutral third are written after Climério de Oliveira Santos, "Guerra: uma introdução ao estudo da performance dos caboclinhos Canindés" (ANPPOM, 2007), and the preacas after him and Jaqueline de Oliveira e Silva, "Guerra, perré e outras manobras" (Revista Dança, 2014).
+# The melodies, the rest of the gaita's scale and its pitch, the tempos, the tarol outside guerra and the atabaque's pattern are mx's own, where a gaiteiro varies melodies the tradition hands down.
 # flute plays the gaita, ganza and shaker the two caracaxás, low_bongo the tarol, high_bongo muted the preacas, and cajon the atabaque.
 defmodule Caboclinho do
   import Mx
@@ -100,8 +101,8 @@ defmodule Caboclinho do
 
   def tarol(:macumba, _bar), do: []
 
-  # The preacas: three strikes a beat in guerra, two a bar in baião, one a bar in perré and macumba do índio.
-  def preacas(:guerra), do: [0, 1 / 3, 2 / 3, 1, 4 / 3, 5 / 3]
+  # The preacas: in guerra one strike on the first beat of each bar, as Santos hears the Canindés play it.
+  # Silva counts two strikes in baião and one in perré, set here on the beats; macumba do índio's one is mx's own.
   def preacas(:baiao), do: [0, 1]
   def preacas(_toque), do: [0]
 
@@ -144,9 +145,7 @@ defmodule Caboclinho do
     seq(notes)
   end
 
-  # The caracaxás shake sixteenths, the third of each beat accented, down on the beat and up off it; they rest while the atabaque plays.
-  def caracaxa(:macumba, _accent, _soft, _up), do: rest(16 * unit(:macumba))
-
+  # The caracaxás shake sixteenths, the third of each beat accented, down on the beat and up off it.
   def caracaxa(toque, accent, soft, up) do
     unit = unit(toque)
 
