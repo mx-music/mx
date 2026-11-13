@@ -47,8 +47,8 @@ defmodule Mx.Examples.SalsaTest do
              ~r/\Apass 1, [^\n]*\nbeat 1 +play amp: 0.35\nbeat 2 +play amp: 0.35\nbeat 4 +play amp: 0.35\nbeat 5.5 +play amp: 0.35\nbeat 7 +play amp: 0.35\nbeat 9 +play amp: 0.35\nbeat 10 +play amp: 0.35\nbeat 12 +play amp: 0.35\nbeat 13.5 +play amp: 0.35\nbeat 15 +play amp: 0.35\z/
   end
 
-  test "the README points to the demo" do
-    assert File.read!("README.md") =~ "examples/salsa.exs"
+  test "the examples guide points to the demo" do
+    assert File.read!("documentation/examples.md") =~ "examples/salsa.exs"
   end
 
   @tag :timing

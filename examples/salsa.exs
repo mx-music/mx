@@ -28,6 +28,22 @@ defmodule Salsa do
     seq(bars)
   end
 
+  # The same tumbao on the plucked double bass, as the baby bass under the band: its weight, where the pluck above is its attack.
+  def baby_bass(:intro), do: rest(16)
+
+  def baby_bass(_section) do
+    bars =
+      for {fifth, next_root} <- [{40, 38}, {45, 41}, {36, 40}, {35, 33}] do
+        seq([
+          rest(1.5),
+          note(fifth, 1.5, vel: 0.8, sustain: 1.3, release: 0.2),
+          note(next_root, 1, vel: 0.9, sustain: 2.2, release: 0.2)
+        ])
+      end
+
+    seq(bars)
+  end
+
   def piano(:piano_solo, _pass) do
     chords = chords()
 
@@ -42,7 +58,7 @@ defmodule Salsa do
       left =
         if rem(step, 8) in [0, 5] do
           [
-            note(Enum.map(chord, &(&1 - 12)), 0, vel: 0.4, amp: 0.25, sustain: 0.3, release: 0.2)
+            note(Enum.map(chord, &(&1 - 12)), 0, vel: 0.4, amp: 0.6, sustain: 0.3, release: 0.2)
           ]
         else
           []
@@ -61,7 +77,7 @@ defmodule Salsa do
 
       right =
         if chance(0.85) do
-          [note(note, 0, vel: between(0.6, 0.9), amp: 0.45, sustain: 0.3, release: 0.3)]
+          [note(note, 0, vel: between(0.6, 0.9), amp: 1.4, sustain: 0.3, release: 0.3)]
         else
           []
         end
@@ -89,7 +105,7 @@ defmodule Salsa do
     hits =
       for {beat, notes} <- hits do
         accent = if beat == trunc(beat), do: 0.1, else: 0
-        {beat, note(notes, 0.35, vel: 0.5 + accent, amp: 0.4, sustain: 0.35, release: 0.25)}
+        {beat, note(notes, 0.35, vel: 0.5 + accent, amp: 1.2, sustain: 0.35, release: 0.25)}
       end
 
     at(hits, 16)
@@ -264,16 +280,57 @@ defmodule Salsa do
     at(entries, 16)
   end
 
-  # The campana on every beat, open on one and three.
+  # The campana, the bongocero's bell, in its third gear over the clave's two bars, a cell to each eighth: O is an open stroke on the bell's mouth played hard, o an open stroke and c a closed one, muted by the hand.
   def cowbell(section) when section in [:mambo, :horn_solo, :mambo_again] do
+    strokes = %{
+      "O" => [amp: 0.3, vel: 1],
+      "o" => [amp: 0.3, vel: 0.8],
+      "c" => [amp: 0.3, vel: 0.6, muted: 1]
+    }
+
     entries =
-      for beat <- 0..15,
-          do: {beat, if(rem(beat, 2) == 0, do: hit(amp: 0.4), else: hit(amp: 0.2, note: 81))}
+      for half <- [0, 8],
+          {cell, index} <- Enum.with_index(String.graphemes("O.c.o.cco.cco.cc")),
+          cell != ".",
+          do: {half + index / 2, hit(strokes[cell])}
 
     at(entries, 16)
   end
 
   def cowbell(_section), do: rest(16)
+
+  # Until the bell, the bongocero plays the martillo, a cell to each eighth: M is a muted stroke on the small drum with the index finger, t a soft one with the thumb, o its open tone and H the large drum's open tone.
+  def bongo(section, _drum) when section in [:intro, :mambo, :horn_solo, :mambo_again],
+    do: rest(16)
+
+  def bongo(_section, drum) do
+    strokes = %{
+      "M" => {:high_bongo, [muted: 1, vel: 0.8]},
+      "t" => {:high_bongo, [muted: 1, vel: 0.4]},
+      "o" => {:high_bongo, [muted: 0, vel: 0.7]},
+      "H" => {:low_bongo, [muted: 0, vel: 0.8]}
+    }
+
+    entries =
+      for bar <- 0..3,
+          {cell, index} <- Enum.with_index(String.split("M t o t M t H t")),
+          {^drum, opts} <- [strokes[cell]],
+          do: {bar * 4 + index / 2, hit(opts)}
+
+    at(entries, 16)
+  end
+
+  # The maracas in eighths, the beat stronger than the stroke after it.
+  def maracas(:intro), do: rest(16)
+
+  def maracas(_section) do
+    entries =
+      for eighth <- 0..31,
+          up = rem(eighth, 2),
+          do: {eighth / 2, hit(vel: 0.5 - up * 0.15, up: up)}
+
+    at(entries, 16)
+  end
 
   # Whether a pass ends leading into the first stabs, mambo or horn solo, which a timbale fill marks.
   def fill?(section, coming), do: coming != section and coming in [:stabs, :mambo, :horn_solo]
@@ -350,6 +407,7 @@ defmodule Salsa do
       together([
         part(:clave, clave(), synth: :clave),
         part(:bass, bass(section), synth: :pluck),
+        part(:baby_bass, baby_bass(section), synth: :double_bass, defaults: [pizz: 1, amp: 0.8]),
         part(:piano, loop(16, fn pass, _ -> piano(section, pass) end),
           synth: :piano,
           fx: [reverb: [room: 0.35, mix: 0.2]]
@@ -360,16 +418,26 @@ defmodule Salsa do
             distortion: [distort: 0.35, mix: 0.3],
             echo: [phase: 0.75, decay: 3, mix: 0.3],
             pan: [],
-            reverb: [room: 0.4, mix: 0.3]
+            reverb: [room: 0.4, mix: 0.3],
+            level: [amp: 0.55]
           ]
         ),
         part(:high_conga, high_conga(section), synth: :high_conga),
-        part(:low_conga, low_conga(section), synth: :low_conga),
-        part(:cascara, cascara(section), synth: :timbale_shell),
+        part(:low_conga, low_conga(section), synth: :low_conga, fx: [level: [amp: 2.5]]),
+        part(:cascara, cascara(section), synth: :timbale_shell, fx: [level: [amp: 0.5]]),
         part(:cowbell, cowbell(section), synth: :cowbell),
+        part(:high_bongo, bongo(section, :high_bongo),
+          synth: :high_bongo,
+          defaults: [amp: 0.5, pan: 0.3]
+        ),
+        part(:low_bongo, bongo(section, :low_bongo),
+          synth: :low_bongo,
+          defaults: [amp: 0.5, pan: 0.3]
+        ),
+        part(:maracas, maracas(section), synth: :shaker, defaults: [amp: 0.5, pan: -0.3]),
         part(:fill_high, fill_high(section, coming), synth: :high_timbale),
         part(:fill_low, fill_low(section, coming), synth: :low_timbale),
-        part(:guiro, guiro(section), synth: :guiro)
+        part(:guiro, guiro(section), synth: :guiro, fx: [level: [amp: 2]])
       ])
     end)
   end
