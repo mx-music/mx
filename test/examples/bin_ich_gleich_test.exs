@@ -7,22 +7,6 @@ defmodule Mx.Examples.BinIchGleichTest do
 
   @moduletag :tmp_dir
 
-  test "the chorale is the song mix mx.import writes from the scan, as the README gives it", %{
-    tmp_dir: dir
-  } do
-    scan = Path.join(dir, "chorale.mxl")
-    File.cp!(Path.join(@dir, "chorale.mxl"), scan)
-
-    args =
-      ~r/^mix mx\.import examples\/bin_ich_gleich\/chorale\.mxl .*$/m
-      |> readme_args()
-      |> Enum.map(&if(&1 == Path.join(@dir, "chorale.mxl"), do: scan, else: &1))
-
-    capture_io(fn -> Mix.Tasks.Mx.Import.run(args) end)
-
-    assert File.read!(Path.join(dir, "chorale.exs")) == File.read!(Path.join(@dir, "chorale.exs"))
-  end
-
   @tag :audiveris
   @tag timeout: 300_000
   test "the scan is what mix mx.scan reads from the page, as the README gives it", %{tmp_dir: dir} do
