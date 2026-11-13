@@ -103,7 +103,7 @@ The bongos play the martillo until the mambo, where the bongocero takes up the c
 
 `examples/solo/congas.exs` is the three congas on their own: the tumbao of son montuno on one drum, heel, tip, slap and open tones, then on two drums with the tumba's open tones on the clave's three side; the quinto over it as in rumba, in the lock, the son clave a sixteenth late with its tones and slaps changing places, and the cross, a slap on every third sixteenth for three claves; a roll of heel and tip; and a run down the three drums.
 
-`examples/solo/bongos.exs` is the bongos on their own: the martillo, with the hembra's open tone on its seventh stroke, then with heel-tip strokes, and a fill across both drums.
+`examples/solo/bongos.exs` is the bongos on their own, as the bongocero plays in son and salsa: the martillo, with the hembra's open tone on its seventh stroke, a rim shot ending every second bar and heel-tip strokes, left for repiques and taken up again; the repiques accent every third sixteenth, play quarter-note triplets across the two drums, mark the offbeats and the fourth beat as in changüí, and roll the fingers into ruffs and a last roll.
 
 `examples/solo/cajon.exs` is the cajón on its own in a festejo of mx's own in 12/8, with bass tones, slaps and ghost strokes.
 

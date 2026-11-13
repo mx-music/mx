@@ -1,67 +1,91 @@
 import Mx
 
-# A beat is a quarter note of 4/4, so a pass is a bar of eighths, or of sixteenths in the fill.
-
+# A solo for the bongos written for mx from how the bongocero plays in son and salsa: the martillo, the hammer, a steady bar of eight strokes, left to play freer phrases, the repiques, and taken up again.
+# The martillo is eight eighths, most of them on the small drum, the macho, and the seventh on the large one, the hembra, as https://www.x8drums.com/blog/martillo-bongo-rhythm describes; the same page gives the heel-tip stroke some bongoceros play on the fourth and eighth.
+# Every second bar ends on the variation https://www.artdrum.com/ESSAY_BONGO_BASICS.HTM calls the most common: the last thumb stroke becomes an accented rim shot on the macho.
+# The repiques are written for mx: accents every third sixteenth over soft strokes, quarter-note triplets across the two drums, the offbeats and the fourth beat as the bongó plays them in changüí, by Wikipedia's article on the bongo, and ruffs, the fingers rolled into an accent, before a roll that grows into the last stroke.
 defmodule Bongos do
   import Mx
 
-  # The martillo is eight strokes in a bar, most of them on the small drum, the macho, and the seventh on the large one, the hembra, as https://www.x8drums.com/blog/martillo-bongo-rhythm describes.
-  # Some bongoceros play the fourth and eighth as a heel-tip stroke, as the same page says.
-  # The strokes are mx's own, a cell to each eighth: M is a muted stroke on the macho with the index finger, t a soft muted one with the thumb, o the macho's open tone, h a heel-tip stroke and H the hembra's open tone.
-  def cells(:martillo), do: "M t o t M t H t"
-  def cells(:heel_tip), do: "M t o h M t H h"
+  # A beat is a quarter note of 4/4, so a pass is a bar, written as eight cells of eighths to a drum, twelve of triplets or sixteen of sixteenths.
+  # In the martillo M is a stroke of the index finger on the macho with the thumb resting on the head, t a soft stroke of the thumb, o the macho's open tone, h a heel-tip stroke and R a rim shot; on the hembra O is its open tone.
+  # In the repiques O is an accent, o a stroke, g a soft stroke and r a ruff, three soft strokes rolled into an accent.
+  @martillo [high_bongo: "MtotMt.t", low_bongo: "......O."]
+  @rim_shot [high_bongo: "MtotMt.R", low_bongo: "......O."]
+  @heel_tip [high_bongo: "MtohMt.h", low_bongo: "......O."]
 
-  # A fill across both drums written for mx, a cell to each sixteenth.
-  def cells(:fill), do: "H M H M o M o M H H o o H o H H"
-
-  def stroke("M"), do: {:high_bongo, 1, 0.8}
-  def stroke("t"), do: {:high_bongo, 1, 0.4}
-  def stroke("o"), do: {:high_bongo, 0, 0.7}
-  def stroke("h"), do: {:high_bongo, 1, 0.25}
-  def stroke("H"), do: {:low_bongo, 0, 0.8}
-
-  # The strokes of a pass on one drum, as {beat, muted, vel}.
-  def strokes(section, drum) do
-    letters = String.split(cells(section))
-    step = 4 / length(letters)
-
-    for {letter, index} <- Enum.with_index(letters),
-        {^drum, muted, vel} <- [stroke(letter)],
-        do: {index * step, muted, vel}
+  def bars do
+    [
+      @martillo,
+      @rim_shot,
+      @heel_tip,
+      @heel_tip,
+      @martillo,
+      @rim_shot,
+      [high_bongo: "OggO ggOg gOgg OggO"],
+      [high_bongo: "ggOg gOgg O... ....", low_bongo: ".... .... .... O..."],
+      @martillo,
+      @rim_shot,
+      [high_bongo: "O.O ... O.O ...", low_bongo: "... .O. ... .O."],
+      [high_bongo: "ogo ogo ogo ...", low_bongo: "... ... ... O.O"],
+      @martillo,
+      @rim_shot,
+      [high_bongo: ".O.O.O.O", low_bongo: "......O."],
+      [high_bongo: "..O. ..O. ..OO ..O.", low_bongo: ".... .... .... O..."],
+      @martillo,
+      @rim_shot,
+      [high_bongo: ".r.r.r..", low_bongo: "......O."],
+      [high_bongo: "gggg gggg oooo OOOO"],
+      [high_bongo: "R", low_bongo: "O"]
+    ]
   end
 
-  # A pass of high_bongo, as 4 beats.
-  def high_bongo(section, _pass) do
+  # How far apart a ruff's strokes are, in beats.
+  @ruff 0.07
+
+  # mx's muted stroke rings as long as the open one, as on the recordings, so the martillo's strokes differ mostly in how hard they are played.
+  def strokes("M"), do: [{0, [muted: 1, vel: 0.8]}]
+  def strokes("t"), do: [{0, [muted: 1, vel: 0.4]}]
+  def strokes("h"), do: [{0, [muted: 1, vel: 0.25]}]
+  def strokes("R"), do: [{0, [vel: 1]}]
+  def strokes("O"), do: [{0, [vel: 0.85]}]
+  def strokes("o"), do: [{0, [vel: 0.7]}]
+  def strokes("g"), do: [{0, [vel: 0.45]}]
+
+  def strokes("r") do
+    graces = for step <- 3..1//-1, do: {-step * @ruff, [vel: 0.45]}
+    graces ++ [{0, [vel: 0.9]}]
+  end
+
+  # A bar of one drum, as 4 beats.
+  def bar(cells) do
+    letters = cells |> String.replace(" ", "") |> String.graphemes()
+    per_beat = length(letters) / 4
+
     hits =
-      for {beat, muted, vel} <- strokes(section, :high_bongo),
-          do: {beat, hit(muted: muted, vel: vel)}
+      for {letter, index} <- Enum.with_index(letters),
+          letter != ".",
+          {offset, opts} <- strokes(letter) do
+        beat = Float.round(index / per_beat + offset, 3)
+        {beat, hit(opts)}
+      end
 
-    at(hits, 4)
+    if hits == [], do: rest(4), else: at(hits, 4)
   end
 
-  # A pass of low_bongo, as 4 beats.
-  def low_bongo(section, _pass) do
-    hits =
-      for {beat, muted, vel} <- strokes(section, :low_bongo),
-          do: {beat, hit(muted: muted, vel: vel)}
+  # The hembra is the louder of the two drums, so it plays a little under the macho.
+  @levels [high_bongo: 1.5, low_bongo: 1.05]
 
-    at(hits, 4)
-  end
-
-  # The form, each of its passes a section.
+  # The form, each of its passes a bar.
   def form do
-    sections =
-      for {section, count} <- [martillo: 4, heel_tip: 2, martillo: 2, fill: 1],
-          _ <- 1..count,
-          do: section
-
-    Enum.with_index(sections, fn section, pass ->
-      together([
-        part(:high_bongo, high_bongo(section, pass), synth: :high_bongo),
-        part(:low_bongo, low_bongo(section, pass), synth: :low_bongo)
-      ])
-    end)
+    for cells <- bars() do
+      together(
+        for {drum, level} <- @levels do
+          part(drum, bar(Keyword.get(cells, drum, "")), synth: drum, defaults: [amp: level])
+        end
+      )
+    end
   end
 end
 
-song(tempo: 112, music: repeat(seq(Bongos.form())))
+song(tempo: 180, music: repeat(seq(Bongos.form())))
