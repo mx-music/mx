@@ -69,14 +69,14 @@ defmodule Mx.Examples.CaboclinhoTest do
     assert Enum.at(bars, 7) != Enum.at(bars, 0)
   end
 
-  test "the preacas strike three times a beat in guerra, twice a bar in baião and once a bar in perré" do
-    assert Enum.map(bars(0, "high_bongo", 1), &length/1) == List.duplicate(6, 8)
+  test "the preacas strike once a bar in guerra and in perré, and twice a bar in baião" do
+    assert Enum.map(bars(0, "high_bongo", 1), &length/1) == List.duplicate(1, 8)
     assert Enum.map(bars(4, "high_bongo", 1.25), &length/1) == List.duplicate(2, 8)
     assert Enum.map(bars(2, "high_bongo", 1.5), &length/1) == List.duplicate(1, 8)
   end
 
-  test "the caracaxás play every sixteenth outside macumba do índio, louder on the third of each beat" do
-    for {pass, unit} <- [{0, 1}, {2, 1.5}, {4, 1.25}], loop <- ["ganza", "shaker"] do
+  test "the caracaxás play every sixteenth in every toque, louder on the third of each beat" do
+    for {pass, unit} <- [{0, 1}, {2, 1.5}, {4, 1.25}, {6, 1.25}], loop <- ["ganza", "shaker"] do
       strokes = events(pass, loop)
 
       assert Enum.map(strokes, &elem(&1, 0)) == Enum.map(0..63, &Float.round(&1 * 0.25 * unit, 3))
@@ -86,9 +86,6 @@ defmodule Mx.Examples.CaboclinhoTest do
         assert third > Enum.max([first, second, fourth])
       end
     end
-
-    assert events(6, "ganza") == []
-    assert events(6, "shaker") == []
   end
 
   test "the atabaque plays only in macumba do índio, and the tarol rests there" do
@@ -111,8 +108,8 @@ defmodule Mx.Examples.CaboclinhoTest do
     assert sixteenth.(0) < sixteenth.(4)
   end
 
-  test "the README points to the demo" do
-    assert File.read!("README.md") =~ "examples/caboclinho.exs"
+  test "the examples guide points to the demo" do
+    assert File.read!("documentation/examples.md") =~ "examples/caboclinho.exs"
   end
 
   @tag :timing
@@ -140,7 +137,7 @@ defmodule Mx.Examples.CaboclinhoTest do
 
     cond do
       atabaque -> :macumba
-      beats == 16 and preacas == 48 -> :guerra
+      beats == 16 and preacas == 8 -> :guerra
       beats == 24 and preacas == 8 -> :perre
       beats == 20 and preacas == 16 -> :baiao
     end
