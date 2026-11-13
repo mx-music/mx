@@ -139,10 +139,10 @@ defmodule Mx.Examples.RagaTest do
     assert print(10) =~ ~r/chikari, pass 10.*\nbeat 1.5 +play 61 /
   end
 
-  test "the README points to the song and names the book its gat comes from" do
-    readme = File.read!("README.md")
-    assert readme =~ "examples/raga.exs"
-    assert readme =~ "Kramik Pustak Malika"
+  test "the examples guide points to the song and names the book its gat comes from" do
+    guide = File.read!("documentation/examples.md")
+    assert guide =~ "examples/raga.exs"
+    assert guide =~ "Kramik Pustak Malika"
   end
 
   @tag :timing

@@ -5,10 +5,13 @@ import Mx
 # https://archive.org/details/dsnn-hindusthani-sangeet-paddhati-kramik-pustakmalika-d/page/n48/mode/1up
 # The sitar plays it as a sitarist would: each pluck rings until the next, the other notes of a matra, its grace notes and its glides are fingered on the ringing string,
 # and the chikari, the high strings tuned to Sa, are struck between the notes.
+# The tabla's dayan is tuned to Sa, its bayan bends on sam, and the three sit in a hall, the tanpura to the left and the tabla to the right.
 defmodule Raga do
   import Mx
 
   def sa, do: 49
+
+  @room [reverb: [room: 0.6, mix: 0.18]]
 
   # The song's length in beats, for the drone to hold through.
   def length, do: 16 * 16
@@ -200,9 +203,12 @@ defmodule Raga do
   def strokes("tin"), do: [:tabla_tun]
   def strokes(_bol), do: [:tabla_na]
 
-  def theka_beats(synth) do
-    for {bol, beat} <- Enum.with_index(theka()), synth in strokes(bol), do: beat
-  end
+  # Sam is struck hardest, the khali lightest, and the strokes that bring the bayan back lead to the next sam.
+  def tabla_vel(_bol, 0), do: 0.85
+  def tabla_vel("dhin", _beat), do: 0.5
+  def tabla_vel("tin", _beat), do: 0.45
+  def tabla_vel("na", _beat), do: 0.55
+  def tabla_vel(_bol, _beat), do: 0.65
 
   # The drone sounds from the first beat through the whole recital.
   def tanpura(:alap, 0), do: note(sa(), 16, vel: 0.5, gap: 1, sustain: length())
@@ -302,33 +308,57 @@ defmodule Raga do
     at(entries, 16)
   end
 
-  def tabla(:gat, synth, accent) do
+  # A pass of one tabla stroke; on sam the bayan glides up two semitones as the heel presses the head.
+  def tabla(:gat, synth) do
     entries =
-      for beat <- theka_beats(synth),
-          do: {beat, hit(vel: if(beat == 0, do: accent, else: 0.6))}
+      for {bol, beat} <- Enum.with_index(theka()), synth in strokes(bol) do
+        vel = tabla_vel(bol, beat)
+
+        if synth == :tabla_ghe and beat == 0 do
+          {beat, hit(vel: vel, note_slide: 0.5, changes: [{0, note: 44.25}])}
+        else
+          {beat, hit(vel: vel)}
+        end
+      end
 
     at(entries, 16)
   end
 
-  def tabla(_section, _synth, _accent), do: rest(16)
+  def tabla(_section, _synth), do: rest(16)
 
   def form do
     for {section, count} <- [alap: 6, jor: 3, gat: 7], time <- 0..(count - 1) do
       together([
-        part(:tanpura, tanpura(section, time), synth: :tanpura, defaults: [amp: 0.5]),
-        part(:sitar, sitar(section, time), synth: :sitar, defaults: [sa: 49]),
+        part(:tanpura, tanpura(section, time),
+          synth: :tanpura,
+          defaults: [amp: 0.8, pan: -0.25],
+          fx: [reverb: [room: 0.8, mix: 0.3]]
+        ),
+        part(:sitar, sitar(section, time),
+          synth: :sitar,
+          defaults: [sa: 49, amp: 1.3],
+          fx: [reverb: [room: 0.75, mix: 0.25]]
+        ),
         part(:chikari, chikari_strokes(section, time),
           synth: :sitar,
-          defaults: [sa: 49, amp: 0.5]
+          defaults: [sa: 49, amp: 0.65],
+          fx: [reverb: [room: 0.75, mix: 0.25]]
         ),
-        part(:tabla_na, tabla(section, :tabla_na, 0.85), synth: :tabla_na, defaults: [amp: 0.7]),
-        part(:tabla_tun, tabla(section, :tabla_tun, 0.6),
+        part(:tabla_na, tabla(section, :tabla_na),
+          synth: :tabla_na,
+          # tabla_na rings two semitones below its note, so this is the drum on Sa.
+          defaults: [note: sa() + 14, amp: 0.7, pan: 0.25],
+          fx: @room
+        ),
+        part(:tabla_tun, tabla(section, :tabla_tun),
           synth: :tabla_tun,
-          defaults: [amp: 0.7]
+          defaults: [note: sa() + 12, amp: 0.7, pan: 0.25],
+          fx: @room
         ),
-        part(:tabla_ghe, tabla(section, :tabla_ghe, 0.85),
+        part(:tabla_ghe, tabla(section, :tabla_ghe),
           synth: :tabla_ghe,
-          defaults: [amp: 0.7]
+          defaults: [amp: 0.55, pan: 0.2],
+          fx: @room
         )
       ])
     end
