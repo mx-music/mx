@@ -14,7 +14,8 @@ mx examples/tranquility_base.exs
 
 `examples/ambient.exs` is a demo to start from, a slow ambient piece of pads, keys, bells and samples through reverb and echo.
 
-`examples/salsa.exs` is a salsa band played only on mx's own synths: son clave, a tumbao on bass and congas, a piano montuno, cáscara and cowbell, a horn section on filtered supersaws, and solos by the piano and the horns.
+`examples/salsa.exs` is a salsa band played only on mx's own synths: son clave, a tumbao on bass and congas, a piano montuno, cáscara, güiro and maracas, a horn section on filtered supersaws, and solos by the piano and the horns.
+The bongos play the martillo until the mambo, where the bongocero takes up the campana, the hand bell.
 
 `examples/choro.exs` is a Brazilian choro in 2/4, in the form A A B B A C C A: a flute running in sixteenths, cavaquinho strumming, the 7-string guitar's bass lines, and pandeiro.
 
@@ -128,7 +129,7 @@ mx examples/tranquility_base.exs
 
 `examples/solo/surdo.exs` is the three surdos of a samba bateria on their own, in 2/4: the surdo de primeira holds the marcação, muted on the first beat of each bar and open on the second, the surdo de segunda answers it open on the first beat, and the surdo de terceira cuts across them in sixteenths.
 
-`examples/cuica/solo.exs` is the cuíca on its own, its part in a samba batucada in 2/4, built from the grooves of the recordings it is measured from: four swung strokes to the beat, two low ones answered by two high ones an octave up, every fourth beat staying low, and a break of single strokes, low ones that whoop up into their note and then high squeals.
+`examples/cuica/solo.exs` is the cuíca on its own, playing its part in a roda de samba in 2/4 as Luiz Guimarães notates it: the fundamental on each beat with three medium strokes after it, the roda's two-bar pattern that holds a high stroke over the barline and comes back down through three fundamental ones, and a variation that rests on the beat and answers with three high strokes, the third and fourth sixteenths of each beat coming early.
 
 `examples/tamborim/solo.exs` is the tamborim on its own, its parts in a samba batucada in 2/4: the teleco-teco, a two-bar figure of sixteenths off the beat, the carreteiro striking every sixteenth with the teleco-teco's strokes accented, and a virada that closes a phrase with a run of thirty-seconds swelling into an accent.
 
