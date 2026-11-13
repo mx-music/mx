@@ -1,4 +1,4 @@
-# Setting up Audiveris for mix mx.scan
+# Setting up Audiveris
 
 `mix mx.scan` reads the music on a scanned page with Audiveris, an open source optical music recognition program under the AGPL v3.
 mx runs it as a separate program and ships none of its code, so it is installed apart from mx.

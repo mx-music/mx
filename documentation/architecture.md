@@ -19,6 +19,26 @@ The session is a supervisor of five processes, started in this order:
 
 Stopping the session stops them in reverse order, so the engine stops last and silences every note the band started.
 
+```mermaid
+graph TD
+  file["song.exs"]
+  watcher["Mx.Watcher<br>loads the file on each save"]
+  band["Mx.Band<br>one Mx.Loop for each part"]
+  inputs["Mx.Inputs<br>MIDI and OSC input, shared values"]
+  engine["Mx.Engine.Mxs<br>mxs, the sound engine"]
+  out["Mx.Out<br>MIDI and OSC output"]
+  card["Sound card"]
+  devices["Other devices and programs"]
+
+  file --> watcher
+  watcher -->|tempo and music| band
+  inputs -.->|snapshot for each pass| band
+  band -->|notes, half a second ahead| engine
+  band -->|MIDI and OSC steps| out
+  engine --> card
+  out --> devices
+```
+
 A song file is evaluated as Elixir, and its `song` call gives the tempo and the music, which `Mx.Song` loads.
 The functions of `Mx.Music` build the music as plain values and raise as soon as something cannot play, and the loader reports the file and line from that error.
 The song's music is split into sections, the items of its outermost `seq`, and each part becomes a loop whose pass `n` plays that part's notes in section `n`.
@@ -26,6 +46,10 @@ The song's music is split into sections, the items of its outermost `seq`, and e
 The band starts one `Mx.Loop` process for each loop.
 A loop works out each pass half a second before it starts, through `Mx.Pass`, which is a pure function of the loop, the pass number and a snapshot of the inputs, so the same pass always plays the same notes.
 Each note then goes to the engine half a second before it plays, stamped with the Unix time in microseconds of its beat.
+
+A pass that takes longer than that half second to work out is late.
+mx drops its notes that are more than a quarter of a beat late, sends the rest, and prints a warning naming the part and how many notes it dropped.
+The part plays on, and its next pass is on time once it catches up.
 
 ## Time
 
@@ -42,6 +66,7 @@ A render runs the same band, loops and engine as playing does, only as fast as t
 Saving the file loads it again, and a version that fails to load prints its error while the playing version carries on.
 A changed loop takes over at the end of its own pass, a new loop starts on the next beat, and a removed loop stops at the end of its pass.
 A new tempo starts on the first whole beat after the notes already sent, so every loop changes on the same beat.
+Saving the file with the same `song(tempo:)` keeps the tempo the music has changed to.
 `Mx.Band` has the full rules.
 
 ## The engine
@@ -63,6 +88,14 @@ A panic while mxs fills the sound card's buffer turns the output silent and mark
 `Mx.Inputs` listens to every MIDI input connected when it starts, and for OSC on the port the song names.
 A pass reads one snapshot of the inputs for its whole length, and a loop with `on:` plays a pass each time the input it waits for arrives.
 `Mx.Out` sends a song's MIDI and OSC steps, which have no timestamps of their own, by waking just before each is due.
+
+## Live audio and sample rates
+
+mx reads the sound card's input only when the song it starts with has `live_audio`, so other songs never touch the microphone.
+A `live_audio` added while playing needs mx restarted.
+mxs cannot start with input on when the input and output devices run at different sample rates, as Bluetooth headphones at 24 kHz beside speakers at 48 kHz do.
+mx then stops with a message naming the device and the rates it runs at; set both to the same rate in Audio MIDI Setup, or use other devices.
+macOS may ask once whether the terminal can use the microphone.
 
 ## Other parts of mx
 

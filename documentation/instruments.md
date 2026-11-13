@@ -196,7 +196,7 @@ The folder `test/support/instruments` holds a marimba, a flute and a tabla writt
 ## Sampled instruments
 
 `Mx.Sampled` plays a folder of recordings, one key at a time, often at several strengths and in several takes, as a part plays a synth.
-[notation.md](notation.md), under "Samples, MIDI, OSC, shared values and changes", covers how a song names a folder or a collection of files with `sampled`.
+[notation.md](notation.md), under "Sampled instruments", covers how a song names a folder or a collection of files with `sampled`.
 
 ## Instruments measured from recordings
 

@@ -48,11 +48,38 @@ defmodule Mx.MixProject do
       output: "docs",
       formatters: ["html", "markdown"],
       main: "readme",
-      extras: ["README.md" | Path.wildcard("documentation/*.md")],
+      extras: [
+        "README.md",
+        "documentation/notation.md",
+        "documentation/instruments.md",
+        "documentation/scores.md",
+        "documentation/examples.md",
+        "documentation/audiveris.md",
+        "documentation/architecture.md"
+      ],
+      groups_for_extras: [
+        Guides: ~w(notation instruments scores examples) |> Enum.map(&"documentation/#{&1}.md"),
+        Setup: ["documentation/audiveris.md"],
+        Internals: ["documentation/architecture.md"]
+      ],
+      assets: %{"documentation/assets" => "assets"},
+      before_closing_body_tag: &docs_body_tag/1,
       groups_for_modules: [
-        Music: [Mx, Mx.Music, Mx.Song, Mx.Notes, Mx.Tempo, Mx.Pass, Mx.Samples],
-        Playing: [Mx.Session, Mx.Player, Mx.Band, Mx.Loop, Mx.Inputs, Mx.Out, Mx.Watcher],
-        Engine: [~r/^Mx\.Engine/, Mx.Synth, Mx.Synths, Mx.OSC, Mx.Render],
+        Music: [Mx, ~r/^Mx\.Music/, ~r/^Mx\.Song/, Mx.Notes, Mx.Tempo, ~r/^Mx\.Pass/],
+        Samples: [Mx.Samples, Mx.Sampled, Mx.GitHub],
+        Playing: [
+          Mx.Session,
+          Mx.Player,
+          Mx.Band,
+          Mx.Loop,
+          Mx.Inputs,
+          Mx.Out,
+          Mx.Watcher,
+          Mx.Clock,
+          Mx.Application
+        ],
+        Engine: [~r/^Mx\.Engine/, Mx.Synths, Mx.OSC, Mx.Render],
+        Instruments: [~r/^Mx\.Instrument($|\.)/],
         Measuring: [
           ~r/^Mx\.Measure/,
           Mx.Fit,
@@ -70,9 +97,35 @@ defmodule Mx.MixProject do
           Mx.Audiveris,
           Mx.Transcriber,
           ~r/^Mx\.Hum/
+        ],
+        "Test support": [
+          Mx.FakeGitHub,
+          Mx.Timeline,
+          Mx.Voice,
+          ~r/^Mx\.Instruments\./,
+          ~r/^Mx\.Paired\./
         ]
       ],
-      nest_modules_by_prefix: [Mx.Measure, Mx.Hum]
+      nest_modules_by_prefix: [
+        Mx.Music,
+        Mx.Song,
+        Mx.Pass,
+        Mx.Engine,
+        Mx.Instrument,
+        Mx.Measure,
+        Mx.Hum,
+        Mx.Instruments,
+        Mx.Paired
+      ]
     ]
   end
+
+  defp docs_body_tag(:html) do
+    """
+    <link rel="stylesheet" href="assets/mermaid.css">
+    <script src="assets/mermaid.js"></script>
+    """
+  end
+
+  defp docs_body_tag(_formatter), do: ""
 end

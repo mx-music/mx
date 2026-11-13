@@ -1,7 +1,8 @@
 # mx
 
-Music written as Elixir code, and changed while it plays.
-mx is inspired by Sonic Pi, and makes sound with mxs, its own sound engine in Rust.
+mx is a library for writing music in Elixir.
+You write a song as a file, and mx plays it and applies your changes each time you save.
+It makes sound with mxs, its own sound engine in Rust.
 
 ## Guides
 
@@ -14,24 +15,22 @@ mx is inspired by Sonic Pi, and makes sound with mxs, its own sound engine in Ru
 
 ## Install
 
-mx needs Elixir and Rust, and a clone of mxs, https://github.com/rodrigues/mxs, in a folder beside mx's:
+mx needs Elixir 1.20 or later, and Rust, which compiles mxs the first time mx is built.
+
+Install the `mx` command, which plays a song file:
 
 ```sh
-git clone https://github.com/rodrigues/mxs ../mxs
+mix escript.install hex mx 0.1.0
 ```
 
-mx builds mxs into itself when it compiles.
-After changing mxs, `mix compile --force` builds it again, since mx does not watch mxs's files.
+Mix puts the command in `~/.mix/escripts`, which must be on your `PATH`.
 
-The `mx` command plays a song file with nothing else installed.
-It is the script `bin/mx` in this repository; copy it onto your `PATH`:
+To use mx in a Mix project instead, add it to the dependencies in `mix.exs`:
 
-```sh
-cp bin/mx ~/.local/bin/mx
+```elixir
+{:mx, "~> 0.1.0"}
 ```
 
-The first time it runs, it installs mx with `Mix.install`, and after that it uses Mix's cache.
-Give it a clone of mx, with mxs beside it, as `MX_PATH=~/code/mx mx song.exs`; mx installed from GitHub cannot find mxs.
 To play Sonic Pi's samples, download its sample pack once:
 
 ```sh
@@ -40,7 +39,7 @@ mx samples download sonic_pi
 
 The pack is 35 MB, under Creative Commons 0, and goes to your cache folder rather than the repository.
 Run the command again to finish an interrupted download.
-In a clone of mx, `mix mx.samples.download sonic_pi` does the same.
+In a Mix project, `mix mx.samples.download sonic_pi` does the same.
 
 ## Play a song
 

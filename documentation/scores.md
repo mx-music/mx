@@ -3,6 +3,18 @@
 A song need not be typed in by hand.
 mx writes one from a MusicXML score, from a scanned page of a printed score, or from a recording of a melody you hum.
 
+```mermaid
+graph LR
+  page["Scanned page"]
+  score["MusicXML score"]
+  hum["Recording of a hum"]
+  song["Song file"]
+
+  page -->|mix mx.scan| score
+  score -->|mix mx.import| song
+  hum -->|mix mx.hum| song
+```
+
 ## Import a score
 
 `mix mx.import` turns a MusicXML score into a song, so a piece need not be typed in by hand.
