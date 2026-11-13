@@ -439,7 +439,7 @@ defmodule Mx.Instrument do
   end
 
   @doc """
-  Registers each synth and effect of `module` with the mxs engine `engine`, as `Mx.Engine.Mxs.Native` starts it.
+  Registers each synth and effect of `module` with the mxs engine `engine`, as mx's NIF module, Mx.Engine.Mxs.Native, starts it.
 
   Returns `:ok` once every one is registered, or `{:error, reason}` at the first the engine refuses; the ones after it are not registered.
   `known/1` calls it for a running engine, so call it yourself only with an engine you started.

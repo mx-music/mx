@@ -142,10 +142,14 @@ defmodule Mx.Instrument.Vocabulary do
 
   @doc "Segments from silence through each point, `{seconds, level}` straight, `{seconds, level, curve}` bent, or `{seconds, level, :exp}` exponential."
   def envelope(points), do: Expr.call(:envelope, [points])
+
+  @doc "A sound scaled by the level `envelope/1` gives for `points`."
   def envelope(sound, points), do: Expr.call(:envelope, [sound, points])
 
   @doc "A quick rise over `attack:` and a fall to silence over `release:`."
   def perc(opts), do: Expr.call(:perc, [], opts)
+
+  @doc "A sound scaled by the level `perc/1` gives for `opts`."
   def perc(sound, opts), do: Expr.call(:perc, [sound], opts)
 
   @doc "Sounds added together."

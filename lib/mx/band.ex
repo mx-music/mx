@@ -21,7 +21,7 @@ defmodule Mx.Band do
 
   alias Mx.Loop
 
-  @doc "Starts the band with the `:song` in `opts`, the `:play` function its notes go to the engine through, as `Mx.Engine.play/2` takes them, an optional `:new_id` as `Mx.Engine.new_id/0`, optional functions for samples, effects, inputs and live audio, and an optional `:name`."
+  @doc "Starts the band with the `:song` in `opts`, the `:play` function its notes go to the engine through, as `c:Mx.Engine.play/2` takes them, an optional `:new_id` as `c:Mx.Engine.new_id/0`, optional functions for samples, effects, inputs and live audio, and an optional `:name`."
   def start_link(opts) when is_list(opts) do
     GenServer.start_link(__MODULE__, opts, Keyword.take(opts, [:name]))
   end
@@ -44,8 +44,13 @@ defmodule Mx.Band do
     GenServer.call(band, {:cue, name, beat, pass})
   end
 
+  @doc "The real time, in microseconds, of a beat on a timeline, as `Mx.Tempo.time_at/2` works it out."
   defdelegate time_at(timeline, beat), to: Mx.Tempo
+
+  @doc "The tempo in beats per minute at a beat on a timeline, as `Mx.Tempo.tempo_at/2` works it out."
   defdelegate tempo_at(timeline, beat), to: Mx.Tempo
+
+  @doc "The beat at a real time, in microseconds, on a timeline, as `Mx.Tempo.beat_at/2` works it out."
   defdelegate beat_at(timeline, us), to: Mx.Tempo
 
   @impl true
