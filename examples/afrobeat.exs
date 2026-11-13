@@ -8,6 +8,7 @@ import Mx
 # In the drop the snare leaves the groove to the bass drum and the hi-hat, and the keyboard holds two chords under a tremolo.
 # The floor tom, tuned to the bass's G and D, repeats a stroke every beat and a half against the bar of four beats, and meets the bar again only where a section ends.
 # The theme falls from D to the low G, bowed near the bridge with a tremolo, quietly, over the plucked line, and the solo is the drummer's: one run on the tuned tom that gains a stroke in every bar, from three strokes to ten, each ending on the rimshot.
+# It ends by thinning out over four bars, the echoes left to themselves, before a last chord.
 # The files are fetched as the song loads.
 defmodule Afrobeat do
   import Mx
@@ -153,8 +154,22 @@ defmodule Afrobeat do
 
   # Four bars of the kit: the two bars of the groove twice, the last bar the fill when a new section follows.
   # Under the solo the snare keeps only its ghost notes, and in the drop it plays only the fill.
-  def drums(:ending, _coming),
-    do: play(kick: strokes("9... .... .... ...."), rimshot: strokes("8..."))
+  def drums(:ending, _coming) do
+    play(
+      kick: strokes(["9... .... .... ....", @silent]),
+      rimshot: strokes(["8... .... .... ....", @silent])
+    )
+  end
+
+  # In the way out the bass drum keeps one, softer in each bar, the hi-hat thins and stops, and two rimshots are thrown.
+  def drums(:way_out, _coming) do
+    play(
+      kick: strokes(for strength <- [8, 7, 6, 5], do: "#{strength}... .... .... ...."),
+      hat:
+        strokes(["5.3. 5.3. 5.3. 5.3.", "5.3. 5.3. 5.3. 5.3.", "4.2. 4.2. 3... 2...", @silent]),
+      rimshot: thrown(:way_out)
+    )
+  end
 
   def drums(section, coming) do
     last = if coming != section, do: 2, else: 1
@@ -190,7 +205,7 @@ defmodule Afrobeat do
     beats =
       case section do
         :drums -> [14]
-        :drop -> [1, 9]
+        section when section in [:drop, :way_out] -> [1, 9]
         :solo -> for bar <- 0..3, do: bar * 4 + 0.5 + (2 + bar) / 4
         :solo_on -> for bar <- 0..3, do: bar * 4 + 0.5 + (6 + bar) / 4
         _ -> [6.75, 14.75]
@@ -205,7 +220,13 @@ defmodule Afrobeat do
     on(:keys, at(for({beat, chord} <- chords, do: {beat, note(chord, 0, sustain: 7)}), 16))
   end
 
-  def keys(:ending), do: on(:keys, note([:g3, :bb3, :d4, :f4], 4, sustain: 3))
+  # In the way out it holds G minor with its seventh and then the drop's A flat, which falls back to G on the last chord.
+  def keys(:way_out) do
+    chords = [{0, [:g3, :bb3, :d4, :f4]}, {8, [:ab3, :c4, :eb4, :g4]}]
+    on(:keys, at(for({beat, chord} <- chords, do: {beat, note(chord, 0, sustain: 7)}), 16))
+  end
+
+  def keys(:ending), do: on(:keys, note([:g3, :bb3, :d4, :f4], 8, sustain: 6))
   def keys(_section), do: rest(16)
 
   # The run the solo is made of: each bar plays more of it, from its first three strokes to all ten.
@@ -232,7 +253,25 @@ defmodule Afrobeat do
     on(:tuned_tom, at(entries, 16))
   end
 
-  def tuned_tom(:ending), do: rest(4)
+  # In the way out the cycle fades stroke by stroke, and its last three strokes fall on the last chord.
+  def tuned_tom(:way_out) do
+    strokes =
+      for stroke <- 0..9 do
+        amp = Float.round(1.4 - stroke * 0.08, 2)
+        {stroke * 1.5, note(:g2, 0, vel: 0.5, amp: amp)}
+      end
+
+    on(:tuned_tom, at(strokes, 16))
+  end
+
+  def tuned_tom(:ending) do
+    strokes =
+      for {beat, amp} <- [{0, 0.6}, {1.5, 0.45}, {3, 0.3}],
+          do: {beat, note(:g2, 0, vel: 0.4, amp: amp)}
+
+    on(:tuned_tom, at(strokes, 8))
+  end
+
   def tuned_tom(_section), do: rest(16)
 
   # Notes placed on the vamp's two bars as beat, note and beats held, repeated to four bars.
@@ -273,13 +312,13 @@ defmodule Afrobeat do
     {7.5, :f2, 0.3}
   ]
 
-  # Under the solo the line thins to the root on one and the push before two.
+  # Under the solo and in the way out the line thins to the root on one and the push before two.
   @solo_line [{0, :g2, 0.6}, {4, :g2, 0.6}, {7.5, :f2, 0.3}]
 
   def bass(:drums), do: rest(16)
-  def bass(:ending), do: on(:bass, note(:g1, 4, sustain: 3, release: 0.8))
+  def bass(:ending), do: on(:bass, note(:g1, 8, sustain: 6, release: 1.5))
   def bass(:drop), do: vamp(@drop_line)
-  def bass(section) when section in [:solo, :solo_on], do: vamp(@solo_line)
+  def bass(section) when section in [:solo, :solo_on, :way_out], do: vamp(@solo_line)
   def bass(_section), do: vamp(@line)
 
   # The theme, bowed: each phrase is its beat, the beats it lasts and its notes, each at the beat it comes after the first.
@@ -301,10 +340,10 @@ defmodule Afrobeat do
     on(:lead, at(phrases, 16))
   end
 
-  def lead(:ending), do: on(:lead, note(:g2, 4, sustain: 3, release: 0.8))
+  def lead(:ending), do: on(:lead, note(:g2, 8, sustain: 5, release: 2.5))
   def lead(_section), do: rest(16)
 
-  # Each section is four bars, two turns of the vamp, and the ending is one bar held.
+  # Each section is four bars, two turns of the vamp, and the ending is a chord held for two bars.
   def form do
     sections =
       for {section, count} <- [
@@ -316,6 +355,7 @@ defmodule Afrobeat do
             solo_on: 1,
             drop: 1,
             theme_again: 2,
+            way_out: 1,
             ending: 1
           ],
           _ <- 1..count,
@@ -333,4 +373,5 @@ defmodule Afrobeat do
   end
 end
 
-song(tempo: 100, music: seq(Afrobeat.form()))
+# Two silent bars follow the last chord, for the echoes to die away in.
+song(tempo: 100, music: seq(Afrobeat.form() ++ [rest(8)]))
