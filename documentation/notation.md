@@ -19,19 +19,60 @@ song(
 )
 ```
 
-`mix mx.play song.exs` plays the file, and `mix mx.print song.exs` prints each part's notes with their beats instead of playing them.
-A function refuses what cannot play, such as an unknown note name or an option the synth does not have, and mx prints the refusal with the line of the song file.
+`mix mx.play song.exs` plays the file.
+`mix mx.print song.exs` prints each part's notes with their beats instead of playing them.
 
-A longer song is better written as a module, which [A song as a module](#a-song-as-a-module) describes.
+This page goes from one note to a whole song, in the order you would learn it.
+
+```mermaid
+graph LR
+  notes["Notes<br>note, rest, chord"]
+  music["Music<br>seq, together, steps"]
+  part["A part<br>one player, a synth, effects"]
+  song["The song<br>a tempo and its music"]
+
+  notes --> music --> part --> song
+```
+
+## A little music first
+
+Skip this section if you read music.
+
+A note has a pitch and a length.
+
+- The pitch is how high the note sounds, and it has a name: a letter from A to G and the number of its octave. C4 is the C in the middle of a piano.
+- An octave is the distance from one C to the next C above it. C5 sounds like C4, only higher.
+- Between the letters are the sharps and flats, the black keys of a piano: F sharp is just above F, and B flat just below B.
+- Every pitch also has a number, which goes up by one for each key of the piano, black or white. C4 is 60, so the D above it is 62 and C5 is 72.
+
+| Name | C4 | D4 | E4 | F4 | G4 | A4 | B4 | C5 |
+|---|---|---|---|---|---|---|---|---|
+| Number | 60 | 62 | 64 | 65 | 67 | 69 | 71 | 72 |
+
+The length is counted in beats.
+
+- A beat is the pulse you would tap your foot to.
+- The tempo is how many beats pass in a minute. At 120 a beat lasts half a second, and at 60 a whole second.
+- A length is a number of beats: 1 is one beat, 0.5 half of one, and 4 is four.
+
+Several notes sounding at once are a chord, and a scale is the set of notes a tune is made from.
 
 ## Notes
 
-`note(:a4, 1.5)` is the note A4 lasting 1.5 beats, and `rest(1)` is a beat of silence.
+`note` is one note: a pitch, and how many beats it lasts.
+`rest` is silence for some beats.
 
-A pitch is a name or a MIDI note number, where 60 is middle C.
-A name is a letter from `a` to `g`, an optional `s` for sharp or `b` for flat, and an optional octave that defaults to 4: `:c4` is 60, `:fs3` is 54 and `:eb3` is 51.
+```elixir
+note(:a4, 1.5)
+rest(1)
+```
 
-Options after the length go to the part's synth:
+A pitch is a name or a number.
+
+- A name is a letter from `a` to `g`, an optional `s` for sharp or `b` for flat, and an optional octave, which is 4 unless given.
+- `:c4` is 60, `:fs3` is 54 and `:eb3` is 51.
+
+Options after the length go to the synth that plays the note:
 
 ```elixir
 note(:a4, 1.5, amp: 0.8, release: 2)
@@ -40,7 +81,9 @@ note(:a4, 1.5, amp: 0.8, release: 2)
 Each synth has its own options, which [Instruments](instruments.md) lists.
 `attack`, `decay`, `sustain`, `release` and every option ending in `_slide` are measured in beats, so `release: 1` lasts one beat at any tempo.
 
-A list of pitches is a chord:
+### Chords
+
+A list of pitches is a chord, and `chord` builds the list from its lowest note and its kind:
 
 ```elixir
 note(chord(:c4, :major), 2)
@@ -48,10 +91,49 @@ note(chord(:e3, :minor), 1, strum: 0.05)
 note([40, 47, 52, 56], 1, vel: [0.8, 0.6, 0.5, 0.45])
 ```
 
-`strum:` starts each note of the chord that many beats after the one below it, and a negative strum goes from the highest note down.
-An option given as a list has one value for each note of the chord.
+- `strum:` starts each note of the chord that many beats after the one below it. A negative strum goes from the highest note down.
+- An option given as a list has one value for each note of the chord.
 
-## Putting music together
+## One after another, and at once
+
+Two functions put music together.
+`seq` plays its items one after another.
+`together` starts its items at once.
+
+```mermaid
+graph LR
+  subgraph s["seq"]
+    c["c4"] --> e["e4"] --> g["g4"]
+  end
+```
+
+```mermaid
+graph LR
+  start(["start"])
+  subgraph t["together"]
+    c["c4"]
+    e["e4"]
+    g["g4"]
+  end
+  start --> c
+  start --> e
+  start --> g
+```
+
+`seq` takes a list of music, or note names and lengths, where `r` is a rest:
+
+```elixir
+seq([note(:c4, 1), note(:e4, 1), note(:g4, 2)])
+seq(c4: 1, e4: 1, g4: 2, r: 1)
+```
+
+`together` takes a list, and lasts as long as its longest item:
+
+```elixir
+together([seq(c5: 2, b4: 2), seq(e4: 4)])
+```
+
+The two nest, so a song is built from small pieces with names:
 
 ```elixir
 verse = seq(c4: 1, e4: 1, g4: 2)
@@ -60,82 +142,27 @@ chorus = together([seq(c5: 2, b4: 2), seq(e4: 4)])
 seq([verse, transpose(verse, 5), repeat(chorus, 2)])
 ```
 
-- `seq` plays its items one after another. It takes a list of music, or note names and lengths as a keyword list where `r` is a rest: `seq(a4: 1.5, a4: 0.5, c5: 1, r: 1)`.
-- `together` starts its items at once, and lasts as long as the longest.
 - `repeat(music, 4)` plays the music four times. `repeat(music)` plays it until mx stops, and can only hold the whole of a song's music.
 - `transpose(music, 12)` moves every note an octave up.
 - `delay(music, 7)` is the music after 7 beats of silence, so inside `together` it starts 7 beats after the rest.
 - `beats(music)` is the length of music in beats.
 
-## Rhythm
-
-```elixir
-part(:kick, steps("x... x... x... x.x.", 0.25), synth: :kick)
-part(:cajon, at([{0, hit(slap: 1, vel: 0.8)}, {1.5, hit(vel: 0.5)}], 2), synth: :cajon)
-```
-
-- `steps("x..x x.x.", 0.25)` is one drum hit for each `x`. Each character lasts a quarter of a beat, a dot is silence, and spaces are left out. [Patterns](#patterns) describes what else it plays.
-- `hit(vel: 0.5)` is one hit of a drum at its own pitch, taking no time.
-- `at([{0.5, music}, {1.5, music}], 2)` is music of 2 beats that starts each item at its beat, so hits at known beats need no rests between them.
-- `swing(music, fun)` starts each note at the beat the function returns for the beat it was written on, so some notes can be pushed late and others early.
-
-## Patterns
-
-A pattern is music written as text, and `steps(pattern, step)` plays it, each step of the pattern lasting `step` beats.
-`~MX` writes a pattern, and reads it when the song compiles, so a bracket left open or a length that is no number is refused with its line before anything plays.
-
-```elixir
-steps(~MX"g4:2 _ g4 bb4:2 _ a4 | g4:4 - -", 0.25, vel: 0.8)
-steps(~MX"9... 9... 9..5 9.7."s, 0.25)
-```
-
-Without a modifier, `~MX` reads a word to a step:
-
-- A word that is a note's name, such as `g4` or `fs5`, is that note.
-- `_` is silence.
-- `-` holds the word before it one step longer.
-- A number after a colon is a word's length in steps: `g4:2` lasts two, and `g4:1.5` one and a half.
-- Words joined by a slash sound together: `g5/b4`.
-- The words in brackets share one step evenly: `[f f]` is two in the time of one.
-- A word after `~` is not struck. The note before it glides to that pitch and lasts through it: `eb2:2 ~g2:2` is one note of four steps that glides to G halfway.
-- A bar line, `|`, is only for reading.
-
-With the modifier `s`, as in `~MX"9..5 x..."s`, it reads a character to a step: a dot is silence, and spaces and bar lines are left out.
-A plain string given to `steps` is read the same way.
-
-A pattern says nothing of what its words sound like; the options of `steps` do:
-
-```elixir
-steps(~MX"9...9..5"s, 0.25, sample: "kick.wav", release: 0.1)
-steps(~MX"ccoc ccoc"s, 0.25, strokes: [o: [vel: 0.75, sustain: 0.2], c: [vel: 0.5]])
-steps(~MX"..1. .5.3"s, 0.25, notes: [:g4, :a4, :bb4, :c5, :d5])
-steps(~MX"x.xx"s, 0.25, each: fn step -> [vel: if(step == 0, do: 0.9, else: 0.5)] end)
-steps(~MX"eb2:2 ~g2:2 d2:4", 0.25, slide: 0.3)
-```
-
-- `x` is a hit of a drum at its own pitch.
-- A digit is a hit at that level, 9 the loudest. It sets `vel:`, or the option `digit:` names.
-- `sample:` plays each hit as that sample, where a digit sets `amp:`.
-- `strokes:` gives the options of other characters or words, so a drum's strokes can have their own letters.
-- `notes:` makes a digit a hit tuned to that note of the list, counted from 1.
-- `each:` is a function of the step a sound starts on, counted from 0, that returns more options for it. A function of two takes the sound's length in steps as well.
-- `slide:` is how many beats a glide takes.
-- Any other option goes to every sound.
-
-A pattern is a list, so two patterns join with `++`, and `steps` plays a list of patterns as one bar after another:
-
-```elixir
-kick = [~MX"9...9...9..59.7."s, ~MX"9..59...9..59.7."s]
-part(:kick, repeat(steps(kick, 0.25), 4), synth: :kick)
-```
-
-A sigil takes no interpolation; build a longer pattern by joining shorter ones.
-
 ## Parts
 
-`part(:soprano, music, synth: :oboe)` is music played by one player.
-The synth defaults to `:tri`.
-A part of one name is the same player wherever it appears in the song, so it must have the same options each time.
+A `part` is music played by one player.
+It has a name, its music, the synth that plays it, and the effects its sound goes through.
+
+```mermaid
+graph LR
+  music["music"] --> synth["synth:<br>the instrument"] --> fx["fx:<br>effects, in order"] --> out(["speakers"])
+```
+
+```elixir
+part(:soprano, melody, synth: :oboe)
+```
+
+- The synth is `:tri`, a plain triangle wave, unless given. [Instruments](instruments.md) lists the others.
+- A part of one name is the same player wherever it appears in the song, so it must have the same options each time.
 
 `fx:` sends the part through an effect, or through a list of effects in order, each with its options:
 
@@ -152,11 +179,23 @@ part(:guitar, music, synth: :guitar, defaults: [amp: 0.55])
 
 ## The song
 
-`song(tempo: 72, music: music)` is the song.
-The tempo defaults to 60 beats per minute.
+`song` is the last line of the file: a tempo and the music.
+
+```elixir
+song(tempo: 72, music: music)
+```
+
+The tempo is 60 beats a minute unless given.
+
+### Sections
 
 The items of the song's outermost `seq` are its sections, also when the `seq` is inside `repeat`.
-A part plays only in the sections that hold it, so instruments can take turns:
+A part plays only in the sections that hold it, so instruments can take turns.
+
+```mermaid
+graph LR
+  first["first<br>trombone and flute"] --> second["second<br>cello and tenor sax"] --> again(["first again, and so on"])
+```
 
 ```elixir
 import Mx
@@ -170,20 +209,28 @@ second = together([part(:cello, melody, synth: :cello), part(:tenor_sax, answer,
 song(tempo: 72, music: repeat(seq([first, second])))
 ```
 
-When you save the file while the song plays, the new version takes over at the end of the current section.
-A song whose music is not a `seq` is one section.
+- When you save the file while the song plays, the new version takes over at the end of the current section.
+- A song whose music is not a `seq` is one section.
+
+### Changing the tempo
 
 `tempo(140)` changes the tempo for every part from the beat where it is written, and takes no time.
 `tempo(130, over: 16)` gets there evenly over 16 beats.
+
 In music that repeats, give the first section its tempo too, since each change comes round again:
 
 ```elixir
 repeat(seq([tempo(100), verse, tempo(140), chorus]))
 ```
 
+### What mx refuses
+
+A function refuses what cannot play, such as an unknown note name or an option the synth does not have.
+mx prints the refusal with the line of the song file, and a song that is already playing keeps its previous version.
+
 ### A song as a module
 
-A song file can hold a module that uses `Mx.Song` in place of ending with `song`:
+A longer song reads better as a module that uses `Mx.Song` in place of ending with `song`:
 
 ```elixir
 defmodule Paredao do
@@ -218,9 +265,109 @@ A file holds one such module; a module that uses `Mx.Instrument` can stand besid
 
 `mix format` keeps a declaration without parentheses when the project's `.formatter.exs` has `import_deps: [:mx]`.
 
+## Rhythm
+
+A drum plays hits, not notes: it has its own pitch.
+`steps` writes a rhythm as text, one character for each step.
+
+```elixir
+part(:kick, steps("x... x... x... x.x.", 0.25), synth: :kick)
+```
+
+Each character lasts a quarter of a beat here, so sixteen of them are four beats:
+
+```
+beat   1    2    3    4
+       x... x... x... x.x.
+```
+
+- An `x` is a hit, a dot is silence, and spaces are left out.
+- A digit is a hit at that level, 9 the loudest: `"9..5 9.7."`.
+
+Hits can also be placed by their beat:
+
+```elixir
+part(:cajon, at([{0, hit(slap: 1, vel: 0.8)}, {1.5, hit(vel: 0.5)}], 2), synth: :cajon)
+```
+
+- `hit(vel: 0.5)` is one hit of a drum at its own pitch, taking no time.
+- `at([{0.5, music}, {1.5, music}], 2)` is music of 2 beats that starts each item at its beat, so hits at known beats need no rests between them.
+- `swing(music, fun)` starts each note at the beat the function returns for the beat it was written on, so some notes can be pushed late and others early.
+
+## Patterns
+
+A pattern is music written as text, and `steps(pattern, step)` plays it, each step of the pattern lasting `step` beats.
+`~MX` writes a pattern, and reads it when the song compiles, so a bracket left open or a length that is no number is refused with its line before anything plays.
+
+```elixir
+steps(~MX"g4:2 _ g4 bb4:2 _ a4 | g4:4 - -", 0.25, vel: 0.8)
+steps(~MX"9... 9... 9..5 9.7."s, 0.25)
+```
+
+### A word to a step
+
+Without a modifier, `~MX` reads a word to a step.
+
+| Written | Plays |
+|---|---|
+| `g4`, `fs5` | that note |
+| `_` | silence |
+| `-` | the word before it, one step longer |
+| `g4:2`, `g4:1.5` | the note for two steps, or one and a half |
+| `g5/b4` | both notes together |
+| `[f f]` | two notes in the time of one step |
+| `eb2:2 ~g2:2` | one note of four steps that glides to G halfway |
+
+A word after `~` is not struck: the note before it glides to that pitch and lasts through it.
+A bar line, `|`, is only for reading.
+
+### A character to a step
+
+With the modifier `s`, as in `~MX"9..5 x..."s`, it reads a character to a step: a dot is silence, and spaces and bar lines are left out.
+A plain string given to `steps` is read the same way.
+
+### What the words sound like
+
+A pattern says nothing of what its words sound like; the options of `steps` do:
+
+```elixir
+steps(~MX"9...9..5"s, 0.25, sample: "kick.wav", release: 0.1)
+steps(~MX"ccoc ccoc"s, 0.25, strokes: [o: [vel: 0.75, sustain: 0.2], c: [vel: 0.5]])
+steps(~MX"..1. .5.3"s, 0.25, notes: [:g4, :a4, :bb4, :c5, :d5])
+steps(~MX"x.xx"s, 0.25, each: fn step -> [vel: if(step == 0, do: 0.9, else: 0.5)] end)
+steps(~MX"eb2:2 ~g2:2 d2:4", 0.25, slide: 0.3)
+```
+
+- `x` is a hit of a drum at its own pitch.
+- A digit is a hit at that level, 9 the loudest. It sets `vel:`, or the option `digit:` names.
+- `sample:` plays each hit as that sample, where a digit sets `amp:`.
+- `strokes:` gives the options of other characters or words, so a drum's strokes can have their own letters.
+- `notes:` makes a digit a hit tuned to that note of the list, counted from 1.
+- `each:` is a function of the step a sound starts on, counted from 0, that returns more options for it. A function of two takes the sound's length in steps as well.
+- `slide:` is how many beats a glide takes.
+- Any other option goes to every sound.
+
+### Joining patterns
+
+A pattern is a list, so two patterns join with `++`, and `steps` plays a list of patterns as one bar after another:
+
+```elixir
+kick = [~MX"9...9...9..59.7."s, ~MX"9..59...9..59.7."s]
+part(:kick, repeat(steps(kick, 0.25), 4), synth: :kick)
+```
+
+A sigil takes no interpolation; build a longer pattern by joining shorter ones.
+
 ## Loops
 
-`loop(4, fn pass, inputs -> music end)` runs the function again every 4 beats and plays the music it returns, so a part can vary from pass to pass:
+A `loop` works its music out again on every pass, so a part can vary from pass to pass.
+`loop(4, fn pass, inputs -> music end)` runs the function every 4 beats and plays the music it returns.
+
+```mermaid
+graph LR
+  fun["the function<br>given pass and inputs"] --> music["music<br>for these beats"] --> play(["plays"])
+  play -->|next pass| fun
+```
 
 ```elixir
 import Mx
@@ -243,7 +390,17 @@ song(tempo: 96, music: together([
 - A pass that raises prints its error, and the loop plays its next pass.
 - `mix mx.print song.exs --pass 4` prints the fifth pass.
 
-`inputs` holds what has arrived from outside: `inputs.cc` the latest value of each MIDI controller, `inputs.notes` the velocity of the latest note on for each note, `inputs.osc` the arguments of the latest message to each OSC address, and `inputs.values` each shared value.
+### Inputs
+
+`inputs` holds what has arrived from outside.
+
+| Field | Holds |
+|---|---|
+| `inputs.cc` | the latest value of each MIDI controller |
+| `inputs.notes` | the velocity of the latest note on for each note |
+| `inputs.osc` | the arguments of the latest message to each OSC address |
+| `inputs.values` | each shared value |
+
 An entry is nil until something has sent it.
 
 ```elixir
@@ -252,26 +409,57 @@ part(:bass, loop(1, fn _, inputs -> note(:c2, 1, cutoff: (inputs.cc[74] || 64) *
 
 mx works a pass out half a second before it plays, so an input that changes shows from the next pass on.
 
-A loop can also play a pass each time something arrives, as soon as possible, for playing live:
+### Playing live
+
+A loop can also play a pass each time something arrives, as soon as possible:
 
 ```elixir
 loop(fn trigger, _ -> note(trigger.note, 1) end, on: :midi_note)
 ```
 
-`on: :midi_cc` waits for controller changes and `on: {:osc, "/hit"}` for messages to that address.
-`trigger` is what arrived: `%{note: 60, velocity: 100}`, `%{number: 74, value: 64}`, or `%{address: "/hit", args: [1]}`.
+- `on: :midi_note` waits for notes, `on: :midi_cc` for controller changes, and `on: {:osc, "/hit"}` for messages to that address.
+- `trigger` is what arrived: `%{note: 60, velocity: 100}`, `%{number: 74, value: 64}`, or `%{address: "/hit", args: [1]}`.
 
-## Samples
+## Recordings
 
-`sample(:bd_haus, 1)` plays a sample of Sonic Pi's pack by name, then a beat passes.
-Its names are the files in [Sonic Pi's samples folder](https://github.com/sonic-pi-net/sonic-pi/tree/v5.0.0/etc/samples), without the extension.
-`sample("kick.wav", 1)` plays a WAV, AIFF or FLAC file by path.
+A song plays recordings as well as synths, in two ways.
+`sample` plays one recording, as it is or cut up.
+`sampled` makes an instrument out of many recordings of one, and a part plays it like a synth.
+
+### Naming a recording
+
+There are three ways to name a recording, and they work in both `sample` and `sampled`.
+
+```mermaid
+graph LR
+  path["a path<br>a file of your own"] --> play(["plays"])
+  collection["collection and name<br>a collection mx knows"] --> cache["your cache<br>downloaded once"]
+  github["repository, ref and path<br>any public repository"] --> cache
+  cache --> play
+```
 
 ```elixir
-sample(:loop_amen, 4, beats: 4)
-sample(:loop_amen, 1, from: 0.5, to: 1.0)
-sample(:loop_amen, 0.5, slices: 8, slice: 3)
-sample(:ambi_choir, 4, rate: 0.5, amp: 0.6)
+sample("kick.wav", 1)
+sample({:sonic_pi, :bd_haus}, 1)
+sample({:vcsl, "Idiophones/Struck Idiophones/Agogo Bells/Agogo_High_v1_rr1_Mid.wav"}, 1)
+sample({:github, "owner/repo", "main", "drums/kick.wav"}, 1)
+```
+
+- A string is the path of a WAV, AIFF or FLAC file. A path that does not start at the root is read from the folder mx runs in.
+- `{collection, name}` is a recording of a collection mx knows by name, which [Collections](#collections) lists.
+- `{:github, repo, ref, path}` is a file of any public GitHub repository, at a commit, tag or branch.
+
+mx downloads a recording into your cache when the song loads, and plays it from the cache after that.
+
+### Samples
+
+`sample({:sonic_pi, :bd_haus}, 1)` plays the sample, then a beat passes.
+
+```elixir
+sample({:sonic_pi, :loop_amen}, 4, beats: 4)
+sample({:sonic_pi, :loop_amen}, 1, from: 0.5, to: 1.0)
+sample({:sonic_pi, :loop_amen}, 0.5, slices: 8, slice: 3)
+sample({:sonic_pi, :ambi_choir}, 4, rate: 0.5, amp: 0.6)
 ```
 
 - `rate: 0.5` plays at half speed an octave lower, and a negative rate plays backwards.
@@ -281,39 +469,87 @@ sample(:ambi_choir, 4, rate: 0.5, amp: 0.6)
 - `normalize: true` scales the sample so its loudest moment reaches full scale before `amp`, for files recorded at very different levels.
 - A sample also takes `amp`, `pan` and the envelope options `attack`, `decay`, `sustain` and `release`.
 
-A sample can come from a public GitHub repository, at a commit, tag or branch:
-
-```elixir
-sample({:github, "sgossner/VCSL", "c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e", "Idiophones/Struck Idiophones/Agogo Bells/Agogo_High_v1_rr1_Mid.wav"}, 1)
-```
-
-mx downloads the file into your cache when the song loads, and plays it from the cache after that.
-`mix mx.samples.download SOURCE` downloads a whole collection ahead of time, where SOURCE is `sonic_pi` or a repository as `owner/repo@ref`, optionally followed by `:folder`:
-
-```sh
-mix mx.samples.download "sgossner/VCSL@c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e:Idiophones/Struck Idiophones/Agogo Bells"
-```
-
-## Sampled instruments
+### Sampled instruments
 
 `sampled(folder)` makes an instrument from a folder of recordings, one file for each key, and a part plays it with `note` and `hit` as it plays a synth:
 
 ```elixir
-mbira = sampled("VCSL/Idiophones/Plucked Idiophones/Mbira dzaVadzimu Nyamaropa, Zimbabwe, Low B")
+mbira = sampled({:vcsl, "Idiophones/Plucked Idiophones/Mbira dzaVadzimu Nyamaropa, Zimbabwe, Low B"})
 part(:mbira, seq([note(:e4, 1), note(:fs4, 1), note(chord(:e3, :major), 2, strum: 0.05)]), synth: mbira)
 ```
 
-mx reads each file's note, strength and take from its name, as the VCSL library names them: `MBira4_pluck_Main_E4_19_50_100_rr2.wav` is the mbira's E4, take 2.
-A note plays the recorded key nearest to it, sped up or slowed down to its pitch.
-`vel` from 0 to 1 picks among the recorded strengths, and repeated notes play the takes in turn.
+- mx reads each file's note, strength and take from its name, as the VCSL library names them: `MBira4_pluck_Main_E4_19_50_100_rr2.wav` is the mbira's E4, take 2.
+- A note plays the recorded key nearest to it, sped up or slowed down to its pitch.
+- `vel` from 0 to 1 picks among the recorded strengths, and repeated notes play the takes in turn.
 
 For files named another way, list them with what each one is:
 
 ```elixir
 sampled([{"low.wav", note: :c2}, {"high.wav", note: :c3, strength: 2, take: 1}])
+sampled([{{:salamander, "Samples/C4v8.flac"}, note: :c4}])
 ```
 
-`sampled({:github, repo, ref, folder})` plays a folder of a GitHub repository.
+### Collections
+
+A collection is a set of recordings mx knows by name.
+
+`:sonic_pi` is Sonic Pi's sample pack, 206 samples under Creative Commons 0.
+Its samples are named by atoms, the names of the files in [Sonic Pi's samples folder](https://github.com/sonic-pi-net/sonic-pi/tree/v5.0.0/etc/samples) without the extension: `{:sonic_pi, :loop_amen}`.
+It is downloaded whole, once, before a song can play it:
+
+```sh
+mix mx.samples.download sonic_pi
+```
+
+Every other collection is a public GitHub repository, pinned to one commit so a song sounds the same each time.
+Its files and folders are named by their path in the repository.
+Each repository states its own license.
+
+| Collection | Repository |
+|---|---|
+| `:freepats_button_accordion` | [freepats/button-accordion-HN](https://github.com/freepats/button-accordion-HN) |
+| `:freepats_electric_guitar` | [freepats/electric-guitar-FSBS-clean](https://github.com/freepats/electric-guitar-FSBS-clean) |
+| `:freepats_fm_piano` | [freepats/fm-piano1](https://github.com/freepats/fm-piano1) |
+| `:freepats_lately_bass` | [freepats/lately-bass](https://github.com/freepats/lately-bass) |
+| `:freepats_spanish_guitar` | [freepats/spanish-classical-guitar](https://github.com/freepats/spanish-classical-guitar) |
+| `:freepats_synth_brass` | [freepats/synth-brass-1](https://github.com/freepats/synth-brass-1) |
+| `:freepats_synth_choir` | [freepats/synth-pad-choir](https://github.com/freepats/synth-pad-choir) |
+| `:freepats_synth_percussion` | [freepats/synthesizer-percussion](https://github.com/freepats/synthesizer-percussion) |
+| `:freepats_synth_square` | [freepats/synth-square](https://github.com/freepats/synth-square) |
+| `:freepats_synth_strings` | [freepats/synth-strings-1](https://github.com/freepats/synth-strings-1) |
+| `:freepats_upright_piano` | [freepats/upright-piano-KW](https://github.com/freepats/upright-piano-KW) |
+| `:karoryfer_big_rusty_drums` | [sfzinstruments/karoryfer.big-rusty-drums](https://github.com/sfzinstruments/karoryfer.big-rusty-drums) |
+| `:karoryfer_bigcat_cello` | [sfzinstruments/karoryfer-bigcat.cello](https://github.com/sfzinstruments/karoryfer-bigcat.cello) |
+| `:karoryfer_black_and_green_guitars` | [sfzinstruments/karoryfer.black-and-green-guitars](https://github.com/sfzinstruments/karoryfer.black-and-green-guitars) |
+| `:karoryfer_caveman_cosmonaut` | [sfzinstruments/karoryfer.caveman-cosmonaut](https://github.com/sfzinstruments/karoryfer.caveman-cosmonaut) |
+| `:karoryfer_gogodze_phu` | [sfzinstruments/karoryfer.gogodze-phu-vol-i](https://github.com/sfzinstruments/karoryfer.gogodze-phu-vol-i) |
+| `:karoryfer_growly_bass` | [sfzinstruments/karoryfer.growlybass](https://github.com/sfzinstruments/karoryfer.growlybass) |
+| `:karoryfer_horse_pulse` | [sfzinstruments/Karoryfer.HorsePulse](https://github.com/sfzinstruments/Karoryfer.HorsePulse) |
+| `:karoryfer_merry_orks` | [sfzinstruments/karoryfer.272-merry-orks](https://github.com/sfzinstruments/karoryfer.272-merry-orks) |
+| `:karoryfer_shiny_guitar` | [sfzinstruments/karoryfer.shinyguitar](https://github.com/sfzinstruments/karoryfer.shinyguitar) |
+| `:karoryfer_sneaky_bass` | [sfzinstruments/karoryfer.sneakybass](https://github.com/sfzinstruments/karoryfer.sneakybass) |
+| `:karoryfer_squid_pipes` | [sfzinstruments/karoryfer.squidpipes](https://github.com/sfzinstruments/karoryfer.squidpipes) |
+| `:karoryfer_swag_bass` | [sfzinstruments/karoryfer.swagbass](https://github.com/sfzinstruments/karoryfer.swagbass) |
+| `:karoryfer_swirly_drums` | [sfzinstruments/karoryfer.swirly-drums](https://github.com/sfzinstruments/karoryfer.swirly-drums) |
+| `:karoryfer_unruly_drums` | [sfzinstruments/karoryfer.unruly-drums](https://github.com/sfzinstruments/karoryfer.unruly-drums) |
+| `:karoryfer_war_tuba` | [sfzinstruments/karoryfer.war-tuba](https://github.com/sfzinstruments/karoryfer.war-tuba) |
+| `:karoryfer_weresax` | [sfzinstruments/karoryfer.weresax](https://github.com/sfzinstruments/karoryfer.weresax) |
+| `:mridangam` | [yaxu/mrid](https://github.com/yaxu/mrid) |
+| `:salamander` | [sfzinstruments/SalamanderGrandPiano](https://github.com/sfzinstruments/SalamanderGrandPiano) |
+| `:vcsl` | [sgossner/VCSL](https://github.com/sgossner/VCSL) |
+| `:virtuosity_drums` | [sfzinstruments/virtuosity_drums](https://github.com/sfzinstruments/virtuosity_drums) |
+| `:vsco` | [sgossner/VSCO-2-CE](https://github.com/sgossner/VSCO-2-CE) |
+
+A song downloads the files it names as it loads.
+`mix mx.samples.download` fetches a whole collection, or one folder of it, ahead of time:
+
+```sh
+mix mx.samples.download vcsl
+mix mx.samples.download "vcsl:Idiophones/Struck Idiophones/Agogo Bells"
+mix mx.samples.download "owner/repo@main:drums"
+```
+
+Running it again finishes an interrupted download.
 
 ## MIDI and OSC
 
@@ -342,6 +578,7 @@ change({:lead, :reverb}, mix: 0)
 ```
 
 An option's `_slide` partner makes the change glide over that many beats instead of jumping.
+
 A note can also carry its own later changes, so a held note glides to the next pitch without a new attack:
 
 ```elixir
@@ -351,12 +588,13 @@ part(:lead, note(:a4, 4, changes: [{1, note: :c5, note_slide: 0.1}]), synth: :fl
 ## Live audio
 
 `live_audio: [mic: []]` in `song` plays the sound card's first input through the speakers while the song plays.
-It takes `input: 2` for another input, `stereo: true`, `amp`, `pan` and `fx:`.
-mx must start with a song that has `live_audio` to read the input.
+
+- It takes `input: 2` for another input, `stereo: true`, `amp`, `pan` and `fx:`.
+- mx must start with a song that has `live_audio` to read the input.
 
 ## Helpers
 
-Pitches and chords:
+### Pitches and chords
 
 - `pitch(:e5)` is 76, the number of a note name.
 - `chord(:a3, :minor7)` and `scale(:e3, :minor_pentatonic, octaves: 2)` are lists of note numbers.
@@ -370,12 +608,12 @@ Pitches and chords:
 - `fit(scale(:a4, :minor), chord(:e4, :dom7))` moves the scale's notes a semitone to hold the chord's notes, so G becomes G sharp.
 - `cents(386)` is an interval in cents as semitones, 3.86, and `ratio(5 / 4)` is the interval of a frequency ratio, also 3.86.
 
-Lists and numbers:
+### Lists and numbers
 
 - `ring([60, 64, 67], 4)` is 64, the item at an index, wrapping round.
 - `clamp(12, 2, 11)` keeps a number from 2 up to 11, so it is 11.
 
-Chance:
+### Chance
 
 - `pick([60, 63, 67])` is one item of a list or a range.
 - `chance(0.45)` is true about 45 times in 100.

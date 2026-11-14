@@ -124,7 +124,13 @@ defmodule Dubwise do
       part(:vinyl, hiss(16)),
       part(
         :space,
-        at([{0, sample(:ambi_haunted_hum, 12, amp: 0.2, attack: 2, release: 4)}, woosh(16)], 16)
+        at(
+          [
+            {0, sample({:sonic_pi, :ambi_haunted_hum}, 12, amp: 0.2, attack: 2, release: 4)},
+            woosh(16)
+          ],
+          16
+        )
       ),
       part(:siren, at([{1, siren()}], 16)),
       part(
@@ -216,7 +222,13 @@ defmodule Dubwise do
         ),
         part(
           :dub_snare,
-          at([{22, sample(:sn_dub, 1, amp: 0.7)}, {30, sample(:sn_dub, 1, amp: 0.6)}], 32)
+          at(
+            [
+              {22, sample({:sonic_pi, :sn_dub}, 1, amp: 0.7)},
+              {30, sample({:sonic_pi, :sn_dub}, 1, amp: 0.6)}
+            ],
+            32
+          )
         ),
         part(:tom, delay(roll(), 28)),
         part(
@@ -287,7 +299,7 @@ defmodule Dubwise do
   # slicer.
   defp section(:deep) do
     snare_echo = fn opts -> change({:dub_snare, :ping_pong}, opts) end
-    snares = for beat <- [2, 6, 10, 14], do: {beat, sample(:sn_dub, 1, amp: 0.7)}
+    snares = for beat <- [2, 6, 10, 14], do: {beat, sample({:sonic_pi, :sn_dub}, 1, amp: 0.7)}
 
     together(
       [
@@ -297,8 +309,8 @@ defmodule Dubwise do
           :space,
           at(
             [
-              {0, sample(:ambi_haunted_hum, 12, amp: 0.25, attack: 3, release: 4)},
-              {16, sample(:misc_cineboom, 8, amp: 0.4)},
+              {0, sample({:sonic_pi, :ambi_haunted_hum}, 12, amp: 0.25, attack: 3, release: 4)},
+              {16, sample({:sonic_pi, :misc_cineboom}, 8, amp: 0.4)},
               woosh(32)
             ],
             32
@@ -367,7 +379,7 @@ defmodule Dubwise do
   # The selector pulls the record back.
   defp section(:rewind) do
     together([
-      part(:vinyl, sample(:vinyl_rewind, 4, amp: 0.7)),
+      part(:vinyl, sample({:sonic_pi, :vinyl_rewind}, 4, amp: 0.7)),
       part(:siren, note(:a4, 4, changes: [{0.1, note: :a6}, {2, note: :e6}]))
     ])
   end
@@ -624,13 +636,15 @@ defmodule Dubwise do
   defp hiss(length) do
     loops =
       for beat <- 0..(length - 8)//8,
-          do: {beat, sample(:vinyl_hiss, 8, amp: 0.35, sustain: 7, release: 2)}
+          do: {beat, sample({:sonic_pi, :vinyl_hiss}, 8, amp: 0.35, sustain: 7, release: 2)}
 
     at(loops, length)
   end
 
   # The dark woosh backwards, swelling into the downbeat after the given beat.
-  defp woosh(beat), do: {beat - 4.5, sample(:ambi_dark_woosh, 4, rate: -1, amp: 0.35)}
+  defp woosh(beat) do
+    {beat - 4.5, sample({:sonic_pi, :ambi_dark_woosh}, 4, rate: -1, amp: 0.35)}
+  end
 
   defp kit(range, style) do
     [

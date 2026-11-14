@@ -21,33 +21,27 @@ defmodule LunaDeCabarete do
 
   use Mx.Song, tempo: 126
 
-  @guitar {"sfzinstruments/karoryfer.shinyguitar", "57243cca85277dbcc120ce17c6178032f93c80f3"}
-  @bass {"sfzinstruments/karoryfer.swagbass", "9d10fcae71af1975988ddecd5af1c95d372c7355"}
+  @guitar :karoryfer_shiny_guitar
+  @bass :karoryfer_swag_bass
 
   # The guitar through its microphone, a note every minor third, at four strengths and two takes
   # of each.
   @guitar_keys ~w(e2 gb2 a2 c3 eb3 gb3 a3 c4 eb4 gb4 a4 c5 eb5 gb5 a5 c6)
   @shinyguitar Enum.flat_map(@guitar_keys, fn name ->
-                 {repo, commit} = @guitar
-
                  for strength <- 1..4, take <- 1..2 do
                    path = "Samples/acoustic/#{name}_vl#{strength}_rr#{take}_1.wav"
 
-                   {{:github, repo, commit, path},
-                    note: Mx.Notes.parse(name), strength: strength, take: take}
+                   {{@guitar, path}, note: Mx.Notes.parse(name), strength: strength, take: take}
                  end
                end)
 
   # Swagbass names each note an octave above the pitch it sounds.
   @bass_keys ~w(a1 c2 eb2 gb2 a2 c3 eb3 gb3 a3 c4)
   @swagbass Enum.flat_map(@bass_keys, fn name ->
-              {repo, commit} = @bass
-
               for {dynamic, strength} <- [{"p", 1}, {"f", 2}], take <- 1..2 do
                 path = "notes/#{name}_#{dynamic}_rr#{take}.wav"
 
-                {{:github, repo, commit, path},
-                 note: Mx.Notes.parse(name) - 12, strength: strength, take: take}
+                {{@bass, path}, note: Mx.Notes.parse(name) - 12, strength: strength, take: take}
               end
             end)
 

@@ -11,18 +11,18 @@ defmodule ValseDuZinc do
   listed with the pitch it was measured at, a third of a semitone above its name and an octave
   below it.
   Download them with mx samples download
-  "freepats/button-accordion-HN@d70d16456fd99305d1c24c612b205ab38846eb0f", and the same for
-  "freepats/spanish-classical-guitar@6f4eb1b092acc88f5448cea1a0001bd07b971af8:samples" and
-  "freepats/upright-piano-KW@570f6c60ed2eff67accad3b85d5b452e57a3ad28:samples".
+  "freepats_button_accordion", and the same for
+  "freepats_spanish_guitar:samples" and
+  "freepats_upright_piano:samples".
   """
 
   use Mx.Song, tempo: 168
 
-  @accordion_repo {"freepats/button-accordion-HN", "d70d16456fd99305d1c24c612b205ab38846eb0f"}
-  @guitar_repo {"freepats/spanish-classical-guitar", "6f4eb1b092acc88f5448cea1a0001bd07b971af8"}
-  @piano_repo {"freepats/upright-piano-KW", "570f6c60ed2eff67accad3b85d5b452e57a3ad28"}
+  @accordion_collection :freepats_button_accordion
+  @guitar_collection :freepats_spanish_guitar
+  @piano_collection :freepats_upright_piano
 
-  file = fn {repo, commit}, path -> {:github, repo, commit, path} end
+  file = fn collection, path -> {collection, path} end
 
   # Each accordion file with the key its bank plays it on and the cents the bank lowers it by.
   @accordion for {name, key, cents} <- [
@@ -45,10 +45,10 @@ defmodule ValseDuZinc do
                    {"G6", 79, 10}
                  ],
                  do:
-                   {file.(@accordion_repo, "Button Accordion HN #{name}.flac"),
+                   {file.(@accordion_collection, "Button Accordion HN #{name}.flac"),
                     note: key + cents / 100}
 
-  @guitar file.(@guitar_repo, "samples")
+  @guitar file.(@guitar_collection, "samples")
 
   # The piano was recorded soft, L, and hard, H, on every third key, and a few keys in one
   # strength only.
@@ -60,7 +60,7 @@ defmodule ValseDuZinc do
              ],
              name <- names,
              do:
-               {file.(@piano_repo, "samples/#{name}v#{layer}.flac"),
+               {file.(@piano_collection, "samples/#{name}v#{layer}.flac"),
                 note: name |> String.downcase() |> String.replace("#", "s") |> Mx.Notes.parse(),
                 strength: strength}
 

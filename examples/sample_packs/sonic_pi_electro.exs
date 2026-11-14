@@ -50,14 +50,14 @@ defmodule DialTone do
   # The telephone dials over the pads, and the hats come in.
   defp intro do
     play(
-      bed: sample(:tbd_fxbed_loop, 16),
+      bed: sample({:sonic_pi, :tbd_fxbed_loop}, 16),
       pads: pads(1),
       voices:
         seq([
-          sample(:mehackit_phone1, 4),
-          sample(:mehackit_phone2, 4),
-          sample(:mehackit_phone4, 4),
-          sample(:mehackit_phone3, 4)
+          sample({:sonic_pi, :mehackit_phone1}, 4),
+          sample({:sonic_pi, :mehackit_phone2}, 4),
+          sample({:sonic_pi, :mehackit_phone4}, 4),
+          sample({:sonic_pi, :mehackit_phone3}, 4)
         ]),
       hats: seq([rest(8), strokes(:hat_cab, "7353735373537353", 2)]),
       clicks: seq([rest(8), strokes(:elec_tick, "9..9..9..9..9.9.", 2)])
@@ -121,10 +121,10 @@ defmodule DialTone do
   # A last kick, a chime and a robot.
   defp ending do
     play(
-      kick: sample(:bd_808, 8),
-      bells: sample(:elec_chime, 8),
-      pads: sample(:tbd_pad_1, 8, release: 2),
-      voices: seq([rest(1), sample(:mehackit_robot7, 7)])
+      kick: sample({:sonic_pi, :bd_808}, 8),
+      bells: sample({:sonic_pi, :elec_chime}, 8),
+      pads: sample({:sonic_pi, :tbd_pad_1}, 8, release: 2),
+      voices: seq([rest(1), sample({:sonic_pi, :mehackit_robot7}, 7)])
     )
   end
 
@@ -135,10 +135,10 @@ defmodule DialTone do
   defp pads(times) do
     repeat(
       seq([
-        sample(:tbd_pad_1, 4, attack: 0.2, release: 0.5),
-        sample(:tbd_pad_2, 4, attack: 0.2, release: 0.5),
-        sample(:tbd_pad_4, 4, attack: 0.2, release: 0.5),
-        sample(:tbd_pad_3, 4, attack: 0.2, release: 0.5)
+        sample({:sonic_pi, :tbd_pad_1}, 4, attack: 0.2, release: 0.5),
+        sample({:sonic_pi, :tbd_pad_2}, 4, attack: 0.2, release: 0.5),
+        sample({:sonic_pi, :tbd_pad_4}, 4, attack: 0.2, release: 0.5),
+        sample({:sonic_pi, :tbd_pad_3}, 4, attack: 0.2, release: 0.5)
       ]),
       times
     )
@@ -151,7 +151,7 @@ defmodule DialTone do
       hits =
         for {cell, index} <- Enum.with_index(String.graphemes(pattern)),
             cell != ".",
-            do: {index / 4, sample(name, 0, amp: String.to_integer(cell) / 9)}
+            do: {index / 4, sample({:sonic_pi, name}, 0, amp: String.to_integer(cell) / 9)}
 
       at(hits, 4)
     end
@@ -181,7 +181,7 @@ defmodule DialTone do
 
   # A voice at the start of every other bar.
   defp voices(names) do
-    seq(for name <- names, do: sample(name, 8))
+    seq(for name <- names, do: sample({:sonic_pi, name}, 8))
   end
 
   defp backbeat(bars) do
@@ -199,7 +199,13 @@ defmodule DialTone do
   defp line(name, notes, amp \\ 1.0) do
     hits =
       for {note, index} <- Enum.with_index(notes), note != nil do
-        {index / 4, sample(name, 0, rate: semitones(note), amp: amp, sustain: 0.2, release: 0.05)}
+        {index / 4,
+         sample({:sonic_pi, name}, 0,
+           rate: semitones(note),
+           amp: amp,
+           sustain: 0.2,
+           release: 0.05
+         )}
       end
 
     at(hits, 4)

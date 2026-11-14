@@ -581,7 +581,7 @@ defmodule Mx.BandTest do
       song =
         load(
           ctx,
-          "import Mx\nsong(tempo: 120, music: part(:drums, loop(1, fn _, _ -> seq([sample(:bd_haus, 0, rate: 2, release: 1, sustain: 0), sample(\"test/support/samples/sn_dolf.flac\", 0), rest(1)]) end)))\n"
+          "import Mx\nsong(tempo: 120, music: part(:drums, loop(1, fn _, _ -> seq([sample({:sonic_pi, :bd_haus}, 0, rate: 2, release: 1, sustain: 0), sample(\"test/support/samples/sn_dolf.flac\", 0), rest(1)]) end)))\n"
         )
 
       bd_haus = Path.expand("test/support/samples/bd_haus.flac")
@@ -601,7 +601,7 @@ defmodule Mx.BandTest do
       song =
         load(
           ctx,
-          "import Mx\nsong(tempo: 6000, music: part(:drums, loop(1, fn _, _ -> seq([sample(:bd_haus, 0), rest(1)]) end)))\n"
+          "import Mx\nsong(tempo: 6000, music: part(:drums, loop(1, fn _, _ -> seq([sample({:sonic_pi, :bd_haus}, 0), rest(1)]) end)))\n"
         )
 
       bd_haus = Path.expand("test/support/samples/bd_haus.flac")
@@ -625,7 +625,7 @@ defmodule Mx.BandTest do
       song =
         load(
           ctx,
-          "import Mx\nsong(tempo: 6000, music: part(:drums, loop(1, fn _, _ -> seq([sample(String.to_atom(\"bd_\" <> \"haus\"), 0), rest(1)]) end)))\n"
+          "import Mx\nsong(tempo: 6000, music: part(:drums, loop(1, fn _, _ -> seq([sample({:sonic_pi, String.to_atom(\"bd_\" <> \"haus\")}, 0), rest(1)]) end)))\n"
         )
 
       test = self()

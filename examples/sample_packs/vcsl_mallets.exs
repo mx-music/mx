@@ -15,16 +15,14 @@ defmodule SevenStrokes do
   VCSL names each key an octave below the pitch mx names it by, and records its instruments at
   very different levels, so each part is brought to its place by its own level.
   Download them with mx samples download
-  "sgossner/VCSL@c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e:Idiophones".
+  "vcsl:Idiophones".
   """
 
   use Mx.Song, tempo: 100
 
-  @repo "sgossner/VCSL"
-  @commit "c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e"
   @struck "Idiophones/Struck Idiophones"
 
-  vcsl = fn path -> {:github, @repo, @commit, "#{@struck}/#{path}"} end
+  vcsl = fn path -> {:vcsl, "#{@struck}/#{path}"} end
 
   key = fn name ->
     name = name |> String.downcase() |> String.replace("#", "s") |> Mx.Notes.parse()

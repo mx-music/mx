@@ -18,12 +18,11 @@ defmodule Cosmonauta do
 
   use Mx.Song, tempo: 96
 
-  @organ {"sfzinstruments/karoryfer.caveman-cosmonaut",
-          "9de9bcfcbc6d2b20bea5c1116cd07a310febc339"}
-  @bass {"sfzinstruments/karoryfer.swagbass", "9d10fcae71af1975988ddecd5af1c95d372c7355"}
-  @drums {"sfzinstruments/karoryfer.swirly-drums", "c40dafe0011cb2e54c0c220ff0fa308a11fc60f5"}
+  @organ :karoryfer_caveman_cosmonaut
+  @bass :karoryfer_swag_bass
+  @drums :karoryfer_swirly_drums
 
-  file = fn {repo, commit}, path -> {:github, repo, commit, path} end
+  file = fn collection, path -> {collection, path} end
 
   # The organ names its notes as mx does; the bass names them an octave above.
   key = fn name, octaves -> Mx.Notes.parse(name) + 12 * octaves end

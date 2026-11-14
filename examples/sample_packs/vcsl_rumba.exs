@@ -20,10 +20,7 @@ defmodule RumbaYMontuno do
 
   use Mx.Song, tempo: 112
 
-  @repo "sgossner/VCSL"
-  @commit "c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e"
-
-  vcsl = fn path -> {:github, @repo, @commit, path} end
+  vcsl = fn path -> {:vcsl, path} end
   drum = fn path -> vcsl.("Membranophones/Struck Membranophones/#{path}") end
   struck = fn path -> vcsl.("Idiophones/Struck Idiophones/#{path}") end
 

@@ -156,8 +156,10 @@ defmodule Mx.RenderTest do
              "part pads waits for MIDI or OSC input, which a render does not have, so it plays nothing\n"
   end
 
-  test "the README describes --render" do
-    assert File.read!("README.md") =~ "mix mx.play song.exs --render song.wav"
+  test "the README names --render, and the playing guide describes it" do
+    assert File.read!("README.md") =~ "`--render song.wav`"
+
+    assert File.read!("documentation/playing.md") =~ "mix mx.play song.exs --render song.wav"
   end
 
   @tag :timing

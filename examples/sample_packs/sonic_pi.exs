@@ -47,12 +47,18 @@ defmodule Rewind do
     play(
       record:
         seq([
-          sample(:vinyl_hiss, 12),
-          sample(:vinyl_hiss, 12),
-          sample(:vinyl_rewind, 8)
+          sample({:sonic_pi, :vinyl_hiss}, 12),
+          sample({:sonic_pi, :vinyl_hiss}, 12),
+          sample({:sonic_pi, :vinyl_rewind}, 8)
         ]),
-      guitar: seq([sample(:guit_em9, 16), sample(:guit_harmonics, 8), rest(8)]),
-      tabla: seq([rest(8), sample(:loop_tabla, 24, beats: 32, sustain: 15, release: 1)]),
+      guitar:
+        seq([
+          sample({:sonic_pi, :guit_em9}, 16),
+          sample({:sonic_pi, :guit_harmonics}, 8),
+          rest(8)
+        ]),
+      tabla:
+        seq([rest(8), sample({:sonic_pi, :loop_tabla}, 24, beats: 32, sustain: 15, release: 1)]),
       choir: seq([rest(16), choir(4)]),
       bell: seq([rest(16), bell()])
     )
@@ -71,7 +77,11 @@ defmodule Rewind do
       bass: repeat(bass(@line), 8),
       stabs: seq([rest(32), stabs(8)]),
       bell: seq([rest(16), bell(), rest(16), bell()]),
-      crash: seq([sample(:drum_splash_hard, 32), sample(:drum_cymbal_open, 32)])
+      crash:
+        seq([
+          sample({:sonic_pi, :drum_splash_hard}, 32),
+          sample({:sonic_pi, :drum_cymbal_open}, 32)
+        ])
     )
   end
 
@@ -79,13 +89,14 @@ defmodule Rewind do
   # backspin.
   defp middle do
     play(
-      guitar: seq([sample(:guit_e_fifths, 16), sample(:guit_e_slide, 16)]),
+      guitar:
+        seq([sample({:sonic_pi, :guit_e_fifths}, 16), sample({:sonic_pi, :guit_e_slide}, 16)]),
       choir: choir(8),
-      tabla: sample(:loop_tabla, 32, beats: 32, sustain: 27, release: 1),
+      tabla: sample({:sonic_pi, :loop_tabla}, 32, beats: 32, sustain: 27, release: 1),
       bell: seq([rest(8), bell(), rest(8)]),
       bass: seq([bass([{4, 8}, {0, 8}, {4, 8}]), rest(8)]),
       breaks: seq([rest(28), roll(4, 8), roll(12, 8)]),
-      record: seq([rest(30), sample(:vinyl_backspin, 2)])
+      record: seq([rest(30), sample({:sonic_pi, :vinyl_backspin}, 2)])
     )
   end
 
@@ -103,17 +114,21 @@ defmodule Rewind do
       stabs: stabs(16),
       choir: choir(16),
       bell: seq([bell(), rest(16), bell(), rest(16)]),
-      crash: seq([sample(:drum_splash_hard, 32), sample(:drum_splash_hard, 32)])
+      crash:
+        seq([
+          sample({:sonic_pi, :drum_splash_hard}, 32),
+          sample({:sonic_pi, :drum_splash_hard}, 32)
+        ])
     )
   end
 
   # The chord again over the hiss, and a low boom.
   defp outro do
     play(
-      guitar: sample(:guit_em9, 20),
-      record: sample(:vinyl_hiss, 20),
-      crash: sample(:drum_splash_hard, 20),
-      bass: sample(:bd_boom, 20, rate: 0.8)
+      guitar: sample({:sonic_pi, :guit_em9}, 20),
+      record: sample({:sonic_pi, :vinyl_hiss}, 20),
+      crash: sample({:sonic_pi, :drum_splash_hard}, 20),
+      bass: sample({:sonic_pi, :bd_boom}, 20, rate: 0.8)
     )
   end
 
@@ -125,8 +140,8 @@ defmodule Rewind do
   defp choir(bars) do
     repeat(
       seq([
-        sample(:ambi_choir, 8, rate: semitones(-2), attack: 0.5, release: 1),
-        sample(:ambi_choir, 8, rate: semitones(3) / 2, attack: 0.5, release: 1)
+        sample({:sonic_pi, :ambi_choir}, 8, rate: semitones(-2), attack: 0.5, release: 1),
+        sample({:sonic_pi, :ambi_choir}, 8, rate: semitones(3) / 2, attack: 0.5, release: 1)
       ]),
       div(bars, 4)
     )
@@ -145,7 +160,10 @@ defmodule Rewind do
       {16, 9}
     ]
 
-    seq(for {steps, beats} <- phrase, do: sample(:elec_bell, beats, rate: semitones(steps)))
+    seq(
+      for {steps, beats} <- phrase,
+          do: sample({:sonic_pi, :elec_bell}, beats, rate: semitones(steps))
+    )
   end
 
   # Four bars of the break: three as given and a turn.
@@ -155,7 +173,7 @@ defmodule Rewind do
   defp bass(notes) do
     seq(
       for {steps, beats} <- notes do
-        sample(:bass_woodsy_c, beats,
+        sample({:sonic_pi, :bass_woodsy_c}, beats,
           rate: semitones(steps),
           sustain: beats - 0.15,
           release: 0.15
@@ -166,14 +184,14 @@ defmodule Rewind do
 
   # bass_dnb_f, an F brought down to E, on the first beat of every other bar.
   defp stabs(bars) do
-    repeat(seq([sample(:bass_dnb_f, 8, rate: semitones(-1))]), div(bars, 2))
+    repeat(seq([sample({:sonic_pi, :bass_dnb_f}, 8, rate: semitones(-1))]), div(bars, 2))
   end
 
   # A roll: one sixteenth of the break again and again, growing.
   defp roll(piece, strokes) do
     seq(
       for stroke <- 1..strokes do
-        sample(:loop_amen, 0.25,
+        sample({:sonic_pi, :loop_amen}, 0.25,
           slices: 16,
           slice: piece,
           rate: @faster,
@@ -186,7 +204,10 @@ defmodule Rewind do
   # Pieces of the break in the order given, half a beat each: 0 and 1 are its kicks, 2 and 6 its
   # snares.
   defp chop(pieces) do
-    seq(for piece <- pieces, do: sample(:loop_amen, 0.5, slices: 8, slice: piece, rate: @faster))
+    seq(
+      for piece <- pieces,
+          do: sample({:sonic_pi, :loop_amen}, 0.5, slices: 8, slice: piece, rate: @faster)
+    )
   end
 
   # The rate that moves a recording by so many semitones.

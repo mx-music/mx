@@ -22,32 +22,27 @@ defmodule Fado do
 
   use Mx.Song, tempo: 66
 
-  @guitar {"sfzinstruments/karoryfer.shinyguitar", "57243cca85277dbcc120ce17c6178032f93c80f3"}
-  @bass {"sfzinstruments/karoryfer.sneakybass", "cc1a67e5c913678b85eaad1a3b5cb180d3be3e2d"}
+  @guitar :karoryfer_shiny_guitar
+  @bass :karoryfer_sneaky_bass
 
   # The guitar through its microphone, a note every minor third, at four strengths and two takes
   # of each.
   @guitar_keys ~w(e2 gb2 a2 c3 eb3 gb3 a3 c4 eb4 gb4 a4 c5 eb5 gb5)
   @shinyguitar Enum.flat_map(@guitar_keys, fn name ->
-                 {repo, commit} = @guitar
-
                  for strength <- 1..4, take <- 1..2 do
                    path = "Samples/acoustic/#{name}_vl#{strength}_rr#{take}_1.wav"
 
-                   {{:github, repo, commit, path},
-                    note: Mx.Notes.parse(name), strength: strength, take: take}
+                   {{@guitar, path}, note: Mx.Notes.parse(name), strength: strength, take: take}
                  end
                end)
 
   # Sneakybass names each note an octave above the pitch it sounds.
   @bass_keys ~w(c2 db2 d2 eb2 e2 f2 gb2 g2 ab2 a2 bb2 b2 c3 db3 d3 eb3 e3)
   @sneakybass Enum.flat_map(@bass_keys, fn name ->
-                {repo, commit} = @bass
-
                 for take <- 1..2 do
                   path = "Samples/finger/sneakybass_#{name}_finger_rr#{take}.wav"
 
-                  {{:github, repo, commit, path}, note: Mx.Notes.parse(name) - 12, take: take}
+                  {{@bass, path}, note: Mx.Notes.parse(name) - 12, take: take}
                 end
               end)
 

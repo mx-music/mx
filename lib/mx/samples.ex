@@ -1,11 +1,14 @@
 defmodule Mx.Samples do
   @moduledoc """
-  Sonic Pi's sample pack, which is under Creative Commons 0, and the files a song plays as samples: the pack's by name, a file by path, or a file of a public GitHub repository as `{:github, repo, ref, path}`.
+  Sonic Pi's sample pack, which is under Creative Commons 0, and the files a song plays as samples: a file by path, a file of a collection as `{collection, name}`, or a file of any public GitHub repository as `{:github, repo, ref, path}`.
+
+  `Mx.Collections` lists the collections: `{:sonic_pi, :loop_amen}` is a sample of the pack, and `{:vcsl, path}` a file of a repository mx knows by name.
 
   The pack is too large for the repository, so `download/1` fetches it from a fixed Sonic Pi release into a folder outside the repository, the user's cache by default.
   Each file is written under a temporary name and renamed once complete, so an interrupted download never leaves a sample that looks downloaded.
   """
 
+  alias Mx.Collections
   alias Mx.Engine.Mxs.Native
 
   @release "v5.0.0"
@@ -23,8 +26,10 @@ defmodule Mx.Samples do
   @doc "The folder in the user's cache the sample pack downloads to."
   def default_dir, do: Path.join(:filename.basedir(:user_cache, "mx"), "samples-#{@release}")
 
-  @doc "How messages name a sample: by its name in the pack, its path, or its repository and path."
+  @doc "How messages name a sample: by its name in the pack, its path, its collection and path, or its repository and path."
   def name({:github, repo, _ref, path}), do: "#{repo} #{path}"
+  def name({:sonic_pi, name}), do: to_string(name)
+  def name({collection, path}), do: "#{collection} #{path}"
   def name(ref), do: to_string(ref)
 
   @doc "Refuses a GitHub sample's reference that is not `{:github, \"owner/repo\", ref, path}`, as `:ok` or `{:error, message}`."
@@ -38,7 +43,28 @@ defmodule Mx.Samples do
     end
   end
 
-  @doc "The full path of a sample named as an atom from the pack, given as a file path, or of a GitHub repository, downloaded into the cache when it is not there yet, or `{:error, message}` saying why it cannot play."
+  @doc "Refuses a sample's reference that mx cannot read, as `:ok` or `{:error, message}`, without looking for its file."
+  def check_ref({:github, _repo, _ref, _path} = github), do: check_github(github)
+  def check_ref({:sonic_pi, name}) when is_atom(name), do: :ok
+  def check_ref(path) when is_binary(path), do: :ok
+
+  def check_ref(name) when is_atom(name) do
+    name = inspect(name)
+    {:error, "sample #{name} needs its collection, as {:sonic_pi, #{name}}"}
+  end
+
+  def check_ref(ref) do
+    if Collections.ref?(ref) and elem(ref, 0) != :sonic_pi do
+      with {:ok, _github} <- Collections.expand(ref), do: :ok
+    else
+      ref = inspect(ref)
+
+      {:error,
+       "sample takes a path, {collection, name} or {:github, repo, ref, path}, not #{ref}"}
+    end
+  end
+
+  @doc "The full path of a sample given as a file path, of a collection, or of a GitHub repository, downloaded into the cache when it is not there yet, or `{:error, message}` saying why it cannot play."
   def path(ref, dir \\ dir())
 
   def path({:github, repo, ref, file} = github, _dir) do
@@ -50,7 +76,7 @@ defmodule Mx.Samples do
     end
   end
 
-  def path(name, dir) when is_atom(name) and is_binary(dir) do
+  def path({:sonic_pi, name}, dir) when is_atom(name) and is_binary(dir) do
     file = "#{name}.flac"
     path = Path.expand(file, dir)
 
@@ -77,6 +103,13 @@ defmodule Mx.Samples do
       end
     else
       {:error, "sample file #{file} does not exist"}
+    end
+  end
+
+  def path(ref, dir) do
+    with :ok <- check_ref(ref),
+         {:ok, github} <- Collections.expand(ref) do
+      path(github, dir)
     end
   end
 
@@ -215,7 +248,7 @@ defmodule Mx.Samples do
   @doc """
   Downloads a collection ahead of time, for `mx samples download SOURCE` and `mix mx.samples.download SOURCE`, and returns `{:ok, message}` or `{:error, message}`.
 
-  SOURCE is `sonic_pi` for Sonic Pi's pack, or a GitHub repository as `owner/repo@ref`, optionally followed by `:folder` for only that folder.
+  SOURCE is a collection's name, such as `sonic_pi` or `vcsl`, or a GitHub repository as `owner/repo@ref`; but for `sonic_pi`, either is optionally followed by `:folder` for only that folder.
   Files already on disk are skipped, so running it again finishes an interrupted download.
   """
   def download_source("sonic_pi") do
@@ -234,13 +267,28 @@ defmodule Mx.Samples do
   end
 
   def download_source(source) when is_binary(source) do
-    case Regex.run(~r"^([\w.-]+/[\w.-]+)@([^:]+)(?::(.+))?$", source) do
-      [_ | [repo, ref | folder]] ->
+    [name | folder] = String.split(source, ":", parts: 2)
+    collection = Enum.find(Collections.names(), &(to_string(&1) == name))
+
+    case {collection && Collections.github(collection), github_source(source)} do
+      {{repo, commit}, _} ->
+        download_github(source, repo, commit, List.first(folder))
+
+      {nil, [repo, ref | folder]} ->
         download_github(source, repo, ref, List.first(folder))
 
-      nil ->
+      {nil, nil} ->
+        names = Enum.join(Collections.names(), ", ")
+
         {:error,
-         "SOURCE is sonic_pi for Sonic Pi's pack, or a GitHub repository as owner/repo@ref, optionally followed by :folder, not #{source}"}
+         "SOURCE is a collection, one of #{names}, or a GitHub repository as owner/repo@ref, optionally followed by :folder, not #{source}"}
+    end
+  end
+
+  defp github_source(source) do
+    case Regex.run(~r"^([\w.-]+/[\w.-]+)@([^:]+)(?::(.+))?$", source) do
+      [_ | parts] -> parts
+      nil -> nil
     end
   end
 

@@ -7,8 +7,8 @@ The songs in `examples` play from a clone of mx, each with `mix mx.play` and its
 `examples/tranquility_base.exs` is made only of public recordings, with no synth: VCSL's marimba, vibraphone, hand chimes and drums play as sampled instruments, choosing strengths and alternating takes, its wine glasses are tuned by their rate into a chord, and NASA's Kennedy, Apollo and Sputnik recordings are cut at seconds, stuttered, reversed and fitted to the beat over it, through thirteen of mx's effects. It needs two of VCSL's folders downloaded once, 1.5 GB together, and NASA's recordings ship beside it:
 
 ```sh
-mix mx.samples.download "sgossner/VCSL@c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e:Idiophones"
-mix mx.samples.download "sgossner/VCSL@c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e:Membranophones"
+mix mx.samples.download "vcsl:Idiophones"
+mix mx.samples.download "vcsl:Membranophones"
 mix mx.play examples/tranquility_base.exs
 ```
 
@@ -30,6 +30,11 @@ The bongos play the martillo until the mambo, where the bongocero takes up the c
 `examples/midnight.exs` is a hypnotic piece in raga Darbari Kanada, the grave raga of midnight, on mx's measured synths: the tanpura and the organ's stopped flute drone under the oboe, which plays as a shehnai with meend, kan and andolan on Ga and Dha, while the harmonium answers its phrases plainly. In the gat the tabla plays teentaal with its dayan tuned to Sa, the güiro scrapes and then plays the cha-cha-chá, the claves play son clave, and two pianos phase as in Steve Reich's Piano Phase, one drifting a sixteenth ahead each pass until they meet again in unison as the tihai lands on the sam of shanti. The piece is mixed as a dream of that recital: the oboe's phrases echo from side to side and return three beats late as a ghost heard only through its echo, the organ's drone and the pianos sweep through slow filters, the tanpura through a light flanger, the organ's chorus pulses through a slicer, and a vibraphone drops notes of the raga into the quiet passes.
 
 `examples/dubwise.exs` is a dub in A dorian on mx's measured synths, over a riddim of four bars, Am7, D9, Am7 and G: the drum kit leads through the one drop, rockers and steppers, the double bass plucks under a guitar skank and the organ's bubble, and the harmonium plays as a melodica, answered by the vibraphone and doubled by the trombone in the last riddim. The parts are thrown into a tape echo and swept through filters as on a dub mixing desk, with a dub siren, and a rewind before the last riddim; its samples are Sonic Pi's.
+
+`examples/afrobeat.exs` is an afrobeat groove for a double bass and a drum set at 100 bpm, mixed as a dub: the drums lead, and their strokes are sent into echoes.
+The drum set is Virtuosity Drums and the keyboard is FreePats' FM piano, both sampled and under Creative Commons 0, and the bass is mx's double bass, plucked for the line and bowed for the theme.
+The floor tom repeats a stroke every beat and a half against the bar of four beats, and the solo is the drummer's: a run on the tuned tom that gains a stroke in every bar, each ending on the rimshot.
+Its files are fetched as the song loads.
 
 ## Keyboards and mallets
 

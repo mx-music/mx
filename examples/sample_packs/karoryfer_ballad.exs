@@ -11,19 +11,19 @@ defmodule SmallHours do
   middle four bars alone.
   Every beat is split in three, the long note first, as a slow ballad is played.
   Download them with mx samples download
-  "sfzinstruments/karoryfer.weresax@a4d756b21d2a573aca0d840cce7e71ba5effd4c6:Samples/alto", and
+  "karoryfer_weresax:Samples/alto", and
   the same for the other folders named below.
   """
 
   use Mx.Song, tempo: 72
 
-  @sax {"sfzinstruments/karoryfer.weresax", "a4d756b21d2a573aca0d840cce7e71ba5effd4c6"}
-  @guitar {"sfzinstruments/karoryfer.shinyguitar", "57243cca85277dbcc120ce17c6178032f93c80f3"}
-  @bass {"sfzinstruments/karoryfer.sneakybass", "cc1a67e5c913678b85eaad1a3b5cb180d3be3e2d"}
-  @cello {"sfzinstruments/karoryfer-bigcat.cello", "6fd75fbfc1dbb3109bf26220ba1adea46188a18b"}
-  @drums {"sfzinstruments/karoryfer.big-rusty-drums", "f07ce00df34a46b6b08375be56fe116cf15782bc"}
+  @sax :karoryfer_weresax
+  @guitar :karoryfer_shiny_guitar
+  @bass :karoryfer_sneaky_bass
+  @cello :karoryfer_bigcat_cello
+  @drums :karoryfer_big_rusty_drums
 
-  file = fn {repo, commit}, path -> {:github, repo, commit, path} end
+  file = fn collection, path -> {collection, path} end
 
   # The libraries name their notes in different octaves: the saxophone and the cello an octave
   # below the pitch mx names, the bass an octave above, the guitar the same.

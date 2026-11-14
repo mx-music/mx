@@ -24,9 +24,6 @@ defmodule Afrobeat do
 
   use Mx.Song, tempo: 100
 
-  @repo "sfzinstruments/virtuosity_drums"
-  @commit "9f04cf9a734527edfbb0a4eee1f674e45bbf71bc"
-
   @hall [reverb: [room: 0.85, damp: 0.4, mix: 0.3]]
   @throw [ping_pong: [phase: 0.75, feedback: 0.7, mix: 0.65]]
   @trail [ping_pong: [phase: 0.75, feedback: 0.5, mix: 0.2]]
@@ -58,8 +55,8 @@ defmodule Afrobeat do
             {layer, strength} <- [{60, 1}, {80, 2}, {100, 3}],
             note = name |> String.downcase() |> String.replace("#", "s") |> Mx.Notes.parse(),
             do:
-              {{:github, "freepats/fm-piano1", "89a92d10b47aea841597408f5cf2e9c8164ecb00",
-                "samples/#{name}v#{layer}.flac"}, note: note, strength: strength}
+              {{:freepats_fm_piano, "samples/#{name}v#{layer}.flac"},
+               note: note, strength: strength}
 
   # The bass twice, the plucked line and a second part for the bow, and the keyboard.
   # The bow plays near the bridge, pressed hard and swayed by the rosin, under a tremolo, so the
@@ -69,7 +66,7 @@ defmodule Afrobeat do
     for strength <- 1..strengths,
         take <- if(takes, do: Enum.map(1..takes, &"_rr#{&1}"), else: [""]) do
       path = "Samples/#{mic}/#{drum}/#{mic}_#{drum}_#{stroke}_vl#{strength}#{take}.flac"
-      {:github, @repo, @commit, path}
+      {:virtuosity_drums, path}
     end
   end
 

@@ -14,14 +14,11 @@ defmodule Tani do
   The recordings of each stroke are sorted here into three strengths by their level, and the first
   stroke of each beat is the strong one.
   Download them with mx samples download
-  "yaxu/mrid@5ba409cabb2893e6e8a52a15a2812c35585cdadb:sounds/tha", and the same for the other
+  "mridangam:sounds/tha", and the same for the other
   folders named below.
   """
 
   use Mx.Song, tempo: 76
-
-  @repo "yaxu/mrid"
-  @commit "5ba409cabb2893e6e8a52a15a2812c35585cdadb"
 
   # Each stroke's folder and its recordings, the softest first.
   @recordings [
@@ -57,8 +54,7 @@ defmodule Tani do
               files =
                 for {names, strength} <- Enum.with_index(strengths, 1),
                     {name, take} <- Enum.with_index(names, 1) do
-                  {{:github, @repo, @commit, "sounds/#{folder}/#{name}.wav"},
-                   strength: strength, take: take}
+                  {{:mridangam, "sounds/#{folder}/#{name}.wav"}, strength: strength, take: take}
                 end
 
               pan = if stroke in @left, do: -0.3, else: 0.25

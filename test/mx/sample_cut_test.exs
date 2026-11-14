@@ -49,31 +49,42 @@ defmodule Mx.SampleCutTest do
   end
 
   test "beats fits a sample to that many beats at the tempo where it starts", %{tmp_dir: dir} do
-    assert played(dir, "sample(:loop_amen, 4, beats: 4)")[:rate] |> Float.round(4) == 0.8767
-    assert_in_delta played(dir, "sample(:loop_amen, 4, beats: 4)", 136.9)[:rate], 1, 0.001
-    assert_in_delta rendered_seconds(dir, "sample(:loop_amen, 4, beats: 4)"), 2, 0.02
+    assert played(dir, "sample({:sonic_pi, :loop_amen}, 4, beats: 4)")[:rate] |> Float.round(4) ==
+             0.8767
+
+    assert_in_delta played(dir, "sample({:sonic_pi, :loop_amen}, 4, beats: 4)", 136.9)[:rate],
+                    1,
+                    0.001
+
+    assert_in_delta rendered_seconds(dir, "sample({:sonic_pi, :loop_amen}, 4, beats: 4)"), 2, 0.02
   end
 
   test "slices and slice play one of equal pieces, fitted to its share of beats", %{tmp_dir: dir} do
-    opts = played(dir, "sample(:loop_amen, 0.5, slices: 8, slice: 3, beats: 0.5)")
+    opts = played(dir, "sample({:sonic_pi, :loop_amen}, 0.5, slices: 8, slice: 3, beats: 0.5)")
     assert_in_delta opts[:start] * @amen, 0.6575, 0.0001
     assert_in_delta opts[:finish] * @amen, 0.8767, 0.0001
     assert Float.round(opts[:rate], 4) == 0.8767
 
     assert_in_delta rendered_seconds(
                       dir,
-                      "sample(:loop_amen, 0.5, slices: 8, slice: 3, beats: 0.5)"
+                      "sample({:sonic_pi, :loop_amen}, 0.5, slices: 8, slice: 3, beats: 0.5)"
                     ),
                     0.25,
                     0.02
   end
 
   test "from and to cut a sample at seconds into its file", %{tmp_dir: dir} do
-    opts = played(dir, "sample(:loop_amen, 1, from: 0.5, to: 1.0)")
+    opts = played(dir, "sample({:sonic_pi, :loop_amen}, 1, from: 0.5, to: 1.0)")
     assert_in_delta opts[:start] * @amen, 0.5, 1.0e-9
     assert_in_delta opts[:finish] * @amen, 1.0, 1.0e-9
     refute Keyword.has_key?(opts, :rate)
-    assert_in_delta rendered_seconds(dir, "sample(:loop_amen, 1, from: 0.5, to: 1.0)"), 0.5, 0.02
+
+    assert_in_delta rendered_seconds(
+                      dir,
+                      "sample({:sonic_pi, :loop_amen}, 1, from: 0.5, to: 1.0)"
+                    ),
+                    0.5,
+                    0.02
   end
 
   test "from and to name seconds of the recording, forwards and backwards", %{tmp_dir: dir} do
@@ -95,24 +106,27 @@ defmodule Mx.SampleCutTest do
     file = Path.join(dir, "song.exs")
 
     for {body, message} <- [
-          {"sample(:loop_amen, 1, to: 2.0)",
+          {"sample({:sonic_pi, :loop_amen}, 1, to: 2.0)",
            "sample loop_amen lasts 1.753 seconds, so to: 2.0 is outside it"},
-          {"sample(:loop_amen, 1, finish: 1.2)",
+          {"sample({:sonic_pi, :loop_amen}, 1, finish: 1.2)",
            "a sample's finish takes a fraction of the file from 0 to 1, not 1.2"},
-          {"sample(:loop_amen, 1, beats: 4, rate: 2)", "a sample takes beats or rate, not both"},
-          {"sample(:loop_amen, 4, beats: 4, rate: -1)", "a sample takes beats or rate, not both"},
-          {"sample(:loop_amen, 1, from: 0.5, start: 0.1)",
+          {"sample({:sonic_pi, :loop_amen}, 1, beats: 4, rate: 2)",
+           "a sample takes beats or rate, not both"},
+          {"sample({:sonic_pi, :loop_amen}, 4, beats: 4, rate: -1)",
+           "a sample takes beats or rate, not both"},
+          {"sample({:sonic_pi, :loop_amen}, 1, from: 0.5, start: 0.1)",
            "a sample takes start and finish, or from and to, not both"},
-          {"sample(:loop_amen, 1, slices: 8, slice: 8)",
+          {"sample({:sonic_pi, :loop_amen}, 1, slices: 8, slice: 8)",
            "a sample's slice takes a whole number from 0 to 7, not 8"},
-          {"sample(:loop_amen, 1, slice: 2)", "a sample takes slices and slice together"}
+          {"sample({:sonic_pi, :loop_amen}, 1, slice: 2)",
+           "a sample takes slices and slice together"}
         ] do
       assert load(dir, body) == {:error, "#{file}:3: #{message}"}
     end
   end
 
   test "a cut in a loop's pass is refused with its line", %{tmp_dir: dir} do
-    {:ok, song} = load(dir, "loop(1, fn _, _ -> sample(:loop_amen, 1, to: 2.0) end)")
+    {:ok, song} = load(dir, "loop(1, fn _, _ -> sample({:sonic_pi, :loop_amen}, 1, to: 2.0) end)")
     assert {:error, message} = Pass.events(hd(song.loops), 0)
 
     assert message =~
@@ -123,7 +137,7 @@ defmodule Mx.SampleCutTest do
     path =
       write(
         dir,
-        "seq([sample(:loop_amen, 4, beats: 4), sample(:loop_amen, 1, from: 0.5, to: 1.0)])"
+        "seq([sample({:sonic_pi, :loop_amen}, 4, beats: 4), sample({:sonic_pi, :loop_amen}, 1, from: 0.5, to: 1.0)])"
       )
 
     assert capture_io(fn -> Mix.Tasks.Mx.Print.run([path]) end) == """

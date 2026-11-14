@@ -90,9 +90,12 @@ defmodule Mx.PatternTest do
 
     test "plays each hit as the sample of sample:, a digit its amp" do
       assert %Seq{
-               items: [%Sample{ref: :bd_haus, beats: 0.5, opts: [amp: 1.0]}, %Sample{opts: []}]
+               items: [
+                 %Sample{ref: {:sonic_pi, :bd_haus}, beats: 0.5, opts: [amp: 1.0]},
+                 %Sample{opts: []}
+               ]
              } =
-               steps("9x", 0.5, sample: :bd_haus)
+               steps("9x", 0.5, sample: {:sonic_pi, :bd_haus})
     end
 
     test "plays the characters of strokes: with their options, and a digit as a note of notes:" do

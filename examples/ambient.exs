@@ -26,7 +26,10 @@ defmodule Ambient do
       part(:keys, loop(8, fn pass, _ -> keys(pass) end)),
       part(:bells, loop(8, fn _, _ -> bells() end)),
       part(:air, loop(8, fn pass, _ -> air(pass) end)),
-      part(:dust, loop(8, fn _, _ -> sample(:vinyl_hiss, 8, amp: 0.04, rate: 0.8) end))
+      part(
+        :dust,
+        loop(8, fn _, _ -> sample({:sonic_pi, :vinyl_hiss}, 8, amp: 0.04, rate: 0.8) end)
+      )
     ])
   end
 
@@ -86,9 +89,9 @@ defmodule Ambient do
 
   defp air(pass) do
     case rem(pass, 4) do
-      0 -> sample(:ambi_drone, 8, rate: 0.5, amp: 0.2, attack: 2, release: 4)
-      2 -> sample(:ambi_glass_hum, 8, amp: 0.13, pan: -0.5, attack: 1)
-      3 -> sample(:ambi_lunar_land, 8, rate: 0.75, amp: 0.1, pan: 0.5)
+      0 -> sample({:sonic_pi, :ambi_drone}, 8, rate: 0.5, amp: 0.2, attack: 2, release: 4)
+      2 -> sample({:sonic_pi, :ambi_glass_hum}, 8, amp: 0.13, pan: -0.5, attack: 1)
+      3 -> sample({:sonic_pi, :ambi_lunar_land}, 8, rate: 0.75, amp: 0.1, pan: 0.5)
       _ -> rest(8)
     end
   end

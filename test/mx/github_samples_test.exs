@@ -241,10 +241,12 @@ defmodule Mx.GitHubSamplesTest do
       assert {:ok, "Downloaded 1 files to " <> _} = Samples.download_source(source)
     end
 
-    test "a source that is neither sonic_pi nor owner/repo@ref is refused, showing both" do
-      assert Samples.download_source("VCSL") ==
-               {:error,
-                "SOURCE is sonic_pi for Sonic Pi's pack, or a GitHub repository as owner/repo@ref, optionally followed by :folder, not VCSL"}
+    test "a source that is neither a collection nor owner/repo@ref is refused, showing both" do
+      assert {:error, message} = Samples.download_source("VCSL")
+      assert message =~ ~r/^SOURCE is a collection, one of .*sonic_pi, vcsl, /
+
+      assert message =~
+               "or a GitHub repository as owner/repo@ref, optionally followed by :folder, not VCSL"
     end
 
     test "a ref, repository or folder GitHub does not have is refused before anything downloads" do
@@ -345,10 +347,11 @@ defmodule Mx.GitHubSamplesTest do
     assert File.read!("bin/mx") =~ "mx samples download SOURCE"
   end
 
-  test "the README shows downloading Sonic Pi's pack, and the notation guide a VCSL sample and a VCSL folder ahead of time" do
+  test "the README shows downloading Sonic Pi's pack, and the notation guide a GitHub sample, a VCSL sample and a VCSL folder ahead of time" do
     assert File.read!("README.md") =~ "mix mx.samples.download sonic_pi"
     guide = File.read!("documentation/notation.md")
-    assert guide =~ ~s(sample({:github, "sgossner/VCSL")
-    assert guide =~ ~s(mix mx.samples.download "sgossner/VCSL@)
+    assert guide =~ ~s(sample({:github, "owner/repo")
+    assert guide =~ ~s(sample({:vcsl, ")
+    assert guide =~ ~s(mix mx.samples.download "vcsl:)
   end
 end

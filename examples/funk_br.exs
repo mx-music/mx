@@ -97,8 +97,7 @@ defmodule Paredao do
 
   @room [reverb: [room: 0.5, damp: 0.6, mix: 0.18]]
 
-  @kick {:github, "sfzinstruments/karoryfer.big-rusty-drums",
-         "f07ce00df34a46b6b08375be56fe116cf15782bc", "Samples/kick_24/kick/kick/k_vl14_rr1.flac"}
+  @kick {:karoryfer_big_rusty_drums, "Samples/kick_24/kick/kick/k_vl14_rr1.flac"}
 
   part :kick, fx: [level: [amp: 0.22]]
 

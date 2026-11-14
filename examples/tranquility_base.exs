@@ -14,21 +14,19 @@ defmodule TranquilityBase do
   return.
   VCSL is Versilian Studios' Versilian Community Sample Library, under Creative Commons 0,
   downloaded with mx samples download
-  "sgossner/VCSL@c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e:Idiophones" and the same for
+  "vcsl:Idiophones" and the same for
   Membranophones NASA's recordings are in the folder beside this file, from
   https://nssdc.gsfc.nasa.gov/planetary/sound/index.html, courtesy of NASA.
   """
 
   use Mx.Song, tempo: 136
 
-  @repo "sgossner/VCSL"
-  @commit "c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e"
   @drums "Membranophones/Struck Membranophones"
   @struck "Idiophones/Struck Idiophones"
   @cymbals "Idiophones/Struck Idiophones/Hi-Hat Cymbal"
   @glasses "Idiophones/Friction Idiophones/Wine Glasses/Sustains/Slow"
 
-  vcsl = fn path -> {:github, @repo, @commit, path} end
+  vcsl = fn path -> {:vcsl, path} end
 
   # VCSL names each key an octave below the pitch mx names it by: its A2 sounds at 220 Hz.
   key = fn name ->

@@ -18,8 +18,8 @@ defmodule Mx.Sampled do
   @not_options [:rate, :rate_slide, :start, :finish]
 
   @doc """
-  The instrument whose recordings are in the files of `folder`, a folder of a GitHub repository as `{:github, repo, ref, folder}`, or listed as `{file, note: note, strength: strength, take: take}`; its files are read by `load/1`.
-  A listed file is a path or `{:github, repo, ref, path}`, and what it does not give is read from its name.
+  The instrument whose recordings are in the files of `folder`, a folder of a collection as `{collection, folder}` or of a GitHub repository as `{:github, repo, ref, folder}`, or listed as `{file, note: note, strength: strength, take: take}`; its files are read by `load/1`.
+  A listed file is a path, `{collection, path}` or `{:github, repo, ref, path}`, and what it does not give is read from its name.
   """
   def new(folder) when is_binary(folder), do: %__MODULE__{source: folder}
 
@@ -30,12 +30,19 @@ defmodule Mx.Sampled do
     end
   end
 
+  def new({collection, folder} = source) when is_atom(collection) and is_binary(folder) do
+    case Mx.Collections.expand(source) do
+      {:ok, _github} -> %__MODULE__{source: source}
+      {:error, message} -> raise ArgumentError, message
+    end
+  end
+
   def new(files) when is_list(files) and files != [] do
     files = Enum.map(files, &if(match?({_, opts} when is_list(opts), &1), do: &1, else: {&1, []}))
 
     for file <- files do
       case file do
-        {path, opts} when is_binary(path) or (is_tuple(path) and elem(path, 0) == :github) ->
+        {path, opts} when is_binary(path) or is_tuple(path) ->
           case Enum.find(Keyword.keys(opts), &(&1 not in [:note, :strength, :take])) do
             nil -> :ok
             option -> raise ArgumentError, "sampled lists a file with no option #{option}"
@@ -78,6 +85,14 @@ defmodule Mx.Sampled do
     end
   end
 
+  def load(%__MODULE__{source: {_collection, _folder} = source} = sampled) do
+    {:ok, github} = Mx.Collections.expand(source)
+
+    with {:ok, loaded} <- load(%{sampled | source: github}) do
+      {:ok, %{loaded | source: source}}
+    end
+  end
+
   def load(%__MODULE__{source: folder} = sampled) when is_binary(folder) do
     load_folder(sampled, Path.expand(folder), folder)
   end
@@ -100,7 +115,7 @@ defmodule Mx.Sampled do
     end
   end
 
-  defp local({:github, _, _, _} = file) do
+  defp local(file) when is_tuple(file) do
     Mx.Samples.path(file)
   end
 
@@ -221,6 +236,10 @@ defmodule Mx.Sampled do
 
     def to_string(%{source: {:github, repo, _ref, folder}}) do
       "sampled instrument #{folder} of #{repo}"
+    end
+
+    def to_string(%{source: {collection, folder}}) do
+      "sampled instrument #{folder} of #{collection}"
     end
 
     def to_string(_sampled), do: "sampled instrument"

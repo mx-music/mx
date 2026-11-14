@@ -91,7 +91,7 @@ defmodule Kaida do
               stroke != nil do
             stroke = if stroke == :tabla_te1 and rem(index, 2) == 1, do: :tabla_te2, else: stroke
             amp = if rem(index, per_beat) == 0, do: 1.0, else: 0.65
-            {index / per_beat, sample(stroke, 0, amp: amp)}
+            {index / per_beat, sample({:sonic_pi, stroke}, 0, amp: amp)}
           end
 
         part(drum, at(hits, beats))

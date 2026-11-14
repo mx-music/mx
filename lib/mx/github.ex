@@ -1,6 +1,6 @@
 defmodule Mx.GitHub do
   @moduledoc """
-  Files of public GitHub repositories, downloaded into the user's cache, for samples a song names as `{:github, repo, ref, path}` and collections downloaded ahead of time.
+  Files of public GitHub repositories, downloaded into the user's cache, for samples a song names as `{collection, path}` or `{:github, repo, ref, path}` and collections downloaded ahead of time.
 
   Each repository and ref has its own folder in the cache, so two refs of one repository never share a file.
   A file is written under a temporary name and renamed once complete, so an interrupted download never leaves a file that looks downloaded.

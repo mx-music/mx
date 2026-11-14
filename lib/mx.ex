@@ -162,13 +162,14 @@ defmodule Mx do
   defdelegate hit(opts \\ []), to: Mx.Music
 
   @doc """
-  A sample of the pack by name, or a WAV, AIFF or FLAC file by path, then some beats of time, with the options samples take.
+  A recording of a collection as `{collection, name}`, or a WAV, AIFF or FLAC file by path, then some beats of time, with the options samples take.
   A sample mx cannot find is refused when it is named.
 
-      part(:drums, seq([sample(:bd_haus, 1), sample(:sn_dolf, 1)]))
+      part(:drums, seq([sample({:sonic_pi, :bd_haus}, 1), sample({:sonic_pi, :sn_dolf}, 1)]))
+      part(:bell, sample({:vcsl, "Idiophones/Struck Idiophones/Agogo Bells/Agogo_High_v3_rr1_Mid.wav"}, 1))
       part(:voice, sample("samples/hello.wav", 4, amp: 0.8))
 
-      iex> beats(seq([sample(:bd_haus, 1), sample(:bd_haus, 0.5)]))
+      iex> beats(seq([sample({:sonic_pi, :bd_haus}, 1), sample({:sonic_pi, :bd_haus}, 0.5)]))
       1.5
   """
   defdelegate sample(ref, beats, opts \\ []), to: Mx.Music
@@ -248,7 +249,7 @@ defmodule Mx do
   @doc """
   A sampled instrument, for a part's `synth:`: a folder of recordings whose names carry their note, strength and take, as VCSL names them, or a list of files, each with its own.
 
-      part(:mbira, seq(e4: 1, fs4: 1), synth: sampled("VCSL/Idiophones/Plucked Idiophones/Mbira dzaVadzimu Nyamaropa, Zimbabwe, Low B"))
+      part(:mbira, seq(e4: 1, fs4: 1), synth: sampled({:vcsl, "Idiophones/Plucked Idiophones/Mbira dzaVadzimu Nyamaropa, Zimbabwe, Low B"}))
       part(:kick, steps("x.x.", 1), synth: sampled([{"kick_soft.wav", strength: 1}, {"kick_hard.wav", strength: 2}]))
   """
   defdelegate sampled(source), to: Mx.Sampled, as: :new

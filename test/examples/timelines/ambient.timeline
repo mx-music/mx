@@ -141,23 +141,23 @@
      {58.0, 77.0, [amp: 0.15, pan: -0.2, release: 0.3, sustain: 1000.0]}
    ], 64},
   air: {[
-     {0.0, {:sample, :ambi_drone},
+     {0.0, {:sample, {:sonic_pi, :ambi_drone}},
       [amp: 0.2, attack: 2.0, rate: 0.5, release: 4.0]},
-     {16.0, {:sample, :ambi_glass_hum}, [amp: 0.13, attack: 1.0, pan: -0.5]},
-     {24.0, {:sample, :ambi_lunar_land}, [amp: 0.1, pan: 0.5, rate: 0.75]},
-     {32.0, {:sample, :ambi_drone},
+     {16.0, {:sample, {:sonic_pi, :ambi_glass_hum}}, [amp: 0.13, attack: 1.0, pan: -0.5]},
+     {24.0, {:sample, {:sonic_pi, :ambi_lunar_land}}, [amp: 0.1, pan: 0.5, rate: 0.75]},
+     {32.0, {:sample, {:sonic_pi, :ambi_drone}},
       [amp: 0.2, attack: 2.0, rate: 0.5, release: 4.0]},
-     {48.0, {:sample, :ambi_glass_hum}, [amp: 0.13, attack: 1.0, pan: -0.5]},
-     {56.0, {:sample, :ambi_lunar_land}, [amp: 0.1, pan: 0.5, rate: 0.75]}
+     {48.0, {:sample, {:sonic_pi, :ambi_glass_hum}}, [amp: 0.13, attack: 1.0, pan: -0.5]},
+     {56.0, {:sample, {:sonic_pi, :ambi_lunar_land}}, [amp: 0.1, pan: 0.5, rate: 0.75]}
    ], 64},
   dust: {[
-     {0.0, {:sample, :vinyl_hiss}, [amp: 0.04, rate: 0.8]},
-     {8.0, {:sample, :vinyl_hiss}, [amp: 0.04, rate: 0.8]},
-     {16.0, {:sample, :vinyl_hiss}, [amp: 0.04, rate: 0.8]},
-     {24.0, {:sample, :vinyl_hiss}, [amp: 0.04, rate: 0.8]},
-     {32.0, {:sample, :vinyl_hiss}, [amp: 0.04, rate: 0.8]},
-     {40.0, {:sample, :vinyl_hiss}, [amp: 0.04, rate: 0.8]},
-     {48.0, {:sample, :vinyl_hiss}, [amp: 0.04, rate: 0.8]},
-     {56.0, {:sample, :vinyl_hiss}, [amp: 0.04, rate: 0.8]}
+     {0.0, {:sample, {:sonic_pi, :vinyl_hiss}}, [amp: 0.04, rate: 0.8]},
+     {8.0, {:sample, {:sonic_pi, :vinyl_hiss}}, [amp: 0.04, rate: 0.8]},
+     {16.0, {:sample, {:sonic_pi, :vinyl_hiss}}, [amp: 0.04, rate: 0.8]},
+     {24.0, {:sample, {:sonic_pi, :vinyl_hiss}}, [amp: 0.04, rate: 0.8]},
+     {32.0, {:sample, {:sonic_pi, :vinyl_hiss}}, [amp: 0.04, rate: 0.8]},
+     {40.0, {:sample, {:sonic_pi, :vinyl_hiss}}, [amp: 0.04, rate: 0.8]},
+     {48.0, {:sample, {:sonic_pi, :vinyl_hiss}}, [amp: 0.04, rate: 0.8]},
+     {56.0, {:sample, {:sonic_pi, :vinyl_hiss}}, [amp: 0.04, rate: 0.8]}
    ], 64}
 }

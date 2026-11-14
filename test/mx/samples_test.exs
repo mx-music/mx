@@ -7,15 +7,15 @@ defmodule Mx.SamplesTest do
     @dir "test/support/samples"
 
     test "finds a downloaded sample of the pack by name" do
-      assert Samples.path(:bd_haus, @dir) == {:ok, Path.expand("bd_haus.flac", @dir)}
+      assert Samples.path({:sonic_pi, :bd_haus}, @dir) == {:ok, Path.expand("bd_haus.flac", @dir)}
     end
 
     test "refuses a name the pack does not have" do
-      assert Samples.path(:bd_hause, @dir) == {:error, "unknown sample bd_hause"}
+      assert Samples.path({:sonic_pi, :bd_hause}, @dir) == {:error, "unknown sample bd_hause"}
     end
 
     test "says to run mix mx.samples.download sonic_pi for a sample of the pack not downloaded yet" do
-      assert {:error, message} = Samples.path(:ambi_choir, @dir)
+      assert {:error, message} = Samples.path({:sonic_pi, :ambi_choir}, @dir)
       assert message =~ "ambi_choir"
       assert message =~ "run mix mx.samples.download sonic_pi"
     end

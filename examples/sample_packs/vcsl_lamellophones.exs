@@ -21,10 +21,7 @@ defmodule ThreeTunings do
 
   use Mx.Song, tempo: 108
 
-  @repo "sgossner/VCSL"
-  @commit "c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e"
-
-  vcsl = fn path -> {:github, @repo, @commit, "Idiophones/#{path}"} end
+  vcsl = fn path -> {:vcsl, "Idiophones/#{path}"} end
 
   # The files of one instrument, each key the start of its name, an octave above that name.
   keys = fn folder, prefix, suffix, names ->

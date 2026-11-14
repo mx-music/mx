@@ -10,21 +10,20 @@ defmodule SquidPolka do
   open the piece and take the middle with the tuba.
   The orks count the band in and shout at the ends of the phrases.
   Download them with mx samples download
-  "sfzinstruments/karoryfer.squidpipes@b258528c8f49d6389ec2b4ec04a8b10013169dd9:Samples/long_clean",
+  "karoryfer_squid_pipes:Samples/long_clean",
   and the same for the other folders named below.
   """
 
   use Mx.Song, tempo: 144
 
-  @pipes {"sfzinstruments/karoryfer.squidpipes", "b258528c8f49d6389ec2b4ec04a8b10013169dd9"}
-  @tuba {"sfzinstruments/karoryfer.war-tuba", "5b62dd6ef6b00281bb734769e44a63f5e013018a"}
-  @horse {"sfzinstruments/Karoryfer.HorsePulse", "6f4749d54512d762098ca726a3cbd13444562904"}
-  @drums {"sfzinstruments/karoryfer.unruly-drums", "9bf75c2a1392f190cd1c264645653629f0b3a097"}
-  @hand_drums {"sfzinstruments/karoryfer.gogodze-phu-vol-i",
-               "7452f62060cd3a468c78bc361d96a4dfb30879c9"}
-  @orks {"sfzinstruments/karoryfer.272-merry-orks", "a437e2c02014e02710a104a6692193eab8672d0a"}
+  @pipes :karoryfer_squid_pipes
+  @tuba :karoryfer_war_tuba
+  @horse :karoryfer_horse_pulse
+  @drums :karoryfer_unruly_drums
+  @hand_drums :karoryfer_gogodze_phu
+  @orks :karoryfer_merry_orks
 
-  file = fn {repo, commit}, path -> {:github, repo, commit, path} end
+  file = fn collection, path -> {collection, path} end
 
   # The libraries name their notes in different octaves: the pipes and the tagelharpa an octave
   # above the pitch mx names, the tuba an octave below.

@@ -17,8 +17,6 @@ defmodule MapleLeafRag do
 
   use Mx.Song, tempo: 96
 
-  @repo "sgossner/VCSL"
-  @commit "c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e"
   @folder "Chordophones/Zithers"
 
   tones = fn keys, octaves, more ->
@@ -53,7 +51,7 @@ defmodule MapleLeafRag do
       for key <- keys do
         note = key |> String.downcase() |> String.replace("#", "s") |> Mx.Notes.parse()
         path = "#{@folder}/#{folder}/#{prefix}#{key}#{suffix}.wav"
-        {{:github, @repo, @commit, path}, note: note + octave}
+        {{:vcsl, path}, note: note + octave}
       end
 
     [

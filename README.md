@@ -82,7 +82,19 @@ mx's synths and effects are its own designs.
 Beside the basic waveforms, most synths imitate a real instrument and were fitted to recordings of it: piano, guitar, the bowed strings, the winds, mallet instruments, and percussion.
 [Instruments](documentation/instruments.md) lists every synth and effect with its options, and shows how to write a synth.
 
-A song also plays sound files, sampled instruments made from folders of recordings, and the samples of Sonic Pi's pack, which is 35 MB, under Creative Commons 0, and downloaded once:
+A song also plays recordings: single sound files, and sampled instruments made from folders of recordings, one file for each key.
+A recording is a file of your own, or comes from a collection mx knows by name and downloads into your cache:
+
+```elixir
+sample({:sonic_pi, :loop_amen}, 4, beats: 4)
+sampled({:vcsl, "Idiophones/Plucked Idiophones/Mbira dzaVadzimu Nyamaropa, Zimbabwe, Low B"})
+```
+
+The collections are Sonic Pi's sample pack, the Versilian Community Sample Library, VSCO 2, the Salamander piano, Virtuosity Drums, a mridangam, and instruments of FreePats and Karoryfer.
+Any other public GitHub repository of recordings plays the same way, named by its repository.
+[The notation](documentation/notation.md#collections) lists the collections, and the songs in `examples/sample_packs` play them.
+
+Sonic Pi's pack, of 35 MB, is downloaded once before a song plays it:
 
 ```sh
 mix mx.samples.download sonic_pi
@@ -123,3 +135,9 @@ The folder `examples` in the repository holds more songs: pieces for a band, suc
 - [Architecture](documentation/architecture.md): how a song file becomes sound.
 - [Setting up Audiveris](documentation/audiveris.md), for `mix mx.scan`.
 - [Working on mx](documentation/development.md): the tests and the lint script.
+
+## License
+
+mx is under the MIT License, in [LICENSE](https://github.com/mx-music/mx/blob/main/LICENSE).
+[LICENSE-designs.md](https://github.com/mx-music/mx/blob/main/LICENSE-designs.md) names the recordings each synth was measured from, the two effects that follow Airwindows, and the recordings the examples play, with their terms.
+Sample packs are not part of mx: Sonic Pi's samples, under Creative Commons 0, and the others are downloaded from their own sources, under their own licenses.

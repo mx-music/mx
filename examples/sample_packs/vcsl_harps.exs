@@ -18,10 +18,7 @@ defmodule PlanxtyIrwin do
 
   use Mx.Song, tempo: 92
 
-  @repo "sgossner/VCSL"
-  @commit "c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e"
-
-  vcsl = fn path -> {:github, @repo, @commit, "Chordophones/#{path}"} end
+  vcsl = fn path -> {:vcsl, "Chordophones/#{path}"} end
 
   # The files of one instrument, each key the start of its name, so many semitones above that
   # name.

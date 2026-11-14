@@ -18,10 +18,7 @@ defmodule StillWater do
 
   use Mx.Song, tempo: 60
 
-  @repo "sgossner/VCSL"
-  @commit "c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e"
-
-  vcsl = fn path -> {:github, @repo, @commit, path} end
+  vcsl = fn path -> {:vcsl, path} end
 
   didgeridoo = fn name ->
     vcsl.("Aerophones/Lip Aerophones/Didgeridoo/Didgeridoo1_#{name}_Main.wav")

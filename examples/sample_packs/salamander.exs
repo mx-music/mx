@@ -13,21 +13,18 @@ defmodule Salamander do
   The recordings have no sustain pedal, so each note is left to ring on after its key for a while
   in its place.
   Download them with mx samples download
-  "sfzinstruments/SalamanderGrandPiano@3382bf9496bba2486f5ab0de55a264d1dfc38404:Samples", which is
+  "salamander:Samples", which is
   about 700 MB.
   """
 
   use Mx.Song, tempo: 120
-
-  @repo "sfzinstruments/SalamanderGrandPiano"
-  @commit "3382bf9496bba2486f5ab0de55a264d1dfc38404"
 
   # A note every minor third from the lowest A, each at sixteen strengths.
   @files (for index <- 0..29, strength <- 1..16 do
             letter = Enum.at(["A", "C", "D#", "F#"], rem(index, 4))
             octave = if letter == "A", do: div(index, 4), else: div(index, 4) + 1
 
-            {{:github, @repo, @commit, "Samples/#{letter}#{octave}v#{strength}.flac"},
+            {{:salamander, "Samples/#{letter}#{octave}v#{strength}.flac"},
              note: 21 + 3 * index, strength: strength}
           end)
 

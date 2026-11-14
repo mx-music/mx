@@ -5,9 +5,11 @@ defmodule Mix.Tasks.Mx.Samples.Download do
   Downloads a collection of samples into the user's cache, so songs play them with no network access.
 
       mix mx.samples.download sonic_pi
-      mix mx.samples.download "sgossner/VCSL@c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e:Idiophones/Struck Idiophones/Agogo Bells"
+      mix mx.samples.download "vcsl:Idiophones/Struck Idiophones/Agogo Bells"
+      mix mx.samples.download "owner/repo@v1.0:Samples"
 
-  SOURCE is `sonic_pi` for Sonic Pi's pack, which is under Creative Commons 0, or a public GitHub repository as `owner/repo@ref`, optionally followed by `:folder` to download only that folder.
+  SOURCE is a collection mx knows by name, such as `sonic_pi` or `vcsl`, or a public GitHub repository as `owner/repo@ref`.
+  Either is optionally followed by `:folder` to download only that folder; Sonic Pi's pack has no folders.
   Files already downloaded are skipped, so running it again finishes an interrupted download.
   The mx command does the same with `mx samples download SOURCE`.
   """

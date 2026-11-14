@@ -17,9 +17,6 @@ defmodule Prelude do
 
   use Mx.Song, tempo: 72
 
-  @repo "sgossner/VCSL"
-  @commit "c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e"
-
   # Every octave's keys of a whole-tone row, with the keys that are recorded outside it.
   rows = fn keys, octaves, more ->
     more ++ for octave <- octaves, key <- keys, do: "#{key}#{octave}"
@@ -70,7 +67,7 @@ defmodule Prelude do
       for key <- keys do
         note = key |> String.downcase() |> String.replace("#", "s") |> Mx.Notes.parse()
         path = "#{folder}/#{prefix}#{key}#{suffix}.wav"
-        {{:github, @repo, @commit, path}, note: note + 12}
+        {{:vcsl, path}, note: note + 12}
       end
 
     [

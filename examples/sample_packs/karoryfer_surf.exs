@@ -11,18 +11,17 @@ defmodule RustWave do
   The tremolo picking never plays one recording twice in a row: each note has four takes at each
   of three strengths.
   Download them with mx samples download
-  "sfzinstruments/karoryfer.black-and-green-guitars@b3b3249d37dc977a1a297bd2dc053e6d9b6b805c:Samples/green/ord",
+  "karoryfer_black_and_green_guitars:Samples/green/ord",
   and the same for the other folders named below.
   """
 
   use Mx.Song, tempo: 164
 
-  @guitars {"sfzinstruments/karoryfer.black-and-green-guitars",
-            "b3b3249d37dc977a1a297bd2dc053e6d9b6b805c"}
-  @bass {"sfzinstruments/karoryfer.growlybass", "4f483268fc66b5a6d5781d421c0d11b8d08d3fc6"}
-  @drums {"sfzinstruments/karoryfer.big-rusty-drums", "f07ce00df34a46b6b08375be56fe116cf15782bc"}
+  @guitars :karoryfer_black_and_green_guitars
+  @bass :karoryfer_growly_bass
+  @drums :karoryfer_big_rusty_drums
 
-  file = fn {repo, commit}, path -> {:github, repo, commit, path} end
+  file = fn collection, path -> {collection, path} end
 
   # Karoryfer names each note an octave above the pitch mx names it by: its e3 is the guitar's low
   # E.

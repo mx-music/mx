@@ -9,27 +9,24 @@ defmodule NightService do
   hold the harmony, the synth brass answers, and the synth square plays the tune.
   It goes round Cm7, A flat major 7, B flat and Gm7, a bar each.
   Download each instrument with mx samples download
-  "freepats/lately-bass@e27530dec05161ec3b661e86f4feb2065e0675aa:samples", and the same for the
+  "freepats_lately_bass:samples", and the same for the
   other repositories and commits named below; the guitar's folder is samples/bridge.
   """
 
   use Mx.Song, tempo: 122
 
-  @repos %{
-    percussion: {"freepats/synthesizer-percussion", "39bbabce8e0e10aa259d5d94fca329f668733185"},
-    bass: {"freepats/lately-bass", "e27530dec05161ec3b661e86f4feb2065e0675aa"},
-    piano: {"freepats/fm-piano1", "89a92d10b47aea841597408f5cf2e9c8164ecb00"},
-    strings: {"freepats/synth-strings-1", "c0ecbfd69cc242703c6342fcb3a7ffe8cd493ec7"},
-    brass: {"freepats/synth-brass-1", "a2d2111daae3e45761c5cabd480f4c60258bd645"},
-    lead: {"freepats/synth-square", "6d204b085af42f023770a3add2eeea9f9dbc5f14"},
-    choir: {"freepats/synth-pad-choir", "b801f7fc3eee44f575cd480750aea4f6a16a07a9"},
-    guitar: {"freepats/electric-guitar-FSBS-clean", "192cf0d9bf2c4ba6ead8e3524ba3f78818e4fe91"}
+  @collections %{
+    percussion: :freepats_synth_percussion,
+    bass: :freepats_lately_bass,
+    piano: :freepats_fm_piano,
+    strings: :freepats_synth_strings,
+    brass: :freepats_synth_brass,
+    lead: :freepats_synth_square,
+    choir: :freepats_synth_choir,
+    guitar: :freepats_electric_guitar
   }
 
-  file = fn name, path ->
-    {repo, commit} = @repos[name]
-    {:github, repo, commit, path}
-  end
+  file = fn name, path -> {@collections[name], path} end
 
   key = fn name -> name |> String.downcase() |> String.replace("#", "s") |> Mx.Notes.parse() end
 

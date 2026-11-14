@@ -54,7 +54,7 @@ defmodule Sgubhu do
   @hall [reverb: [room: 0.85, damp: 0.4, mix: 0.35]]
 
   vcsl = fn path ->
-    {:github, "sgossner/VCSL", "c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e", path}
+    {:vcsl, path}
   end
 
   # A sampled instrument from a folder of VCSL: its files' names around each key, the keys

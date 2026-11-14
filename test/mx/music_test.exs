@@ -502,9 +502,12 @@ defmodule Mx.MusicTest do
     @tag :tmp_dir
     test "a sample does not take the part's defaults", ctx do
       {:ok, song} =
-        load(ctx, "song(music: part(:a, sample(:loop_amen, 1), defaults: [amp: 0.5]))")
+        load(
+          ctx,
+          "song(music: part(:a, sample({:sonic_pi, :loop_amen}, 1), defaults: [amp: 0.5]))"
+        )
 
-      assert [{0, {:sample, :loop_amen, _}, []}] = events(song, :a)
+      assert [{0, {:sample, {:sonic_pi, :loop_amen}, _}, []}] = events(song, :a)
     end
   end
 
@@ -774,7 +777,10 @@ defmodule Mx.MusicTest do
     @tag :tmp_dir
     test "a sample plays at its beat, and the song names it to load before playing", ctx do
       {:ok, song} =
-        load(ctx, "song(music: part(:drums, seq([sample(:bd_haus, 1), sample(:bd_haus, 1)])))")
+        load(
+          ctx,
+          "song(music: part(:drums, seq([sample({:sonic_pi, :bd_haus}, 1), sample({:sonic_pi, :bd_haus}, 1)])))"
+        )
 
       [drums] = song.loops
       assert [path] = drums.samples
@@ -782,7 +788,10 @@ defmodule Mx.MusicTest do
 
       assert {:ok,
               %{
-                events: [{0, {:sample, :bd_haus, ^path}, []}, {1, {:sample, :bd_haus, ^path}, []}],
+                events: [
+                  {0, {:sample, {:sonic_pi, :bd_haus}, ^path}, []},
+                  {1, {:sample, {:sonic_pi, :bd_haus}, ^path}, []}
+                ],
                 beats: 2
               }} =
                Pass.events(drums, 0)
@@ -791,7 +800,7 @@ defmodule Mx.MusicTest do
     @tag :tmp_dir
     test "a sample mx cannot find is refused with its line", ctx do
       assert {:error, message} =
-               load(ctx, "song(music: part(:drums,\n  sample(:no_such_sample, 0)))")
+               load(ctx, "song(music: part(:drums,\n  sample({:sonic_pi, :no_such_sample}, 0)))")
 
       assert message =~ ~r/song_\d+\.exs:4: .*no_such_sample/
     end
@@ -801,13 +810,15 @@ defmodule Mx.MusicTest do
       {:ok, song} =
         load(
           ctx,
-          "song(music: part(:drums, loop(1, fn pass, _ -> if(pass == 2, do: sample(:bd_haus, 1), else: rest(1)) end)))"
+          "song(music: part(:drums, loop(1, fn pass, _ -> if(pass == 2, do: sample({:sonic_pi, :bd_haus}, 1), else: rest(1)) end)))"
         )
 
       [drums] = song.loops
       assert drums.samples == []
       assert {:ok, %{events: []}} = Pass.events(drums, 1)
-      assert {:ok, %{events: [{0, {:sample, :bd_haus, _}, []}]}} = Pass.events(drums, 2)
+
+      assert {:ok, %{events: [{0, {:sample, {:sonic_pi, :bd_haus}, _}, []}]}} =
+               Pass.events(drums, 2)
     end
 
     @tag :tmp_dir
@@ -844,7 +855,7 @@ defmodule Mx.MusicTest do
       assert {:error, message} = Song.load(path)
       assert message =~ "sample file /missing.wav does not exist"
 
-      path = write(ctx, "song(music: part(:pad, sample(:ambi_choir, 1)))")
+      path = write(ctx, "song(music: part(:pad, sample({:sonic_pi, :ambi_choir}, 1)))")
       assert {:error, message} = Song.load(path)
       assert message =~ "sample ambi_choir"
       assert message =~ "run mix mx.samples.download sonic_pi"
@@ -862,7 +873,7 @@ defmodule Mx.MusicTest do
 
     @tag :tmp_dir
     test "an option samples do not have is refused", ctx do
-      path = write(ctx, "song(music: part(:drums, sample(:bd_haus, 1, relase: 1)))")
+      path = write(ctx, "song(music: part(:drums, sample({:sonic_pi, :bd_haus}, 1, relase: 1)))")
       assert {:error, message} = Song.load(path)
       assert message =~ "samples have no option relase"
     end

@@ -28,7 +28,7 @@ defmodule Mx.Examples.TranquilityBaseTest do
 
     guide = File.read!("documentation/examples.md")
     assert guide =~ "mix mx.play examples/tranquility_base.exs"
-    assert guide =~ ~s(mix mx.samples.download "sgossner/VCSL@#{@commit}:Idiophones")
+    assert guide =~ ~s(mix mx.samples.download "vcsl:Idiophones")
   end
 
   # Versilian Studios' Versilian Community Sample Library at the commit the piece names, in the

@@ -16,11 +16,9 @@ defmodule DanTranh do
 
   use Mx.Song, tempo: 84
 
-  @repo "sgossner/VCSL"
-  @commit "c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e"
   @folder "Chordophones/Zithers/Dan Tranh"
 
-  vcsl = fn path -> {:github, @repo, @commit, "#{@folder}/#{path}"} end
+  vcsl = fn path -> {:vcsl, "#{@folder}/#{path}"} end
 
   # Every string recorded one way, an octave above its name.
   strings = fn way, suffix ->

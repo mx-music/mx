@@ -14,19 +14,17 @@ defmodule LowB do
   Its plucks start a tenth of a second into their files, so the mbiras play that much early, after
   a beat of silence.
   Download them with mx samples download
-  "sgossner/VCSL@c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e:Idiophones", and the same for
+  "vcsl:Idiophones", and the same for
   Membranophones.
   """
 
   use Mx.Song, tempo: 130
 
-  @repo "sgossner/VCSL"
-  @commit "c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e"
   @plucked "Idiophones/Plucked Idiophones/Mbira dzaVadzimu Nyamaropa, Zimbabwe, Low B"
   @struck "Idiophones/Struck Idiophones"
   @drums "Membranophones/Struck Membranophones"
 
-  vcsl = fn path -> {:github, @repo, @commit, path} end
+  vcsl = fn path -> {:vcsl, path} end
 
   # VCSL names each key an octave below the pitch mx names it by.
   key = fn name ->

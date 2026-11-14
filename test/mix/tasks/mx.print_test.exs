@@ -26,7 +26,7 @@ defmodule Mix.Tasks.Mx.PrintTest do
     import Mx
 
     song(osc_to: {"127.0.0.1", 9000}, music: together([
-      part(:drums, seq([sample(:bd_haus, 1), midi(60, 1), midi_cc(74, 64), osc("/hello", [1]), set(:root, 40)])),
+      part(:drums, seq([sample({:sonic_pi, :bd_haus}, 1), midi(60, 1), midi_cc(74, 64), osc("/hello", [1]), set(:root, 40)])),
       part(:lead, note(:a4, 4, changes: [{1, note: :c5}]), synth: :flute),
       part(:conductor, seq([rest(2), change(:lead, amp: 0.5)]))
     ]))
@@ -273,7 +273,7 @@ defmodule Mix.Tasks.Mx.PrintTest do
 
     File.write!(
       path,
-      "import Mx\nsong(music: part(:a, loop(1, fn _, _ -> seq([sample(:bd_haus, 0, rate: 2), rest(1)]) end)))\n"
+      "import Mx\nsong(music: part(:a, loop(1, fn _, _ -> seq([sample({:sonic_pi, :bd_haus}, 0, rate: 2), rest(1)]) end)))\n"
     )
 
     assert capture_io(fn -> Print.run([path]) end) =~

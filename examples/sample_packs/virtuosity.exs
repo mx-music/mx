@@ -15,14 +15,11 @@ defmodule Virtuosity do
   Every stroke picks one of the strengths the kit was recorded at, up to 36 for the snare, and the
   drums sound through their close, overhead and room microphones.
   Download the kit with mx samples download
-  "sfzinstruments/virtuosity_drums@9f04cf9a734527edfbb0a4eee1f674e45bbf71bc:Samples/oh", and the
+  "virtuosity_drums:Samples/oh", and the
   same for kickmic, snaremic, room and perc/close.
   """
 
   use Mx.Song, tempo: 184
-
-  @repo "sfzinstruments/virtuosity_drums"
-  @commit "9f04cf9a734527edfbb0a4eee1f674e45bbf71bc"
 
   # Each voice of the kit: its drum, its stroke, the strengths and takes recorded, how many beats
   # it rings and fades over, and the part and level of each microphone.
@@ -123,7 +120,7 @@ defmodule Virtuosity do
     for strength <- 1..strengths,
         take <- if(takes, do: Enum.map(1..takes, &"_rr#{&1}"), else: [""]) do
       path = "Samples/#{mic}/#{drum}/#{mic}_#{drum}_#{stroke}_vl#{strength}#{take}.flac"
-      {:github, @repo, @commit, path}
+      {:virtuosity_drums, path}
     end
   end
 
@@ -141,7 +138,7 @@ defmodule Virtuosity do
     files =
       for {layer, strength} <- Enum.with_index(layers, 1), take <- 1..takes do
         path = "Samples/perc/close/#{prefix}#{layer}_rr#{take}_Close.wav"
-        {{:github, @repo, @commit, path}, strength: strength, take: take}
+        {{:virtuosity_drums, path}, strength: strength, take: take}
       end
 
     part name,
@@ -392,7 +389,7 @@ defmodule Virtuosity do
     )
   end
 
-  defp file(path), do: {:github, @repo, @commit, "Samples/" <> path}
+  defp file(path), do: {:virtuosity_drums, "Samples/" <> path}
 
   # The music on a voice of the kit through each of its microphones, on a percussion instrument,
   # or on the bass.

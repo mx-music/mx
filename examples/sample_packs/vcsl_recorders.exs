@@ -13,8 +13,6 @@ defmodule Consort do
 
   use Mx.Song, tempo: 66
 
-  @repo "sgossner/VCSL"
-  @commit "c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e"
   @folder "Aerophones/Edge-blown Aerophones"
 
   # Each recorder's file prefix and the keys it was recorded at.
@@ -38,7 +36,7 @@ defmodule Consort do
       for key <- keys do
         name = key |> String.downcase() |> String.replace("#", "s") |> Mx.Notes.parse()
         path = "#{@folder}/Baroque #{size} Recorder/Sustain/#{prefix}_Sus_#{key}_rr1_Main.wav"
-        {{:github, @repo, @commit, path}, note: name + 12}
+        {{:vcsl, path}, note: name + 12}
       end
 
     [

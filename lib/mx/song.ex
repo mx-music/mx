@@ -269,7 +269,7 @@ defmodule Mx.Song do
     played
     |> Enum.reverse()
     |> Enum.group_by(fn {_ref, path, _} -> path end)
-    |> Enum.sort_by(fn {_path, [{ref, _, _} | _]} -> to_string(ref) end)
+    |> Enum.sort_by(fn {_path, [{ref, _, _} | _]} -> Samples.name(ref) end)
     |> Enum.flat_map(fn {path, [{ref, _, _} | _] = uses} ->
       normalized? = Enum.all?(uses, fn {_, _, normalized?} -> normalized? end)
       List.wrap(Samples.level_warning(ref, Samples.peak(path), normalized?))

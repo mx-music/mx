@@ -64,8 +64,7 @@ defmodule ColdFront do
         note = key |> String.downcase() |> String.replace("#", "s") |> Mx.Notes.parse()
         path = "#{folder}/#{prefix}#{name}#{suffix}.wav"
 
-        {{:github, "sgossner/VCSL", "c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e", path},
-         note: pitch(note) + 12}
+        {{:vcsl, path}, note: pitch(note) + 12}
       end
     )
   end
@@ -377,7 +376,9 @@ defmodule ColdFront do
     )
   end
 
-  defp hiss(beats), do: repeat(sample(:vinyl_hiss, 8, attack: 0.5, release: 0.5), div(beats, 8))
+  defp hiss(beats) do
+    repeat(sample({:sonic_pi, :vinyl_hiss}, 8, attack: 0.5, release: 0.5), div(beats, 8))
+  end
 
   # What an eighth of the hi-hat holds: how many strokes, and how many semitones the first and the
   # last are tuned up.

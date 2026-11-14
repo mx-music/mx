@@ -22,12 +22,12 @@ defmodule VassourinhasSamples do
 
   use Mx.Song, tempo: 148
 
-  @vsco {"sgossner/VSCO-2-CE", "440300901dfe9275fd84e0b7763af1f8443ae62e"}
-  @vcsl {"sgossner/VCSL", "c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e"}
-  @weresax {"sfzinstruments/karoryfer.weresax", "a4d756b21d2a573aca0d840cce7e71ba5effd4c6"}
-  @war_tuba {"sfzinstruments/karoryfer.war-tuba", "5b62dd6ef6b00281bb734769e44a63f5e013018a"}
+  @vsco :vsco
+  @vcsl :vcsl
+  @weresax :karoryfer_weresax
+  @war_tuba :karoryfer_war_tuba
 
-  file = fn {repo, commit}, path -> {:github, repo, commit, path} end
+  file = fn collection, path -> {collection, path} end
 
   # Every library names its keys an octave below the pitch mx names them by.
   key = fn name ->
@@ -97,7 +97,7 @@ defmodule VassourinhasSamples do
               {file.(@war_tuba, "Samples/#{name}_s_vl4_rr#{take}_cnd.wav"),
                note: Mx.Notes.parse(name) + 12, take: take}
 
-  @drums {"sfzinstruments/virtuosity_drums", "9f04cf9a734527edfbb0a4eee1f674e45bbf71bc"}
+  @drums :virtuosity_drums
 
   # Each voice of the kit: its drum, its stroke, the strengths and takes recorded, how many beats
   # it rings and fades over, and the part and level of each microphone.

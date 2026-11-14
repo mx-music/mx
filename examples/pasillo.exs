@@ -20,9 +20,6 @@ defmodule Pasillo do
 
   use Mx.Song, tempo: 100
 
-  @repo "freepats/spanish-classical-guitar"
-  @commit "6f4eb1b092acc88f5448cea1a0001bd07b971af8"
-
   # Each recorded key with the dB that bring its first half second level with the others.
   @keys ~w(G1:-2 G#1:-3 A1:-6 A#1:-3 B1:-2 C2:0 C#2:-1 D2:0 D#2:-2 E2:-2 F2:0 G2:0 A2:0 B2:1 C3:0 D3:0 E3:0 F3:-1 F#3:-4 G3:1 G#3:-3 A3:-1 A#3:-2 B3:-2 C4:2 C#4:0 D4:0 D#4:-2 E4:1 F4:1 F#4:-1 G4:0 A4:-4 A#4:5 B4:0 C5:5 C#5:-1 D5:0 D#5:5 E5:5 F5:2 F#5:2 G5:-1 G#5:0 A5:0 A#5:2 B5:5 C6:7)
         |> Enum.map(fn word ->
@@ -32,7 +29,7 @@ defmodule Pasillo do
         end)
 
   @guitar for {name, key, _} <- @keys,
-              do: {{:github, @repo, @commit, "samples/#{name}.flac"}, note: key}
+              do: {{:freepats_spanish_guitar, "samples/#{name}.flac"}, note: key}
 
   @levels for {_, key, db} <- @keys, do: {key, db}
 
