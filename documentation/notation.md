@@ -22,6 +22,8 @@ song(
 `mx song.exs` plays the file, and `mix mx.print song.exs` prints each part's notes with their beats instead of playing them.
 A function refuses what cannot play, such as an unknown note name or an option the synth does not have, and mx prints the refusal with the line of the song file.
 
+A longer song is better written as a module, which [A song as a module](#a-song-as-a-module) describes.
+
 ## Notes
 
 `note(:a4, 1.5)` is the note A4 lasting 1.5 beats, and `rest(1)` is a beat of silence.
@@ -62,6 +64,7 @@ seq([verse, transpose(verse, 5), repeat(chorus, 2)])
 - `together` starts its items at once, and lasts as long as the longest.
 - `repeat(music, 4)` plays the music four times. `repeat(music)` plays it until mx stops, and can only hold the whole of a song's music.
 - `transpose(music, 12)` moves every note an octave up.
+- `delay(music, 7)` is the music after 7 beats of silence, so inside `together` it starts 7 beats after the rest.
 - `beats(music)` is the length of music in beats.
 
 ## Rhythm
@@ -71,10 +74,62 @@ part(:kick, steps("x... x... x... x.x.", 0.25), synth: :kick)
 part(:cajon, at([{0, hit(slap: 1, vel: 0.8)}, {1.5, hit(vel: 0.5)}], 2), synth: :cajon)
 ```
 
-- `steps("x..x x.x.", 0.25)` is one drum hit for each `x`. Each character lasts a quarter of a beat, a dot is silence, and spaces are left out.
+- `steps("x..x x.x.", 0.25)` is one drum hit for each `x`. Each character lasts a quarter of a beat, a dot is silence, and spaces are left out. [Patterns](#patterns) describes what else it plays.
 - `hit(vel: 0.5)` is one hit of a drum at its own pitch, taking no time.
 - `at([{0.5, music}, {1.5, music}], 2)` is music of 2 beats that starts each item at its beat, so hits at known beats need no rests between them.
 - `swing(music, fun)` starts each note at the beat the function returns for the beat it was written on, so some notes can be pushed late and others early.
+
+## Patterns
+
+A pattern is music written as text, and `steps(pattern, step)` plays it, each step of the pattern lasting `step` beats.
+`~MX` writes a pattern, and reads it when the song compiles, so a bracket left open or a length that is no number is refused with its line before anything plays.
+
+```elixir
+steps(~MX"g4:2 _ g4 bb4:2 _ a4 | g4:4 - -", 0.25, vel: 0.8)
+steps(~MX"9... 9... 9..5 9.7."s, 0.25)
+```
+
+Without a modifier, `~MX` reads a word to a step:
+
+- A word that is a note's name, such as `g4` or `fs5`, is that note.
+- `_` is silence.
+- `-` holds the word before it one step longer.
+- A number after a colon is a word's length in steps: `g4:2` lasts two, and `g4:1.5` one and a half.
+- Words joined by a slash sound together: `g5/b4`.
+- The words in brackets share one step evenly: `[f f]` is two in the time of one.
+- A word after `~` is not struck. The note before it glides to that pitch and lasts through it: `eb2:2 ~g2:2` is one note of four steps that glides to G halfway.
+- A bar line, `|`, is only for reading.
+
+With the modifier `s`, as in `~MX"9..5 x..."s`, it reads a character to a step: a dot is silence, and spaces and bar lines are left out.
+A plain string given to `steps` is read the same way.
+
+A pattern says nothing of what its words sound like; the options of `steps` do:
+
+```elixir
+steps(~MX"9...9..5"s, 0.25, sample: "kick.wav", release: 0.1)
+steps(~MX"ccoc ccoc"s, 0.25, strokes: [o: [vel: 0.75, sustain: 0.2], c: [vel: 0.5]])
+steps(~MX"..1. .5.3"s, 0.25, notes: [:g4, :a4, :bb4, :c5, :d5])
+steps(~MX"x.xx"s, 0.25, each: fn step -> [vel: if(step == 0, do: 0.9, else: 0.5)] end)
+steps(~MX"eb2:2 ~g2:2 d2:4", 0.25, slide: 0.3)
+```
+
+- `x` is a hit of a drum at its own pitch.
+- A digit is a hit at that level, 9 the loudest. It sets `vel:`, or the option `digit:` names.
+- `sample:` plays each hit as that sample, where a digit sets `amp:`.
+- `strokes:` gives the options of other characters or words, so a drum's strokes can have their own letters.
+- `notes:` makes a digit a hit tuned to that note of the list, counted from 1.
+- `each:` is a function of the step a sound starts on, counted from 0, that returns more options for it. A function of two takes the sound's length in steps as well.
+- `slide:` is how many beats a glide takes.
+- Any other option goes to every sound.
+
+A pattern is a list, so two patterns join with `++`, and `steps` plays a list of patterns as one bar after another:
+
+```elixir
+kick = [~MX"9...9...9..59.7."s, ~MX"9..59...9..59.7."s]
+part(:kick, repeat(steps(kick, 0.25), 4), synth: :kick)
+```
+
+A sigil takes no interpolation; build a longer pattern by joining shorter ones.
 
 ## Parts
 
@@ -125,6 +180,43 @@ In music that repeats, give the first section its tempo too, since each change c
 ```elixir
 repeat(seq([tempo(100), verse, tempo(140), chorus]))
 ```
+
+### A song as a module
+
+A song file can hold a module that uses `Mx.Song` in place of ending with `song`:
+
+```elixir
+defmodule Paredao do
+  use Mx.Song, tempo: 92
+
+  part :kick, synth: :kick, fx: [level: [amp: 0.6]]
+  part :bass, synth: :double_bass, defaults: [amp: 0.5]
+
+  def song, do: seq([intro(), beat(), beat()])
+
+  defp intro, do: part(:kick, kick(2))
+
+  defp beat do
+    together([
+      part(:kick, kick(4)),
+      part(:bass, steps(~MX"g1:3 _ g1:3 _ bb1:3 _ d2:2 f2:2", 0.25))
+    ])
+  end
+
+  defp kick(bars), do: repeat(steps(~MX"9...9...9..59.7."s, 0.25), bars)
+end
+```
+
+- `use Mx.Song` imports `Mx`, and takes the options of `song` except `music:`.
+- `song/0` returns the song's music, and mx calls it when it loads the file.
+- `part :kick, synth: :kick` in the module's body declares a part with its options, once.
+- `part(:kick, music)` in a function is that part playing the music, with the options it was declared with.
+
+A part that is not declared, and a part declared twice, do not compile, and mx names the line.
+A file holds one such module; a module that uses `Mx.Instrument` can stand beside it.
+`examples/funk_br.exs` is a whole song written this way.
+
+`mix format` keeps a declaration without parentheses when the project's `.formatter.exs` has `import_deps: [:mx]`.
 
 ## Loops
 

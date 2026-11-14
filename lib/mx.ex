@@ -59,6 +59,16 @@ defmodule Mx do
   defdelegate together(items), to: Mx.Music
 
   @doc """
+  The music after some beats of silence, so it starts that many beats into the music it plays together with.
+
+      together([part(:kick, kick()), part(:tom, delay(roll(), 7))])
+
+      iex> beats(delay(seq(c4: 1), 7))
+      8
+  """
+  defdelegate delay(music, beats), to: Mx.Music
+
+  @doc """
   Music played again and again until mx stops.
   It can only hold the whole of a song's music, so a song of sections that goes round is `repeat(seq([a, b]))`.
 
@@ -107,14 +117,37 @@ defmodule Mx do
   defdelegate swing(music, fun), to: Mx.Music
 
   @doc """
-  Hits of a drum at its own pitch, one for each x of the pattern, each character lasting a step of beats and a dot being silence; spaces are left out.
-  The options go to every hit.
+  The sounds of a pattern, each character lasting a step of beats; spaces are left out, and a list of patterns is one bar after another.
+  An x is a hit of a drum at its own pitch, a dot is silence, and a digit is a hit of that level, 9 the loudest.
+  The other options go to every sound.
 
       part(:kick, steps("x... x... x... x.x.", 0.25), synth: :kick)
       part(:hats, steps("x.x.x.x.", 0.5, vel: 0.3), synth: :closed_hihat)
+      part(:snare, steps(["..3. 9...", "..3. 9.69"], 0.25), synth: :snare)
+
+  A digit sets `vel:`, or the option `digit:` names.
+  `sample:` plays each hit as that sample, where a digit sets `amp:`.
+  `strokes:` gives the options of other characters, and `notes:` makes a digit a hit tuned to that note of a list, counted from 1.
+  `each:` is a function of the step a sound starts on, counted from 0, that returns more options for it.
+
+      steps("9...9..5", 0.25, sample: "kick.wav", release: 0.1)
+      steps("ccoc", 0.25, strokes: [o: [vel: 0.75, sustain: 0.2], c: [vel: 0.5]])
+      steps("..1..5.3", 0.25, notes: [:g4, :a4, :bb4, :c5, :d5])
+      steps("x.xx", 0.25, each: fn step -> [vel: if(step == 0, do: 0.9, else: 0.5)] end)
+
+  A function of two for `each:` takes the length of the sound in steps as well.
+
+  A pattern of `sigil_MX/2` is read a word to a step, and a word that is no stroke is a note's name.
+  A word after `~` is the note the one before it glides to, which `slide:` gives the beats to get there.
+
+      part(:lead, steps(~MX"g4:2 _ g4 bb4:2 _ a4", 0.25, vel: 0.8))
+      part(:bass, steps(~MX"eb2:2 ~g2:2 d2:4", 0.25, slide: 0.3), synth: :fm)
 
       iex> beats(steps("x..x", 0.25))
       1.0
+
+      iex> beats(steps(~MX"g4:2 _ g4 [a4 bb4]", 0.5))
+      2.5
   """
   defdelegate steps(pattern, step, opts \\ []), to: Mx.Music
 
@@ -235,6 +268,44 @@ defmodule Mx do
       )
   """
   defdelegate song(opts), to: Mx.Music
+
+  @doc """
+  A pattern written as words, read when the song compiles, for `steps/3` to play.
+  Each word lasts one step: `_` is silence, `-` holds the word before it a step longer, and a number after a colon is a length in steps.
+  Words joined by a slash sound together, the words in brackets share one step, and a bar line is only for reading.
+  A word after `~` is not struck: the note before it glides to it and lasts through it.
+  Patterns join with `++`.
+  With the modifier `s` each character lasts one step instead, a dot is silence, and spaces and bar lines are left out.
+
+      ~MX"g5/b4:3 fs5/a4 | e5/g4:2 - _"
+      ~MX"T f h [f f]"
+      ~MX"9... 9..5 | x.x. x..."s
+
+      iex> ~MX"9. x"s
+      [%{tokens: ["9"], steps: 1}, %{tokens: [], steps: 1}, %{tokens: ["x"], steps: 1}]
+
+      iex> ~MX"g4:2 _ [f f]"
+      [
+        %{tokens: ["g4"], steps: 2},
+        %{tokens: [], steps: 1},
+        %{tokens: ["f"], steps: 0.5},
+        %{tokens: ["f"], steps: 0.5}
+      ]
+  """
+  defmacro sigil_MX({:<<>>, _meta, [text]}, modifiers) when is_binary(text) do
+    case modifiers do
+      [] -> Macro.escape(Mx.Pattern.parse(text))
+      ~c"s" -> Macro.escape(Mx.Pattern.parse_steps(text))
+      _ -> raise ArgumentError, "it takes no modifier but s, a character to a step"
+    end
+  rescue
+    error in ArgumentError ->
+      description = "~MX: " <> error.message
+
+      reraise CompileError,
+              [file: __CALLER__.file, line: __CALLER__.line, description: description],
+              __STACKTRACE__
+  end
 
   @doc """
   The length of music in beats, or `:infinity` for music that plays until mx stops.

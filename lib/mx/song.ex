@@ -2,6 +2,21 @@ defmodule Mx.Song do
   @moduledoc """
   A song loaded from a file: its tempo and its parts, each played as a loop, in the order of the song.
   `tempos` holds the tempo changes its music writes, each section's as `Mx.Tempo` takes them, or nil when it writes none.
+
+  A song file is either a script that ends with `Mx.song/1`, or a module that uses `Mx.Song`:
+
+      defmodule Paredao do
+        use Mx.Song, tempo: 92
+
+        part :kick, synth: :kick, fx: [level: [amp: 0.6]]
+        part :bass, synth: :sub808
+
+        def song, do: together([part(:kick, steps("x...", 1)), part(:bass, note(:g1, 4))])
+      end
+
+  `use Mx.Song` imports `Mx` and takes the options of `Mx.song/1` but `music:`, which is what the module's `song/0` returns.
+  `part/2` written in the module's body declares a part with its options, once, and written in a function it is that part playing some music, with those options.
+  A part that is not declared does not compile.
   """
 
   alias Mx.{Samples, Synths}
@@ -33,6 +48,77 @@ defmodule Mx.Song do
   defstruct tempo: 60, tempos: nil, osc_to: nil, osc_from: nil, loops: [], live: [], played: []
 
   @key :mx_song
+  @modules_key :mx_song_modules
+
+  defmacro __using__(opts) do
+    quote do
+      import Mx, except: [part: 2]
+      import Mx.Song, only: [part: 2]
+      Module.register_attribute(__MODULE__, :mx_parts, accumulate: true)
+      @mx_song unquote(opts)
+      @before_compile Mx.Song
+    end
+  end
+
+  @doc "In a module's body, declares a part with its options; in a function, that part playing music with the options it was declared with."
+  defmacro part(name, given) do
+    if __CALLER__.function do
+      declared = Module.get_attribute(__CALLER__.module, :mx_parts)
+
+      if is_atom(name) and not List.keymember?(declared, name, 0) do
+        refuse(
+          __CALLER__,
+          "part #{name} is not declared; declare it with part :#{name}, synth: ..."
+        )
+      end
+
+      quote do
+        Mx.part(unquote(name), unquote(given), Mx.Song.declared(__mx_parts__(), unquote(name)))
+      end
+    else
+      quote do
+        @mx_parts {unquote(name), unquote(given)}
+      end
+    end
+  end
+
+  defmacro __before_compile__(env) do
+    parts = env.module |> Module.get_attribute(:mx_parts) |> Enum.reverse()
+    names = Keyword.keys(parts)
+
+    case names -- Enum.uniq(names) do
+      [] -> :ok
+      [name | _] -> refuse(env, "part #{name} is declared twice")
+    end
+
+    if not Module.defines?(env.module, {:song, 0}) do
+      refuse(env, "a module that uses Mx.Song returns its music from song/0")
+    end
+
+    if Process.get(@key), do: Process.put(@modules_key, [env.module | modules()])
+
+    quote do
+      @doc false
+      def __mx_parts__, do: unquote(Macro.escape(parts))
+
+      @doc false
+      def __mx_song__, do: Mx.song([music: song()] ++ @mx_song)
+    end
+  end
+
+  @doc false
+  def declared(parts, name) do
+    case List.keyfind(parts, name, 0) do
+      {_, opts} -> opts
+      nil -> raise ArgumentError, "part #{name} is not declared"
+    end
+  end
+
+  defp refuse(env, description) do
+    raise CompileError, file: env.file, line: env.line, description: description
+  end
+
+  defp modules, do: Process.get(@modules_key, [])
 
   @chain_error "fx: takes an effect or a list of effects, such as fx: [echo: [phase: 0.5], reverb: []]"
 
@@ -65,6 +151,7 @@ defmodule Mx.Song do
       error -> {:error, Exception.message(error)}
     after
       Process.delete(@key)
+      Process.delete(@modules_key)
     end
   end
 
@@ -78,7 +165,7 @@ defmodule Mx.Song do
 
         try do
           {value, _binding} = Code.eval_file(path)
-          {:ok, value}
+          {:ok, written(value, path)}
         rescue
           error -> {:error, error, __STACKTRACE__}
         after
@@ -98,7 +185,13 @@ defmodule Mx.Song do
             raise ArgumentError, "#{path}:#{line}: #{first}"
 
           nil ->
-            reraise error, stacktrace
+            if error.line && error.description do
+              line = error.line
+              description = error.description
+              reraise ArgumentError, [message: "#{path}:#{line}: #{description}"], stacktrace
+            else
+              reraise error, stacktrace
+            end
         end
 
       {:error, error, stacktrace} ->
@@ -110,6 +203,24 @@ defmodule Mx.Song do
         else
           reraise error, stacktrace
         end
+    end
+  end
+
+  # The song a file ends with, or the song of the module in it that uses Mx.Song.
+  defp written(%Mx.Music.Song{} = song, _path), do: song
+
+  defp written(value, path) do
+    case modules() do
+      [] ->
+        value
+
+      [module] ->
+        module.__mx_song__()
+
+      [second, first | _] ->
+        first = inspect(first)
+        second = inspect(second)
+        raise ArgumentError, "#{path} holds two songs, #{first} and #{second}"
     end
   end
 

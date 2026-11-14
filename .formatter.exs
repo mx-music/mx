@@ -6,7 +6,8 @@ locals_without_parens = [
   defsynth: 2,
   defeffect: 2,
   defsound: 2,
-  defsoundp: 2
+  defsoundp: 2,
+  part: 2
 ]
 
 [

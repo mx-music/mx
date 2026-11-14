@@ -301,6 +301,12 @@ defmodule Mx.Music do
     end
   end
 
+  @doc "The music after some beats of silence."
+  def delay(music, beats) do
+    check_beats("delay", beats)
+    %Seq{items: [%Rest{beats: beats}, item(music)]}
+  end
+
   @doc "Music played a number of times in a row."
   def repeat(music, times) when is_integer(times) and times > 0 do
     %Repeat{music: item(music), times: times}
@@ -351,20 +357,147 @@ defmodule Mx.Music do
   @doc "The music with each note started at the beat the function returns for the beat it was written on, its length unchanged."
   def swing(music, fun) when is_function(fun, 1), do: %Swing{music: item(music), fun: fun}
 
-  @doc "Hits of a drum at its own pitch, one for each x of the pattern, each character lasting a step of beats and a dot being silence."
-  def steps(pattern, step, opts \\ []) when is_binary(pattern) and is_list(opts) do
-    check_beats("steps", step)
+  @steps_options [:sample, :digit, :strokes, :notes, :each, :slide]
 
-    items =
-      for char <- String.graphemes(String.replace(pattern, ~r/\s/, "")) do
-        case char do
-          "x" -> %Note{pitch: :own_note, beats: step, opts: opts}
-          "." -> %Rest{beats: step}
-          other -> raise ArgumentError, "steps takes x for a hit and . for silence, not #{other}"
-        end
-      end
+  @doc "The sounds of a pattern, each character of a string or each word of `~MX` lasting a step of beats; a list of strings is one bar after another."
+  def steps(pattern, step, opts \\ [])
+      when (is_binary(pattern) or is_list(pattern)) and is_list(opts) do
+    check_beats("steps", step)
+    check_keyword("steps", opts)
+    {own, each} = Keyword.split(opts, @steps_options)
+
+    {items, _} =
+      pattern
+      |> List.wrap()
+      |> Enum.flat_map(&cells/1)
+      |> glided()
+      |> Enum.map_reduce(0, fn cell, at ->
+        {cell_item(cell, at, step, own, each), at + cell.steps}
+      end)
 
     %Seq{items: items}
+  end
+
+  defp cells(%{tokens: tokens, steps: steps} = cell) when is_list(tokens) and is_number(steps) do
+    [cell]
+  end
+
+  defp cells(bars) when is_list(bars), do: Enum.flat_map(bars, &cells/1)
+
+  defp cells(text) when is_binary(text), do: Mx.Pattern.parse_steps(text)
+
+  defp cells(other) do
+    other = inspect(other)
+    raise ArgumentError, "steps takes a string, a list of strings or a ~MX pattern, not #{other}"
+  end
+
+  # A word that glides joins the note before it: the note lasts through it, and changes to its pitch where it starts.
+  defp glided(cells) do
+    cells
+    |> Enum.reduce([], fn
+      %{glide: true, tokens: [token], steps: steps}, [%{tokens: [_]} = held | before] ->
+        glides = Map.get(held, :glides, []) ++ [{held.steps, token}]
+        [held |> Map.put(:glides, glides) |> Map.put(:steps, held.steps + steps) | before]
+
+      %{glide: true, tokens: tokens}, _cells ->
+        raise ArgumentError, "~#{Enum.join(tokens, "/")} glides from one note to one note"
+
+      cell, cells ->
+        [cell | cells]
+    end)
+    |> Enum.reverse()
+  end
+
+  defp cell_item(%{tokens: [], steps: steps}, _at, step, _own, _each),
+    do: %Rest{beats: steps * step}
+
+  defp cell_item(%{tokens: tokens, steps: steps} = cell, at, step, own, each) do
+    beats = steps * step
+
+    each =
+      case own[:each] do
+        nil -> each
+        fun when is_function(fun, 1) -> each ++ fun.(at)
+        fun when is_function(fun, 2) -> each ++ fun.(at, steps)
+      end
+
+    slide = if own[:slide], do: [note_slide: own[:slide]], else: []
+
+    changes =
+      for {after_steps, token} <- Map.get(cell, :glides, []) do
+        {after_steps * step, [note: named(token)] ++ slide}
+      end
+
+    case Enum.map(tokens, &sound(&1, own)) do
+      [{:hit, opts}] when changes == [] ->
+        stroke(own[:sample], beats, opts ++ each)
+
+      [{:hit, _opts}] ->
+        raise ArgumentError, "steps glides from a note, not from the stroke #{hd(tokens)}"
+
+      [{:note, pitch}] when changes == [] ->
+        note(pitch, beats, each)
+
+      [{:note, pitch}] ->
+        note(pitch, beats, each ++ [changes: changes])
+
+      sounds ->
+        case Enum.split_with(sounds, &match?({:hit, _}, &1)) do
+          {hits, []} ->
+            together(for {:hit, opts} <- hits, do: stroke(own[:sample], beats, opts ++ each))
+
+          {[], notes} ->
+            note(Keyword.values(notes), beats, each)
+
+          _ ->
+            raise ArgumentError,
+                  "steps cannot play a stroke and a note together, as in #{Enum.join(tokens, "/")}"
+        end
+    end
+  end
+
+  defp stroke(nil, beats, opts), do: %Note{pitch: :own_note, beats: beats, opts: opts}
+  defp stroke(ref, beats, opts), do: sample(ref, beats, opts)
+
+  # What a character or a word sounds: a stroke of strokes:, x, a digit as a note of notes: or as a level, or else a note's name.
+  defp sound(token, own) do
+    stroke = Enum.find(own[:strokes] || [], fn {name, _opts} -> to_string(name) == token end)
+    digit = if token =~ ~r/^[0-9]$/, do: String.to_integer(token)
+
+    cond do
+      stroke ->
+        {:hit, elem(stroke, 1)}
+
+      token == "x" ->
+        {:hit, []}
+
+      digit && own[:notes] ->
+        case digit > 0 && Enum.at(own[:notes], digit - 1) do
+          found when found in [nil, false] ->
+            raise ArgumentError, "steps has no note #{token} in notes:"
+
+          found ->
+            {:hit, [note: pitch(found)]}
+        end
+
+      digit ->
+        {:hit, [{own[:digit] || if(own[:sample], do: :amp, else: :vel), digit / 9}]}
+
+      true ->
+        {:note, named(token)}
+    end
+  end
+
+  defp named(token) do
+    pitch(String.to_atom(token))
+  rescue
+    ArgumentError ->
+      reraise ArgumentError,
+              [
+                message:
+                  "steps takes x, a digit, a stroke of strokes: or a note's name, and . for silence, not #{token}"
+              ],
+              __STACKTRACE__
   end
 
   @doc "Music that runs the function with the pass number and the inputs every `beats` beats, and plays the music it returns; `times:` plays a number of passes, and `on:`, given instead of beats, plays a pass on each input it waits for."
