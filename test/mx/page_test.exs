@@ -1,6 +1,8 @@
 defmodule Mx.PageTest do
   use ExUnit.Case, async: true
 
+  import ExUnit.CaptureIO
+
   alias Mx.{Page, Song}
 
   @moduletag :tmp_dir
@@ -59,21 +61,24 @@ defmodule Mx.PageTest do
           4::little-16, 32::little-16>> <> "data" <> <<byte_size(data)::little-32>> <> data
     )
 
-    {song, path} =
-      load(dir, """
-      song(
-        tempo: 120,
-        music:
-          together([
-            part(:whole, sample(#{inspect(sample)}, 4)),
-            part(:fast, sample(#{inspect(sample)}, 4, rate: 2)),
-            part(:held, sample(#{inspect(sample)}, 4, sustain: 0.5, release: 0.25)),
-            part(:tri, steps("x...", 1), synth: :triangle, defaults: [sustain: 0.5, release: 1]),
-            part(:kick, steps("x...", 1), synth: :kick)
-          ])
-      )
-      """)
+    {{song, path}, warnings} =
+      with_io(:stderr, fn ->
+        load(dir, """
+        song(
+          tempo: 120,
+          music:
+            together([
+              part(:whole, sample(#{inspect(sample)}, 4)),
+              part(:fast, sample(#{inspect(sample)}, 4, rate: 2)),
+              part(:held, sample(#{inspect(sample)}, 4, sustain: 0.5, release: 0.25)),
+              part(:tri, steps("x...", 1), synth: :triangle, defaults: [sustain: 0.5, release: 1]),
+              part(:kick, steps("x...", 1), synth: :kick)
+            ])
+        )
+        """)
+      end)
 
+    assert warnings =~ "sample #{sample} is silent"
     assert {:ok, %{parts: parts}} = Page.data(song, path, 2.0)
 
     assert Enum.map(parts, & &1.hits) == [

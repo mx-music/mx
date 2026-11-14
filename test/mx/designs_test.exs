@@ -2,6 +2,8 @@ defmodule Mx.DesignsTest do
   # Measuring keeps every core busy, so it runs after the tests that depend on timing.
   use ExUnit.Case, async: false
 
+  import ExUnit.CaptureIO
+
   alias Mx.Engine.Mxs
   alias Mx.{Measure, Signal, Synths}
   alias Mx.Measure.{Held, Hits}
@@ -3851,7 +3853,7 @@ defmodule Mx.DesignsTest do
     song(tempo: 120, music: part(:caxixi, at(Enum.map(0..9, &{&1, hit()}), 10), synth: :caxixi))
     """)
 
-    ExUnit.CaptureIO.capture_io(fn -> assert :ok = Mx.Render.render(song, out, seconds: 6) end)
+    capture_io(fn -> assert :ok = Mx.Render.render(song, out, seconds: 6) end)
     wav = File.read!(out)
     {at, _} = :binary.match(wav, "data")
     data = binary_part(wav, at + 8, byte_size(wav) - at - 8)
@@ -5622,7 +5624,7 @@ defmodule Mx.DesignsTest do
     song(tempo: 120, music: part(:cuica, at(Enum.map(0..14, &{&1, hit(note: #{note})}), 15), synth: :cuica))
     """)
 
-    ExUnit.CaptureIO.capture_io(fn -> assert :ok = Mx.Render.render(song, out, seconds: 8) end)
+    capture_io(fn -> assert :ok = Mx.Render.render(song, out, seconds: 8) end)
     wav = File.read!(out)
     {at, _} = :binary.match(wav, "data")
     data = binary_part(wav, at + 8, byte_size(wav) - at - 8)

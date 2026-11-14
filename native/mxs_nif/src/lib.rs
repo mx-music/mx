@@ -369,7 +369,8 @@ fn warnings(resource: ResourceArc<EngineResource>) -> Vec<String> {
 /// Panics on purpose, so a test can check that a panic raises in Elixir instead of stopping the BEAM.
 #[rustler::nif]
 fn panic_on_purpose() -> Atom {
-    panic!("on purpose")
+    // resume_unwind skips the panic hook, whose stderr output a test cannot capture.
+    std::panic::resume_unwind(Box::new("on purpose"))
 }
 
 rustler::init!("Elixir.Mx.Engine.Mxs.Native");

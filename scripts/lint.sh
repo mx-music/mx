@@ -281,6 +281,7 @@ run_check "Use setup :step when defining only one step" -g "test/**/*.exs" "setu
 
 run_check "Define each test module on its own file" -g "test/**/*.exs" -UP "defmodule[\s\S]+\ndefmodule"
 run_check "Define alias on top of test file" -g "test/**/*.exs" -UP "(describe|test)\s\"[\s\S]+\n\s+alias\s[A-Z]"
+run_check "Import ExUnit.CaptureIO at the top of the test file instead of calling it as ExUnit.CaptureIO.capture_io" -g "test/**/*.exs" 'ExUnit\.CaptureIO\.'
 
 # Typespecs
 run_check "Don't use [...] in typespecs, use list() and nonempty_list()" '@(type|spec|callback)\b.*\['

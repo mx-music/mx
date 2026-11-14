@@ -1408,7 +1408,7 @@ defmodule Mx.BandTest do
       """)
 
     output =
-      ExUnit.CaptureIO.capture_io(:stderr, fn ->
+      capture_io(:stderr, fn ->
         start(song, ctx)
         notes = Enum.map(receive_notes(8), &elem(&1, 1))
         assert Enum.count(notes, &(&1 == 40.0)) >= 4

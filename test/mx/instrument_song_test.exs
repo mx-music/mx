@@ -1,6 +1,8 @@
 defmodule Mx.InstrumentSongTest do
   use ExUnit.Case, async: false
 
+  import ExUnit.CaptureIO
+
   alias Mx.Engine.Mxs
 
   @moduletag :tmp_dir
@@ -9,11 +11,23 @@ defmodule Mx.InstrumentSongTest do
     engine = Application.get_env(:mx, :engine)
     modules = Mx.Instrument.modules()
     Application.put_env(:mx, :engine, Rust)
+    ignoring = Code.get_compiler_option(:ignore_module_conflict)
+    Code.put_compiler_option(:ignore_module_conflict, false)
 
     on_exit(fn ->
       Application.put_env(:mx, :engine, engine)
+      Code.put_compiler_option(:ignore_module_conflict, ignoring)
       :persistent_term.put({Mx.Instrument, :modules}, modules)
       Mx.Synths.forget()
+
+      for module <- [
+            Mx.InstrumentSongTest.Bell,
+            Mx.InstrumentSongTest.Quieter,
+            Mx.InstrumentSongTest.Pulse
+          ] do
+        :code.purge(module)
+        :code.delete(module)
+      end
     end)
   end
 
@@ -37,7 +51,8 @@ defmodule Mx.InstrumentSongTest do
     Code.eval_string(bell(0.1))
     assert Mx.Synths.exists?(:bell)
     quiet = Mxs.render_note(:bell, [note: 72], 1.0, nil, [])
-    ExUnit.CaptureIO.capture_io(:stderr, fn -> Code.eval_string(bell(0.4)) end)
+    output = capture_io(:stderr, fn -> Code.eval_string(bell(0.4)) end)
+    assert output =~ "redefining module Mx.InstrumentSongTest.Bell"
     loud = Mxs.render_note(:bell, [note: 72], 1.0, nil, [])
     assert_in_delta peak(loud) / peak(quiet), 4.0, 0.01
   end
