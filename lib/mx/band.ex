@@ -13,6 +13,7 @@ defmodule Mx.Band do
   Each version's live audio goes to `live`, which starts, changes and stops it.
   Each version of the song goes through `prepare` first, which loads its samples, so playing starts only once they are ready.
   When every loop has played its last pass, the band calls `on_end`.
+  Given `from`, a beat of the song, each loop starts in the pass that holds that beat and plays it from there, so that beat sounds first; a loop whose passes end before it does not start.
   A part a new version of a song written as music adds joins at the next section, with the pass number the other parts play there.
   Every loop with a start beat is handed to `worked_out` with that beat before any loop works out a pass, so no loop's pass reads the shared values before the other loops' set steps are in.
   """
@@ -80,7 +81,8 @@ defmodule Mx.Band do
     if subscribe = opts[:subscribe], do: subscribe.(self())
     state = Map.put(state, :live, Keyword.get(opts, :live, fn _lives, _tempo -> :ok end))
     state.live.(song.live, song.tempo)
-    {:ok, start_loops(state, Enum.map(song.loops, &{&1, 0}))}
+    from = Keyword.get(opts, :from, 0)
+    {:ok, start_loops(state, Enum.flat_map(song.loops, &place(&1, from)))}
   end
 
   @impl true
@@ -187,10 +189,18 @@ defmodule Mx.Band do
   defp start_loops(state, starts) do
     worked_out = Keyword.get(state.loop_opts, :worked_out, fn _pid, _beat -> :ok end)
 
-    state =
-      Enum.reduce(starts, state, fn {loop, start}, state -> start_loop(state, loop, start) end)
+    starts =
+      Enum.map(starts, fn
+        {loop, start} -> {loop, start, []}
+        start -> start
+      end)
 
-    pids = for {loop, start} <- starts, do: {state.loops[loop.name], start, loop.on}
+    state =
+      Enum.reduce(starts, state, fn {loop, start, from}, state ->
+        start_loop(state, loop, start, from)
+      end)
+
+    pids = for {loop, start, _} <- starts, do: {state.loops[loop.name], start, loop.on}
     for {pid, start, nil} <- pids, is_number(start), do: worked_out.(pid, start)
 
     # A render ticks every loop itself, one at a time, so their notes reach the engine in the same order on every run.
@@ -198,7 +208,7 @@ defmodule Mx.Band do
     state
   end
 
-  defp start_loop(state, loop, start) do
+  defp start_loop(state, loop, start, from) do
     opts =
       [
         loop: loop,
@@ -207,11 +217,31 @@ defmodule Mx.Band do
         ahead_us: state.ahead_us,
         start: start,
         load_sample: state.load_sample
-      ] ++ state.loop_opts
+      ] ++ from ++ state.loop_opts
 
     {:ok, pid} = Loop.start_link(opts)
     state = put_in(state.loops[loop.name], pid)
     if start == :join, do: put_in(state.joining[loop.name], pid), else: state
+  end
+
+  # The pass holding the beat, started that far into it before beat 0, so the beat falls on 0.
+  defp place(loop, from) when from == 0 or loop.on != nil, do: [{loop, 0}]
+
+  defp place(loop, from) do
+    0
+    |> Stream.iterate(&(&1 + 1))
+    |> Stream.take_while(&(loop.passes == nil or &1 < loop.passes))
+    |> Enum.reduce_while({0, []}, fn pass, {start, []} ->
+      case Mx.Pass.events(loop, pass) do
+        {:ok, %{beats: beats}} when start + beats <= from and beats > 0 ->
+          {:cont, {start + beats, []}}
+
+        _within ->
+          skip = from - start
+          {:halt, {start, [{loop, -skip, pass: pass, skip: skip}]}}
+      end
+    end)
+    |> elem(1)
   end
 
   # A part of a song written as music joins at the next section, the next pass another part starts.

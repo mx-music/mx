@@ -254,6 +254,25 @@ defmodule Mx.BandTest do
   end
 
   @tag :tmp_dir
+  test "a song played from a beat starts each loop in the pass that holds it, from that beat",
+       ctx do
+    song =
+      load(
+        ctx,
+        "import Mx\nsong(tempo: 6000, music: together([part(:drums, loop(4, fn pass, _ -> seq([note(36 + pass, 0), rest(4)]) end)), part(:melody, loop(3, fn pass, _ -> seq([note(60 + pass, 0), rest(1), note(70 + pass, 0), rest(2)]) end))]))\n"
+      )
+
+    {_band, start_us} = start(song, ctx, from: 7)
+    notes = collect(150)
+
+    assert times(notes, 38) == [start_us + 1 * @beat_us]
+    assert times(notes, 72) == [start_us]
+    assert times(notes, 63) == [start_us + 2 * @beat_us]
+    assert times(notes, 73) == [start_us + 3 * @beat_us]
+    assert times(notes, 37) ++ times(notes, 61) ++ times(notes, 62) == []
+  end
+
+  @tag :tmp_dir
   test "a removed loop stops at the end of its current pass, and the others play on", ctx do
     drums = "part(:drums, loop(4, fn _, _ -> seq([note(36, 0), rest(4)]) end))"
 

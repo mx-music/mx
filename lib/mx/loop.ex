@@ -8,6 +8,7 @@ defmodule Mx.Loop do
 
   A new version takes over when the next pass is worked out, and a stopped loop ends with its current pass.
   A loop with a number of passes ends once its last pass has played to its end, exiting with `{:shutdown, :ended}`.
+  A loop started with `pass` and `skip` plays that pass first, leaving out its notes before beat `skip` of it.
   A loop started with `start: :join` waits for the band to send `{:join, beat, pass}`, and plays that pass from that beat.
 
   A sample plays from the buffer the song loaded for it.
@@ -56,7 +57,8 @@ defmodule Mx.Loop do
       play: Keyword.fetch!(opts, :play),
       new_id: Keyword.get(opts, :new_id, fn -> System.unique_integer([:positive]) end),
       ahead_us: Keyword.fetch!(opts, :ahead_us),
-      pass: 0,
+      pass: Keyword.get(opts, :pass, 0),
+      skip: Keyword.get(opts, :skip, 0),
       next_start: if(start == :join or triggered?(opts), do: nil, else: start),
       inputs: Keyword.get(opts, :inputs, fn _beat, _until_us -> %{} end),
       set: Keyword.get(opts, :set, fn _name, _value, _beat, _at_us -> :ok end),
@@ -170,6 +172,8 @@ defmodule Mx.Loop do
     state = %{state | loaded: Map.merge(state.loaded, state.arrived), arrived: %{}}
     unless state.loop.on, do: state.worked_out.(self(), start)
     {state, events, beats} = next_pass(state, Band.time_at(timeline, start))
+    {skip, state} = {state.skip, %{state | skip: 0}}
+    events = Enum.reject(events, fn {beat, step, _} -> beat < skip and skipped?(step) end)
     name = state.loop.name
     timeline = Band.cue(state.band, name, start, state.pass)
 
@@ -183,7 +187,7 @@ defmodule Mx.Loop do
     {dropped, queued} =
       drop_late(queue_pass(events, start, state), timeline, now)
 
-    late_ms = div(now - Band.time_at(timeline, start), 1000)
+    late_ms = div(now - Band.time_at(timeline, start + skip), 1000)
 
     cond do
       dropped > 0 -> warn("loop #{name} is #{late_ms} ms late and dropped #{notes(dropped)}")
@@ -266,6 +270,10 @@ defmodule Mx.Loop do
 
     {length(late), kept}
   end
+
+  defp skipped?({:set, _, _}), do: false
+  defp skipped?({:control, _, _}), do: false
+  defp skipped?(_step), do: true
 
   defp droppable?({:control, _}), do: false
   defp droppable?(_step), do: true

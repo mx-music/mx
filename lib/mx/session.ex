@@ -12,7 +12,7 @@ defmodule Mx.Session do
   alias Mx.{Band, Inputs, Out, Watcher}
   alias Mx.Engine.Mxs
 
-  @doc "Starts playing the song in `opts` through the engine, watching its file for changes."
+  @doc "Starts playing the song in `opts` through the engine, from the beat `:from` if given, watching its file for changes."
   def start_link(opts) when is_list(opts), do: Supervisor.start_link(__MODULE__, opts)
 
   @impl true
@@ -39,7 +39,8 @@ defmodule Mx.Session do
        worked_out: &Inputs.worked_out/2,
        subscribe: &Inputs.subscribe/1,
        live: &Mxs.set_live/2,
-       on_end: Keyword.get(opts, :on_end, fn -> :ok end)},
+       on_end: Keyword.get(opts, :on_end, fn -> :ok end),
+       from: Keyword.get(opts, :from, 0)},
       {Watcher, path: Keyword.fetch!(opts, :path), on_song: &switch/1}
     ]
 
