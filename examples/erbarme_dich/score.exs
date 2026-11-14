@@ -1,7 +1,7 @@
 defmodule ErbarmeDich.Score do
   @moduledoc """
-  The notes of Bach's aria "Erbarme dich, mein Gott", BWV 244/39, which piano.exs and paraphrase.exs
-  beside this file play.
+  The notes of Bach's aria "Erbarme dich, mein Gott", BWV 244/39, which piano.exs and
+  paraphrase.exs beside this file play.
   They are those of the encoding bwv244.39.mxl, under CC BY 4.0 as LICENSE.md says: the violin,
   the alto, and the organ's continuo split into its bass and the voices above it.
   """

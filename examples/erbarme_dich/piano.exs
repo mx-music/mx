@@ -126,9 +126,11 @@ defmodule ErbarmeDich.Piano do
     forte = place >= 22.9 and place < 26.5 and rem(trunc(note.eighth), 3) == 0
     final = note.fermata and note.eighth == 6
 
-    if (forte or final) and note.note - 12 >= 28,
-      do: [note, %{note | note: note.note - 12, role: :octave}],
-      else: [note]
+    if (forte or final) and note.note - 12 >= 28 do
+      [note, %{note | note: note.note - 12, role: :octave}]
+    else
+      [note]
+    end
   end
 
   defp octave(note), do: [note]
@@ -247,9 +249,11 @@ defmodule ErbarmeDich.Piano do
         _ -> 0
       end
 
-    if rem(trunc(note.eighth), 3) == 0 and note.eighth == trunc(note.eighth),
-      do: moves,
-      else: moves - 0.15
+    if rem(trunc(note.eighth), 3) == 0 and note.eighth == trunc(note.eighth) do
+      moves
+    else
+      moves - 0.15
+    end
   end
 
   defp shape(note, _voices), do: stress(note.eighth) * 0.02

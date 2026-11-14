@@ -184,8 +184,9 @@ defmodule ErbarmeDich.Paraphrase do
       answer ++ struck(notes) ++ knocking(notes, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])
   end
 
-  defp lead(notes, voice),
-    do: for(%{voice: ^voice} = note <- notes, do: %{note | kind: :melody})
+  defp lead(notes, voice) do
+    for %{voice: ^voice} = note <- notes, do: %{note | kind: :melody}
+  end
 
   # The alto leads while it sings, the violin answering an octave up; the violin leads when it
   # is silent.
@@ -194,9 +195,11 @@ defmodule ErbarmeDich.Paraphrase do
 
     violin =
       for %{voice: :violin} = note <- notes do
-        if singing?(note.at, alto),
-          do: %{note | note: note.note + 12, kind: :answer},
-          else: %{note | kind: :melody}
+        if singing?(note.at, alto) do
+          %{note | note: note.note + 12, kind: :answer}
+        else
+          %{note | kind: :melody}
+        end
       end
 
     {alto, violin}
@@ -285,11 +288,13 @@ defmodule ErbarmeDich.Paraphrase do
     for %{voice: :inner} = note <- notes,
         beat?(note.eighth) or (note.eighth == trunc(note.eighth) and note.length >= 3),
         note.note < lowest(notes, note.at) or note.note < 76,
-        {pitch, kind} <-
-          [{note.note, :chord}] ++
-            if(note.note - 12 >= 50, do: [{note.note - 12, :chord}], else: []),
-        do: %{note | note: pitch, kind: kind, length: max(note.length, 3)}
+        pitch <- doubled(note.note) do
+      %{note | note: pitch, kind: :chord, length: max(note.length, 3)}
+    end
   end
+
+  defp doubled(pitch) when pitch - 12 >= 50, do: [pitch, pitch - 12]
+  defp doubled(pitch), do: [pitch]
 
   # The cadenza in place of bar 43: from the bass's F sharp an arpeggio of F sharp seven climbs
   # to the top of the keyboard, quickening, trills on its peak, and falls back down B minor's
@@ -340,7 +345,8 @@ defmodule ErbarmeDich.Paraphrase do
     )
   end
 
-  # A run through the pitches, its notes spaced from one gap to another, and the eighth it ends on.
+  # A run through the pitches, its notes spaced from one gap to another, and the eighth it ends
+  # on.
   defp climb(pitches, start, first, last) do
     count = length(pitches)
 
@@ -400,9 +406,11 @@ defmodule ErbarmeDich.Paraphrase do
 
     notes =
       for note <- notes do
-        if note.at + note.length >= length - 0.01 and hold > 0,
-          do: %{note | length: length + hold - note.at},
-          else: note
+        if note.at + note.length >= length - 0.01 and hold > 0 do
+          %{note | length: length + hold - note.at}
+        else
+          note
+        end
       end
 
     %{
