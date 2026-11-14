@@ -319,16 +319,27 @@ run_check "Use Application config instead of reading/writing env vars directly i
 # Acronyms
 
 ACRONYMS=(
+  "ABC"
+  "AIFC"
   "AIFF"
+  "API"
   "FFT"
+  "FLAC"
+  "FM"
   "HTML"
   "JPEG"
   "JSON"
   "MIDI"
+  "MP3"
+  "NIF"
   "OSC"
   "PDF"
   "PNG"
+  "RIFF"
   "URI"
+  "UTF"
+  "VCSL"
+  "VSCO"
   "WAV"
 )
 
