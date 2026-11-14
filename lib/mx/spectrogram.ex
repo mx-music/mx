@@ -47,7 +47,8 @@ defmodule Mx.Spectrogram do
 
     columns =
       0..(width - 1)
-      |> Task.async_stream(&column(sound, round(&1 * hop), size, bins), timeout: :infinity)
+      |> Stream.map(&frame(sound, round(&1 * hop), size))
+      |> Task.async_stream(&column(&1, bins), timeout: :infinity)
       |> Enum.map(fn {:ok, column} -> column end)
 
     loudest = columns |> Enum.map(&Enum.max/1) |> Enum.max()
@@ -66,11 +67,13 @@ defmodule Mx.Spectrogram do
     {width, rows}
   end
 
-  defp column(sound, from, size, bins) do
-    frame =
-      for at <- from..(from + size - 1),
-          do: if(at < tuple_size(sound), do: elem(sound, at), else: 0.0)
+  # Cut here, not in the task, which would copy the whole sound for every column.
+  defp frame(sound, from, size) do
+    for at <- from..(from + size - 1),
+        do: if(at < tuple_size(sound), do: elem(sound, at), else: 0.0)
+  end
 
+  defp column(frame, bins) do
     spectrum = frame |> FFT.magnitudes(@fft) |> List.to_tuple()
 
     for position <- bins do
