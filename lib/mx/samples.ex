@@ -63,7 +63,7 @@ defmodule Mx.Samples do
 
       true ->
         {:error,
-         "sample #{name} is in Sonic Pi's sample pack, which is not downloaded yet; run mx samples download sonic_pi"}
+         "sample #{name} is in Sonic Pi's sample pack, which is not downloaded yet; run mix mx.samples.download sonic_pi"}
     end
   end
 
@@ -269,7 +269,7 @@ defmodule Mx.Samples do
   end
 
   defp failed(file, reason, count, dir, source) do
-    "Could not download #{file}: #{reason}.\nThe #{count} files downloaded before it stay in #{dir}; run mx samples download #{source} again to finish."
+    "Could not download #{file}: #{reason}.\nThe #{count} files downloaded before it stay in #{dir}; run mix mx.samples.download #{source} again to finish."
   end
 
   @doc "Downloads the files of the pack that are missing, with its licence, and returns `{:ok, count}` or `{:error, file, reason, count}`."

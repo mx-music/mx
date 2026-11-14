@@ -19,7 +19,7 @@ song(
 )
 ```
 
-`mx song.exs` plays the file, and `mix mx.print song.exs` prints each part's notes with their beats instead of playing them.
+`mix mx.play song.exs` plays the file, and `mix mx.print song.exs` prints each part's notes with their beats instead of playing them.
 A function refuses what cannot play, such as an unknown note name or an option the synth does not have, and mx prints the refusal with the line of the song file.
 
 A longer song is better written as a module, which [A song as a module](#a-song-as-a-module) describes.
@@ -288,10 +288,10 @@ sample({:github, "sgossner/VCSL", "c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e", "I
 ```
 
 mx downloads the file into your cache when the song loads, and plays it from the cache after that.
-`mx samples download SOURCE` downloads a whole collection ahead of time, where SOURCE is `sonic_pi` or a repository as `owner/repo@ref`, optionally followed by `:folder`:
+`mix mx.samples.download SOURCE` downloads a whole collection ahead of time, where SOURCE is `sonic_pi` or a repository as `owner/repo@ref`, optionally followed by `:folder`:
 
 ```sh
-mx samples download "sgossner/VCSL@c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e:Idiophones/Struck Idiophones/Agogo Bells"
+mix mx.samples.download "sgossner/VCSL@c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e:Idiophones/Struck Idiophones/Agogo Bells"
 ```
 
 ## Sampled instruments

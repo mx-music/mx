@@ -72,7 +72,7 @@ Saving the file with the same `song(tempo:)` keeps the tempo the music has chang
 ## The engine
 
 The engine is the mxs crate, a Rust library of its own that lives beside mx in the sibling repository `mxs`.
-mx reaches it through `native/mxs_nif`, a thin Rustler crate that depends on mxs by path and turns Elixir terms into mxs's types.
+mx reaches it through `native/mxs_nif`, a thin Rustler crate that depends on mxs from crates.io and turns Elixir terms into mxs's types.
 That NIF crate is compiled with mx, so building mx needs the mxs repository checked out next to it.
 
 mxs knows synths and effects by name, each with its options declared.

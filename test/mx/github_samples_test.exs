@@ -231,7 +231,7 @@ defmodule Mx.GitHubSamplesTest do
       assert {:error, message} = Samples.download_source(source)
       assert message =~ "Could not download #{@low}: GitHub answered 500.\n"
       assert message =~ "The 1 files downloaded before it stay in"
-      assert message =~ "run mx samples download #{source} again to finish."
+      assert message =~ "run mix mx.samples.download #{source} again to finish."
       assert File.exists?(Mx.GitHub.local(@repo, @commit, @agogo))
 
       FakeGitHub.start(%{@repo => %{@commit => %{files | @low => wav}}},
@@ -346,9 +346,9 @@ defmodule Mx.GitHubSamplesTest do
   end
 
   test "the README shows downloading Sonic Pi's pack, and the notation guide a VCSL sample and a VCSL folder ahead of time" do
-    assert File.read!("README.md") =~ "mx samples download sonic_pi"
+    assert File.read!("README.md") =~ "mix mx.samples.download sonic_pi"
     guide = File.read!("documentation/notation.md")
     assert guide =~ ~s(sample({:github, "sgossner/VCSL")
-    assert guide =~ ~s(mx samples download "sgossner/VCSL@)
+    assert guide =~ ~s(mix mx.samples.download "sgossner/VCSL@)
   end
 end

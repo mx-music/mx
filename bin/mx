@@ -1,7 +1,7 @@
 #!/usr/bin/env elixir
 # Plays a song file with nothing but Elixir installed: mx song.exs
-# MX_PATH points it at a local checkout of mx instead of GitHub.
-dep = if path = System.get_env("MX_PATH"), do: {:mx, path: path}, else: {:mx, github: "rodrigues/mx"}
+# MX_PATH points it at a local checkout of mx instead of Hex.
+dep = if path = System.get_env("MX_PATH"), do: {:mx, path: path}, else: {:mx, "~> 0.1.0"}
 Mix.install([dep])
 
 usage = """

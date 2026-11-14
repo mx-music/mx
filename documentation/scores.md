@@ -23,7 +23,7 @@ MusicXML is the file format notation programs such as MuseScore, Sibelius and Fi
 
 ```sh
 mix mx.import examples/wachet_auf/bwv140.7.mxl --tempo 72 --part "Soprano=oboe" --part "Alto=clarinet" --part "Tenor=viola" --part "Bass=bassoon" --out examples/wachet_auf/chorale.exs
-mx examples/wachet_auf/chorale.exs
+mix mx.play examples/wachet_auf/chorale.exs
 ```
 
 It reads compressed `.mxl` files and uncompressed `.musicxml` and `.xml` files, and writes the song beside the score, or to `--out`; a song that exists is refused unless you add `--force`.
@@ -48,7 +48,7 @@ The song is ordinary mx code, so it is a place to start: give the bass a second 
 
 ```sh
 mix mx.import examples/erbarme_dich/bwv244.39.mxl --part "Violin=violin" --part "Alto=oboe" --part "Organo a canne=organ" --out examples/erbarme_dich/aria.exs
-mx examples/erbarme_dich/aria.exs
+mix mx.play examples/erbarme_dich/aria.exs
 ```
 
 Its D.S. al Fine is not taken, so the aria ends at bar 46 without going back to the opening ritornello.
@@ -56,7 +56,7 @@ Its D.S. al Fine is not taken, so the aria ends at bar 46 without going back to 
 `examples/erbarme_dich/dub.exs` turns the aria into a roots dub: a dub siren and the hand drums open it and the horns state its opening sigh, then the ritornello is the riddim, the drum kit leading with the one drop, ghost strokes and rolls over the congas playing Nyabinghi drums, the shaker and the güiro, the harp's skank and the organ's bubble over the continuo's bass; a trombone leads with the ritornello, slurring its runs, the harmonium and the horns sing the alto's phrase, and in the dubs the parts drop out into echo and filter sweeps, the tabla's bayan and the tanpura's drone:
 
 ```sh
-mx examples/erbarme_dich/dub.exs
+mix mx.play examples/erbarme_dich/dub.exs
 ```
 
 ## Scan a score
@@ -110,7 +110,7 @@ On three pages of the Maple Leaf Rag it finds 94 notes in 100 both on the clean 
 
 ```sh
 mix mx.hum hum.wav --tempo 90
-mx hum.exs
+mix mx.play hum.exs
 ```
 
 It reads WAV and AIFF files, mono or stereo, at any sample rate, and writes the song beside the recording, or to `--out`; a song that exists is refused unless you add `--force`.

@@ -17,15 +17,7 @@ It makes sound with mxs, its own sound engine in Rust.
 
 mx needs Elixir 1.20 or later, and Rust, which compiles mxs the first time mx is built.
 
-Install the `mx` command, which plays a song file:
-
-```sh
-mix escript.install hex mx 0.1.0
-```
-
-Mix puts the command in `~/.mix/escripts`, which must be on your `PATH`.
-
-To use mx in a Mix project instead, add it to the dependencies in `mix.exs`:
+Add mx to the dependencies in your Mix project's `mix.exs`:
 
 ```elixir
 {:mx, "~> 0.1.0"}
@@ -34,30 +26,27 @@ To use mx in a Mix project instead, add it to the dependencies in `mix.exs`:
 To play Sonic Pi's samples, download its sample pack once:
 
 ```sh
-mx samples download sonic_pi
+mix mx.samples.download sonic_pi
 ```
 
 The pack is 35 MB, under Creative Commons 0, and goes to your cache folder rather than the repository.
 Run the command again to finish an interrupted download.
-In a Mix project, `mix mx.samples.download sonic_pi` does the same.
 
 ## Play a song
 
 ```sh
-mx song.exs
+mix mx.play song.exs
 ```
 
 mx plays the song until it ends or you press Enter.
 Save the file and the new version takes over at the end of the section playing.
 A part added to the file joins at the next section, and a part removed from it stops at the end of its pass.
 A version that does not load prints its error with the line, and the previous version keeps playing.
-`mx` with no song file prints how to use it.
-In a clone of mx, `mix mx.play song.exs` does the same, taking the same options.
 
 To keep what you play, record it to a stereo WAV file:
 
 ```sh
-mx song.exs --record session.wav
+mix mx.play song.exs --record session.wav
 ```
 
 Recording starts before the first note, carries on without a gap when you save the song, and ends when you press Enter, once the notes still sounding have faded or after four seconds at most.
@@ -68,7 +57,7 @@ A file that already exists is refused unless you add `--force`, and so is a path
 To hear what a song does without playing it aloud, render it to a stereo WAV file instead:
 
 ```sh
-mx song.exs --render song.wav
+mix mx.play song.exs --render song.wav
 ```
 
 The render holds what `--record` would, as fast as the machine renders it and with no sound: it starts at the song's first beat and ends once the music has ended and the notes still sounding have faded, or after four seconds at most.
@@ -78,10 +67,10 @@ mx prints the same report as for a recording, and refuses a file that exists unl
 A render sends no MIDI or OSC and has no input, so mx names each part that sends MIDI or OSC, or waits for input, and leaves it out.
 `--render` cannot go with `--record`, nor with a song that has `live_audio`.
 
-`examples/ambient.exs` is a demo to start from, a slow ambient piece of pads, keys, bells and samples through reverb and echo:
+In a clone of mx, `examples/ambient.exs` is a demo to start from, a slow ambient piece of pads, keys, bells and samples through reverb and echo:
 
 ```sh
-mx examples/ambient.exs
+mix mx.play examples/ambient.exs
 ```
 
 The folder `examples` holds more songs: pieces for a band, such as a salsa, a choro, a dub and three ragas, and solos for single instruments.

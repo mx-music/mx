@@ -157,7 +157,7 @@ defmodule Mx.RenderTest do
   end
 
   test "the README describes --render" do
-    assert File.read!("README.md") =~ "mx song.exs --render song.wav"
+    assert File.read!("README.md") =~ "mix mx.play song.exs --render song.wav"
   end
 
   @tag :timing
