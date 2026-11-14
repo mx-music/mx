@@ -264,10 +264,13 @@ defmodule Mx.Measure.Strokes do
 
       for [low, high] <- Enum.chunk_every(bounds, 2, 1, :discard),
           high > low,
-          between = for(frame <- low..(high - 1), do: {frame, elem(smooth, frame)}),
+          between = Enum.map(low..(high - 1), &{&1, elem(smooth, &1)}),
           {_frame, peak} = Enum.max_by(between, &elem(&1, 1)),
           peak >= @heard,
-          inside = for({frame, level} <- between, level > peak - @trim, do: frame),
+          inside =
+            between
+            |> Enum.filter(fn {_, level} -> level > peak - @trim end)
+            |> Enum.map(&elem(&1, 0)),
           from = seconds.(hd(inside)),
           to = seconds.(List.last(inside)),
           to - from >= @shortest do

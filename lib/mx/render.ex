@@ -118,7 +118,7 @@ defmodule Mx.Render do
       {:sent, pid, kind} ->
         part = name(pid)
 
-        if MapSet.member?(told, {part, kind}) do
+        if {part, kind} in told do
           tell_sent(told)
         else
           IO.puts(

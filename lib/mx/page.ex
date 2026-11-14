@@ -17,23 +17,23 @@ defmodule Mx.Page do
   @doc "Writes the song at `path` to the HTML file `out`, with `seconds:`, `force:` and `title:`, and returns `:ok` once written, or `{:error, message}`."
   def write(path, out, opts \\ []) when is_binary(path) and is_binary(out) and is_list(opts) do
     id = System.unique_integer([:positive])
-    wav = Path.join(System.tmp_dir!(), "mx-page-#{id}.wav")
-    mp3 = Path.rootname(wav) <> ".mp3"
+    wav_path = Path.join(System.tmp_dir!(), "mx-page-#{id}.wav")
+    mp3_path = Path.rootname(wav_path) <> ".mp3"
 
     try do
       with {:ok, ffmpeg} <- ffmpeg(),
            :ok <- check(out, Keyword.get(opts, :force, false)),
-           :ok <- Render.render(path, wav, seconds: opts[:seconds]),
-           :ok <- encode(ffmpeg, wav, mp3),
+           :ok <- Render.render(path, wav_path, seconds: opts[:seconds]),
+           :ok <- encode(ffmpeg, wav_path, mp3_path),
            {:ok, song} <- Song.load(path),
-           {:ok, data} <- data(song, path, Recording.seconds(wav)) do
+           {:ok, data} <- data(song, path, Recording.seconds(wav_path)) do
         title = Keyword.get_lazy(opts, :title, fn -> title(path) end)
-        audio = mp3 |> File.read!() |> Base.encode64()
+        audio = mp3_path |> File.read!() |> Base.encode64()
         File.write!(out, html(Map.merge(data, %{title: title, audio: audio})))
       end
     after
-      File.rm(wav)
-      File.rm(mp3)
+      File.rm(wav_path)
+      File.rm(mp3_path)
     end
   end
 
@@ -52,7 +52,7 @@ defmodule Mx.Page do
          source: File.read!(path),
          tempo: song.tempo,
          seconds: seconds,
-         beats: for(beat <- 0..ceil(beats), do: seconds_at(timeline, beat)),
+         beats: Enum.map(0..ceil(beats), &seconds_at(timeline, &1)),
          sections:
            for {_, start, _, beats} <- Enum.reverse(longest) do
              [seconds_at(timeline, start), beats]
@@ -67,21 +67,23 @@ defmodule Mx.Page do
     sections = loop.music.sections
     window = elem(sections, tuple_size(sections) - 1).beats
 
-    0
-    |> Stream.iterate(&(&1 + 1))
-    |> Stream.take_while(&(loop.passes == nil or &1 < loop.passes))
-    |> Enum.reduce_while({:ok, [], 0}, fn pass, {:ok, played, start} ->
-      {timeline, _} = Tempo.through(song.tempos, song.tempo, pass, window)
+    played =
+      0
+      |> Stream.iterate(&(&1 + 1))
+      |> Stream.take_while(&(loop.passes == nil or &1 < loop.passes))
+      |> Enum.reduce_while({:ok, [], 0}, fn pass, {:ok, played, start} ->
+        {timeline, _} = Tempo.through(song.tempos, song.tempo, pass, window)
 
-      with true <- seconds_at(timeline, start) < seconds,
-           {:ok, %{events: events, beats: beats}} <- Pass.events(loop, pass) do
-        {:cont, {:ok, [{timeline, start, events, beats} | played], start + beats}}
-      else
-        false -> {:halt, {:ok, played, start}}
-        {:error, message} -> {:halt, {:error, message}}
-      end
-    end)
-    |> case do
+        with true <- seconds_at(timeline, start) < seconds,
+             {:ok, %{events: events, beats: beats}} <- Pass.events(loop, pass) do
+          {:cont, {:ok, [{timeline, start, events, beats} | played], start + beats}}
+        else
+          false -> {:halt, {:ok, played, start}}
+          {:error, message} -> {:halt, {:error, message}}
+        end
+      end)
+
+    case played do
       {:ok, played, _start} -> {:ok, played}
       error -> error
     end
@@ -100,13 +102,15 @@ defmodule Mx.Page do
 
   defp part(loop, played, files) do
     marks = played |> Enum.reverse() |> Enum.flat_map(&marks(&1, loop.synth, files))
+    notes = for {:note, note} <- marks, do: note
+    hits = for {:hit, hit} <- marks, do: hit
 
     %{
       name: loop.name,
       synth: to_string(loop.synth),
       fx: Enum.map(loop.fx, fn {effect, _opts} -> effect end),
-      notes: for({:note, note} <- marks, do: note) |> Enum.sort(),
-      hits: for({:hit, hit} <- marks, do: hit) |> Enum.sort()
+      notes: Enum.sort(notes),
+      hits: Enum.sort(hits)
     }
   end
 
@@ -185,14 +189,16 @@ defmodule Mx.Page do
   defp seconds_at(timeline, beat), do: Float.round(Tempo.time_at(timeline, beat) / 1_000_000, 3)
 
   defp map_ok(items, fun) do
-    items
-    |> Enum.reduce_while({:ok, []}, fn item, {:ok, done} ->
-      case fun.(item) do
-        {:ok, value} -> {:cont, {:ok, [value | done]}}
-        error -> {:halt, error}
-      end
-    end)
-    |> case do
+    mapped =
+      items
+      |> Enum.reduce_while({:ok, []}, fn item, {:ok, done} ->
+        case fun.(item) do
+          {:ok, value} -> {:cont, {:ok, [value | done]}}
+          error -> {:halt, error}
+        end
+      end)
+
+    case mapped do
       {:ok, done} -> {:ok, Enum.reverse(done)}
       error -> error
     end
@@ -218,8 +224,8 @@ defmodule Mx.Page do
     end
   end
 
-  defp encode(ffmpeg, wav, mp3) do
-    args = ~w(-v error -y -i #{wav} -codec:a libmp3lame -b:a 160k #{mp3})
+  defp encode(ffmpeg, wav_path, mp3_path) do
+    args = ~w(-v error -y -i #{wav_path} -codec:a libmp3lame -b:a 160k #{mp3_path})
 
     case System.cmd(ffmpeg, args, stderr_to_stdout: true) do
       {_log, 0} -> :ok

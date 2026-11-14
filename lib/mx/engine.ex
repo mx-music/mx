@@ -16,7 +16,7 @@ defmodule Mx.Engine do
   @type id :: term()
   @type chain :: term()
   @type params :: keyword(number())
-  @type target :: {:sounds, [id()]} | {:part, chain()} | {:effect, chain(), non_neg_integer()}
+  @type target :: {:sounds, list(id())} | {:part, chain()} | {:effect, chain(), non_neg_integer()}
   @type event ::
           {:note, id() | nil, atom(), number() | [number()] | nil, params(), chain() | nil}
           | {:sample, id() | nil, term(), params(), chain() | nil}
@@ -75,5 +75,5 @@ defmodule Mx.Engine do
   @callback new_id() :: id()
 
   @doc "Plays events at the Unix time in microseconds given."
-  @callback play(at_us :: integer(), events :: [event()]) :: :ok
+  @callback play(at_us :: integer(), events :: list(event())) :: :ok
 end

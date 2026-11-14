@@ -170,7 +170,7 @@ defmodule Mx.Loop do
   defp run_pass(state, timeline) do
     start = state.next_start
     state = %{state | loaded: Map.merge(state.loaded, state.arrived), arrived: %{}}
-    unless state.loop.on, do: state.worked_out.(self(), start)
+    if !state.loop.on, do: state.worked_out.(self(), start)
     {state, events, beats} = next_pass(state, Band.time_at(timeline, start))
     {skip, state} = {state.skip, %{state | skip: 0}}
     events = Enum.reject(events, fn {beat, step, _} -> beat < skip and skipped?(step) end)
@@ -230,7 +230,7 @@ defmodule Mx.Loop do
       {{beat, step, opts}, index} ->
         case out_messages(step, opts, loop) do
           nil ->
-            [{start + beat, loop.synth, step, opts, fx, Map.get(ids, index)}]
+            [{start + beat, loop.synth, step, opts, fx, ids[index]}]
 
           messages ->
             for {offset, message} <- messages,

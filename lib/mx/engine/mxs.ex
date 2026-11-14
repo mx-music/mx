@@ -55,7 +55,9 @@ defmodule Mx.Engine.Mxs do
   defp entries do
     {_synths, note, sample, effects, effect} = Native.catalog()
 
-    for({name, specs} <- synth_specs(), do: {name, specs ++ note}) ++
+    synths = for {name, specs} <- synth_specs(), do: {name, specs ++ note}
+
+    synths ++
       [{"mono_player", sample ++ note}, {"stereo_player", sample ++ note}] ++
       [{"live_audio_mono", note}, {"live_audio_stereo", note}] ++
       for {name, specs} <- effects ++ effect_specs(), do: {"fx_" <> name, specs ++ effect}
@@ -132,10 +134,12 @@ defmodule Mx.Engine.Mxs do
        }}
     else
       {:error, "the input runs at " <> _ = message} ->
+        advice = if advice, do: ", " <> advice
+
         {:stop,
          """
          mxs cannot start with audio input on, because #{message}.
-         Set both to the same sample rate in Audio MIDI Setup#{if advice, do: ", " <> advice}.
+         Set both to the same sample rate in Audio MIDI Setup#{advice}.
          """}
 
       {:error, message} ->
@@ -232,7 +236,9 @@ defmodule Mx.Engine.Mxs do
     {floats(left), floats(right)}
   end
 
-  defp floats(binary), do: for(<<x::float-32-native <- binary>>, do: x)
+  defp floats(binary) do
+    for <<sample::float-32-native <- binary>>, do: sample
+  end
 
   @impl Mx.Engine
   def new_id, do: :atomics.add_get(:persistent_term.get({__MODULE__, :ids}), 1, 1)

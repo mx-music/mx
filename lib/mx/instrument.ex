@@ -54,7 +54,7 @@ defmodule Mx.Instrument do
           defsoundp: 2
         ]
 
-      import Mx.Instrument.Vocabulary
+      import Mx.Instrument.Vocabulary, only: :functions
       Module.register_attribute(__MODULE__, :mx_pending_attrs, accumulate: true)
       Module.register_attribute(__MODULE__, :mx_synths, accumulate: true)
       Module.register_attribute(__MODULE__, :mx_effects, accumulate: true)
@@ -303,7 +303,7 @@ defmodule Mx.Instrument do
   def __after_compile__(env, _bytecode) do
     env.module.__synths__()
     env.module.__effects__()
-    unless Code.can_await_module_compilation?(), do: known(env.module)
+    if not Code.can_await_module_compilation?(), do: known(env.module)
   end
 
   @doc """
@@ -403,7 +403,7 @@ defmodule Mx.Instrument do
         for {_, _, matches, line} <- clauses do
           sound = apply(module, name, [Map.merge(placeholders, Map.new(matches))])
 
-          unless match?(%Expr{op: op} when op in [:note_envelope, :rings], sound) do
+          if not match?(%Expr{op: op} when op in [:note_envelope, :rings], sound) do
             raise CompileError,
               file: file,
               line: line,

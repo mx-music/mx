@@ -29,7 +29,7 @@ defmodule Mx.Samples do
 
   @doc "Refuses a GitHub sample's reference that is not `{:github, \"owner/repo\", ref, path}`, as `:ok` or `{:error, message}`."
   def check_github({:github, repo, ref, path} = github) do
-    if is_binary(repo) and repo =~ ~r{^[\w.-]+/[\w.-]+$} and is_binary(ref) and ref != "" and
+    if is_binary(repo) and repo =~ ~r"^[\w.-]+/[\w.-]+$" and is_binary(ref) and ref != "" and
          is_binary(path) and path != "" do
       :ok
     else
@@ -227,7 +227,7 @@ defmodule Mx.Samples do
   end
 
   def download_source(source) when is_binary(source) do
-    case Regex.run(~r{^([\w.-]+/[\w.-]+)@([^:]+)(?::(.+))?$}, source) do
+    case Regex.run(~r"^([\w.-]+/[\w.-]+)@([^:]+)(?::(.+))?$", source) do
       [_ | [repo, ref | folder]] ->
         download_github(source, repo, ref, List.first(folder))
 

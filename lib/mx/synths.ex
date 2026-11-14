@@ -107,7 +107,7 @@ defmodule Mx.Synths do
 
   defp time_option?(synth, key) do
     String.ends_with?(Atom.to_string(key), "_slide") or
-      MapSet.member?(Map.get(beats(), synth, MapSet.new()), key)
+      key in Map.get(beats(), synth, MapSet.new())
   end
 
   defp fx(effect), do: :"fx_#{effect}"

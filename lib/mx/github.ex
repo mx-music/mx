@@ -47,11 +47,12 @@ defmodule Mx.GitHub do
       {:ok, %{"tree" => tree}} ->
         prefix = if folder, do: String.trim_trailing(folder, "/") <> "/", else: ""
 
-        case for(
-               %{"type" => "blob", "path" => path} <- tree,
-               String.starts_with?(path, prefix),
-               do: path
-             ) do
+        paths =
+          for %{"type" => "blob", "path" => path} <- tree,
+              String.starts_with?(path, prefix),
+              do: path
+
+        case paths do
           [] -> {:error, "#{repo} has no folder #{folder} at #{ref}"}
           paths -> {:ok, paths}
         end

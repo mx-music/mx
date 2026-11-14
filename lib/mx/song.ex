@@ -6,6 +6,8 @@ defmodule Mx.Song do
   A song file is either a script that ends with `Mx.song/1`, or a module that uses `Mx.Song`:
 
       defmodule Paredao do
+        @moduledoc "A kick and an 808 bass at 92 beats a minute."
+
         use Mx.Song, tempo: 92
 
         part :kick, synth: :kick, fx: [level: [amp: 0.6]]

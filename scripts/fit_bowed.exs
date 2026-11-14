@@ -44,10 +44,10 @@ defmodule FitBowed do
 
   def measure(synth, vel, gains, dir, extra \\ []) do
     {notes, _} = @recorded[synth]
-    eq = (gains |> Enum.with_index() |> Enum.reject(&is_nil(elem(&1, 0))) |> Enum.map(fn {g, i} -> {"eq#{i}", g} end)) ++ extra
+    eq_opts = (gains |> Enum.with_index() |> Enum.reject(&is_nil(elem(&1, 0))) |> Enum.map(fn {gain, band} -> {"eq#{band}", gain} end)) ++ extra
 
     notes
-    |> Task.async_stream(fn note -> Held.note(render(synth, [note: note, vel: vel, vibrato: 0, sustain: 2.5] ++ eq, 3, dir), 48_000, note) end, timeout: :infinity)
+    |> Task.async_stream(fn note -> Held.note(render(synth, [note: note, vel: vel, vibrato: 0, sustain: 2.5] ++ eq_opts, 3, dir), 48_000, note) end, timeout: :infinity)
     |> Enum.map(fn {:ok, n} -> n end)
     |> Held.summary()
   end
@@ -118,7 +118,7 @@ defmodule FitBowed do
         for vel <- [0.3, 0.6, 1.0] do
           {_, target} = targets(synth, vel)
           levels = levels(measure(synth, vel, List.duplicate(nil, 8), dir, body_hz: lowest * factor))
-          for [l, t] <- Enum.zip_with(levels, target, &[&1, &2]), is_number(l) and is_number(t), do: t - l
+          for [level, wanted] <- Enum.zip_with(levels, target, &[&1, &2]), is_number(level) and is_number(wanted), do: wanted - level
         end
 
       all = List.flatten(misses)
@@ -132,14 +132,14 @@ defmodule FitBowed do
     {attack, target} = targets(synth, vel)
     IO.puts("#{synth} vel #{vel}: attack rec #{fmt(attack)} engine #{fmt(summary.attack)}")
 
-    for {band, t, l} <- Enum.zip([@bands, target, levels(summary)]), t != nil do
-      mark = if is_number(l) and abs(l - t) > 6, do: " <--", else: ""
-      IO.puts("  #{String.pad_trailing(inspect(band), 13)} rec #{fmt(t)} engine #{fmt(l)}#{mark}")
+    for {band, wanted, level} <- Enum.zip([@bands, target, levels(summary)]), wanted != nil do
+      mark = if is_number(level) and abs(level - wanted) > 6, do: " <--", else: ""
+      IO.puts("  #{String.pad_trailing(inspect(band), 13)} rec #{fmt(wanted)} engine #{fmt(level)}#{mark}")
     end
   end
 
   defp fmt(nil), do: "      -"
-  defp fmt(x), do: x |> Float.round(2) |> to_string() |> String.pad_leading(7)
+  defp fmt(level), do: level |> Float.round(2) |> to_string() |> String.pad_leading(7)
 end
 
 if args != [] do

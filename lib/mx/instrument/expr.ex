@@ -31,22 +31,25 @@ defmodule Mx.Instrument.Ops do
         min: :min
       ] do
     @doc false
-    def unquote(name)(%Expr{} = a, b), do: Expr.call(unquote(name), [a, b])
-    def unquote(name)(a, %Expr{} = b), do: Expr.call(unquote(name), [a, b])
-    def unquote(name)(a, b), do: Kernel.unquote(op)(a, b)
+    def unquote(name)(%Expr{} = left, right), do: Expr.call(unquote(name), [left, right])
+    def unquote(name)(left, %Expr{} = right), do: Expr.call(unquote(name), [left, right])
+    def unquote(name)(left, right), do: Kernel.unquote(op)(left, right)
   end
 
   @doc false
-  def pow(a, b) when is_number(a) and is_number(b), do: :math.pow(a, b)
-  def pow(a, b), do: Expr.call(:pow, [a, b])
+  def pow(base, exponent) when is_number(base) and is_number(exponent) do
+    :math.pow(base, exponent)
+  end
+
+  def pow(base, exponent), do: Expr.call(:pow, [base, exponent])
 
   @doc false
-  def neg(%Expr{} = a), do: Expr.call(:neg, [a])
-  def neg(a), do: -a
+  def neg(%Expr{} = value), do: Expr.call(:neg, [value])
+  def neg(value), do: -value
 
   @doc false
-  def abs(%Expr{} = a), do: Expr.call(:abs, [a])
-  def abs(a), do: Kernel.abs(a)
+  def abs(%Expr{} = value), do: Expr.call(:abs, [value])
+  def abs(value), do: Kernel.abs(value)
 
   @doc false
   def or_else(%Expr{op: :option} = option, fallback), do: Expr.call(:or_else, [option, fallback])
@@ -88,16 +91,16 @@ defmodule Mx.Instrument.Vocabulary do
 
   for name <- [:log2, :exp, :sin, :cos] do
     @doc false
-    def unquote(name)(x) when is_number(x), do: :math.unquote(name)(x)
-    def unquote(name)(x), do: Expr.call(unquote(name), [x])
+    def unquote(name)(value) when is_number(value), do: :math.unquote(name)(value)
+    def unquote(name)(value), do: Expr.call(unquote(name), [value])
   end
 
-  @doc "`x`, held between `low` and `high`."
-  def clamp(x, low, high) when is_number(x) and is_number(low) and is_number(high) do
-    x |> Kernel.max(low) |> Kernel.min(high)
+  @doc "`value`, held between `low` and `high`."
+  def clamp(value, low, high) when is_number(value) and is_number(low) and is_number(high) do
+    value |> Kernel.max(low) |> Kernel.min(high)
   end
 
-  def clamp(x, low, high), do: Expr.call(:clamp, [x, low, high])
+  def clamp(value, low, high), do: Expr.call(:clamp, [value, low, high])
 
   @doc "`then` where `condition` holds, and `otherwise` elsewhere."
   def select(condition, then, otherwise) when is_boolean(condition) do

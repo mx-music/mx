@@ -407,8 +407,9 @@ defmodule Mx.Music do
     |> Enum.reverse()
   end
 
-  defp cell_item(%{tokens: [], steps: steps}, _at, step, _own, _each),
-    do: %Rest{beats: steps * step}
+  defp cell_item(%{tokens: [], steps: steps}, _at, step, _own, _each) do
+    %Rest{beats: steps * step}
+  end
 
   defp cell_item(%{tokens: tokens, steps: steps} = cell, at, step, own, each) do
     beats = steps * step
@@ -488,7 +489,7 @@ defmodule Mx.Music do
   end
 
   defp named(token) do
-    pitch(String.to_atom(token))
+    Notes.parse(token)
   rescue
     ArgumentError ->
       reraise ArgumentError,

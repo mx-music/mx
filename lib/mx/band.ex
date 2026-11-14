@@ -204,7 +204,10 @@ defmodule Mx.Band do
     for {pid, start, nil} <- pids, is_number(start), do: worked_out.(pid, start)
 
     # A render ticks every loop itself, one at a time, so their notes reach the engine in the same order on every run.
-    unless Mx.Clock.rendering?(), do: for({pid, _, _} <- pids, do: send(pid, :tick))
+    if not Mx.Clock.rendering?() do
+      for {pid, _, _} <- pids, do: send(pid, :tick)
+    end
+
     state
   end
 

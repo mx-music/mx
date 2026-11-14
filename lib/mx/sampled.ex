@@ -215,6 +215,7 @@ defmodule Mx.Sampled do
   end
 
   defimpl String.Chars do
+    @doc false
     def to_string(%{source: folder}) when is_binary(folder), do: "sampled instrument #{folder}"
 
     def to_string(%{source: {:github, repo, _ref, folder}}) do
