@@ -292,7 +292,8 @@ defmodule MaracatuDub do
         {root, quality} = ring(chords(), bar - 1)
         chord = voice(chord(root, quality), from: 62, to: 74, limit: 4)
         beats = if rem(bar, 4) == 0, do: [1, 3, 3.25], else: [1, 3]
-        at(for(beat <- beats, do: {beat, note(chord, 0.25)}), 4)
+        hits = for beat <- beats, do: {beat, note(chord, 0.25)}
+        at(hits, 4)
       end
     )
   end
