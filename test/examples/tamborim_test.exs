@@ -4,7 +4,7 @@ defmodule Mx.Examples.TamborimTest do
 
   import ExUnit.CaptureIO
 
-  @song "examples/tamborim/solo.exs"
+  @song "examples/solo/tamborim.exs"
 
   test "the solo plays only the tamborim, starting with the teleco-teco's sixteenths off the beat" do
     output = print()
@@ -24,7 +24,7 @@ defmodule Mx.Examples.TamborimTest do
   end
 
   test "the examples guide points to the solo and lists the tamborim, and the synth designs license names its recording" do
-    assert File.read!("documentation/examples.md") =~ "examples/tamborim/solo.exs"
+    assert File.read!("documentation/examples.md") =~ "examples/solo/tamborim.exs"
 
     assert File.read!("documentation/instruments.md") =~
              "- `tamborim` is the small high drum of samba"

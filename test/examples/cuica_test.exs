@@ -4,7 +4,7 @@ defmodule Mx.Examples.CuicaTest do
 
   import ExUnit.CaptureIO
 
-  @song "examples/cuica/solo.exs"
+  @song "examples/solo/cuica.exs"
 
   test "the solo plays only the cuíca, the fundamental on each beat and three medium strokes after it" do
     output = print()
@@ -38,7 +38,7 @@ defmodule Mx.Examples.CuicaTest do
   end
 
   test "the examples guide points to the solo and lists the cuíca, and the synth designs license names its recordings" do
-    assert File.read!("documentation/examples.md") =~ "examples/cuica/solo.exs"
+    assert File.read!("documentation/examples.md") =~ "examples/solo/cuica.exs"
     assert File.read!("documentation/instruments.md") =~ "- `cuica` is the friction drum of samba"
     notes = File.read!("LICENSE-designs.md")
     assert notes =~ "reinsamba's pack \"Cuica\" on Freesound"

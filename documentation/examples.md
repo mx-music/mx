@@ -127,9 +127,9 @@ The bongos play the martillo until the mambo, where the bongocero takes up the c
 
 `examples/solo/surdo.exs` is the three surdos of a samba bateria on their own, in 2/4: the surdo de primeira holds the marcação, muted on the first beat of each bar and open on the second, the surdo de segunda answers it open on the first beat, and the surdo de terceira cuts across them in sixteenths.
 
-`examples/cuica/solo.exs` is the cuíca on its own, playing its part in a roda de samba in 2/4 as Luiz Guimarães notates it: the fundamental on each beat with three medium strokes after it, the roda's two-bar pattern that holds a high stroke over the barline and comes back down through three fundamental ones, and a variation that rests on the beat and answers with three high strokes, the third and fourth sixteenths of each beat coming early.
+`examples/solo/cuica.exs` is the cuíca on its own, playing its part in a roda de samba in 2/4 as Luiz Guimarães notates it: the fundamental on each beat with three medium strokes after it, the roda's two-bar pattern that holds a high stroke over the barline and comes back down through three fundamental ones, and a variation that rests on the beat and answers with three high strokes, the third and fourth sixteenths of each beat coming early.
 
-`examples/tamborim/solo.exs` is the tamborim on its own, its parts in a samba batucada in 2/4: the teleco-teco, a two-bar figure of sixteenths off the beat, the carreteiro striking every sixteenth with the teleco-teco's strokes accented, and a virada that closes a phrase with a run of thirty-seconds swelling into an accent.
+`examples/solo/tamborim.exs` is the tamborim on its own, its parts in a samba batucada in 2/4: the teleco-teco, a two-bar figure of sixteenths off the beat, the carreteiro striking every sixteenth with the teleco-teco's strokes accented, and a virada that closes a phrase with a run of thirty-seconds swelling into an accent.
 
 `examples/solo/caxixi.exs` is the caxixi on its own, shaken with each of the berimbau's strokes in two of capoeira's toques: in angola it leans on the open note after two buzzes, and in são bento grande on the first buzz of each pair and the open note that closes the phrase.
 
