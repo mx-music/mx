@@ -252,6 +252,8 @@ run_check "Use a descriptive variable name in assertion patterns: 'assert {:ok, 
 run_check "Use a descriptive parameter name in function heads: 'def label(global)', not 'def label(g)'" \
           -P "^\s*(?:defp?|defmacrop?)\s+[a-z_]\w*[?!]?\((?:(?:(?!\)\s*(?:,\s*do:|do\b|when\b))[^\n])*?[\s(,{\[])?${SHORT_NAME}\s*(?:[,)}\]]|\\\\\\\\)"
 run_check 'Avoid # === or # ---, prefer simple comments' '# [-─=]{2,}'
+# A comment of one word, such as a URL, may run past.
+run_check "Wrap comments at 98 columns, the formatter's line length" -P '^(?=.{99,}$)\s*#.*\S\s+\S'
 run_check 'Exclude commented out tests' -g 'test/**/*.exs' "^\s+#\s+(describe|test)\s\""
 run_check 'Exclude unused code, do not comment it out' -P "^\s+(#\s+defp?\s|<%!--\s<)"
 
