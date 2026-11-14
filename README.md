@@ -32,7 +32,7 @@ song(
 
 It sounds like this:
 
-<video src="https://github.com/user-attachments/assets/805f6f99-ce9b-4ed4-ad7e-0418e647a440" controls></video>
+https://github.com/user-attachments/assets/805f6f99-ce9b-4ed4-ad7e-0418e647a440
 
 It is the opening of Erik Satie's first Gymnopédie, of 1888.
 `note` plays a pitch or a chord for a number of beats, `seq` plays notes one after another, and `together` starts its items at once.
@@ -60,11 +60,11 @@ Each video plays a song in `examples` from start to end, as mx renders it, over 
 
 Debussy's Clair de lune on mx's piano, a synth, from [examples/piano/clair_de_lune.exs](https://github.com/mx-music/mx/blob/main/examples/piano/clair_de_lune.exs):
 
-<video src="https://github.com/user-attachments/assets/e2256f68-cba3-40c1-8166-ebf1c1a65c81" controls></video>
+https://github.com/user-attachments/assets/e2256f68-cba3-40c1-8166-ebf1c1a65c81
 
 An afrobeat groove mixed as a dub, with a sampled drum kit and keyboard over mx's double bass, from [examples/afrobeat.exs](https://github.com/mx-music/mx/blob/main/examples/afrobeat.exs):
 
-<video src="https://github.com/user-attachments/assets/be2f2355-f117-4eef-b5e1-bc5c2be42f02" controls></video>
+https://github.com/user-attachments/assets/be2f2355-f117-4eef-b5e1-bc5c2be42f02
 
 ## Install
 
