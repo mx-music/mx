@@ -1,22 +1,25 @@
-# Parade, a march for the orchestral percussion of VCSL, Versilian Studios' Versilian Community
-# Sample Library, under Creative Commons 0: the rope-tension field drum, bass drum, clash cymbals,
-# timpani, tubular glockenspiel, triangle, tambourine, sleigh bells, anvil, ratchet, slapstick and
-# flexatone.
-# It has a march's form: the field drum calls the band in, the first strain is played twice, the
-# trio is quieter, with triangle, tambourine and sleigh bells, and the first strain returns at
-# full strength, with the anvil.
-# Between the trio and the return the ratchet, the slapstick, the flexatone and the anvil have
-# four bars to themselves.
-# The tune is the tubular glockenspiel's, in G, and the timpani play G and D under it; the pack's
-# five timpani are fixed at the notes they were recorded at, and the two used sit some 40 cents
-# under G and D, so the glockenspiel is listed half a semitone above its pitch and sounds that
-# much lower, with them.
-# Each row of the drums is a bar of eight sixteenths, a character to each: a digit is a stroke of
-# that level and a dot is silence.
-# The bass drum's stroke starts 28 thousandths of a second into its file, so it plays that much
-# early.
-# The files are fetched as the song loads, about 25 MB.
 defmodule Parade do
+  @moduledoc """
+  Parade, a march for the orchestral percussion of VCSL, Versilian Studios' Versilian Community
+  Sample Library, under Creative Commons 0: the rope-tension field drum, bass drum, clash cymbals,
+  timpani, tubular glockenspiel, triangle, tambourine, sleigh bells, anvil, ratchet, slapstick and
+  flexatone.
+  It has a march's form: the field drum calls the band in, the first strain is played twice, the
+  trio is quieter, with triangle, tambourine and sleigh bells, and the first strain returns at
+  full strength, with the anvil.
+  Between the trio and the return the ratchet, the slapstick, the flexatone and the anvil have
+  four bars to themselves.
+  The tune is the tubular glockenspiel's, in G, and the timpani play G and D under it; the pack's
+  five timpani are fixed at the notes they were recorded at, and the two used sit some 40 cents
+  under G and D, so the glockenspiel is listed half a semitone above its pitch and sounds that
+  much lower, with them.
+  Each row of the drums is a bar of eight sixteenths, a character to each: a digit is a stroke of
+  that level and a dot is silence.
+  The bass drum's stroke starts 28 thousandths of a second into its file, so it plays that much
+  early.
+  The files are fetched as the song loads, about 25 MB.
+  """
+
   use Mx.Song, tempo: 112
 
   @repo "sgossner/VCSL"

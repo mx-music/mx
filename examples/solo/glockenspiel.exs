@@ -1,6 +1,9 @@
-# A solo for the glockenspiel written for mx: a melody high in its range, damped as it goes, then
-# notes struck once and left to ring, and a last arpeggio up to its top bar.
 defmodule Glockenspiel do
+  @moduledoc """
+  A solo for the glockenspiel written for mx: a melody high in its range, damped as it goes, then
+  notes struck once and left to ring, and a last arpeggio up to its top bar.
+  """
+
   use Mx.Song, tempo: 92
 
   part :glockenspiel, synth: :glockenspiel

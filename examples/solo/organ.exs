@@ -1,6 +1,9 @@
-# A solo for the organ written for mx: chords held on the quiet set over a walking bass, then the
-# same on the loud set, and a last chord on both.
 defmodule Organ do
+  @moduledoc """
+  A solo for the organ written for mx: chords held on the quiet set over a walking bass, then the
+  same on the loud set, and a last chord on both.
+  """
+
   use Mx.Song, tempo: 72
 
   part :organ, synth: :organ

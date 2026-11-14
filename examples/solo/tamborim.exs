@@ -1,9 +1,12 @@
-# A piece for the tamborim alone written for mx: its parts in a samba batucada, in 2/4, two beats
-# to the bar.
-# The teleco-teco is a two-bar figure of sixteenths struck off the beat; the carreteiro strikes
-# every sixteenth with the figure's strokes accented; a virada closes each phrase with a run of
-# thirty-second strokes that swells into an accent.
 defmodule Tamborim do
+  @moduledoc """
+  A piece for the tamborim alone written for mx: its parts in a samba batucada, in 2/4, two beats
+  to the bar.
+  The teleco-teco is a two-bar figure of sixteenths struck off the beat; the carreteiro strikes
+  every sixteenth with the figure's strokes accented; a virada closes each phrase with a run of
+  thirty-second strokes that swells into an accent.
+  """
+
   use Mx.Song, tempo: 100
 
   @note 72.03

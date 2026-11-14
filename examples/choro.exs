@@ -1,13 +1,16 @@
-# Ernesto Nazareth's Apanhei-te, cavaquinho, a polca of 1914 that choro took for its own, played
-# by a regional: flute, clarinet, cavaquinho, 7-string guitar and pandeiro.
-# Its form is A A B B A C C A: A in G major, B in its relative minor, E minor, and C, the trio, in
-# its subdominant, C major.
-# The flute and the clarinet take the pianist's right hand in turns and then together, an octave
-# apart, and the cavaquinho strums the left hand's rhythm.
-# The melody and the harmony are transcribed from Musica Brasilis' edition, whose right hand the
-# piano plays an octave above where it is written; the guitar's bass lines and the pandeiro are
-# the regional's own, and the music itself is in the public domain.
 defmodule Choro do
+  @moduledoc """
+  Ernesto Nazareth's Apanhei-te, cavaquinho, a polca of 1914 that choro took for its own, played
+  by a regional: flute, clarinet, cavaquinho, 7-string guitar and pandeiro.
+  Its form is A A B B A C C A: A in G major, B in its relative minor, E minor, and C, the trio, in
+  its subdominant, C major.
+  The flute and the clarinet take the pianist's right hand in turns and then together, an octave
+  apart, and the cavaquinho strums the left hand's rhythm.
+  The melody and the harmony are transcribed from Musica Brasilis' edition, whose right hand the
+  piano plays an octave above where it is written; the guitar's bass lines and the pandeiro are
+  the regional's own, and the music itself is in the public domain.
+  """
+
   use Mx.Song, tempo: 104
 
   part :flute,

@@ -1,7 +1,10 @@
-# A solo for the tabla written for mx in teentaal: sixteen beats in four vibhags of four, with the
-# theka Wikipedia gives, dha dhin dhin dha, dha dhin dhin dha, then the khali and ta dhin dhin
-# dha.
 defmodule Tabla do
+  @moduledoc """
+  A solo for the tabla written for mx in teentaal: sixteen beats in four vibhags of four, with the
+  theka Wikipedia gives, dha dhin dhin dha, dha dhin dhin dha, then the khali and ta dhin dhin
+  dha.
+  """
+
   use Mx.Song, tempo: 90
 
   # The khali, beats 9 to 12, is played without the bayan, the left drum, so it opens on na, the

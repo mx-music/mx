@@ -1,6 +1,9 @@
-# A meditation in raga Bhupali, the five notes Sa, Re, Ga, Pa and Dha, on Sa D.
-# A beat is a matra and a pass is one cycle of teentaal's 16, about 16 seconds at 60 bpm.
 defmodule Meditation do
+  @moduledoc """
+  A meditation in raga Bhupali, the five notes Sa, Re, Ga, Pa and Dha, on Sa D.
+  A beat is a matra and a pass is one cycle of teentaal's 16, about 16 seconds at 60 bpm.
+  """
+
   use Mx.Song, tempo: 60
 
   part :flute,

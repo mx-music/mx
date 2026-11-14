@@ -1,15 +1,18 @@
-# A solo for the cabasa written for mx from the ways it is played.
-# The player holds the handle and twists it back and forth with the other hand pressed on the
-# beads, as Wikipedia's article on the cabasa describes, and that hand can strike the cabasa for
-# an accent, as https://www.carvedculture.com/blogs/articles/how-to-play-cabasa-tutorial
-# describes; with less pressure the beads spin on after a turn.
-# In bossa nova the cabasa plays a steady, unending sixteenth-note pulse, as
-# https://www.masterclass.com/articles/guide-to-brazilian-bossa-nova-music describes.
-# It opens on two long turns, settles into the pulse, strikes the two-bar bossa nova figure from
-# https://tunableapp.com/rhythm/bossa-nova-rhythm/ over it, plays the figure alone with the beads
-# left to spin after each stroke, takes up the pulse again, and ends on a turn that grows into a
-# stroke.
 defmodule Cabasa do
+  @moduledoc """
+  A solo for the cabasa written for mx from the ways it is played.
+  The player holds the handle and twists it back and forth with the other hand pressed on the
+  beads, as Wikipedia's article on the cabasa describes, and that hand can strike the cabasa for
+  an accent, as https://www.carvedculture.com/blogs/articles/how-to-play-cabasa-tutorial
+  describes; with less pressure the beads spin on after a turn.
+  In bossa nova the cabasa plays a steady, unending sixteenth-note pulse, as
+  https://www.masterclass.com/articles/guide-to-brazilian-bossa-nova-music describes.
+  It opens on two long turns, settles into the pulse, strikes the two-bar bossa nova figure from
+  https://tunableapp.com/rhythm/bossa-nova-rhythm/ over it, plays the figure alone with the beads
+  left to spin after each stroke, takes up the pulse again, and ends on a turn that grows into a
+  stroke.
+  """
+
   use Mx.Song, tempo: 120
 
   part :cabasa, synth: :cabasa, defaults: [amp: 0.6]

@@ -1,6 +1,9 @@
-# A solo for the triangle written for mx from its standard ways of playing, none of them
-# transcribed.
 defmodule Triangle do
+  @moduledoc """
+  A solo for the triangle written for mx from its standard ways of playing, none of them
+  transcribed.
+  """
+
   use Mx.Song, tempo: 96
 
   # It opens on single strokes left to ring, as in the orchestra, from soft to loud; then short

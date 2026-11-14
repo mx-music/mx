@@ -1,20 +1,23 @@
-# Vamos linda, a pasillo by Francisco Paredes Herrera of Cuenca, who died in 1952, played as a
-# serenade plays one: a requinto, a first guitar and a guitar that accompanies.
-# All three are FreePats' Spanish classical guitar, under Creative Commons 0; the requinto is the
-# same recordings in the guitar's upper octave, made brighter.
-# The pasillo is in 3/4 and E minor: an introduction, then the parts A, B and C of sixteen bars
-# each, and C ends on the introduction again, the estribillo.
-# The melody, its second voice in thirds and sixths, the chords and the bass runs are read from
-# the piano score and the guitar transcription in Cristhian Morocho's thesis, Universidad de
-# Cuenca, 2017; who plays what is this file's own.
-# The accompaniment is the pasillo's: two eighths in the bass, an eighth's rest, a chord on the
-# next eighth and a chord on the third beat, and it stops where the melody leads into a phrase
-# alone.
-# The form is played twice: the requinto alone, then in two voices; the second time the first
-# guitar sings the opening an octave lower and the requinto answers, and the two play C in
-# octaves.
-# The files are fetched as the song loads, about 20 MB.
 defmodule Pasillo do
+  @moduledoc """
+  Vamos linda, a pasillo by Francisco Paredes Herrera of Cuenca, who died in 1952, played as a
+  serenade plays one: a requinto, a first guitar and a guitar that accompanies.
+  All three are FreePats' Spanish classical guitar, under Creative Commons 0; the requinto is the
+  same recordings in the guitar's upper octave, made brighter.
+  The pasillo is in 3/4 and E minor: an introduction, then the parts A, B and C of sixteen bars
+  each, and C ends on the introduction again, the estribillo.
+  The melody, its second voice in thirds and sixths, the chords and the bass runs are read from
+  the piano score and the guitar transcription in Cristhian Morocho's thesis, Universidad de
+  Cuenca, 2017; who plays what is this file's own.
+  The accompaniment is the pasillo's: two eighths in the bass, an eighth's rest, a chord on the
+  next eighth and a chord on the third beat, and it stops where the melody leads into a phrase
+  alone.
+  The form is played twice: the requinto alone, then in two voices; the second time the first
+  guitar sings the opening an octave lower and the requinto answers, and the two play C in
+  octaves.
+  The files are fetched as the song loads, about 20 MB.
+  """
+
   use Mx.Song, tempo: 100
 
   @repo "freepats/spanish-classical-guitar"

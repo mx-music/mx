@@ -1,6 +1,9 @@
-# A solo for the sitar written for mx in raga Yaman, on Sa C sharp: Sa, Re, Ga, the sharp Ma, Pa,
-# Dha and Ni.
 defmodule Sitar do
+  @moduledoc """
+  A solo for the sitar written for mx in raga Yaman, on Sa C sharp: Sa, Re, Ga, the sharp Ma, Pa,
+  Dha and Ni.
+  """
+
   use Mx.Song, tempo: 60
 
   # Wikipedia gives its ascent as N R G m P D N S', its descent as S' N D P m G R S and its pakad

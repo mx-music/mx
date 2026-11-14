@@ -1,24 +1,27 @@
-# An afrobeat groove for a double bass and a drum set, mixed as a dub: the drums lead, and their
-# strokes are sent into echoes.
-# The drum set is Virtuosity Drums, the jazz kit recorded by Versilian Studios, and the keyboard
-# is FreePats' FM piano, both under Creative Commons 0; the bass is mx's double bass, plucked for
-# the line and bowed for the theme.
-# It plays at 100 bpm in G with a flat second, on a vamp of two bars over G that the drop lifts to
-# A flat.
-# The bass drum is strong on one and three with softer strokes just after two and four, the snare
-# answers it in ghost notes, and the hi-hat stays closed and soft.
-# A rimshot is thrown into an echo of three sixteenths that crosses from side to side, twice in a
-# section, and the snare and the tuned tom echo more quietly at the same length.
-# In the drop the snare leaves the groove to the bass drum and the hi-hat, and the keyboard holds
-# two chords under a tremolo.
-# The floor tom, tuned to the bass's G and D, repeats a stroke every beat and a half against the
-# bar of four beats, and meets the bar again only where a section ends.
-# The theme falls from D to the low G, bowed near the bridge with a tremolo, quietly, over the
-# plucked line, and the solo is the drummer's: one run on the tuned tom that gains a stroke in
-# every bar, from three strokes to ten, each ending on the rimshot.
-# It ends by thinning out over four bars, the echoes left to themselves, before a last chord.
-# The files are fetched as the song loads.
 defmodule Afrobeat do
+  @moduledoc """
+  An afrobeat groove for a double bass and a drum set, mixed as a dub: the drums lead, and their
+  strokes are sent into echoes.
+  The drum set is Virtuosity Drums, the jazz kit recorded by Versilian Studios, and the keyboard
+  is FreePats' FM piano, both under Creative Commons 0; the bass is mx's double bass, plucked for
+  the line and bowed for the theme.
+  It plays at 100 bpm in G with a flat second, on a vamp of two bars over G that the drop lifts to
+  A flat.
+  The bass drum is strong on one and three with softer strokes just after two and four, the snare
+  answers it in ghost notes, and the hi-hat stays closed and soft.
+  A rimshot is thrown into an echo of three sixteenths that crosses from side to side, twice in a
+  section, and the snare and the tuned tom echo more quietly at the same length.
+  In the drop the snare leaves the groove to the bass drum and the hi-hat, and the keyboard holds
+  two chords under a tremolo.
+  The floor tom, tuned to the bass's G and D, repeats a stroke every beat and a half against the
+  bar of four beats, and meets the bar again only where a section ends.
+  The theme falls from D to the low G, bowed near the bridge with a tremolo, quietly, over the
+  plucked line, and the solo is the drummer's: one run on the tuned tom that gains a stroke in
+  every bar, from three strokes to ten, each ending on the rimshot.
+  It ends by thinning out over four bars, the echoes left to themselves, before a last chord.
+  The files are fetched as the song loads.
+  """
+
   use Mx.Song, tempo: 100
 
   @repo "sfzinstruments/virtuosity_drums"

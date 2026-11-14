@@ -1,18 +1,21 @@
-# Sombras, the pasillo Carlos Brito Benavides of Quito wrote in 1930 to Rosario Sansores' poem,
-# played without its words by a requinto, a first guitar and a guitar that accompanies.
-# This is examples/sombras.exs stroke for stroke on mx's guitar, the nylon-string guitar measured
-# from recordings, in place of the recorded one, to hear one beside the other; the requinto is the
-# same guitar in its upper octave, made brighter.
-# The pasillo is in 3/4 and A minor: an estribillo of nine bars that the requinto plays in thirds,
-# the part A of sixteen bars, the estribillo, the part B of twenty, and the estribillo again.
-# The estribillo, the sung melody, the chords and the bass are read from the score for voice and
-# piano in Boris Mora's thesis, Universidad de Cuenca, 2020, the estribillo an octave below the
-# piano's; the second voice under the melody, the requinto's answers, the breath at the end of
-# each phrase and who plays what are this file's own.
-# The first time the first guitar sings the melody alone and the requinto answers its long notes;
-# the second time the two sing it as a duo does, the requinto above and the first guitar a third
-# or a sixth below.
 defmodule SombrasSynths do
+  @moduledoc """
+  Sombras, the pasillo Carlos Brito Benavides of Quito wrote in 1930 to Rosario Sansores' poem,
+  played without its words by a requinto, a first guitar and a guitar that accompanies.
+  This is examples/sombras.exs stroke for stroke on mx's guitar, the nylon-string guitar measured
+  from recordings, in place of the recorded one, to hear one beside the other; the requinto is the
+  same guitar in its upper octave, made brighter.
+  The pasillo is in 3/4 and A minor: an estribillo of nine bars that the requinto plays in thirds,
+  the part A of sixteen bars, the estribillo, the part B of twenty, and the estribillo again.
+  The estribillo, the sung melody, the chords and the bass are read from the score for voice and
+  piano in Boris Mora's thesis, Universidad de Cuenca, 2020, the estribillo an octave below the
+  piano's; the second voice under the melody, the requinto's answers, the breath at the end of
+  each phrase and who plays what are this file's own.
+  The first time the first guitar sings the melody alone and the requinto answers its long notes;
+  the second time the two sing it as a duo does, the requinto above and the first guitar a third
+  or a sixth below.
+  """
+
   use Mx.Song, tempo: 90
 
   @room [room: 0.6, damp: 0.5, mix: 0.22]

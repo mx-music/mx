@@ -1,19 +1,22 @@
-# A solo for the cajón written for mx, from Peru, where the cajón comes from, to flamenco, which
-# took it up in 1977, and to the grooves it plays in place of a drum kit.
-# The festejo is in 12/8, felt as a dotted quarter to the beat, as
-# http://hugoalcazar.blogspot.com/2008/04/j.html explains; its strokes are written for mx.
-# The rumba flamenca groups its eight eighths as 3+3+2 and accents the second and fourth beats, by
-# Wikipedia's article on it: the bass tone on the first beat and the eighth after the second, and
-# the slap on two and four.
-# The bulerías is a cycle of twelve counts that starts on 12 and accents 12, 3, 6, 8 and 10, or
-# 12, 3, 7, 8 and 10, by Wikipedia's article on it; here a count is an eighth, 208 to the minute,
-# and the last cycle closes on 10.
-# The last groove is a rock beat moved from the kit in the three steps of
-# https://www.thomann.co.uk/onlineexpert_page_cajon_traditional_and_modern_grooves.html: the bass
-# tone for the kick and the slap for the snare, then soft slaps so every eighth is played, then
-# every sixteenth.
-# It ends on a roll of slaps that grows into the bass tone.
 defmodule Cajon do
+  @moduledoc """
+  A solo for the cajón written for mx, from Peru, where the cajón comes from, to flamenco, which
+  took it up in 1977, and to the grooves it plays in place of a drum kit.
+  The festejo is in 12/8, felt as a dotted quarter to the beat, as
+  http://hugoalcazar.blogspot.com/2008/04/j.html explains; its strokes are written for mx.
+  The rumba flamenca groups its eight eighths as 3+3+2 and accents the second and fourth beats, by
+  Wikipedia's article on it: the bass tone on the first beat and the eighth after the second, and
+  the slap on two and four.
+  The bulerías is a cycle of twelve counts that starts on 12 and accents 12, 3, 6, 8 and 10, or
+  12, 3, 7, 8 and 10, by Wikipedia's article on it; here a count is an eighth, 208 to the minute,
+  and the last cycle closes on 10.
+  The last groove is a rock beat moved from the kit in the three steps of
+  https://www.thomann.co.uk/onlineexpert_page_cajon_traditional_and_modern_grooves.html: the bass
+  tone for the kick and the slap for the snare, then soft slaps so every eighth is played, then
+  every sixteenth.
+  It ends on a roll of slaps that grows into the bass tone.
+  """
+
   use Mx.Song, tempo: 104
 
   # Each pass is written as its beats and its cells: B is the bass tone, S the slap, s a softer

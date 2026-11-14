@@ -1,17 +1,20 @@
-# Scott Joplin's Maple Leaf Rag, of 1899, on the four pianos of VCSL, Versilian Studios' Versilian
-# Community Sample Library, under Creative Commons 0.
-# A rag is a march in form: strains of sixteen bars, each played twice, here the first, the
-# second, the first again, the trio and the last.
-# Each strain has its own piano so that they can be compared on the same music: the Knight upright
-# for the first strain each time it comes, the Yamaha upright for the second, the Kawai grand for
-# the trio and the Steinway B grand for the last.
-# The notes are imported by mix mx.import from the encoding of the rag in music21's corpus,
-# maple_leaf_rag.mxl.
-# VCSL names the keys of the uprights and of the Kawai an octave below the pitch mx names them by,
-# and the Steinway's at their pitch, and records the Yamaha only at every C and G.
-# One strength of each piano is used, of the two to four recorded, and only the keys its strain
-# needs; the files are fetched as the song loads, about 480 MB.
 defmodule MapleLeafRag do
+  @moduledoc """
+  Scott Joplin's Maple Leaf Rag, of 1899, on the four pianos of VCSL, Versilian Studios' Versilian
+  Community Sample Library, under Creative Commons 0.
+  A rag is a march in form: strains of sixteen bars, each played twice, here the first, the
+  second, the first again, the trio and the last.
+  Each strain has its own piano so that they can be compared on the same music: the Knight upright
+  for the first strain each time it comes, the Yamaha upright for the second, the Kawai grand for
+  the trio and the Steinway B grand for the last.
+  The notes are imported by mix mx.import from the encoding of the rag in music21's corpus,
+  maple_leaf_rag.mxl.
+  VCSL names the keys of the uprights and of the Kawai an octave below the pitch mx names them by,
+  and the Steinway's at their pitch, and records the Yamaha only at every C and G.
+  One strength of each piano is used, of the two to four recorded, and only the keys its strain
+  needs; the files are fetched as the song loads, about 480 MB.
+  """
+
   use Mx.Song, tempo: 96
 
   @repo "sgossner/VCSL"

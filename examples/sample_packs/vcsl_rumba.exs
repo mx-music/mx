@@ -1,20 +1,23 @@
-# Rumba y Montuno, for the Afro-Cuban percussion of VCSL, Versilian Studios' Versilian Community
-# Sample Library, under Creative Commons 0: claves, woodblock, cajón, the three congas, cabasa,
-# bongos, cowbell, güiro, agogo bells and vibraslap, with its xylophone.
-# Everything is counted from the rumba clave, five strokes in sixteen pulses, which the claves
-# play from the first bar to the last.
-# The first half is a guaguancó as it is commonly taught: sticks on the woodblock, and a melody of
-# three open tones between the low drum and the middle one, which the cajón plays first, as rumba
-# was played on boxes before it was played on drums; over it the quinto, the high drum, plays
-# alone.
-# The second half is a montuno: the congas change to the tumbao of dance music, the bongos play
-# the martillo, the cowbell and the güiro come in, and the xylophone plays the figure a piano
-# would, C, F, G and F, and then a tune over it.
-# Each row is sixteen pulses, a character to each: a digit is a stroke of that level and a dot is
-# silence.
-# The pack records its instruments at very different levels, so each sound has its own gain.
-# The files are fetched as the song loads, about 15 MB.
 defmodule RumbaYMontuno do
+  @moduledoc """
+  Rumba y Montuno, for the Afro-Cuban percussion of VCSL, Versilian Studios' Versilian Community
+  Sample Library, under Creative Commons 0: claves, woodblock, cajón, the three congas, cabasa,
+  bongos, cowbell, güiro, agogo bells and vibraslap, with its xylophone.
+  Everything is counted from the rumba clave, five strokes in sixteen pulses, which the claves
+  play from the first bar to the last.
+  The first half is a guaguancó as it is commonly taught: sticks on the woodblock, and a melody of
+  three open tones between the low drum and the middle one, which the cajón plays first, as rumba
+  was played on boxes before it was played on drums; over it the quinto, the high drum, plays
+  alone.
+  The second half is a montuno: the congas change to the tumbao of dance music, the bongos play
+  the martillo, the cowbell and the güiro come in, and the xylophone plays the figure a piano
+  would, C, F, G and F, and then a tune over it.
+  Each row is sixteen pulses, a character to each: a digit is a stroke of that level and a dot is
+  silence.
+  The pack records its instruments at very different levels, so each sound has its own gain.
+  The files are fetched as the song loads, about 15 MB.
+  """
+
   use Mx.Song, tempo: 112
 
   @repo "sgossner/VCSL"

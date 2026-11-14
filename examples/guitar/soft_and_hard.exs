@@ -1,4 +1,10 @@
 defmodule SoftAndHard do
+  @moduledoc """
+  One phrase in A minor on the guitar at 72 bpm, played softly, then harder, then as hard as the
+  guitar goes, over and over.
+  A low A rings on through a bar's rest before the phrase comes back.
+  """
+
   use Mx.Song, tempo: 72
 
   part :guitar, synth: :guitar, defaults: [amp: 0.5], fx: [reverb: [room: 0.4, mix: 0.2]]

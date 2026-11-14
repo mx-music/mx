@@ -1,18 +1,6 @@
-# Sgubhu, an amapiano track in D minor at 112 bpm, written for mx and not transcribed from any
-# record.
-# The log drum is a synth written in this file: a low note whose overtones, the odd ones, sound as
-# it is struck and die away at once, which knocks down onto its pitch and slides where its line
-# slides.
-# It plays the bass between the kicks, with octave jumps and slides, under a kick on every beat,
-# the shaker's swung sixteenths, an open hi-hat off the beat, the congas, and the claves on every
-# third sixteenth, across the bar.
-# The chords go round four bars, D minor 9, B flat major 9, G minor 9 and A7 flat 9, on the FM
-# piano of a Yamaha TX81Z under a tremolo, with the bowed vibraphone as a pad.
-# The Steinway plays the tune in octaves, the small ocarina whistles, the vibraphone breaks the
-# chords, and the tenor saxophone takes a solo.
-# Those are recordings from the Versilian Community Sample Library, under Creative Commons 0; the
-# drums and the percussion are mx's measured synths.
 defmodule Sgubhu.Synths do
+  @moduledoc "The synth written for Sgubhu: its log drum."
+
   use Mx.Instrument
 
   @doc "A log drum, amapiano's bass: a low note with the odd overtones of a struck slit drum, which die away as it rings."
@@ -43,6 +31,23 @@ defmodule Sgubhu.Synths do
 end
 
 defmodule Sgubhu do
+  @moduledoc """
+  Sgubhu, an amapiano track in D minor at 112 bpm, written for mx and not transcribed from any
+  record.
+  The log drum is a synth written in this file: a low note whose overtones, the odd ones, sound as
+  it is struck and die away at once, which knocks down onto its pitch and slides where its line
+  slides.
+  It plays the bass between the kicks, with octave jumps and slides, under a kick on every beat,
+  the shaker's swung sixteenths, an open hi-hat off the beat, the congas, and the claves on every
+  third sixteenth, across the bar.
+  The chords go round four bars, D minor 9, B flat major 9, G minor 9 and A7 flat 9, on the FM
+  piano of a Yamaha TX81Z under a tremolo, with the bowed vibraphone as a pad.
+  The Steinway plays the tune in octaves, the small ocarina whistles, the vibraphone breaks the
+  chords, and the tenor saxophone takes a solo.
+  Those are recordings from the Versilian Community Sample Library, under Creative Commons 0; the
+  drums and the percussion are mx's measured synths.
+  """
+
   use Mx.Song, tempo: 112
 
   @room [reverb: [room: 0.6, damp: 0.5, mix: 0.25]]

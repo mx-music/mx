@@ -1,18 +1,21 @@
-# Valse du Zinc, a valse musette for three FreePats instruments, each under Creative Commons 0:
-# the Hohner button accordion, the Spanish classical guitar and the upright piano.
-# A valse musette is the Paris dance-hall waltz: the accordion runs in eighths over the pompe, a
-# bass note on one and the chord on two and three.
-# The guitar opens alone, the accordion plays the tune in A minor, the guitar takes the second
-# strain in C over the piano's pompe, the piano plays the tune back in octaves, and the trio turns
-# to A major and slows into its last chord.
-# The accordion's recordings last a second and a half, so its longest note is a bar, and each is
-# listed with the pitch it was measured at, a third of a semitone above its name and an octave
-# below it.
-# Download them with mx samples download
-# "freepats/button-accordion-HN@d70d16456fd99305d1c24c612b205ab38846eb0f", and the same for
-# "freepats/spanish-classical-guitar@6f4eb1b092acc88f5448cea1a0001bd07b971af8:samples" and
-# "freepats/upright-piano-KW@570f6c60ed2eff67accad3b85d5b452e57a3ad28:samples".
 defmodule ValseDuZinc do
+  @moduledoc """
+  Valse du Zinc, a valse musette for three FreePats instruments, each under Creative Commons 0:
+  the Hohner button accordion, the Spanish classical guitar and the upright piano.
+  A valse musette is the Paris dance-hall waltz: the accordion runs in eighths over the pompe, a
+  bass note on one and the chord on two and three.
+  The guitar opens alone, the accordion plays the tune in A minor, the guitar takes the second
+  strain in C over the piano's pompe, the piano plays the tune back in octaves, and the trio turns
+  to A major and slows into its last chord.
+  The accordion's recordings last a second and a half, so its longest note is a bar, and each is
+  listed with the pitch it was measured at, a third of a semitone above its name and an octave
+  below it.
+  Download them with mx samples download
+  "freepats/button-accordion-HN@d70d16456fd99305d1c24c612b205ab38846eb0f", and the same for
+  "freepats/spanish-classical-guitar@6f4eb1b092acc88f5448cea1a0001bd07b971af8:samples" and
+  "freepats/upright-piano-KW@570f6c60ed2eff67accad3b85d5b452e57a3ad28:samples".
+  """
+
   use Mx.Song, tempo: 168
 
   @accordion_repo {"freepats/button-accordion-HN", "d70d16456fd99305d1c24c612b205ab38846eb0f"}

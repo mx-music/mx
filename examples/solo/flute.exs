@@ -1,12 +1,15 @@
-# Debussy's Syrinx for flute alone (1913), from the first edition, Jobert, Paris, 1927, plate J.J.
-# 344, in the public domain.
-# The score is written bar by bar as tokens: a note's sounding name and after a colon its length
-# in beats, a quarter note being a beat; a note without a length keeps the one before it.
-# The score's C flat is written b, its F flat e, and its double flats a and d, as they sound.
-# + tongues a note, where the score starts a slur or marks it tenuto, and the others are slurred
-# to; ~ ties a note into the next, ^ is a grace note, ! a fermata, r a rest, and a comma a breath.
-# @0.4 moves the breath to vel 0.4, and @0.4/3 gets there over 3 beats.
 defmodule Syrinx do
+  @moduledoc """
+  Debussy's Syrinx for flute alone (1913), from the first edition, Jobert, Paris, 1927, plate J.J.
+  344, in the public domain.
+  The score is written bar by bar as tokens: a note's sounding name and after a colon its length
+  in beats, a quarter note being a beat; a note without a length keeps the one before it.
+  The score's C flat is written b, its F flat e, and its double flats a and d, as they sound.
+  + tongues a note, where the score starts a slur or marks it tenuto, and the others are slurred
+  to; ~ ties a note into the next, ^ is a grace note, ! a fermata, r a rest, and a comma a breath.
+  @0.4 moves the breath to vel 0.4, and @0.4/3 gets there over 3 beats.
+  """
+
   use Mx.Song, tempo: 48
 
   part :flute, synth: :flute

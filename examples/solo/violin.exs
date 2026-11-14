@@ -1,13 +1,14 @@
-# A solo for the violin written for mx, in D minor, from the ways a violin is played:
-# a cantabile slurred in groups, each long note swelled and eased, the messa di voce Leopold
-# Mozart's Violinschule (1756) teaches;
-# bariolage, stopped notes against the open A string, the figure of the Preludio of Bach's Partita
-# No. 3, played détaché, the second time louder;
-# the melodic minor scale over two octaves slurred eight notes to a bow, then arpeggios in short
-# notes off the string;
-# chords plucked down to the open G string; and a climb on audible shifts to a long D7 with
-# vibrato.
 defmodule Violin do
+  @moduledoc """
+  A solo for the violin written for mx, in D minor, from the ways a violin is played: a cantabile
+  slurred in groups, each long note swelled and eased, the messa di voce Leopold Mozart's
+  Violinschule (1756) teaches; bariolage, stopped notes against the open A string, the figure of
+  the Preludio of Bach's Partita No. 3, played détaché, the second time louder; the melodic minor
+  scale over two octaves slurred eight notes to a bow, then arpeggios in short notes off the
+  string; chords plucked down to the open G string; and a climb on audible shifts to a long D7
+  with vibrato.
+  """
+
   use Mx.Song, tempo: 72
 
   part :violin, synth: :violin, fx: [reverb: [room: 0.5, mix: 0.25]]

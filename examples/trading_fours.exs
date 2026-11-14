@@ -1,22 +1,25 @@
-# Trading Fours, a feature for the drum kit on mx's own synths, after
-# examples/sample_packs/virtuosity.exs, which plays the same form on recordings of a jazz kit.
-# The kit plays a mambo, swings, trades fours with the piano and comes back to the mambo, at 184
-# bpm, over Dm7, G7, Cmaj7 and A7, with the congas, the claves, the güiro, a cowbell, a plucked
-# double bass and a piano.
-# In the mambo the right hand plays the cáscara on the timbale's shell and then the contracampana,
-# the timbalero's bell, a cowbell tuned a fourth up; the left plays the son clave as cross-sticks,
-# 2-3, and the feet the bombo and the hi-hat on two and four.
-# The bongocero's campana joins the contracampana in its third gear, both as timba.com's "Finding
-# the clave" writes them, https://www.timba.com/artist_pages/finding-the-clave, and the piano
-# plays a montuno.
-# In the swing the ride plays its beat with the hi-hat on two and four, the bass drum feathered
-# under the walking bass and the snare comping in ghost notes, while the piano comps and then
-# plays a riff.
-# mx has no ride cymbal, so the ride is the crash struck softly and damped after two beats, and
-# the hi-hat's pedal is the closed hi-hat struck softly.
-# The first four is on the snare and toms in triplets, the second a tune on the three toms that
-# ends in a buzz roll, and the piano answers each with four bars of its own.
 defmodule TradingFours do
+  @moduledoc """
+  Trading Fours, a feature for the drum kit on mx's own synths, after
+  examples/sample_packs/virtuosity.exs, which plays the same form on recordings of a jazz kit.
+  The kit plays a mambo, swings, trades fours with the piano and comes back to the mambo, at 184
+  bpm, over Dm7, G7, Cmaj7 and A7, with the congas, the claves, the güiro, a cowbell, a plucked
+  double bass and a piano.
+  In the mambo the right hand plays the cáscara on the timbale's shell and then the contracampana,
+  the timbalero's bell, a cowbell tuned a fourth up; the left plays the son clave as cross-sticks,
+  2-3, and the feet the bombo and the hi-hat on two and four.
+  The bongocero's campana joins the contracampana in its third gear, both as timba.com's "Finding
+  the clave" writes them, https://www.timba.com/artist_pages/finding-the-clave, and the piano
+  plays a montuno.
+  In the swing the ride plays its beat with the hi-hat on two and four, the bass drum feathered
+  under the walking bass and the snare comping in ghost notes, while the piano comps and then
+  plays a riff.
+  mx has no ride cymbal, so the ride is the crash struck softly and damped after two beats, and
+  the hi-hat's pedal is the closed hi-hat struck softly.
+  The first four is on the snare and toms in triplets, the second a tune on the three toms that
+  ends in a buzz roll, and the piano answers each with four bars of its own.
+  """
+
   use Mx.Song, tempo: 184
 
   # Each voice of the kit and the percussion: its synth and the options every stroke takes.

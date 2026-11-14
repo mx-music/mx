@@ -1,12 +1,15 @@
-# Paganini's Caprice No. 24 in A minor, from his 24 Caprices for solo violin, op. 1 (1817): the
-# theme and its first variation, each half repeated.
-# The notes follow the ABC transcription "Paganini Caprice" at abcnotation.com, tune 10047 of
-# Lester Bailey's collection.
-# A note is its name, then after a colon its length as a score writes it: 4 a quarter, 8 an
-# eighth, 16 a sixteenth, 12 an eighth in a triplet, and a dot adds half.
-# A note without a length keeps the one before it, r is a rest, parentheses slur notes into one
-# bow stroke, and < starts a crescendo to the end.
 defmodule Paganini do
+  @moduledoc """
+  Paganini's Caprice No. 24 in A minor, from his 24 Caprices for solo violin, op. 1 (1817): the
+  theme and its first variation, each half repeated.
+  The notes follow the ABC transcription "Paganini Caprice" at abcnotation.com, tune 10047 of
+  Lester Bailey's collection.
+  A note is its name, then after a colon its length as a score writes it: 4 a quarter, 8 an
+  eighth, 16 a sixteenth, 12 an eighth in a triplet, and a dot adds half.
+  A note without a length keeps the one before it, r is a rest, parentheses slur notes into one
+  bow stroke, and < starts a crescendo to the end.
+  """
+
   use Mx.Song, tempo: 116
 
   part :violin, synth: :violin, fx: [reverb: [room: 0.5, mix: 0.3]]

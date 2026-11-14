@@ -1,8 +1,11 @@
-# A solo for the güiro written for mx from its standard patterns: the cha-cha-chá as the Jazz
-# Education Network gives it, a long scrape on the quarter note and two short ones on the eighths
-# after it, "down, down up"; son's long-short-short-long and Puerto Rican bomba's three short
-# scrapes before a long one, as Michel Conci's notes on the güiro give them.
 defmodule Guiro do
+  @moduledoc """
+  A solo for the güiro written for mx from its standard patterns: the cha-cha-chá as the Jazz
+  Education Network gives it, a long scrape on the quarter note and two short ones on the eighths
+  after it, "down, down up"; son's long-short-short-long and Puerto Rican bomba's three short
+  scrapes before a long one, as Michel Conci's notes on the güiro give them.
+  """
+
   use Mx.Song, tempo: 120
 
   # It opens on long, slow scrapes, plays the cha-cha-chá, son and bomba, the cha-cha-chá again,

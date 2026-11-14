@@ -1,16 +1,19 @@
-# A solo for the three congas written for mx from their standard patterns, as Wikipedia's articles
-# on the tumbao and on the quinto give them.
-# The conga plays the tumbao, or marcha, of son montuno alone: heel, tip, slap, tip, heel, tip and
-# two open tones, twice to a clave.
-# The tumba joins it in the two tumbaos for two drums that the article takes from Rebeca Mauleón's
-# Salsa Guidebook, each with the tumba's open tones on the clave's three side.
-# Over the tumbao the quinto plays as it does in rumba: the lock, whose strokes are the son clave
-# a sixteenth late, tone, slap, tone in one clave and slap, tone, slap in the next, and then with
-# strokes doubled or left out; the cross, a slap on every third sixteenth, which takes three
-# claves to come round; and a phrase that ends on the sixteenth after the third beat.
-# The conga rolls heel and tip, the manoteo, into a run down the three drums; the tumbao comes
-# back, and the solo ends on a slap and an open tone together.
 defmodule Congas do
+  @moduledoc """
+  A solo for the three congas written for mx from their standard patterns, as Wikipedia's articles
+  on the tumbao and on the quinto give them.
+  The conga plays the tumbao, or marcha, of son montuno alone: heel, tip, slap, tip, heel, tip and
+  two open tones, twice to a clave.
+  The tumba joins it in the two tumbaos for two drums that the article takes from Rebeca Mauleón's
+  Salsa Guidebook, each with the tumba's open tones on the clave's three side.
+  Over the tumbao the quinto plays as it does in rumba: the lock, whose strokes are the son clave
+  a sixteenth late, tone, slap, tone in one clave and slap, tone, slap in the next, and then with
+  strokes doubled or left out; the cross, a slap on every third sixteenth, which takes three
+  claves to come round; and a phrase that ends on the sixteenth after the third beat.
+  The conga rolls heel and tip, the manoteo, into a run down the three drums; the tumbao comes
+  back, and the solo ends on a slap and an open tone together.
+  """
+
   use Mx.Song, tempo: 100
 
   # A beat is a quarter note of 4/4, so a pass is a bar, the length of a clave, written as sixteen

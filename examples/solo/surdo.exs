@@ -1,8 +1,11 @@
-# A piece for the three surdos of a samba bateria written for mx, in 2/4, two beats to the bar.
-# The surdo de primeira holds the marcação, muted on the first beat of each bar and open on the
-# second; the higher surdo de segunda answers it open on the first beat; the surdo de terceira
-# cuts across them in sixteenths.
 defmodule Surdos do
+  @moduledoc """
+  A piece for the three surdos of a samba bateria written for mx, in 2/4, two beats to the bar.
+  The surdo de primeira holds the marcação, muted on the first beat of each bar and open on the
+  second; the higher surdo de segunda answers it open on the first beat; the surdo de terceira
+  cuts across them in sixteenths.
+  """
+
   use Mx.Song, tempo: 132
 
   # The terceira's cuts over two bars, in sixteenths: two off the beat in the first bar, then a

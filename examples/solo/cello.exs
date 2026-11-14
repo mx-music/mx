@@ -1,11 +1,13 @@
-# A solo for the cello written for mx, in G major, from the ways a cello is played:
-# the opening bars of the Prelude of Bach's Cello Suite No. 1, chords broken across the strings in
-# sixteenths, slurred eight notes to a bow;
-# a cantabile in the cello's tenor, climbing from the G string to the A string on shifts that
-# slide audibly, its long notes swelled and eased, with vibrato;
-# a walking bass line plucked, the cellist's pizzicato in jazz; and a climb high on the A string,
-# falling back to the low G, swelled.
 defmodule Cello do
+  @moduledoc """
+  A solo for the cello written for mx, in G major, from the ways a cello is played: the opening
+  bars of the Prelude of Bach's Cello Suite No. 1, chords broken across the strings in sixteenths,
+  slurred eight notes to a bow; a cantabile in the cello's tenor, climbing from the G string to
+  the A string on shifts that slide audibly, its long notes swelled and eased, with vibrato; a
+  walking bass line plucked, the cellist's pizzicato in jazz; and a climb high on the A string,
+  falling back to the low G, swelled.
+  """
+
   use Mx.Song, tempo: 66
 
   part :cello, synth: :cello, fx: [reverb: [room: 0.5, mix: 0.25]]

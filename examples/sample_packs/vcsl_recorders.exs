@@ -1,13 +1,16 @@
-# Bach's chorale "Wachet auf, ruft uns die Stimme", BWV 140/7, on the four Baroque recorders of
-# VCSL, Versilian Studios' Versilian Community Sample Library, under Creative Commons 0.
-# A recorder consort plays four-part vocal music an octave above the voices, the soprano's line on
-# the soprano recorder and so on down to the bass, and so it does here.
-# The notes are imported from examples/wachet_auf/bwv140.7.mxl by mix mx.import, music21's
-# encoding under its BSD License, and the whole chorale plays once with its repeat.
-# VCSL names each key an octave below the pitch mx names it by, and records each recorder at every
-# second or third key.
-# The files are fetched as the song loads, about 50 MB.
 defmodule Consort do
+  @moduledoc """
+  Bach's chorale "Wachet auf, ruft uns die Stimme", BWV 140/7, on the four Baroque recorders of
+  VCSL, Versilian Studios' Versilian Community Sample Library, under Creative Commons 0.
+  A recorder consort plays four-part vocal music an octave above the voices, the soprano's line on
+  the soprano recorder and so on down to the bass, and so it does here.
+  The notes are imported from examples/wachet_auf/bwv140.7.mxl by mix mx.import, music21's
+  encoding under its BSD License, and the whole chorale plays once with its repeat.
+  VCSL names each key an octave below the pitch mx names it by, and records each recorder at every
+  second or third key.
+  The files are fetched as the song loads, about 50 MB.
+  """
+
   use Mx.Song, tempo: 66
 
   @repo "sgossner/VCSL"

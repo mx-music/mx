@@ -1,6 +1,9 @@
-# A solo for the marimba written for mx: its whole range, a melody held with rolls over ringing
-# bass bars, its warm low bars against its bright high ones, and a last chord.
 defmodule Marimba do
+  @moduledoc """
+  A solo for the marimba written for mx: its whole range, a melody held with rolls over ringing
+  bass bars, its warm low bars against its bright high ones, and a last chord.
+  """
+
   use Mx.Song, tempo: 80
 
   part :marimba, synth: :marimba

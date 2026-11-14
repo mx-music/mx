@@ -1,21 +1,24 @@
-# Three Tunings, three short pieces for the African keyed instruments of VCSL, Versilian Studios'
-# Versilian Community Sample Library, under Creative Commons 0: the nyunga nyunga of Mozambique, a
-# kalimba of Kenya and the mbira mavembe of Zimbabwe, each with keys of metal plucked by the
-# thumbs, and the balafon and slit drum beside them.
-# Each instrument keeps the tuning it was recorded in, so each piece is in its instrument's own
-# scale: the nyunga nyunga's scale of F, the kalimba's five notes of B, and the mavembe's scale of
-# G with its flat second.
-# The first is in the manner of the nyunga nyunga's songs, the thumbs alternating a bass with the
-# notes above it through four chords, while the balafon keeps a figure under it and runs down the
-# scale as Mande balafon players do between verses.
-# The second is the kalimba in canon with itself over the slit drum.
-# The third is built as Shona mbira music is, a cycle of 48 pulses in four phrases of three
-# chords, a second mbira playing the same part a pulse later so that the two interlock, with the
-# drum's three against the chords' four.
-# VCSL names each key an octave below the pitch mx names it by.
-# The pack's mbira dzaVadzimu plays in vcsl.exs, and its second kalimba, of Tanzania, is left out.
-# The files are fetched as the song loads, about 60 MB.
 defmodule ThreeTunings do
+  @moduledoc """
+  Three Tunings, three short pieces for the African keyed instruments of VCSL, Versilian Studios'
+  Versilian Community Sample Library, under Creative Commons 0: the nyunga nyunga of Mozambique, a
+  kalimba of Kenya and the mbira mavembe of Zimbabwe, each with keys of metal plucked by the
+  thumbs, and the balafon and slit drum beside them.
+  Each instrument keeps the tuning it was recorded in, so each piece is in its instrument's own
+  scale: the nyunga nyunga's scale of F, the kalimba's five notes of B, and the mavembe's scale of
+  G with its flat second.
+  The first is in the manner of the nyunga nyunga's songs, the thumbs alternating a bass with the
+  notes above it through four chords, while the balafon keeps a figure under it and runs down the
+  scale as Mande balafon players do between verses.
+  The second is the kalimba in canon with itself over the slit drum.
+  The third is built as Shona mbira music is, a cycle of 48 pulses in four phrases of three
+  chords, a second mbira playing the same part a pulse later so that the two interlock, with the
+  drum's three against the chords' four.
+  VCSL names each key an octave below the pitch mx names it by.
+  The pack's mbira dzaVadzimu plays in vcsl.exs, and its second kalimba, of Tanzania, is left out.
+  The files are fetched as the song loads, about 60 MB.
+  """
+
   use Mx.Song, tempo: 108
 
   @repo "sgossner/VCSL"

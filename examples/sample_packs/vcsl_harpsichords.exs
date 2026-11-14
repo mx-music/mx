@@ -1,17 +1,20 @@
-# Bach's Prelude in C, BWV 846, the first of the Well-Tempered Clavier, on the harpsichords and
-# organs of VCSL, Versilian Studios' Versilian Community Sample Library, under Creative Commons 0.
-# The prelude is one figure through 34 bars: two notes held in the left hand and three in the
-# right played twice over them, so each bar is written here as its five notes, checked against
-# music21's encoding of the score.
-# It changes instrument at its cadences so that each can be heard alone: the Italian harpsichord
-# to the cadence in G, the French to the cadence in C, the English with its lute stop for the four
-# bars that leave C, and the Flemish over the long G in the bass and to the end.
-# From the French harpsichord on, the Renaissance organ's 8-foot stop holds the two left-hand
-# notes, and under the Flemish the pipe organ's quiet pedal holds the bass.
-# VCSL names each key an octave below the pitch mx names it by, and records each instrument at
-# every second or third key.
-# The files are fetched as the song loads, about 320 MB.
 defmodule Prelude do
+  @moduledoc """
+  Bach's Prelude in C, BWV 846, the first of the Well-Tempered Clavier, on the harpsichords and
+  organs of VCSL, Versilian Studios' Versilian Community Sample Library, under Creative Commons 0.
+  The prelude is one figure through 34 bars: two notes held in the left hand and three in the
+  right played twice over them, so each bar is written here as its five notes, checked against
+  music21's encoding of the score.
+  It changes instrument at its cadences so that each can be heard alone: the Italian harpsichord
+  to the cadence in G, the French to the cadence in C, the English with its lute stop for the four
+  bars that leave C, and the Flemish over the long G in the bass and to the end.
+  From the French harpsichord on, the Renaissance organ's 8-foot stop holds the two left-hand
+  notes, and under the Flemish the pipe organ's quiet pedal holds the bass.
+  VCSL names each key an octave below the pitch mx names it by, and records each instrument at
+  every second or third key.
+  The files are fetched as the song loads, about 320 MB.
+  """
+
   use Mx.Song, tempo: 72
 
   @repo "sgossner/VCSL"

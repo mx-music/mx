@@ -1,13 +1,16 @@
-# Ernesto Nazareth's Odeon, a tango brasileiro of 1909 in C sharp minor: its first strain, played
-# slowly by a choro regional.
-# The melody is the pianist's left hand, low and singing, so the trombone sings it and the flute
-# answers with the right hand's phrases; on the repeat the cello sings and the tenor saxophone
-# answers.
-# The pandeiro plays as its hand rocks, with a muted and an open bass, ghost notes, slaps and
-# rolls, and every other part swings where its rocking places the sixteenths.
-# The notes are transcribed from Musica Brasilis' edition, revised against Nazareth's manuscript;
-# the music itself is in the public domain.
 defmodule Odeon do
+  @moduledoc """
+  Ernesto Nazareth's Odeon, a tango brasileiro of 1909 in C sharp minor: its first strain, played
+  slowly by a choro regional.
+  The melody is the pianist's left hand, low and singing, so the trombone sings it and the flute
+  answers with the right hand's phrases; on the repeat the cello sings and the tenor saxophone
+  answers.
+  The pandeiro plays as its hand rocks, with a muted and an open bass, ghost notes, slaps and
+  rolls, and every other part swings where its rocking places the sixteenths.
+  The notes are transcribed from Musica Brasilis' edition, revised against Nazareth's manuscript;
+  the music itself is in the public domain.
+  """
+
   use Mx.Song, tempo: 72
 
   part :trombone, synth: :trombone, defaults: [amp: 2], fx: [reverb: [room: 0.6, mix: 0.3]]

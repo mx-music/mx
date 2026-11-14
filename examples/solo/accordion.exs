@@ -1,8 +1,11 @@
-# A solo for the accordion's right hand written for mx, a bal-musette waltz in A minor, three
-# beats to the bar.
-# The musette register's two reeds beat on the low theme, the chords and the ending; the high
-# theme plays dry, on one reed, with detune: 0.
 defmodule Accordion do
+  @moduledoc """
+  A solo for the accordion's right hand written for mx, a bal-musette waltz in A minor, three
+  beats to the bar.
+  The musette register's two reeds beat on the low theme, the chords and the ending; the high
+  theme plays dry, on one reed, with detune: 0.
+  """
+
   use Mx.Song, tempo: 168
 
   @steps %{"C" => 0, "D" => 2, "E" => 4, "F" => 5, "G" => 7, "A" => 9, "B" => 11}

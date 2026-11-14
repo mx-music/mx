@@ -1,4 +1,10 @@
 defmodule Fingerpicking do
+  @moduledoc """
+  A fingerpicked guitar in 3/4 at 84 bpm, round eight chords in A minor, one to a bar.
+  Each bar is six eighths, the bass and then the index, middle and ring fingers, each string
+  plucked at its own strength and left to ring until it is plucked again.
+  """
+
   use Mx.Song, tempo: 84
 
   part :guitar, synth: :guitar, fx: [reverb: [room: 0.35, mix: 0.18]]

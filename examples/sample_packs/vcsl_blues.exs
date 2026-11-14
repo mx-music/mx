@@ -1,19 +1,22 @@
-# Twelve Bars, a shuffle blues in C at 92 bpm for the band that VCSL holds, Versilian Studios'
-# Versilian Community Sample Library, under Creative Commons 0: tenor saxophone, saxello, three
-# harmonicas, the Knight upright piano and a drum kit of its bass drum, snare, hi-hat, toms and
-# cymbals.
-# It is four times round the twelve bars after the piano's introduction: the tenor plays a riff
-# and the harmonicas answer it, the chromatic harmonica takes a chorus over the saxophones' short
-# notes, the saxello takes one over the harmonicas' train rhythm, and the riff comes back with the
-# saxello an octave above the tenor.
-# A harmonica is recorded only at the notes it plays when blown, C, E and G on the C harmonica and
-# the chromatic one and F, A and C on the F harmonica, so the C harmonica plays the chords of C
-# and G and the F harmonica the chord of F.
-# The pack has no bass, so the piano's left hand plays the boogie bass.
-# VCSL names each key an octave below the pitch mx names it by, and records its instruments at
-# very different levels, so each part is brought to its place by its own level.
-# The files are fetched as the song loads, about 250 MB.
 defmodule TwelveBars do
+  @moduledoc """
+  Twelve Bars, a shuffle blues in C at 92 bpm for the band that VCSL holds, Versilian Studios'
+  Versilian Community Sample Library, under Creative Commons 0: tenor saxophone, saxello, three
+  harmonicas, the Knight upright piano and a drum kit of its bass drum, snare, hi-hat, toms and
+  cymbals.
+  It is four times round the twelve bars after the piano's introduction: the tenor plays a riff
+  and the harmonicas answer it, the chromatic harmonica takes a chorus over the saxophones' short
+  notes, the saxello takes one over the harmonicas' train rhythm, and the riff comes back with the
+  saxello an octave above the tenor.
+  A harmonica is recorded only at the notes it plays when blown, C, E and G on the C harmonica and
+  the chromatic one and F, A and C on the F harmonica, so the C harmonica plays the chords of C
+  and G and the F harmonica the chord of F.
+  The pack has no bass, so the piano's left hand plays the boogie bass.
+  VCSL names each key an octave below the pitch mx names it by, and records its instruments at
+  very different levels, so each part is brought to its place by its own level.
+  The files are fetched as the song loads, about 250 MB.
+  """
+
   use Mx.Song, tempo: 92
 
   @repo "sgossner/VCSL"

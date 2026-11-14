@@ -1,5 +1,8 @@
-# A beat is a quarter note of samba's 2/4, so a pass is two bars of sixteenths.
 defmodule Ganza do
+  @moduledoc """
+  A beat is a quarter note of samba's 2/4, so a pass is two bars of sixteenths.
+  """
+
   use Mx.Song, tempo: 100
 
   part :ganza, synth: :ganza

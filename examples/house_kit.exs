@@ -1,19 +1,22 @@
-# House Kit on mx's own synths: examples/sample_packs/virtuosity.exs stroke for stroke, to hear
-# the synths beside the recordings of the Virtuosity kit.
-# The kit plays a mambo, swings, trades fours with the band and comes back to the mambo, at 184
-# bpm, over Dm7, G7, Cmaj7 and A7; the bass line is the floor tom, tuned to each note.
-# In the mambo the right hand plays the cáscara on the floor tom's rim and then on the ride's
-# bell, the left the son clave as cross-sticks, 2-3, and the feet the bombo and the hi-hat on two
-# and four.
-# In the swing the ride plays its beat with the hi-hat on two and four, the bass drum feathered
-# under the walking bass and the snare comping in ghost notes.
-# The first four is on the snare and toms in triplets, the second on the toms with the snares off,
-# ending in a buzz roll.
-# The drums are tuned to the recorded kit's: the kick to 83 Hz, the snare and the high tom to 181
-# Hz and the floor tom to 113 Hz.
-# The ride and its bell, the cross-sticks, the hi-hat's pedal, the rimshot, the buzz and the snare
-# with its snares off are fitted to the kit's own recordings.
 defmodule HouseKit do
+  @moduledoc """
+  House Kit on mx's own synths: examples/sample_packs/virtuosity.exs stroke for stroke, to hear
+  the synths beside the recordings of the Virtuosity kit.
+  The kit plays a mambo, swings, trades fours with the band and comes back to the mambo, at 184
+  bpm, over Dm7, G7, Cmaj7 and A7; the bass line is the floor tom, tuned to each note.
+  In the mambo the right hand plays the cáscara on the floor tom's rim and then on the ride's
+  bell, the left the son clave as cross-sticks, 2-3, and the feet the bombo and the hi-hat on two
+  and four.
+  In the swing the ride plays its beat with the hi-hat on two and four, the bass drum feathered
+  under the walking bass and the snare comping in ghost notes.
+  The first four is on the snare and toms in triplets, the second on the toms with the snares off,
+  ending in a buzz roll.
+  The drums are tuned to the recorded kit's: the kick to 83 Hz, the snare and the high tom to 181
+  Hz and the floor tom to 113 Hz.
+  The ride and its bell, the cross-sticks, the hi-hat's pedal, the rimshot, the buzz and the snare
+  with its snares off are fitted to the kit's own recordings.
+  """
+
   use Mx.Song, tempo: 184
 
   # Each voice of the kit and the percussion: the synths that sound it, each with the part it

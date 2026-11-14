@@ -1,20 +1,23 @@
-# Vamos linda, a pasillo by Francisco Paredes Herrera of Cuenca, who died in 1952, played as a
-# serenade plays one: a requinto, a first guitar and a guitar that accompanies.
-# This is examples/pasillo.exs stroke for stroke on mx's guitar, the nylon-string guitar measured
-# from recordings, in place of the recorded one, to hear one beside the other; the requinto is the
-# same guitar in its upper octave, made brighter.
-# The pasillo is in 3/4 and E minor: an introduction, then the parts A, B and C of sixteen bars
-# each, and C ends on the introduction again, the estribillo.
-# The melody, its second voice in thirds and sixths, the chords and the bass runs are read from
-# the piano score and the guitar transcription in Cristhian Morocho's thesis, Universidad de
-# Cuenca, 2017; who plays what is this file's own.
-# The accompaniment is the pasillo's: two eighths in the bass, an eighth's rest, a chord on the
-# next eighth and a chord on the third beat, and it stops where the melody leads into a phrase
-# alone.
-# The form is played twice: the requinto alone, then in two voices; the second time the first
-# guitar sings the opening an octave lower and the requinto answers, and the two play C in
-# octaves.
 defmodule PasilloSynths do
+  @moduledoc """
+  Vamos linda, a pasillo by Francisco Paredes Herrera of Cuenca, who died in 1952, played as a
+  serenade plays one: a requinto, a first guitar and a guitar that accompanies.
+  This is examples/pasillo.exs stroke for stroke on mx's guitar, the nylon-string guitar measured
+  from recordings, in place of the recorded one, to hear one beside the other; the requinto is the
+  same guitar in its upper octave, made brighter.
+  The pasillo is in 3/4 and E minor: an introduction, then the parts A, B and C of sixteen bars
+  each, and C ends on the introduction again, the estribillo.
+  The melody, its second voice in thirds and sixths, the chords and the bass runs are read from
+  the piano score and the guitar transcription in Cristhian Morocho's thesis, Universidad de
+  Cuenca, 2017; who plays what is this file's own.
+  The accompaniment is the pasillo's: two eighths in the bass, an eighth's rest, a chord on the
+  next eighth and a chord on the third beat, and it stops where the melody leads into a phrase
+  alone.
+  The form is played twice: the requinto alone, then in two voices; the second time the first
+  guitar sings the opening an octave lower and the requinto answers, and the two play C in
+  octaves.
+  """
+
   use Mx.Song, tempo: 100
 
   @room [room: 0.6, damp: 0.5, mix: 0.22]

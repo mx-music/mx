@@ -1,18 +1,21 @@
-# Still Water, a slow piece for the sounds of VCSL that are held rather than struck, Versilian
-# Studios' Versilian Community Sample Library, under Creative Commons 0: didgeridoo, two ocarinas,
-# wine glasses, ocean drum, Nepalese hand bells, darbuka, and the toy train whistle, ball whistle
-# and siren whistle.
-# The didgeridoo's note is the C sharp two octaves below middle C, and it is recorded as long
-# notes and phrases of ten to fifteen seconds, so the piece lays one after another as a drone from
-# beginning to end.
-# Over it the wine glasses hold D sharp, F sharp and B, the larger ocarina plays a tune in the
-# five notes C sharp, E, F sharp, G sharp and B, and the small ocarina answers it an octave above.
-# Two of the glasses and the darbuka were recorded a little off those notes, so each is played at
-# the rate that brings it to them.
-# The tempo is 60, so a beat is a second.
-# VCSL names the ocarinas' keys an octave below the pitch mx names them by.
-# The files are fetched as the song loads, about 120 MB.
 defmodule StillWater do
+  @moduledoc """
+  Still Water, a slow piece for the sounds of VCSL that are held rather than struck, Versilian
+  Studios' Versilian Community Sample Library, under Creative Commons 0: didgeridoo, two ocarinas,
+  wine glasses, ocean drum, Nepalese hand bells, darbuka, and the toy train whistle, ball whistle
+  and siren whistle.
+  The didgeridoo's note is the C sharp two octaves below middle C, and it is recorded as long
+  notes and phrases of ten to fifteen seconds, so the piece lays one after another as a drone from
+  beginning to end.
+  Over it the wine glasses hold D sharp, F sharp and B, the larger ocarina plays a tune in the
+  five notes C sharp, E, F sharp, G sharp and B, and the small ocarina answers it an octave above.
+  Two of the glasses and the darbuka were recorded a little off those notes, so each is played at
+  the rate that brings it to them.
+  The tempo is 60, so a beat is a second.
+  VCSL names the ocarinas' keys an octave below the pitch mx names them by.
+  The files are fetched as the song loads, about 120 MB.
+  """
+
   use Mx.Song, tempo: 60
 
   @repo "sgossner/VCSL"

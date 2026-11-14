@@ -1,17 +1,20 @@
-# Small Hours, a slow ballad in D minor at 72 bpm for five Karoryfer Samples libraries, each under
-# Creative Commons 0: Weresax, Shinyguitar, Sneakybass, the Karoryfer and Bigcat cello, and Big
-# Rusty Drums.
-# The alto saxophone plays the tune, softly the first time and harder the second, over an archtop
-# guitar, a double bass and brushes.
-# The drummer stirs a brush round the snare the whole way through, a recording of nine seconds
-# started again every two bars, and taps the other brush on two and four.
-# The cello joins under the second time through, then holds the chords while the guitar takes the
-# middle four bars alone.
-# Every beat is split in three, the long note first, as a slow ballad is played.
-# Download them with mx samples download
-# "sfzinstruments/karoryfer.weresax@a4d756b21d2a573aca0d840cce7e71ba5effd4c6:Samples/alto", and
-# the same for the other folders named below.
 defmodule SmallHours do
+  @moduledoc """
+  Small Hours, a slow ballad in D minor at 72 bpm for five Karoryfer Samples libraries, each under
+  Creative Commons 0: Weresax, Shinyguitar, Sneakybass, the Karoryfer and Bigcat cello, and Big
+  Rusty Drums.
+  The alto saxophone plays the tune, softly the first time and harder the second, over an archtop
+  guitar, a double bass and brushes.
+  The drummer stirs a brush round the snare the whole way through, a recording of nine seconds
+  started again every two bars, and taps the other brush on two and four.
+  The cello joins under the second time through, then holds the chords while the guitar takes the
+  middle four bars alone.
+  Every beat is split in three, the long note first, as a slow ballad is played.
+  Download them with mx samples download
+  "sfzinstruments/karoryfer.weresax@a4d756b21d2a573aca0d840cce7e71ba5effd4c6:Samples/alto", and
+  the same for the other folders named below.
+  """
+
   use Mx.Song, tempo: 72
 
   @sax {"sfzinstruments/karoryfer.weresax", "a4d756b21d2a573aca0d840cce7e71ba5effd4c6"}

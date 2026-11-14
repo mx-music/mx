@@ -1,16 +1,19 @@
-# A solo for the bongos written for mx from how the bongocero plays in son and salsa: the
-# martillo, the hammer, a steady bar of eight strokes, left to play freer phrases, the repiques,
-# and taken up again.
-# The martillo is eight eighths, most of them on the small drum, the macho, and the seventh on the
-# large one, the hembra, as https://www.x8drums.com/blog/martillo-bongo-rhythm describes; the same
-# page gives the heel-tip stroke some bongoceros play on the fourth and eighth.
-# Every second bar ends on the variation https://www.artdrum.com/ESSAY_BONGO_BASICS.HTM calls the
-# most common: the last thumb stroke becomes an accented rim shot on the macho.
-# The repiques are written for mx: accents every third sixteenth over soft strokes, quarter-note
-# triplets across the two drums, the offbeats and the fourth beat as the bongó plays them in
-# changüí, by Wikipedia's article on the bongo, and ruffs, the fingers rolled into an accent,
-# before a roll that grows into the last stroke.
 defmodule Bongos do
+  @moduledoc """
+  A solo for the bongos written for mx from how the bongocero plays in son and salsa: the
+  martillo, the hammer, a steady bar of eight strokes, left to play freer phrases, the repiques,
+  and taken up again.
+  The martillo is eight eighths, most of them on the small drum, the macho, and the seventh on the
+  large one, the hembra, as https://www.x8drums.com/blog/martillo-bongo-rhythm describes; the same
+  page gives the heel-tip stroke some bongoceros play on the fourth and eighth.
+  Every second bar ends on the variation https://www.artdrum.com/ESSAY_BONGO_BASICS.HTM calls the
+  most common: the last thumb stroke becomes an accented rim shot on the macho.
+  The repiques are written for mx: accents every third sixteenth over soft strokes, quarter-note
+  triplets across the two drums, the offbeats and the fourth beat as the bongó plays them in
+  changüí, by Wikipedia's article on the bongo, and ruffs, the fingers rolled into an accent,
+  before a roll that grows into the last stroke.
+  """
+
   use Mx.Song, tempo: 180
 
   # A beat is a quarter note of 4/4, so a pass is a bar, written as eight cells of eighths to a

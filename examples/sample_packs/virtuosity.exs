@@ -1,21 +1,24 @@
-# House Kit, a feature for Virtuosity Drums: a jazz kit played with sticks by Austin McMahon,
-# recorded by Versilian Studios through six microphones, with its percussion, under Creative
-# Commons 0.
-# The kit plays a mambo, swings, trades fours with the band and comes back to the mambo, at 184
-# bpm, over Dm7, G7, Cmaj7 and A7; the bass line is the floor tom, tuned to each note.
-# In the mambo the right hand plays the cáscara on the floor tom's rim and then on the ride's
-# bell, the left the son clave as cross-sticks, 2-3, and the feet the bombo and the hi-hat on two
-# and four.
-# In the swing the ride plays its beat with the hi-hat on two and four, the bass drum feathered
-# under the walking bass and the snare comping in ghost notes.
-# The first four is on the snare and toms in triplets, the second on the toms with the snares off,
-# ending in a buzz roll.
-# Every stroke picks one of the strengths the kit was recorded at, up to 36 for the snare, and the
-# drums sound through their close, overhead and room microphones.
-# Download the kit with mx samples download
-# "sfzinstruments/virtuosity_drums@9f04cf9a734527edfbb0a4eee1f674e45bbf71bc:Samples/oh", and the
-# same for kickmic, snaremic, room and perc/close.
 defmodule Virtuosity do
+  @moduledoc """
+  House Kit, a feature for Virtuosity Drums: a jazz kit played with sticks by Austin McMahon,
+  recorded by Versilian Studios through six microphones, with its percussion, under Creative
+  Commons 0.
+  The kit plays a mambo, swings, trades fours with the band and comes back to the mambo, at 184
+  bpm, over Dm7, G7, Cmaj7 and A7; the bass line is the floor tom, tuned to each note.
+  In the mambo the right hand plays the cáscara on the floor tom's rim and then on the ride's
+  bell, the left the son clave as cross-sticks, 2-3, and the feet the bombo and the hi-hat on two
+  and four.
+  In the swing the ride plays its beat with the hi-hat on two and four, the bass drum feathered
+  under the walking bass and the snare comping in ghost notes.
+  The first four is on the snare and toms in triplets, the second on the toms with the snares off,
+  ending in a buzz roll.
+  Every stroke picks one of the strengths the kit was recorded at, up to 36 for the snare, and the
+  drums sound through their close, overhead and room microphones.
+  Download the kit with mx samples download
+  "sfzinstruments/virtuosity_drums@9f04cf9a734527edfbb0a4eee1f674e45bbf71bc:Samples/oh", and the
+  same for kickmic, snaremic, room and perc/close.
+  """
+
   use Mx.Song, tempo: 184
 
   @repo "sfzinstruments/virtuosity_drums"

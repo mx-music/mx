@@ -1,18 +1,21 @@
-# A piece for the cuíca alone, playing its part in a roda de samba, in 2/4, as Luiz Guimarães
-# notates it in "A percussão da roda de samba" (UNIRIO).
-# The stick is rubbed back and forth on every sixteenth, and the other hand on the head gives
-# three sounds: the fundamental, with the head free, the medium one, with the hand resting on it,
-# and the high one, with a finger pressing its centre.
-# The base plays the fundamental on each beat and three medium strokes after it.
-# The roda's two-bar pattern leaves the second beat for a high stroke on its second half, held
-# over the barline, and comes back down through three fundamental strokes.
-# The variation rests on the beat, answers with three high strokes, and goes on in syncopated
-# medium ones.
-# The third and fourth sixteenths of a beat come early, as Naveda, Gouyon, Guedes and Leman
-# measured across samba recordings.
-# Each sound's note, scoop and level are those of the strokes of reinsamba's pack "Cuica" on
-# Freesound, which the synth plays back.
 defmodule Cuica do
+  @moduledoc """
+  A piece for the cuíca alone, playing its part in a roda de samba, in 2/4, as Luiz Guimarães
+  notates it in "A percussão da roda de samba" (UNIRIO).
+  The stick is rubbed back and forth on every sixteenth, and the other hand on the head gives
+  three sounds: the fundamental, with the head free, the medium one, with the hand resting on it,
+  and the high one, with a finger pressing its centre.
+  The base plays the fundamental on each beat and three medium strokes after it.
+  The roda's two-bar pattern leaves the second beat for a high stroke on its second half, held
+  over the barline, and comes back down through three fundamental strokes.
+  The variation rests on the beat, answers with three high strokes, and goes on in syncopated
+  medium ones.
+  The third and fourth sixteenths of a beat come early, as Naveda, Gouyon, Guedes and Leman
+  measured across samba recordings.
+  Each sound's note, scoop and level are those of the strokes of reinsamba's pack "Cuica" on
+  Freesound, which the synth plays back.
+  """
+
   use Mx.Song, tempo: 100
 
   # Where the four sixteenths of a beat start.

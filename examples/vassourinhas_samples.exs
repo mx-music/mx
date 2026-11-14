@@ -1,22 +1,25 @@
-# Vassourinhas, the frevo de rua Matias da Rocha and Joana Batista Ramos wrote in Recife in 1909,
-# in the public domain, played by a street band of recorded instruments; examples/vassourinhas.exs
-# is the same tune as a score for mx's own winds.
-# The trumpet and the trombone are those of VSCO 2 Community Edition, Versilian Studios' chamber
-# orchestra, the tenor saxophone is VCSL's, and the alto saxophone and the tuba are Karoryfer
-# Samples' Weresax and War Tuba, all under Creative Commons 0.
-# The drums are Virtuosity Drums, a jazz kit played by Austin McMahon and recorded by Versilian
-# Studios, also under Creative Commons 0.
-# The drummer plays the caixa's part on the snare, ghost strokes between its accents and a press
-# roll into every other bar, and the surdo's on the bass drum and the floor tom, light on the
-# first beat and open on the second, with the hi-hat closing between the beats.
-# A beat is a quarter note of 2/4, so a bar is two beats and each part of the tune is 32.
-# The first part is the brass's fanfare and the second the saxophones' tune, as a frevo de rua has
-# them ask and answer.
-# The form is an opening on the caixa, the first part, the second part from the saxophones and
-# then from the trumpet over their runs, the first part handed from player to player over a
-# lighter kit, then both parts a tone higher with the whole band, and a last chord.
-# The files are fetched as the song loads, about 210 MB.
 defmodule VassourinhasSamples do
+  @moduledoc """
+  Vassourinhas, the frevo de rua Matias da Rocha and Joana Batista Ramos wrote in Recife in 1909,
+  in the public domain, played by a street band of recorded instruments; examples/vassourinhas.exs
+  is the same tune as a score for mx's own winds.
+  The trumpet and the trombone are those of VSCO 2 Community Edition, Versilian Studios' chamber
+  orchestra, the tenor saxophone is VCSL's, and the alto saxophone and the tuba are Karoryfer
+  Samples' Weresax and War Tuba, all under Creative Commons 0.
+  The drums are Virtuosity Drums, a jazz kit played by Austin McMahon and recorded by Versilian
+  Studios, also under Creative Commons 0.
+  The drummer plays the caixa's part on the snare, ghost strokes between its accents and a press
+  roll into every other bar, and the surdo's on the bass drum and the floor tom, light on the
+  first beat and open on the second, with the hi-hat closing between the beats.
+  A beat is a quarter note of 2/4, so a bar is two beats and each part of the tune is 32.
+  The first part is the brass's fanfare and the second the saxophones' tune, as a frevo de rua has
+  them ask and answer.
+  The form is an opening on the caixa, the first part, the second part from the saxophones and
+  then from the trumpet over their runs, the first part handed from player to player over a
+  lighter kit, then both parts a tone higher with the whole band, and a last chord.
+  The files are fetched as the song loads, about 210 MB.
+  """
+
   use Mx.Song, tempo: 148
 
   @vsco {"sgossner/VSCO-2-CE", "440300901dfe9275fd84e0b7763af1f8443ae62e"}

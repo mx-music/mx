@@ -1,22 +1,25 @@
-# Fado menor, the traditional fado in a minor key, as Manoel Gomes printed it for the Portuguese
-# guitar in A Guitarra Portuguesa: Método fácil, Lisbon, 1929, anonymous and long in the public
-# domain.
-# It is played as a fado house plays it: the guitarra portuguesa leads, the viola, a guitar,
-# strums the chords, and the viola baixo, an acoustic bass, plays on the beats.
-# The guitarra's notes are read from Ronald Louis Fernández's tablature of Gomes's score,
-# transposed from F minor to D minor for the modern Lisbon tuning: the theme and three variations,
-# in 2/4, in sixteenths.
-# The harmony is the fado menor's, D minor and A7 by turns, and the third variation passes through
-# E flat before its last A7.
-# There is no free recording of a guitarra, so it is Karoryfer's Shinyguitar, an archtop under
-# Creative Commons 0, played twice for each note as a guitarra's paired strings sound: the second
-# string a few cents sharp and a moment late, in unison on the three top courses and an octave up
-# on the three below.
-# The viola is the same guitar through its microphone, and the viola baixo Karoryfer's Sneakybass,
-# also under Creative Commons 0.
-# The guitarra plays the theme, the three variations and the theme again, slowing at the end of
-# each eight bars as a fadista breathes; the files, about 140 MB, are fetched as the song loads.
 defmodule Fado do
+  @moduledoc """
+  Fado menor, the traditional fado in a minor key, as Manoel Gomes printed it for the Portuguese
+  guitar in A Guitarra Portuguesa: Método fácil, Lisbon, 1929, anonymous and long in the public
+  domain.
+  It is played as a fado house plays it: the guitarra portuguesa leads, the viola, a guitar,
+  strums the chords, and the viola baixo, an acoustic bass, plays on the beats.
+  The guitarra's notes are read from Ronald Louis Fernández's tablature of Gomes's score,
+  transposed from F minor to D minor for the modern Lisbon tuning: the theme and three variations,
+  in 2/4, in sixteenths.
+  The harmony is the fado menor's, D minor and A7 by turns, and the third variation passes through
+  E flat before its last A7.
+  There is no free recording of a guitarra, so it is Karoryfer's Shinyguitar, an archtop under
+  Creative Commons 0, played twice for each note as a guitarra's paired strings sound: the second
+  string a few cents sharp and a moment late, in unison on the three top courses and an octave up
+  on the three below.
+  The viola is the same guitar through its microphone, and the viola baixo Karoryfer's Sneakybass,
+  also under Creative Commons 0.
+  The guitarra plays the theme, the three variations and the theme again, slowing at the end of
+  each eight bars as a fadista breathes; the files, about 140 MB, are fetched as the song loads.
+  """
+
   use Mx.Song, tempo: 66
 
   @guitar {"sfzinstruments/karoryfer.shinyguitar", "57243cca85277dbcc120ce17c6178032f93c80f3"}

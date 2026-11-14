@@ -1,20 +1,23 @@
-# Low B, a piece for the mbira of VCSL, Versilian Studios' Versilian Community Sample Library,
-# under Creative Commons 0, with its marimba, shaker, claps and frame drum.
-# It is built as Shona mbira music is: a cycle of 48 pulses in four phrases, each three pairs of
-# notes a fifth apart, four pulses to a pair against the shaker's three.
-# One mbira plays the leading part, the kushaura, and a second plays the same part a pulse later,
-# the kutsinhira, so the two interlock.
-# The shaker plays the hosho's three strokes to the beat and the claps a pattern of five strokes
-# to the phrase, then the marimba takes the bass and the top line, as Zimbabwe's marimba bands
-# play mbira pieces.
-# The mbira keeps the tuning it was recorded in, a scale of B with a flat seventh that sits some
-# 15 cents above concert pitch, and the marimba is raised to meet it.
-# Its plucks start a tenth of a second into their files, so the mbiras play that much early, after
-# a beat of silence.
-# Download them with mx samples download
-# "sgossner/VCSL@c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e:Idiophones", and the same for
-# Membranophones.
 defmodule LowB do
+  @moduledoc """
+  Low B, a piece for the mbira of VCSL, Versilian Studios' Versilian Community Sample Library,
+  under Creative Commons 0, with its marimba, shaker, claps and frame drum.
+  It is built as Shona mbira music is: a cycle of 48 pulses in four phrases, each three pairs of
+  notes a fifth apart, four pulses to a pair against the shaker's three.
+  One mbira plays the leading part, the kushaura, and a second plays the same part a pulse later,
+  the kutsinhira, so the two interlock.
+  The shaker plays the hosho's three strokes to the beat and the claps a pattern of five strokes
+  to the phrase, then the marimba takes the bass and the top line, as Zimbabwe's marimba bands
+  play mbira pieces.
+  The mbira keeps the tuning it was recorded in, a scale of B with a flat seventh that sits some
+  15 cents above concert pitch, and the marimba is raised to meet it.
+  Its plucks start a tenth of a second into their files, so the mbiras play that much early, after
+  a beat of silence.
+  Download them with mx samples download
+  "sgossner/VCSL@c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e:Idiophones", and the same for
+  Membranophones.
+  """
+
   use Mx.Song, tempo: 130
 
   @repo "sgossner/VCSL"

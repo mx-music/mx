@@ -1,15 +1,18 @@
-# A study after the caboclinhos of Pernambuco in 2/4, played only on synths measured from
-# recordings.
-# The terno, the order of the toques and the gaita's neutral third are written after Climério de
-# Oliveira Santos, "Guerra: uma introdução ao estudo da performance dos caboclinhos Canindés"
-# (ANPPOM, 2007), and the preacas after him and Jaqueline de Oliveira e Silva, "Guerra, perré e
-# outras manobras" (Revista Dança, 2014).
-# The melodies, the rest of the gaita's scale and its pitch, the tempos, the tarol outside guerra
-# and the atabaque's pattern are mx's own, where a gaiteiro varies melodies the tradition hands
-# down.
-# flute plays the gaita, ganza and shaker the two caracaxás, low_bongo the tarol, high_bongo muted
-# the preacas, and cajon the atabaque.
 defmodule Caboclinho do
+  @moduledoc """
+  A study after the caboclinhos of Pernambuco in 2/4, played only on synths measured from
+  recordings.
+  The terno, the order of the toques and the gaita's neutral third are written after Climério de
+  Oliveira Santos, "Guerra: uma introdução ao estudo da performance dos caboclinhos Canindés"
+  (ANPPOM, 2007), and the preacas after him and Jaqueline de Oliveira e Silva, "Guerra, perré e
+  outras manobras" (Revista Dança, 2014).
+  The melodies, the rest of the gaita's scale and its pitch, the tempos, the tarol outside guerra
+  and the atabaque's pattern are mx's own, where a gaiteiro varies melodies the tradition hands
+  down.
+  flute plays the gaita, ganza and shaker the two caracaxás, low_bongo the tarol, high_bongo muted
+  the preacas, and cajon the atabaque.
+  """
+
   use Mx.Song, tempo: 132
 
   part :flute, synth: :flute, defaults: [vibrato: 0.1], fx: [reverb: [room: 0.3, mix: 0.15]]

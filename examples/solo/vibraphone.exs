@@ -1,6 +1,9 @@
-# A solo for the vibraphone written for mx: chords left to ring with the pedal, the same chords
-# with the motor turning, a line of short damped notes, and a last chord.
 defmodule Vibraphone do
+  @moduledoc """
+  A solo for the vibraphone written for mx: chords left to ring with the pedal, the same chords
+  with the motor turning, a line of short damped notes, and a last chord.
+  """
+
   use Mx.Song, tempo: 72
 
   part :vibraphone, synth: :vibraphone

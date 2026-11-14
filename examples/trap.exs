@@ -1,20 +1,6 @@
-# Cold Front, a trap beat in F minor at 140 bpm, written for mx and not transcribed from any
-# record.
-# The drums are trap's: the clap on beat three of every bar, so the bar feels half as fast,
-# hi-hats in eighths that break into rolls of sixteenth triplets and thirty-seconds whose pitch
-# bends, and a kick under every note of the 808.
-# The 808 is a synth written in this file: a sine that drops onto its note as it is struck, with
-# overtones a small speaker can carry, which glides from note to note where its line slides.
-# The tune goes round four bars, F minor twice, D flat and C, on recordings from the Versilian
-# Community Sample Library, under Creative Commons 0: the Knight upright piano breaks the chords,
-# the ocarina plays the hook, the dan tranh is plucked in the verse, the bowed psaltery holds the
-# chords far below the notes it was recorded on, and the tubular bells toll in the last hook with
-# mx's timpani.
-# The drums are mx's measured kit, with the claves, the glockenspiel is mx's too, and the vinyl
-# hiss is Sonic Pi's.
-# The desk opens and shuts a low-pass filter over the piano, crushes it in the bridge, gates the
-# psaltery with a slicer in the verse, and opens filtered noise into each drop.
 defmodule ColdFront.Synths do
+  @moduledoc "The synth written for Cold Front: its 808 bass."
+
   use Mx.Instrument
 
   @doc "An 808 bass: a sine that drops onto its note, with overtones, and fades by itself."
@@ -48,6 +34,25 @@ defmodule ColdFront.Synths do
 end
 
 defmodule ColdFront do
+  @moduledoc """
+  Cold Front, a trap beat in F minor at 140 bpm, written for mx and not transcribed from any
+  record.
+  The drums are trap's: the clap on beat three of every bar, so the bar feels half as fast,
+  hi-hats in eighths that break into rolls of sixteenth triplets and thirty-seconds whose pitch
+  bends, and a kick under every note of the 808.
+  The 808 is a synth written in this file: a sine that drops onto its note as it is struck, with
+  overtones a small speaker can carry, which glides from note to note where its line slides.
+  The tune goes round four bars, F minor twice, D flat and C, on recordings from the Versilian
+  Community Sample Library, under Creative Commons 0: the Knight upright piano breaks the chords,
+  the ocarina plays the hook, the dan tranh is plucked in the verse, the bowed psaltery holds the
+  chords far below the notes it was recorded on, and the tubular bells toll in the last hook with
+  mx's timpani.
+  The drums are mx's measured kit, with the claves, the glockenspiel is mx's too, and the vinyl
+  hiss is Sonic Pi's.
+  The desk opens and shuts a low-pass filter over the piano, crushes it in the bridge, gates the
+  psaltery with a slicer in the verse, and opens filtered noise into each drop.
+  """
+
   use Mx.Song, tempo: 140
 
   # A sampled instrument from a folder of VCSL, which names each key an octave below the pitch mx

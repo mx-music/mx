@@ -1,7 +1,10 @@
-# The notes of Debussy's Clair de lune and how they are played, which
-# examples/piano/clair_de_lune.exs plays on mx's piano and examples/sample_packs/salamander.exs
-# on the Salamander Grand Piano.
 defmodule ClairDeLune do
+  @moduledoc """
+  The notes of Debussy's Clair de lune and how they are played, which
+  examples/piano/clair_de_lune.exs plays on mx's piano and examples/sample_packs/salamander.exs on
+  the Salamander Grand Piano.
+  """
+
   # Every note of a bar as {beat, note, velocity, sustain}: the right hand's top note sings over
   # the rest, the bass under each pedal sounds full, and the inner notes stay back a little behind
   # the melody.

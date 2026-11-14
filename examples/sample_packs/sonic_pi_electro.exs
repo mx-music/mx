@@ -1,13 +1,16 @@
-# Dial Tone, an electro track in G minor at 126 bpm made only of the electronic samples Sonic Pi
-# ships, which are under Creative Commons 0.
-# The beat is electro's: the 808 kick pushed off the beat, a snare and a snap on two and four,
-# sixteenth hats and a cowbell.
-# The bass is bass_trance_c and the arpeggio elec_blip, each a single note moved to the others by
-# its rate, over four bars of G minor, G minor, E flat and F.
-# The pads, the robot voices and the telephone are the pack's tbd, mehackit and glitch samples as
-# recorded.
-# Download them with mx samples download sonic_pi.
 defmodule DialTone do
+  @moduledoc """
+  Dial Tone, an electro track in G minor at 126 bpm made only of the electronic samples Sonic Pi
+  ships, which are under Creative Commons 0.
+  The beat is electro's: the 808 kick pushed off the beat, a snare and a snap on two and four,
+  sixteenth hats and a cowbell.
+  The bass is bass_trance_c and the arpeggio elec_blip, each a single note moved to the others by
+  its rate, over four bars of G minor, G minor, E flat and F.
+  The pads, the robot voices and the telephone are the pack's tbd, mehackit and glitch samples as
+  recorded.
+  Download them with mx samples download sonic_pi.
+  """
+
   use Mx.Song, tempo: 126
 
   part :kick, fx: [level: [amp: 0.65]]

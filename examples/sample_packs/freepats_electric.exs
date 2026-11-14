@@ -1,15 +1,18 @@
-# Night Service, a house track at 122 bpm for FreePats' electric and synthesizer instruments, each
-# under Creative Commons 0.
-# The synthesizer percussion plays four on the floor with a clap on two and four and an open
-# hi-hat on every off-beat; Lately Bass, the FM bass of late 1980s house, jumps between octaves.
-# The FM piano holds the chords under a tremolo and then plays them as stabs, the clean electric
-# guitar plays arpeggios into an echo three sixteenths long, the synth strings and the choir pad
-# hold the harmony, the synth brass answers, and the synth square plays the tune.
-# It goes round Cm7, A flat major 7, B flat and Gm7, a bar each.
-# Download each instrument with mx samples download
-# "freepats/lately-bass@e27530dec05161ec3b661e86f4feb2065e0675aa:samples", and the same for the
-# other repositories and commits named below; the guitar's folder is samples/bridge.
 defmodule NightService do
+  @moduledoc """
+  Night Service, a house track at 122 bpm for FreePats' electric and synthesizer instruments, each
+  under Creative Commons 0.
+  The synthesizer percussion plays four on the floor with a clap on two and four and an open
+  hi-hat on every off-beat; Lately Bass, the FM bass of late 1980s house, jumps between octaves.
+  The FM piano holds the chords under a tremolo and then plays them as stabs, the clean electric
+  guitar plays arpeggios into an echo three sixteenths long, the synth strings and the choir pad
+  hold the harmony, the synth brass answers, and the synth square plays the tune.
+  It goes round Cm7, A flat major 7, B flat and Gm7, a bar each.
+  Download each instrument with mx samples download
+  "freepats/lately-bass@e27530dec05161ec3b661e86f4feb2065e0675aa:samples", and the same for the
+  other repositories and commits named below; the guitar's folder is samples/bridge.
+  """
+
   use Mx.Song, tempo: 122
 
   @repos %{

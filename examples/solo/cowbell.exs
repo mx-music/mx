@@ -1,14 +1,17 @@
-# A solo for two cowbells written for mx from salsa's bell patterns, as timba.com's "Finding the
-# clave" writes them, https://www.timba.com/artist_pages/finding-the-clave, all in 2:3 clave.
-# The campana is the bongocero's bell, large and held in the hand: its "second gear", then the
-# standard "third gear".
-# The contracampana is the timbalero's bell, smaller and higher, here the same cowbell tuned a
-# fourth up: its pattern alone, then with the campana, the two bells against each other as in a
-# montuno, and then the pattern the page names for Changuito over the second gear.
-# The campana plays the standard pattern of the 12/8 rhythms, which Wikipedia's article on bell
-# patterns gives as X . X . X X . X . X . X, the two bells come back together, and both end on one
-# open stroke.
 defmodule Cowbell do
+  @moduledoc """
+  A solo for two cowbells written for mx from salsa's bell patterns, as timba.com's "Finding the
+  clave" writes them, https://www.timba.com/artist_pages/finding-the-clave, all in 2:3 clave.
+  The campana is the bongocero's bell, large and held in the hand: its "second gear", then the
+  standard "third gear".
+  The contracampana is the timbalero's bell, smaller and higher, here the same cowbell tuned a
+  fourth up: its pattern alone, then with the campana, the two bells against each other as in a
+  montuno, and then the pattern the page names for Changuito over the second gear.
+  The campana plays the standard pattern of the 12/8 rhythms, which Wikipedia's article on bell
+  patterns gives as X . X . X X . X . X . X, the two bells come back together, and both end on one
+  open stroke.
+  """
+
   use Mx.Song, tempo: 190
 
   # A pass is the two bars of the clave, written as sixteen cells of eighth notes, or for the 12/8

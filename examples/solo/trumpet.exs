@@ -1,7 +1,10 @@
-# A solo for the trumpet written for mx: a fanfare call in Bb major, tongued short and answered, a
-# lyrical phrase with vibrato, the call at its loudest with a soft echo, and a last climb to a
-# held Bb5.
 defmodule Trumpet do
+  @moduledoc """
+  A solo for the trumpet written for mx: a fanfare call in Bb major, tongued short and answered, a
+  lyrical phrase with vibrato, the call at its loudest with a soft echo, and a last climb to a
+  held Bb5.
+  """
+
   use Mx.Song, tempo: 104
 
   part :trumpet, synth: :trumpet

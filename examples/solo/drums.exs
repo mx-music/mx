@@ -1,17 +1,20 @@
-# A solo for the drum kit written for mx from the kit's standard vocabulary.
-# It builds the beat of James Brown's "Funky Drummer" in the steps of Ethan Hein's "Building the
-# Funky Drummer beat", https://www.ethanhein.com/wp/2023/building-the-funky-drummer-beat/:
-# sixteenths on the hi-hat, the kick and the backbeat, the snare's ghost notes, and the hi-hat
-# opening for a sixteenth.
-# Then come the rudiments, as the Percussive Arts Society's forty give them: the single paradiddle
-# between the hi-hat and the snare, flams, a drag, and a single stroke roll from the snare's
-# softest stroke to its hardest.
-# The solo plays over the feet, the kick on one and three and the hi-hat closed on two and four:
-# accents every third sixteenth for three bars, until the count meets the first beat again, on the
-# snare, the high tom and down the toms; sextuplets down the drums; the toms answered by flams;
-# and threes between the kick and the hands.
-# The beat comes back, and the last crash rings and is choked.
 defmodule Drums do
+  @moduledoc """
+  A solo for the drum kit written for mx from the kit's standard vocabulary.
+  It builds the beat of James Brown's "Funky Drummer" in the steps of Ethan Hein's "Building the
+  Funky Drummer beat", https://www.ethanhein.com/wp/2023/building-the-funky-drummer-beat/:
+  sixteenths on the hi-hat, the kick and the backbeat, the snare's ghost notes, and the hi-hat
+  opening for a sixteenth.
+  Then come the rudiments, as the Percussive Arts Society's forty give them: the single paradiddle
+  between the hi-hat and the snare, flams, a drag, and a single stroke roll from the snare's
+  softest stroke to its hardest.
+  The solo plays over the feet, the kick on one and three and the hi-hat closed on two and four:
+  accents every third sixteenth for three bars, until the count meets the first beat again, on the
+  snare, the high tom and down the toms; sextuplets down the drums; the toms answered by flams;
+  and threes between the kick and the hands.
+  The beat comes back, and the last crash rings and is choked.
+  """
+
   use Mx.Song, tempo: 96
 
   @kit ~w(kick snare closed_hihat open_hihat high_tom mid_tom low_tom crash)a

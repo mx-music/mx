@@ -1,16 +1,19 @@
-# Squid Polka, a polka in A minor at 144 bpm for the odd instruments of Karoryfer Samples, six
-# libraries each under Creative Commons 0: Squidpipes, War Tuba, Horse Pulse, Unruly Drums,
-# Gogodze Phu and 272 Merry Orks.
-# The bagpipes play the tune over their drone, with a short high note before the first note of
-# each bar, which is how a piper separates notes on an instrument that never stops sounding.
-# The tuba plays the beats and the tagelharpa, a bowed lyre played here plucked, answers off them.
-# Every drum of the kit has snare wires on it, the kick too, and the hand drums and the woodblocks
-# open the piece and take the middle with the tuba.
-# The orks count the band in and shout at the ends of the phrases.
-# Download them with mx samples download
-# "sfzinstruments/karoryfer.squidpipes@b258528c8f49d6389ec2b4ec04a8b10013169dd9:Samples/long_clean",
-# and the same for the other folders named below.
 defmodule SquidPolka do
+  @moduledoc """
+  Squid Polka, a polka in A minor at 144 bpm for the odd instruments of Karoryfer Samples, six
+  libraries each under Creative Commons 0: Squidpipes, War Tuba, Horse Pulse, Unruly Drums,
+  Gogodze Phu and 272 Merry Orks.
+  The bagpipes play the tune over their drone, with a short high note before the first note of
+  each bar, which is how a piper separates notes on an instrument that never stops sounding.
+  The tuba plays the beats and the tagelharpa, a bowed lyre played here plucked, answers off them.
+  Every drum of the kit has snare wires on it, the kick too, and the hand drums and the woodblocks
+  open the piece and take the middle with the tuba.
+  The orks count the band in and shout at the ends of the phrases.
+  Download them with mx samples download
+  "sfzinstruments/karoryfer.squidpipes@b258528c8f49d6389ec2b4ec04a8b10013169dd9:Samples/long_clean",
+  and the same for the other folders named below.
+  """
+
   use Mx.Song, tempo: 144
 
   @pipes {"sfzinstruments/karoryfer.squidpipes", "b258528c8f49d6389ec2b4ec04a8b10013169dd9"}

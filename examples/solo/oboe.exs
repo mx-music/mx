@@ -1,7 +1,10 @@
-# A solo for the oboe written for mx: a pastoral melody in F major, a dance in short detached
-# notes, a climb through its range from its low B flat to F6 and back, and the melody again an
-# octave up.
 defmodule Oboe do
+  @moduledoc """
+  A solo for the oboe written for mx: a pastoral melody in F major, a dance in short detached
+  notes, a climb through its range from its low B flat to F6 and back, and the melody again an
+  octave up.
+  """
+
   use Mx.Song, tempo: 72
 
   part :oboe, synth: :oboe

@@ -1,7 +1,10 @@
-# A solo for the French horn written for mx: a broad melody in Eb major, then again an octave
-# lower, hunting calls answered a fourth lower, a long note at its softest and then its loudest,
-# and a run down to a held low Eb2.
 defmodule Horn do
+  @moduledoc """
+  A solo for the French horn written for mx: a broad melody in Eb major, then again an octave
+  lower, hunting calls answered a fourth lower, a long note at its softest and then its loudest,
+  and a run down to a held low Eb2.
+  """
+
   use Mx.Song, tempo: 72
 
   part :horn, synth: :horn

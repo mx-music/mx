@@ -1,25 +1,28 @@
-# Bach's aria "Erbarme dich, mein Gott", BWV 244/39, as a roots dub on mx's measured synths.
-# The aria's 12/8 bar is a reggae bar of four beats swung in triplets, so the ritornello's eight
-# bars become the riddim: the double bass plucks the continuo's falling bass over a saw filtered
-# round and dark, as a bass guitar with its tone rolled off plays it, the harp skanks on 2 and 4,
-# and the organ bubbles, its left hand steady on the last triplet of each beat and its right hand
-# chopping 2 and 4.
-# The drum kit leads: the one drop, kick and rimshot together on beat 3 with beat 1 left empty,
-# the rimshot's ghost strokes, the hi-hat riding the triplets and opening into the next bar, snare
-# pickups and tom rolls.
-# Under it the congas play the Nyabinghi drums of Rastafari, the thunder open on 1 and damped on
-# 3, the funde's heartbeat on 2 and 4 and the repeater riding it, and the shaker and the güiro
-# fill the triplets the hi-hat leaves.
-# A dub siren and the hand drums open it, and a horn section of trumpet, tenor saxophone and
-# trombone states the aria's opening sigh before the riddim drops.
-# A trombone leads with the ritornello, slurring its runs as Rico Rodriguez and Vin Gordon played
-# dub's trombone leads, the harmonium sings the alto's "Erbarme dich" as a melodica does in
-# Augustus Pablo's dubs, and the horns sing it the second time.
-# In the dubs the parts drop out and come back, the rimshot, harp, harmonium and horns are thrown
-# into the echo, the harp and organ sweep through a high-pass filter as King Tubby's big knob did,
-# the tabla's bayan bends down on the drop, and the tanpura drones on B while the bass is out.
-# The notes come from the score beside this song, under CC BY 4.0, as LICENSE.md says.
 defmodule Dub do
+  @moduledoc """
+  Bach's aria "Erbarme dich, mein Gott", BWV 244/39, as a roots dub on mx's measured synths.
+  The aria's 12/8 bar is a reggae bar of four beats swung in triplets, so the ritornello's eight
+  bars become the riddim: the double bass plucks the continuo's falling bass over a saw filtered
+  round and dark, as a bass guitar with its tone rolled off plays it, the harp skanks on 2 and 4,
+  and the organ bubbles, its left hand steady on the last triplet of each beat and its right hand
+  chopping 2 and 4.
+  The drum kit leads: the one drop, kick and rimshot together on beat 3 with beat 1 left empty,
+  the rimshot's ghost strokes, the hi-hat riding the triplets and opening into the next bar, snare
+  pickups and tom rolls.
+  Under it the congas play the Nyabinghi drums of Rastafari, the thunder open on 1 and damped on
+  3, the funde's heartbeat on 2 and 4 and the repeater riding it, and the shaker and the güiro
+  fill the triplets the hi-hat leaves.
+  A dub siren and the hand drums open it, and a horn section of trumpet, tenor saxophone and
+  trombone states the aria's opening sigh before the riddim drops.
+  A trombone leads with the ritornello, slurring its runs as Rico Rodriguez and Vin Gordon played
+  dub's trombone leads, the harmonium sings the alto's "Erbarme dich" as a melodica does in
+  Augustus Pablo's dubs, and the horns sing it the second time.
+  In the dubs the parts drop out and come back, the rimshot, harp, harmonium and horns are thrown
+  into the echo, the harp and organ sweep through a high-pass filter as King Tubby's big knob did,
+  the tabla's bayan bends down on the drop, and the tanpura drones on B while the bass is out.
+  The notes come from the score beside this song, under CC BY 4.0, as LICENSE.md says.
+  """
+
   use Mx.Song, tempo: 104
 
   # The chord on each of a ritornello bar's four beats, as its root, its quality and the

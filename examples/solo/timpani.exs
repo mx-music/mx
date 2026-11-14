@@ -1,7 +1,10 @@
-# A solo for the timpani written for mx: a roll on A2 that swells from soft to loud, the tonic and
-# dominant pounded in turn, a melody on five drums tuned to D major, the same melody at its
-# softest, and a roll on D3 that ends on a loud stroke left to ring.
 defmodule Timpani do
+  @moduledoc """
+  A solo for the timpani written for mx: a roll on A2 that swells from soft to loud, the tonic and
+  dominant pounded in turn, a melody on five drums tuned to D major, the same melody at its
+  softest, and a roll on D3 that ends on a loud stroke left to ring.
+  """
+
   use Mx.Song, tempo: 80
 
   # The drums are tuned to A2, B2, D3, E3 and F#3, all within the recordings' range.

@@ -1,7 +1,10 @@
-# A solo for the tuba written for mx: an oom-pah bass in Bb major in short notes, then a walking
-# bass under the same chords, a melody high in its range, a long note at its softest and then its
-# loudest, and a run down to a held low F1.
 defmodule Tuba do
+  @moduledoc """
+  A solo for the tuba written for mx: an oom-pah bass in Bb major in short notes, then a walking
+  bass under the same chords, a melody high in its range, a long note at its softest and then its
+  loudest, and a run down to a held low F1.
+  """
+
   use Mx.Song, tempo: 100
 
   part :tuba, synth: :tuba

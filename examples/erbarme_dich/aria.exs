@@ -1,11 +1,14 @@
-# Erbarme dich, imported from bwv244.39.mxl by mix mx.import.
-# Each part's bars are written one to a line where they fit, as the bar's number and its music; a
-# bar of several voices plays them together.
-# A note's length is in beats, a quarter note being a beat; a note tied over a bar line sounds for
-# the whole tie, given as its sustain, and the note it ties into is a rest.
-# Notes play at vel 0.6, and a dynamic marked in the score gives the notes after it another vel.
-# The whole score plays once, 276.5 beats.
 defmodule Aria do
+  @moduledoc """
+  Erbarme dich, imported from bwv244.39.mxl by mix mx.import.
+  Each part's bars are written one to a line where they fit, as the bar's number and its music; a
+  bar of several voices plays them together.
+  A note's length is in beats, a quarter note being a beat; a note tied over a bar line sounds for
+  the whole tie, given as its sustain, and the note it ties into is a rest.
+  Notes play at vel 0.6, and a dynamic marked in the score gives the notes after it another vel.
+  The whole score plays once, 276.5 beats.
+  """
+
   use Mx.Song, tempo: 48
 
   part :violin, synth: :violin, defaults: [vel: 0.6]

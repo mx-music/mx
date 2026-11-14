@@ -1,4 +1,15 @@
 defmodule Salsa do
+  @moduledoc """
+  A salsa in A minor at 184 bpm, round four bars of Am7, D7, Fmaj7 and E7, with the son clave
+  running 2-3 across every two bars.
+  The bass and the baby bass play the tumbao, the piano the montuno, the congas their tumbao, the
+  bongocero the martillo and then the bell, the timbales the cáscara, and the maracas and the
+  güiro fill in the eighths.
+  It goes from an intro through the band, horn stabs, a piano solo, the mambo and a horn solo,
+  back to the mambo and the stabs, with a timbale fill before the stabs, the mambo and the horn
+  solo first come in.
+  """
+
   use Mx.Song, tempo: 184
 
   part :clave, synth: :clave

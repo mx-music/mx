@@ -1,7 +1,10 @@
-# A solo for the trombone written for mx: a legato melody in F major whose notes glide into each
-# other as the slide moves, a march in short notes, a long note at its softest and then its
-# loudest, and a last glide from F2 up to F4.
 defmodule Trombone do
+  @moduledoc """
+  A solo for the trombone written for mx: a legato melody in F major whose notes glide into each
+  other as the slide moves, a march in short notes, a long note at its softest and then its
+  loudest, and a last glide from F2 up to F4.
+  """
+
   use Mx.Song, tempo: 76
 
   part :trombone, synth: :trombone

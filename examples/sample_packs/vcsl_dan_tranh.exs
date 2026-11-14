@@ -1,16 +1,19 @@
-# A solo for the dan tranh, the Vietnamese zither of sixteen strings, in VCSL, Versilian Studios'
-# Versilian Community Sample Library, under Creative Commons 0.
-# The instrument is tuned to five notes, here B, C sharp, D sharp, F sharp and G sharp, and was
-# recorded on every string plucked, plucked with vibrato from the left hand, and in tremolo, with
-# sweeps across all the strings.
-# The solo is shaped as a dan tranh piece is: a prelude without a beat, of sweeps and long notes,
-# and then a tune in the five notes, its first note of each phrase doubled at the octave and its
-# long notes given vibrato, over the thumb on the low strings.
-# The tune goes round once more with its longer notes in tremolo, and a sweep down the strings
-# ends it.
-# VCSL names each string an octave below the pitch mx names it by.
-# The files are fetched as the song loads, about 50 MB.
 defmodule DanTranh do
+  @moduledoc """
+  A solo for the dan tranh, the Vietnamese zither of sixteen strings, in VCSL, Versilian Studios'
+  Versilian Community Sample Library, under Creative Commons 0.
+  The instrument is tuned to five notes, here B, C sharp, D sharp, F sharp and G sharp, and was
+  recorded on every string plucked, plucked with vibrato from the left hand, and in tremolo, with
+  sweeps across all the strings.
+  The solo is shaped as a dan tranh piece is: a prelude without a beat, of sweeps and long notes,
+  and then a tune in the five notes, its first note of each phrase doubled at the octave and its
+  long notes given vibrato, over the thumb on the low strings.
+  The tune goes round once more with its longer notes in tremolo, and a sweep down the strings
+  ends it.
+  VCSL names each string an octave below the pitch mx names it by.
+  The files are fetched as the song loads, about 50 MB.
+  """
+
   use Mx.Song, tempo: 84
 
   @repo "sgossner/VCSL"

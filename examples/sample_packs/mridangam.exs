@@ -1,20 +1,23 @@
-# Tani, a mridangam solo in adi tala, the cycle of eight beats, at 76 bpm, for the mridangam
-# strokes Arthur Carabott recorded from Harishankar V Menon, shared under Creative Commons
-# Attribution-ShareAlike.
-# It follows the order of a solo in a Carnatic concert: the first lesson, tha dhi thom nam, slowly
-# and then at speed, a flowing pattern that keeps the cycle, the same with the sharp chaapu
-# stroke, fast rolls at eight strokes to the beat, and a korvai, a composed ending whose last
-# stroke is the first beat of the next cycle.
-# The korvai takes two cycles: three phrases that shrink, 16, 12 and 8 strokes long, then tha dhin
-# gi na thom spread over seven strokes, three times with a gap of four.
-# Each row below is spoken as a drummer speaks a rhythm, a syllable to a stroke and a dot for a
-# silent one, and each syllable plays the recordings of one or two strokes.
-# The recordings of each stroke are sorted here into three strengths by their level, and the first
-# stroke of each beat is the strong one.
-# Download them with mx samples download
-# "yaxu/mrid@5ba409cabb2893e6e8a52a15a2812c35585cdadb:sounds/tha", and the same for the other
-# folders named below.
 defmodule Tani do
+  @moduledoc """
+  Tani, a mridangam solo in adi tala, the cycle of eight beats, at 76 bpm, for the mridangam
+  strokes Arthur Carabott recorded from Harishankar V Menon, shared under Creative Commons
+  Attribution-ShareAlike.
+  It follows the order of a solo in a Carnatic concert: the first lesson, tha dhi thom nam, slowly
+  and then at speed, a flowing pattern that keeps the cycle, the same with the sharp chaapu
+  stroke, fast rolls at eight strokes to the beat, and a korvai, a composed ending whose last
+  stroke is the first beat of the next cycle.
+  The korvai takes two cycles: three phrases that shrink, 16, 12 and 8 strokes long, then tha dhin
+  gi na thom spread over seven strokes, three times with a gap of four.
+  Each row below is spoken as a drummer speaks a rhythm, a syllable to a stroke and a dot for a
+  silent one, and each syllable plays the recordings of one or two strokes.
+  The recordings of each stroke are sorted here into three strengths by their level, and the first
+  stroke of each beat is the strong one.
+  Download them with mx samples download
+  "yaxu/mrid@5ba409cabb2893e6e8a52a15a2812c35585cdadb:sounds/tha", and the same for the other
+  folders named below.
+  """
+
   use Mx.Song, tempo: 76
 
   @repo "yaxu/mrid"

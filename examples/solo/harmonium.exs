@@ -1,6 +1,9 @@
-# A solo for the harmonium written for mx in raga Bhairav, on Sa G: Sa, the flat Re, Ga, Ma, Pa,
-# the flat Dha and Ni.
 defmodule Harmonium do
+  @moduledoc """
+  A solo for the harmonium written for mx in raga Bhairav, on Sa G: Sa, the flat Re, Ga, Ma, Pa,
+  the flat Dha and Ni.
+  """
+
   use Mx.Song, tempo: 72
 
   # Wikipedia gives its ascent as Sa Re Ga Ma Pa Dha Ni Sa', its descent as Sa' Ni Dha Pa Ma Ga Re

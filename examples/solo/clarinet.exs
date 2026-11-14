@@ -1,7 +1,10 @@
-# A solo for the clarinet written for mx: a dark melody in G minor low in its range, fast
-# arpeggios through its registers, the melody again an octave and a fifth up, and a last phrase
-# high in its range, up to G6.
 defmodule Clarinet do
+  @moduledoc """
+  A solo for the clarinet written for mx: a dark melody in G minor low in its range, fast
+  arpeggios through its registers, the melody again an octave and a fifth up, and a last phrase
+  high in its range, up to G6.
+  """
+
   use Mx.Song, tempo: 84
 
   part :clarinet, synth: :clarinet

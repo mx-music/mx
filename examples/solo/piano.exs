@@ -1,6 +1,9 @@
-# A solo for the piano written for mx: its whole range, chords softly and then hard, runs over a
-# bass, and its lowest and highest notes.
 defmodule Piano do
+  @moduledoc """
+  A solo for the piano written for mx: its whole range, chords softly and then hard, runs over a
+  bass, and its lowest and highest notes.
+  """
+
   use Mx.Song, tempo: 84
 
   part :piano, synth: :piano

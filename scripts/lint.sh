@@ -197,7 +197,7 @@ run_check "Add space between parentheses and do" "\)do"
 run_check "Don't use 'Map.get/2'. Use 'map[key]', 'Map.fetch!/2' or 'struct.field' instead" -PU 'Map\.get\([a-z_"@:\.]+\,\s[a-z_"@:\.]+\)'
 run_check "Remove 'else nil', it's the default" -PU -B 5 "\selse(\s+nil\s+end|:\snil)"
 run_check "Using with '<-' expects a pattern matching on the left side" -P '^(?m)\s*(?:with\b\s*|,\s*)(?!(?:nil|true|false)\b)(?:[a-z_]\w*|_)\s*<-'
-run_check "Using with '<-' expects a pattern matching on the left side" -PU "(?ms)with\b(?:(?!\bdo\b).)*\K^\s*(?!(?:nil|true|false)\b)(?:[a-z_]\w*|_)\s*<-"
+run_check "Using with '<-' expects a pattern matching on the left side" -PU "(?ms)(?:^\s*|[=(]\s*)with\b(?:(?!\bdo\b).)*\K^\s*(?!(?:nil|true|false)\b)(?:[a-z_]\w*|_)\s*<-"
 
 run_check "Use/import/alias/require/defstruct/defexception should be after @behaviour" -PU '^\s*(use|import|alias|require|defstruct|defexception)\b[^\n]*\n\s*@behaviour\b'
 run_check "Import should be after use" -PU '^\s*import\b[^\n]*\n\s*use\b'
@@ -304,6 +304,15 @@ run_check 'Avoid defining @moduledoc for test files' -g 'test/**/*.exs' '@module
 run_check "Fill in a @moduledoc \"...\" for every module in lib/${APP}/" \
           -g "lib/${APP}/**/*.ex" \
           -PU '(?m)^\s*defmodule\b(?:(?!^\s*defmodule\b)[\s\S])*?^\s*@moduledoc\s+"(*SKIP)(*FAIL)|^\s*defmodule\b'
+
+run_check "Describe every example module in a @moduledoc \"...\", not in comments above it" \
+          -g 'examples/**/*.exs' \
+          -PU '(?m)^defmodule\b(?:(?!^defmodule\b)[\s\S])*?^\s*@moduledoc\s+"(*SKIP)(*FAIL)|^defmodule\b'
+
+# A line of one word, such as a URL, may run past.
+run_check "Wrap example moduledocs at 98 columns, the formatter's line length" \
+          -g 'examples/**/*.exs' \
+          -PU '(?m)^[ \t]*@moduledoc """\n(?:(?![ \t]*""")[^\n]*\n)*?\K(?=[^\n]{99,}$)[ \t]*\S+[ \t]+\S[^\n]*$|^(?=[^\n]{99,}$)[ \t]*@moduledoc "'
 
 # Env vars
 run_check "Use Application config instead of reading/writing env vars directly in lib" \

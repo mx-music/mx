@@ -1,15 +1,18 @@
-# Rewind, a jungle track in E minor at 165 bpm made only of the samples Sonic Pi ships, which are
-# under Creative Commons 0 and which mx plays by name.
-# Its drums are one bar of the Amen break, loop_amen, cut into eight pieces and played back in new
-# orders, which is how jungle is made.
-# The bass is bass_woodsy_c, a single C played faster or slower to reach the other notes, with
-# bass_dnb_f under the accents.
-# The guitar chords, the choir and the bell are the pack's too, each one recording moved to the
-# notes of E minor by its rate.
-# A record's hiss opens it over a tabla loop, a rewind brings in the drums, and a backspin ends
-# the middle.
-# Download them with mx samples download sonic_pi.
 defmodule Rewind do
+  @moduledoc """
+  Rewind, a jungle track in E minor at 165 bpm made only of the samples Sonic Pi ships, which are
+  under Creative Commons 0 and which mx plays by name.
+  Its drums are one bar of the Amen break, loop_amen, cut into eight pieces and played back in new
+  orders, which is how jungle is made.
+  The bass is bass_woodsy_c, a single C played faster or slower to reach the other notes, with
+  bass_dnb_f under the accents.
+  The guitar chords, the choir and the bell are the pack's too, each one recording moved to the
+  notes of E minor by its rate.
+  A record's hiss opens it over a tabla loop, a rewind brings in the drums, and a backspin ends
+  the middle.
+  Download them with mx samples download sonic_pi.
+  """
+
   use Mx.Song, tempo: 165
 
   part :breaks, fx: [level: [amp: 0.5]]

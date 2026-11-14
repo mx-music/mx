@@ -1,19 +1,22 @@
-# A hypnotic piece in raga Darbari Kanada, the grave raga of midnight, on Sa F, laid out as a
-# recital: alap, a slow gat, a fast gat ending on a tihai, and shanti.
-# Wikipedia gives its ascent as S R g, g M P d n S' and its descent as S' d n P M P g, g M R S,
-# komal Ga and komal Dha swung slowly in andolan, mostly in the lower octave;
-# Raganet and Ragajunglism give g M R S and d n P as its defining phrases, and Ga touched from Re
-# on the way up and from Ma on the way down.
-# The oboe plays it as a shehnai would, the double reed of Hindustani music: each phrase slurred
-# on one breath, the fingers moving from note to note, gliding in meend where the raga asks, and
-# tongued again only to start a breath or repeat a note.
-# The harmonium cannot glide, so it plays its notes plainly: in the alap it answers the end of
-# each of the oboe's phrases, as an accompanist fills the soloist's breath, and in the gat it
-# follows the composition but not its taans.
-# Under the gat two pianos phase as in Steve Reich's Piano Phase: both repeat one figure, and
-# every pass the second locks in for eight beats, then drifts a sixteenth ahead over the next
-# eight, until twelve passes bring them back to unison.
 defmodule Midnight do
+  @moduledoc """
+  A hypnotic piece in raga Darbari Kanada, the grave raga of midnight, on Sa F, laid out as a
+  recital: alap, a slow gat, a fast gat ending on a tihai, and shanti.
+  Wikipedia gives its ascent as S R g, g M P d n S' and its descent as S' d n P M P g, g M R S,
+  komal Ga and komal Dha swung slowly in andolan, mostly in the lower octave; Raganet and
+  Ragajunglism give g M R S and d n P as its defining phrases, and Ga touched from Re on the way
+  up and from Ma on the way down.
+  The oboe plays it as a shehnai would, the double reed of Hindustani music: each phrase slurred
+  on one breath, the fingers moving from note to note, gliding in meend where the raga asks, and
+  tongued again only to start a breath or repeat a note.
+  The harmonium cannot glide, so it plays its notes plainly: in the alap it answers the end of
+  each of the oboe's phrases, as an accompanist fills the soloist's breath, and in the gat it
+  follows the composition but not its taans.
+  Under the gat two pianos phase as in Steve Reich's Piano Phase: both repeat one figure, and
+  every pass the second locks in for eight beats, then drifts a sixteenth ahead over the next
+  eight, until twelve passes bring them back to unison.
+  """
+
   use Mx.Song, tempo: 60
 
   @sa 65

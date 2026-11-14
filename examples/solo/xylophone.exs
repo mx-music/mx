@@ -1,6 +1,9 @@
-# A solo for the xylophone written for mx: fast runs over two octaves, a note struck again and
-# again as a melody moves over it, its brightest bars, and a run to its top note.
 defmodule Xylophone do
+  @moduledoc """
+  A solo for the xylophone written for mx: fast runs over two octaves, a note struck again and
+  again as a melody moves over it, its brightest bars, and a run to its top note.
+  """
+
   use Mx.Song, tempo: 126
 
   part :xylophone, synth: :xylophone

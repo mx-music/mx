@@ -1,18 +1,21 @@
-# Planxty Irwin, a tune by the Irish harper Turlough O'Carolan, on the plucked strings of VCSL,
-# Versilian Studios' Versilian Community Sample Library, under Creative Commons 0: concert harp,
-# folk harp, strumstick, and the bowed psaltery, plucked and bowed.
-# The tune is as O'Neill's Music of Ireland of 1903 prints it, number 677, a jig in D of two
-# strains of eight bars, each played twice; the chords under it are this arrangement's.
-# It is played twice through: first by the concert harp alone, the tune in one hand and a bass and
-# chord in the other, then by the folk harp over the concert harp's broken chords and the
-# strumstick's strumming, the psaltery plucking the tune an octave above in the first strain and
-# bowing long notes in the second.
-# VCSL names the keys of the concert harp at their pitch and those of the others an octave below
-# it.
-# The concert harp's notes start some 40 thousandths of a second into their files, so it plays
-# that much early.
-# The files are fetched as the song loads, about 135 MB.
 defmodule PlanxtyIrwin do
+  @moduledoc """
+  Planxty Irwin, a tune by the Irish harper Turlough O'Carolan, on the plucked strings of VCSL,
+  Versilian Studios' Versilian Community Sample Library, under Creative Commons 0: concert harp,
+  folk harp, strumstick, and the bowed psaltery, plucked and bowed.
+  The tune is as O'Neill's Music of Ireland of 1903 prints it, number 677, a jig in D of two
+  strains of eight bars, each played twice; the chords under it are this arrangement's.
+  It is played twice through: first by the concert harp alone, the tune in one hand and a bass and
+  chord in the other, then by the folk harp over the concert harp's broken chords and the
+  strumstick's strumming, the psaltery plucking the tune an octave above in the first strain and
+  bowing long notes in the second.
+  VCSL names the keys of the concert harp at their pitch and those of the others an octave below
+  it.
+  The concert harp's notes start some 40 thousandths of a second into their files, so it plays
+  that much early.
+  The files are fetched as the song loads, about 135 MB.
+  """
+
   use Mx.Song, tempo: 92
 
   @repo "sgossner/VCSL"

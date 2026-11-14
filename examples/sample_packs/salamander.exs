@@ -1,19 +1,22 @@
-# Debussy's Clair de lune on the Salamander Grand Piano, Alexander Holm's recordings of a Yamaha
-# C5, shared under Creative Commons Attribution 3.0.
-# The notes, the touch and the rubato are those of examples/piano/clair_de_lune.exs, from the
-# Mutopia Project's public-domain engraving; only the instrument differs.
-# The piano is recorded every minor third at sixteen strengths, and the piece asks for most of
-# them, from its pianissimo opening to the forte of bar 41 and back.
-# A strength is already as loud or as quiet as the piano was when it was recorded, so each note
-# keeps the level of its recording instead of being made louder or quieter again by its velocity.
-# The recordings have no sustain pedal, so each note is left to ring on after its key for a while
-# in its place.
-# Download them with mx samples download
-# "sfzinstruments/SalamanderGrandPiano@3382bf9496bba2486f5ab0de55a264d1dfc38404:Samples", which is
-# about 700 MB.
 Code.require_file("../piano/clair_de_lune_score.exs", __DIR__)
 
 defmodule Salamander do
+  @moduledoc """
+  Debussy's Clair de lune on the Salamander Grand Piano, Alexander Holm's recordings of a Yamaha
+  C5, shared under Creative Commons Attribution 3.0.
+  The notes, the touch and the rubato are those of examples/piano/clair_de_lune.exs, from the
+  Mutopia Project's public-domain engraving; only the instrument differs.
+  The piano is recorded every minor third at sixteen strengths, and the piece asks for most of
+  them, from its pianissimo opening to the forte of bar 41 and back.
+  A strength is already as loud or as quiet as the piano was when it was recorded, so each note
+  keeps the level of its recording instead of being made louder or quieter again by its velocity.
+  The recordings have no sustain pedal, so each note is left to ring on after its key for a while
+  in its place.
+  Download them with mx samples download
+  "sfzinstruments/SalamanderGrandPiano@3382bf9496bba2486f5ab0de55a264d1dfc38404:Samples", which is
+  about 700 MB.
+  """
+
   use Mx.Song, tempo: 120
 
   @repo "sfzinstruments/SalamanderGrandPiano"

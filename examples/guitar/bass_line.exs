@@ -1,4 +1,11 @@
 defmodule BassLine do
+  @moduledoc """
+  A walking bass on the guitar at 96 bpm, round Dm7, G7, C6 and A7, four quarter notes to a bar
+  with the root louder.
+  Each walk steps through the chord and into the next root from a semitone away, and every eighth
+  bar the A7 walks down to the low B instead.
+  """
+
   use Mx.Song, tempo: 96
 
   part :bass, synth: :guitar, fx: [reverb: [room: 0.3, mix: 0.12]]

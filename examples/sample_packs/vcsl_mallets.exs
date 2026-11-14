@@ -1,20 +1,23 @@
-# Seven Strokes, a piece for the mallet instruments of VCSL, Versilian Studios' Versilian
-# Community Sample Library, under Creative Commons 0: marimba, vibraphone struck and bowed,
-# glockenspiel, hand chimes and tubular bells, with its finger cymbals, suspended cymbal, gong and
-# wind chimes.
-# It is written as music for mallet ensembles often is, as a steady pulse of twelve to the bar
-# that the players share.
-# The marimba plays the seven strokes of the bell pattern of West African music, added one to a
-# bar until all seven are there, and the vibraphone plays the five pulses the marimba leaves
-# empty, so that between them every pulse sounds.
-# Under them the chords change every two bars, D, B minor, G and A, and each time round another
-# instrument joins: the bowed vibraphone, then the glockenspiel and the hand chimes, then the
-# tubular bells.
-# VCSL names each key an octave below the pitch mx names it by, and records its instruments at
-# very different levels, so each part is brought to its place by its own level.
-# Download them with mx samples download
-# "sgossner/VCSL@c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e:Idiophones".
 defmodule SevenStrokes do
+  @moduledoc """
+  Seven Strokes, a piece for the mallet instruments of VCSL, Versilian Studios' Versilian
+  Community Sample Library, under Creative Commons 0: marimba, vibraphone struck and bowed,
+  glockenspiel, hand chimes and tubular bells, with its finger cymbals, suspended cymbal, gong and
+  wind chimes.
+  It is written as music for mallet ensembles often is, as a steady pulse of twelve to the bar
+  that the players share.
+  The marimba plays the seven strokes of the bell pattern of West African music, added one to a
+  bar until all seven are there, and the vibraphone plays the five pulses the marimba leaves
+  empty, so that between them every pulse sounds.
+  Under them the chords change every two bars, D, B minor, G and A, and each time round another
+  instrument joins: the bowed vibraphone, then the glockenspiel and the hand chimes, then the
+  tubular bells.
+  VCSL names each key an octave below the pitch mx names it by, and records its instruments at
+  very different levels, so each part is brought to its place by its own level.
+  Download them with mx samples download
+  "sgossner/VCSL@c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e:Idiophones".
+  """
+
   use Mx.Song, tempo: 100
 
   @repo "sgossner/VCSL"

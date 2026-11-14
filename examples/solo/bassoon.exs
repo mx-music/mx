@@ -1,7 +1,10 @@
-# A solo for the bassoon written for mx: a song-like melody in B flat in its tenor register, a
-# walking bass line low in its range, a comic tune in short detached notes, and the melody again,
-# closing on its low B flat.
 defmodule Bassoon do
+  @moduledoc """
+  A solo for the bassoon written for mx: a song-like melody in B flat in its tenor register, a
+  walking bass line low in its range, a comic tune in short detached notes, and the melody again,
+  closing on its low B flat.
+  """
+
   use Mx.Song, tempo: 76
 
   part :bassoon, synth: :bassoon

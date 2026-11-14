@@ -1,6 +1,9 @@
-# A solo for the tambourine written for mx from its standard ways of playing, none of them
-# transcribed.
 defmodule Tambourine do
+  @moduledoc """
+  A solo for the tambourine written for mx from its standard ways of playing, none of them
+  transcribed.
+  """
+
   use Mx.Song, tempo: 112
 
   # It opens on a shake roll that starts and ends on a stroke, as orchestral players begin and end

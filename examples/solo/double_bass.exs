@@ -1,7 +1,10 @@
-# A solo for the double bass written for mx: a plucked walking line through a twelve-bar blues in
-# F, four bars at a time, then a slow bowed melody over its low strings, and a last walk down to
-# its low F, bowed and held.
 defmodule DoubleBass do
+  @moduledoc """
+  A solo for the double bass written for mx: a plucked walking line through a twelve-bar blues in
+  F, four bars at a time, then a slow bowed melody over its low strings, and a last walk down to
+  its low F, bowed and held.
+  """
+
   use Mx.Song, tempo: 112
 
   part :double_bass, synth: :double_bass

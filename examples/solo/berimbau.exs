@@ -1,19 +1,22 @@
-# A solo for the berimbau as a capoeira roda plays it: the toque of Angola with its variations,
-# São Bento Pequeno, São Bento Grande speeding up, and Benguela to calm the game.
-# The toques and variations are the transcriptions of Wikipedia's "Capoeira toques",
-# https://en.wikipedia.org/wiki/Capoeira_toques, a bar of 4/4 each, the same strokes Lelé's list
-# of toques gives, https://lelecapoeira.com/2025/capoeira-toques-updated/.
-# Every toque ends its bar on two buzzed strokes, the coin resting on the wire with the gourd
-# against the belly.
-# The tempo and the buzzes' spacing come from "Toque-de-angola.ogg" on Wikimedia Commons, in the
-# public domain: its bar of Angola lasts 2.03 seconds, 119 bpm, and its two buzzes are 0.1 seconds
-# apart, about a sixteenth, closer than the transcriptions' eighths.
-# In seven bars of that recording the same stroke lands within about 15 to 25 ms of where it lands
-# in the others, and its peak varies by 2 to 3 dB, so each word here moves up to 0.05 beat either
-# way and each stroke's vel up to 0.1, and the gourd's pace moves a little from stroke to stroke.
-# The other toques keep their order from slow to fast around it: Benguela slower, São Bento
-# Pequeno faster, São Bento Grande fastest and speeding up.
 defmodule Berimbau do
+  @moduledoc """
+  A solo for the berimbau as a capoeira roda plays it: the toque of Angola with its variations,
+  São Bento Pequeno, São Bento Grande speeding up, and Benguela to calm the game.
+  The toques and variations are the transcriptions of Wikipedia's "Capoeira toques",
+  https://en.wikipedia.org/wiki/Capoeira_toques, a bar of 4/4 each, the same strokes Lelé's list
+  of toques gives, https://lelecapoeira.com/2025/capoeira-toques-updated/.
+  Every toque ends its bar on two buzzed strokes, the coin resting on the wire with the gourd
+  against the belly.
+  The tempo and the buzzes' spacing come from "Toque-de-angola.ogg" on Wikimedia Commons, in the
+  public domain: its bar of Angola lasts 2.03 seconds, 119 bpm, and its two buzzes are 0.1 seconds
+  apart, about a sixteenth, closer than the transcriptions' eighths.
+  In seven bars of that recording the same stroke lands within about 15 to 25 ms of where it lands
+  in the others, and its peak varies by 2 to 3 dB, so each word here moves up to 0.05 beat either
+  way and each stroke's vel up to 0.1, and the gourd's pace moves a little from stroke to stroke.
+  The other toques keep their order from slow to fast around it: Benguela slower, São Bento
+  Pequeno faster, São Bento Grande fastest and speeding up.
+  """
+
   use Mx.Song, tempo: 120
 
   part :berimbau, synth: :berimbau, fx: [reverb: [room: 0.35, mix: 0.1]]

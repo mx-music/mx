@@ -1,12 +1,13 @@
-# A solo for the viola written for mx, in C minor, from the ways a viola is played:
-# a cantabile low on its C and G strings, the register that sets it apart from the violin, slurred
-# in groups with its long notes swelled and eased;
-# measured tremolo, the repeated sixteenths violas carry under an orchestra's melody, growing from
-# soft to loud;
-# arpeggios from the low C, slurred four notes to a bow across the strings; chords plucked and
-# left to ring;
-# and the melody an octave higher, settling on the low C, swelled.
 defmodule Viola do
+  @moduledoc """
+  A solo for the viola written for mx, in C minor, from the ways a viola is played: a cantabile
+  low on its C and G strings, the register that sets it apart from the violin, slurred in groups
+  with its long notes swelled and eased; measured tremolo, the repeated sixteenths violas carry
+  under an orchestra's melody, growing from soft to loud; arpeggios from the low C, slurred four
+  notes to a bow across the strings; chords plucked and left to ring; and the melody an octave
+  higher, settling on the low C, swelled.
+  """
+
   use Mx.Song, tempo: 66
 
   part :viola, synth: :viola, fx: [reverb: [room: 0.5, mix: 0.25]]

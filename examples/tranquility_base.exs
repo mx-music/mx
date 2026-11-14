@@ -1,22 +1,24 @@
-# Tranquility Base, a piece made only of public recordings, at 136 bpm, where Sputnik's beep,
-# every 0.44 seconds, falls on the beat.
-# It goes round C minor 9, A flat major 7, E flat major 7 and B flat, two bars each, chords that
-# all hold the E flat Sputnik beeps near.
-# VCSL's marimba plays the bass and an ostinato, its vibraphone the chords, struck and bowed, its
-# hand chimes the melody, and its wine glasses, tuned by their rate, hold E flat major 7 over
-# everything.
-# Its bass drum, snare, hi-hat, frame drum, shaker, claps and tom keep time, each choosing
-# strengths and alternating takes, with its cymbal, timpani, gong and wind chimes at the turns.
-# NASA's recordings tell the story over it: Kennedy's challenge, the liftoff of Apollo 11, Apollo
-# 13's problem through a bitcrusher, the landing stuttered into the drop, the first step, and the
-# return.
-# VCSL is Versilian Studios' Versilian Community Sample Library, under Creative Commons 0,
-# downloaded with mx samples download
-# "sgossner/VCSL@c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e:Idiophones" and the same for
-# Membranophones
-# NASA's recordings are in the folder beside this file, from
-# https://nssdc.gsfc.nasa.gov/planetary/sound/index.html, courtesy of NASA.
 defmodule TranquilityBase do
+  @moduledoc """
+  Tranquility Base, a piece made only of public recordings, at 136 bpm, where Sputnik's beep,
+  every 0.44 seconds, falls on the beat.
+  It goes round C minor 9, A flat major 7, E flat major 7 and B flat, two bars each, chords that
+  all hold the E flat Sputnik beeps near.
+  VCSL's marimba plays the bass and an ostinato, its vibraphone the chords, struck and bowed, its
+  hand chimes the melody, and its wine glasses, tuned by their rate, hold E flat major 7 over
+  everything.
+  Its bass drum, snare, hi-hat, frame drum, shaker, claps and tom keep time, each choosing
+  strengths and alternating takes, with its cymbal, timpani, gong and wind chimes at the turns.
+  NASA's recordings tell the story over it: Kennedy's challenge, the liftoff of Apollo 11, Apollo
+  13's problem through a bitcrusher, the landing stuttered into the drop, the first step, and the
+  return.
+  VCSL is Versilian Studios' Versilian Community Sample Library, under Creative Commons 0,
+  downloaded with mx samples download
+  "sgossner/VCSL@c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e:Idiophones" and the same for
+  Membranophones NASA's recordings are in the folder beside this file, from
+  https://nssdc.gsfc.nasa.gov/planetary/sound/index.html, courtesy of NASA.
+  """
+
   use Mx.Song, tempo: 136
 
   @repo "sgossner/VCSL"

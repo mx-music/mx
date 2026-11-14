@@ -1,17 +1,20 @@
-# Rust Wave, a surf instrumental at 164 bpm for three Karoryfer Samples libraries, each under
-# Creative Commons 0: Black And Green Guitars, Growlybass and Big Rusty Drums.
-# The green Gretsch plays the lead: a riff of muted strokes on the low strings, then the tune
-# tremolo-picked in sixteenths, as surf guitar plays a melody, through a long reverb.
-# The black Hofner strums the chords, Em, D, C and B, the Andalusian cadence most surf tunes in a
-# minor key go round.
-# The Jazz Bass drives in eighths, and the drums play the surf beat, the snare on two, the and of
-# two, and four, then move to the floor tom.
-# The tremolo picking never plays one recording twice in a row: each note has four takes at each
-# of three strengths.
-# Download them with mx samples download
-# "sfzinstruments/karoryfer.black-and-green-guitars@b3b3249d37dc977a1a297bd2dc053e6d9b6b805c:Samples/green/ord",
-# and the same for the other folders named below.
 defmodule RustWave do
+  @moduledoc """
+  Rust Wave, a surf instrumental at 164 bpm for three Karoryfer Samples libraries, each under
+  Creative Commons 0: Black And Green Guitars, Growlybass and Big Rusty Drums.
+  The green Gretsch plays the lead: a riff of muted strokes on the low strings, then the tune
+  tremolo-picked in sixteenths, as surf guitar plays a melody, through a long reverb.
+  The black Hofner strums the chords, Em, D, C and B, the Andalusian cadence most surf tunes in a
+  minor key go round.
+  The Jazz Bass drives in eighths, and the drums play the surf beat, the snare on two, the and of
+  two, and four, then move to the floor tom.
+  The tremolo picking never plays one recording twice in a row: each note has four takes at each
+  of three strengths.
+  Download them with mx samples download
+  "sfzinstruments/karoryfer.black-and-green-guitars@b3b3249d37dc977a1a297bd2dc053e6d9b6b805c:Samples/green/ord",
+  and the same for the other folders named below.
+  """
+
   use Mx.Song, tempo: 164
 
   @guitars {"sfzinstruments/karoryfer.black-and-green-guitars",

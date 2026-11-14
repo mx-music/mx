@@ -1,4 +1,12 @@
 defmodule Virtuoso do
+  @moduledoc """
+  A pandeiro solo in 2/4 at 104 bpm, on mx's four pandeiro strokes: the thumb's bass, the heel of
+  the hand, the fingertips on the jingles, and the slap.
+  It opens on a groove and a variation with ruffs, then the hand rocks in sixteenths with an
+  accent every three strokes, then every five, then every fourth stroke of sextuplets, the accents
+  crossing the bar line until the count meets the first beat again, and the groove comes back.
+  """
+
   use Mx.Song, tempo: 104
 
   part :pandeiro_thumb, synth: :pandeiro_thumb

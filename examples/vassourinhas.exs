@@ -1,12 +1,15 @@
-# Vassourinhas, the frevo de rua Matias da Rocha and Joana Batista Ramos wrote in Recife in 1909,
-# in the public domain, in an arrangement written for mx's nine winds.
-# A beat is a quarter note of 2/4, so a bar is two beats and each part of the tune is 32.
-# The first part is the brass's fanfare and the second the reeds' tune, as a frevo de rua has them
-# ask and answer.
-# The form is an opening on the caixa, the first part, the second part twice, the first part
-# handed from wind to wind, then both parts a tone higher with every wind playing, and a last
-# chord.
 defmodule Vassourinhas do
+  @moduledoc """
+  Vassourinhas, the frevo de rua Matias da Rocha and Joana Batista Ramos wrote in Recife in 1909,
+  in the public domain, in an arrangement written for mx's nine winds.
+  A beat is a quarter note of 2/4, so a bar is two beats and each part of the tune is 32.
+  The first part is the brass's fanfare and the second the reeds' tune, as a frevo de rua has them
+  ask and answer.
+  The form is an opening on the caixa, the first part, the second part twice, the first part
+  handed from wind to wind, then both parts a tone higher with every wind playing, and a last
+  chord.
+  """
+
   use Mx.Song, tempo: 148
 
   @hall [reverb: [room: 0.45, mix: 0.18]]

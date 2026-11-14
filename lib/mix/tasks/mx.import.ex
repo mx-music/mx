@@ -160,7 +160,7 @@ defmodule Mix.Tasks.Mx.Import do
     title = title(score.title)
     beats = format_beats(beats(score))
 
-    header =
+    moduledoc =
       [
         "#{title}, imported from #{file} by mix mx.import.",
         "Each part's bars are written one to a line where they fit, as the bar's number and its music; a bar of several voices plays them together.",
@@ -168,11 +168,14 @@ defmodule Mix.Tasks.Mx.Import do
         "Notes play at vel 0.6, and a dynamic marked in the score gives the notes after it another vel.",
         "The whole score plays once, #{beats} beats."
       ]
-      |> Enum.map_join("\n", &comment/1)
+      |> Enum.map_join("\n", &doc_line/1)
 
     """
-    #{header}
     defmodule #{song_module} do
+      @moduledoc \"""
+    #{moduledoc}
+      \"""
+
       use Mx.Song, tempo: #{tempo}
 
     #{declarations}
@@ -191,8 +194,8 @@ defmodule Mix.Tasks.Mx.Import do
     """
   end
 
-  # Each sentence a comment of its own, wrapped at 98 columns.
-  defp comment(sentence) do
+  # Each sentence a line of its own in the moduledoc, wrapped at 98 columns.
+  defp doc_line(sentence) do
     sentence
     |> String.split(" ")
     |> Enum.reduce([], fn
@@ -203,7 +206,7 @@ defmodule Mix.Tasks.Mx.Import do
         [word | lines]
     end)
     |> Enum.reverse()
-    |> Enum.map_join("\n", &("# " <> &1))
+    |> Enum.map_join("\n", &("  " <> &1))
   end
 
   # The module is named after the song, so two songs whose parts share a name can load side by side.
@@ -361,7 +364,7 @@ defmodule Mix.Tasks.Mx.Import do
     "note(#{pitch}, #{format_length(beats)}#{opts})"
   end
 
-  # Audiveris and music21 name a score after its file, which says nothing the comment does not.
+  # Audiveris and music21 name a score after its file, which says nothing the moduledoc does not.
   defp title(title) when title in [nil, ""], do: "A score"
 
   defp title(title) do

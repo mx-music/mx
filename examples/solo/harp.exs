@@ -1,6 +1,9 @@
-# A solo for the harp written for mx: a joropo in A minor, the bass in 3/4 under arpeggios in 6/8,
-# then chords left to ring, and a last arpeggio.
 defmodule Harp do
+  @moduledoc """
+  A solo for the harp written for mx: a joropo in A minor, the bass in 3/4 under arpeggios in 6/8,
+  then chords left to ring, and a last arpeggio.
+  """
+
   use Mx.Song, tempo: 168
 
   part :harp, synth: :harp

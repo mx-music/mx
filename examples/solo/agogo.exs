@@ -1,6 +1,9 @@
-# A beat is a quarter note of samba's cut time, so a pass is two bars, the length of a bell
-# figure.
 defmodule Agogo do
+  @moduledoc """
+  A beat is a quarter note of samba's cut time, so a pass is two bars, the length of a bell
+  figure.
+  """
+
   use Mx.Song, tempo: 200
 
   part :low_agogo, synth: :low_agogo

@@ -1,5 +1,8 @@
-# Every part's pass is one bar of 8 beats, so they all change chord together.
 defmodule Ambient do
+  @moduledoc """
+  Every part's pass is one bar of 8 beats, so they all change chord together.
+  """
+
   use Mx.Song, tempo: 64
 
   part :pad, synth: :supersaw, fx: [lpf: [cutoff: 84], reverb: [room: 0.95, damp: 0.6, mix: 0.7]]

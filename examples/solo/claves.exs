@@ -1,7 +1,10 @@
-# A solo for the claves written for mx from the standard clave patterns, as Wikipedia's article on
-# the clave rhythm gives them: son clave 3-2 and then 2-3, rumba clave, the bossa nova clave, the
-# 6/8 standard bell of bembé, and son clave again to close.
 defmodule Claves do
+  @moduledoc """
+  A solo for the claves written for mx from the standard clave patterns, as Wikipedia's article on
+  the clave rhythm gives them: son clave 3-2 and then 2-3, rumba clave, the bossa nova clave, the
+  6/8 standard bell of bembé, and son clave again to close.
+  """
+
   use Mx.Song, tempo: 104
 
   # A pass is two bars of 4/4, written as sixteen cells of eighth notes, or for the 6/8 bell as

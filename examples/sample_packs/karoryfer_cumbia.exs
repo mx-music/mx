@@ -1,18 +1,21 @@
-# Cosmonauta, a cumbia in A minor at 96 bpm for three Karoryfer Samples libraries, each under
-# Creative Commons 0: Caveman Cosmonaut, Swagbass and Swirly Drums.
-# Caveman Cosmonaut is a transistor organ of the 1970s, the instrument that led Peruvian and
-# Mexican cumbia bands, and here its reed stop plays the tune through an echo and its flute stop
-# the chords off the beat.
-# The bass plays the cumbia's long root, then the fifth and the root again.
-# Swirly Drums plays the rest: the cowbell on the beats, the hi-hat the long and two short strokes
-# a güiro scrapes, the djembe the open tone on two and four, the bongos between, and the snare the
-# fills.
-# The verse goes between A minor and E seventh, and the chorus down through D minor, A minor and E
-# seventh with the tune in thirds.
-# The organ's recordings last about three seconds and do not loop, so no note here is longer than
-# that.
-# The files are fetched as the song loads, about 60 MB.
 defmodule Cosmonauta do
+  @moduledoc """
+  Cosmonauta, a cumbia in A minor at 96 bpm for three Karoryfer Samples libraries, each under
+  Creative Commons 0: Caveman Cosmonaut, Swagbass and Swirly Drums.
+  Caveman Cosmonaut is a transistor organ of the 1970s, the instrument that led Peruvian and
+  Mexican cumbia bands, and here its reed stop plays the tune through an echo and its flute stop
+  the chords off the beat.
+  The bass plays the cumbia's long root, then the fifth and the root again.
+  Swirly Drums plays the rest: the cowbell on the beats, the hi-hat the long and two short strokes
+  a güiro scrapes, the djembe the open tone on two and four, the bongos between, and the snare the
+  fills.
+  The verse goes between A minor and E seventh, and the chorus down through D minor, A minor and E
+  seventh with the tune in thirds.
+  The organ's recordings last about three seconds and do not loop, so no note here is longer than
+  that.
+  The files are fetched as the song loads, about 60 MB.
+  """
+
   use Mx.Song, tempo: 96
 
   @organ {"sfzinstruments/karoryfer.caveman-cosmonaut",

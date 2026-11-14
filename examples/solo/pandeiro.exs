@@ -1,5 +1,8 @@
-# A beat is a quarter note of 2/4, so a pass is two bars of sixteenths.
 defmodule Pandeiro do
+  @moduledoc """
+  A beat is a quarter note of 2/4, so a pass is two bars of sixteenths.
+  """
+
   use Mx.Song, tempo: 100
 
   part :pandeiro_thumb, synth: :pandeiro_thumb

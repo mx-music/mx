@@ -1,7 +1,10 @@
-# A solo for the tenor saxophone written for mx: a choro melody in F major with its runs in
-# sixteenths, a slow phrase with vibrato, the same phrase at its softest and then its loudest, and
-# a last run down to its low A flat.
 defmodule TenorSax do
+  @moduledoc """
+  A solo for the tenor saxophone written for mx: a choro melody in F major with its runs in
+  sixteenths, a slow phrase with vibrato, the same phrase at its softest and then its loudest, and
+  a last run down to its low A flat.
+  """
+
   use Mx.Song, tempo: 88
 
   part :tenor_sax, synth: :tenor_sax

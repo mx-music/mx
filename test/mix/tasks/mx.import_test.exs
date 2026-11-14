@@ -19,7 +19,9 @@ defmodule Mix.Tasks.Mx.ImportTest do
     import!([ctx.score, "--tempo", "100"])
     song = File.read!(ctx.song)
 
-    assert song =~ "\ndefmodule Bwv1407 do\n  use Mx.Song, tempo: 100\n"
+    assert String.starts_with?(song, "defmodule Bwv1407 do\n")
+    assert song =~ "\n  A score, imported from bwv140.7.mxl by mix mx.import.\n"
+    assert song =~ "\n  \"\"\"\n\n  use Mx.Song, tempo: 100\n"
 
     assert Regex.scan(~r/^  part :(\w+), synth: :tri$/m, song, capture: :all_but_first) ==
              [["soprano"], ["alto"], ["tenor"], ["bass"]]

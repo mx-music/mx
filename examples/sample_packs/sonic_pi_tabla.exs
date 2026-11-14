@@ -1,14 +1,17 @@
-# Kaida, a tabla solo in teentaal, the cycle of sixteen beats, at 84 bpm, made only of the tabla
-# strokes Sonic Pi ships, which are under Creative Commons 0.
-# It opens with teentaal's theka, the pattern that names the cycle, then plays the kaida every
-# student of the Delhi school learns first: dha dha te te dha dha tin na, answered without the
-# bass drum as ta ta te te dha dha dhin na.
-# A kaida is a theme and its variations, each made only of the theme's strokes: here the theme at
-# half speed, at speed, three variations, and a tihai, a phrase played three times so that its
-# last dha is the first beat of the next cycle.
-# Each row is spoken as a tabla player speaks it, a syllable to a stroke and a dot for a silent
-# one, and each syllable plays a stroke of the small drum, of the bass drum, or of both.
 defmodule Kaida do
+  @moduledoc """
+  Kaida, a tabla solo in teentaal, the cycle of sixteen beats, at 84 bpm, made only of the tabla
+  strokes Sonic Pi ships, which are under Creative Commons 0.
+  It opens with teentaal's theka, the pattern that names the cycle, then plays the kaida every
+  student of the Delhi school learns first: dha dha te te dha dha tin na, answered without the
+  bass drum as ta ta te te dha dha dhin na.
+  A kaida is a theme and its variations, each made only of the theme's strokes: here the theme at
+  half speed, at speed, three variations, and a tihai, a phrase played three times so that its
+  last dha is the first beat of the next cycle.
+  Each row is spoken as a tabla player speaks it, a syllable to a stroke and a dot for a silent
+  one, and each syllable plays a stroke of the small drum, of the bass drum, or of both.
+  """
+
   use Mx.Song, tempo: 84
 
   # Each syllable as the small drum's stroke and the bass drum's, nil where that hand rests: dha

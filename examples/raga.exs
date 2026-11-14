@@ -1,14 +1,17 @@
-# Raga Yaman for tanpura, sitar and tabla, laid out as a Hindustani recital: the drone first, a
-# slow alap, a jor to a pulse, and a gat with the tabla in teentaal.
-# The gat is "Yaman–Trital (Madhyalay)" from V. N. Bhatkhande's Kramik Pustak Malika, second book,
-# Hindi edition, Bombay 1946, printed page 33, in the public domain:
-# https://archive.org/details/dsnn-hindusthani-sangeet-paddhati-kramik-pustakmalika-d/page/n48/mode/1up
-# The sitar plays it as a sitarist would: each pluck rings until the next, the other notes of a
-# matra, its grace notes and its glides are fingered on the ringing string,
-# and the chikari, the high strings tuned to Sa, are struck between the notes.
-# The tabla's dayan is tuned to Sa, its bayan bends on sam, and the three sit in a hall, the
-# tanpura to the left and the tabla to the right.
 defmodule Raga do
+  @moduledoc """
+  Raga Yaman for tanpura, sitar and tabla, laid out as a Hindustani recital: the drone first, a
+  slow alap, a jor to a pulse, and a gat with the tabla in teentaal.
+  The gat is "Yaman–Trital (Madhyalay)" from V. N. Bhatkhande's Kramik Pustak Malika, second book,
+  Hindi edition, Bombay 1946, printed page 33, in the public domain:
+  https://archive.org/details/dsnn-hindusthani-sangeet-paddhati-kramik-pustakmalika-d/page/n48/mode/1up
+  The sitar plays it as a sitarist would: each pluck rings until the next, the other notes of a
+  matra, its grace notes and its glides are fingered on the ringing string, and the chikari, the
+  high strings tuned to Sa, are struck between the notes.
+  The tabla's dayan is tuned to Sa, its bayan bends on sam, and the three sit in a hall, the
+  tanpura to the left and the tabla to the right.
+  """
+
   use Mx.Song, tempo: 80
 
   @sa 49

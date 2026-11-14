@@ -1,11 +1,14 @@
-# Raga Bhupali for flute and tabla, as a bansuri player lays it out: a slow alap without a beat, a
-# drut gat in teentaal, taans, and a tihai landing on sam.
-# The gat is built on Bhupali's pakad, G R S .D S R G, and the taans on the alankars that climb
-# and fall in threes.
-# Each breath is one note whose later changes move it from swara to swara, so the air runs on
-# through a phrase: a tongued note dips the breath, a slurred one only moves the pitch, and a
-# glide, the bansuri's meend, slides into it.
 defmodule Bhupali do
+  @moduledoc """
+  Raga Bhupali for flute and tabla, as a bansuri player lays it out: a slow alap without a beat, a
+  drut gat in teentaal, taans, and a tihai landing on sam.
+  The gat is built on Bhupali's pakad, G R S .D S R G, and the taans on the alankars that climb
+  and fall in threes.
+  Each breath is one note whose later changes move it from swara to swara, so the air runs on
+  through a phrase: a tongued note dips the breath, a slurred one only moves the pitch, and a
+  glide, the bansuri's meend, slides into it.
+  """
+
   use Mx.Song, tempo: 240
 
   part :flute, synth: :flute

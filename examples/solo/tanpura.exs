@@ -1,8 +1,11 @@
-# A solo for the tanpura written for mx from how a tanpura is played: Pa, Sa, Sa and the low Sa
-# plucked in turn, the first and the last given two beats and the middle two one beat each, as
-# players on Rasikas.org give the Hindustani pattern, so the low Sa rings on before the cycle
-# starts again.
 defmodule Tanpura do
+  @moduledoc """
+  A solo for the tanpura written for mx from how a tanpura is played: Pa, Sa, Sa and the low Sa
+  plucked in turn, the first and the last given two beats and the middle two one beat each, as
+  players on Rasikas.org give the Hindustani pattern, so the low Sa rings on before the cycle
+  starts again.
+  """
+
   use Mx.Song, tempo: 60
 
   # It holds a slow drone on C sharp, plucks it quicker, moves to a low E for two short drones,

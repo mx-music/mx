@@ -1,22 +1,25 @@
-# A dub in A dorian on mx's measured synths, its riddim written for mx: four bars of Am7, D9, Am7
-# and G, with the double bass plucking a line that leaves the drop open, a guitar skanking on 2
-# and 4 and the organ bubbling.
-# The kit leads: the one drop, kick and rimshot together on beat 3, then rockers with the kick on
-# 1 and 3, as Sly Dunbar played them, and steppers with the kick on every beat; the hi-hat rides
-# swung sixteenths, and the congas and the shaker stay under it.
-# The harmonium plays as the melodica in Augustus Pablo's dubs, each run slurred into one held
-# note, the vibraphone answers with its motor turning, and the trombone doubles the melodica an
-# octave down in the last riddim.
-# The desk does the rest, as King Tubby and Lee Perry played their mixing desks: parts thrown into
-# the tape echo and pulled back, the skank and the organ swept through a high-pass filter, the
-# hi-hat through a flanger standing in for the Black Ark's phaser, the echo's delay slid while its
-# repeats ring so they bend in pitch, the organ gated by a slicer, and a dub siren.
-# Before the last riddim the selector pulls the record back, as sound systems rewind a tune the
-# crowd calls for.
-# The samples are Sonic Pi's, from freesound.org under Creative Commons 0: vinyl hiss, a rewind, a
-# dub snare, a haunted hum, a dark woosh played backwards into the drops, and a boom where the
-# bass comes back.
 defmodule Dubwise do
+  @moduledoc """
+  A dub in A dorian on mx's measured synths, its riddim written for mx: four bars of Am7, D9, Am7
+  and G, with the double bass plucking a line that leaves the drop open, a guitar skanking on 2
+  and 4 and the organ bubbling.
+  The kit leads: the one drop, kick and rimshot together on beat 3, then rockers with the kick on
+  1 and 3, as Sly Dunbar played them, and steppers with the kick on every beat; the hi-hat rides
+  swung sixteenths, and the congas and the shaker stay under it.
+  The harmonium plays as the melodica in Augustus Pablo's dubs, each run slurred into one held
+  note, the vibraphone answers with its motor turning, and the trombone doubles the melodica an
+  octave down in the last riddim.
+  The desk does the rest, as King Tubby and Lee Perry played their mixing desks: parts thrown into
+  the tape echo and pulled back, the skank and the organ swept through a high-pass filter, the
+  hi-hat through a flanger standing in for the Black Ark's phaser, the echo's delay slid while its
+  repeats ring so they bend in pitch, the organ gated by a slicer, and a dub siren.
+  Before the last riddim the selector pulls the record back, as sound systems rewind a tune the
+  crowd calls for.
+  The samples are Sonic Pi's, from freesound.org under Creative Commons 0: vinyl hiss, a rewind, a
+  dub snare, a haunted hum, a dark woosh played backwards into the drops, and a boom where the
+  bass comes back.
+  """
+
   use Mx.Song, tempo: 74
 
   @room [reverb: [room: 0.7, mix: 0.3]]
