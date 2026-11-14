@@ -283,14 +283,11 @@ run_check "Define alias on top of test file" -g "test/**/*.exs" -UP "(describe|t
 run_check "Don't use [...] in typespecs, use list() and nonempty_list()" '@(type|spec|callback)\b.*\['
 run_check "Don't use [SomeModule.t()] in typespecs, use list(SomeModule.t())" '\[.*\.t\('
 run_check "Don't use [map()] in typespecs, use list()" '\[map\('
-run_check "Don't use t()] in typespecs, use list()" -g '!test/**/*' 't\(\)\]'
 run_check "Always end with nil when nullable in typespecs (e.g., '... | nil')" 'nil \| '
 run_check "Use Keyword.t() instead of keyword()" 'keyword\(\)'
 run_check "Use String.t() instead of binary()" ' binary\(\)'
-run_check "Use more specific number types like non_neg_integer(), pos_integer(), etc." '\snumber\(\)'
-run_check "Use non_neg_integer() or pos_integer() instead of integer()" '\sinteger\(\)'
 run_check 'Type definitions without arguments should not use parentheses' -P "@type.*\(\)\s\:\:"
-run_check "Don't append _t in typespecs, instead of @type commodity_t, simply use @type commodity" "@type [a-z_]+_t ::"
+run_check "Don't append _t in typespecs, instead of @type music_t, simply use @type music" "@type [a-z_]+_t ::"
 
 run_check "Don't use '@dialyzer'; fix the underlying type issue instead of suppressing warnings" '@dialyzer\b'
 

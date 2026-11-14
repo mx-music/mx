@@ -23,7 +23,7 @@ defmodule Mx.Engine do
           | {:set, target(), params()}
 
   @doc "Starts the engine, with options of its own."
-  @callback start_link(opts :: keyword()) :: GenServer.on_start()
+  @callback start_link(opts :: Keyword.t()) :: GenServer.on_start()
 
   @doc "Loads the samples a song names, and returns the song with each loop's samples."
   @callback prepare(song :: %Mx.Song{}) :: %Mx.Song{}
