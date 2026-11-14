@@ -6,10 +6,11 @@ defmodule Mx.Page do
   Each part's notes are the ones `Mx.Pass` works out, pass by pass, at the seconds `Mx.Tempo` gives their beats.
   A note with no `sustain:` shows half a beat long, and a note a control step moves to another pitch shows as one mark for each pitch.
   A sample shows as a hit, and so does a note of a sampled instrument, as its pass names the file it plays and not the key.
+  A hit lasts as long as its sample file plays at its rate, cut short by a sustain it is given, or as long as the attack, decay, sustain and release given to its synth; a synth hit given none of them lasts 0 seconds, as its synth alone knows how long it rings.
   A part that waits for input is left out, as a render leaves it out.
   """
 
-  alias Mx.{Pass, Recording, Render, Song, Tempo}
+  alias Mx.{Pass, Recording, Render, Samples, Song, Synths, Tempo}
 
   @unheld_beats 0.5
 
@@ -43,6 +44,7 @@ defmodule Mx.Page do
     with {:ok, played} <- map_ok(loops, &passes(&1, song, seconds)) do
       [{timeline, _, _, _} | _] = longest = Enum.max_by(played, &length/1)
       beats = longest |> Enum.map(fn {_, start, _, beats} -> start + beats end) |> Enum.max()
+      files = files(played)
 
       {:ok,
        %{
@@ -55,7 +57,7 @@ defmodule Mx.Page do
            for {_, start, _, beats} <- Enum.reverse(longest) do
              [seconds_at(timeline, start), beats]
            end,
-         parts: Enum.zip_with(loops, played, &part/2)
+         parts: Enum.zip_with(loops, played, &part(&1, &2, files))
        }}
     end
   end
@@ -85,8 +87,19 @@ defmodule Mx.Page do
     end
   end
 
-  defp part(loop, played) do
-    marks = played |> Enum.reverse() |> Enum.flat_map(&marks/1)
+  defp files(played) do
+    paths =
+      for passes <- played,
+          {_, _, events, _} <- passes,
+          {_, {:sample, _, path}, _} <- events,
+          uniq: true,
+          do: path
+
+    Map.new(paths, &{&1, Samples.seconds(&1)})
+  end
+
+  defp part(loop, played, files) do
+    marks = played |> Enum.reverse() |> Enum.flat_map(&marks(&1, loop.synth, files))
 
     %{
       name: loop.name,
@@ -98,7 +111,7 @@ defmodule Mx.Page do
   end
 
   # A control step names the notes it changes by their place among the pass's events.
-  defp marks({timeline, start, events, _beats}) do
+  defp marks({timeline, start, events, _beats}, synth, files) do
     moves =
       for {beat, {:control, {:sounds, indexes}, _synth}, opts} <- events,
           pitch = opts[:note],
@@ -129,11 +142,39 @@ defmodule Mx.Page do
         [{:note, [at.(beat), seconds, pitch, Float.round(opts[:velocity] / 127, 2), 0]}]
 
       {{beat, step, opts}, _index} when step == :own_note or elem(step, 0) == :sample ->
-        [{:hit, [at.(beat), strength(opts)]}]
+        lasts = &Float.round(at.(beat + &1) - at.(beat), 3)
+        [{:hit, [at.(beat), strength(opts), sounds(step, opts, synth, files, lasts)]}]
 
       _other ->
         []
     end)
+  end
+
+  defp sounds({:sample, _, path}, opts, _synth, files, lasts) do
+    span = abs(Keyword.get(opts, :finish, 1) - Keyword.get(opts, :start, 0))
+    whole = Float.round(files[path] * span / abs(Keyword.get(opts, :rate, 1)), 3)
+
+    case opts[:sustain] do
+      sustain when is_number(sustain) and sustain >= 0 ->
+        min(
+          whole,
+          lasts.(Keyword.get(opts, :attack, 0) + sustain + Keyword.get(opts, :release, 0))
+        )
+
+      _until_the_end ->
+        whole
+    end
+  end
+
+  defp sounds(:own_note, opts, synth, _files, lasts) do
+    envelope =
+      for key <- [:attack, :decay, :sustain, :release],
+          is_atom(synth),
+          Synths.option?(synth, key),
+          beats = opts[key],
+          do: beats
+
+    if envelope == [], do: 0.0, else: lasts.(Enum.sum(envelope))
   end
 
   defp strength(opts) do

@@ -44,6 +44,47 @@ defmodule Mx.PageTest do
     assert Enum.map(drum.hits, &hd/1) == [0.0, 1.0]
   end
 
+  test "gives a hit the seconds it sounds when its sample or options say, and 0 otherwise", %{
+    tmp_dir: dir
+  } do
+    sample = Path.join(dir, "second.wav")
+    data = :binary.copy(<<0.0::little-float-32>>, 48_000)
+
+    File.write!(
+      sample,
+      "RIFF" <>
+        <<36 + byte_size(data)::little-32>> <>
+        "WAVEfmt " <>
+        <<16::little-32, 3::little-16, 1::little-16, 48_000::little-32, 192_000::little-32,
+          4::little-16, 32::little-16>> <> "data" <> <<byte_size(data)::little-32>> <> data
+    )
+
+    {song, path} =
+      load(dir, """
+      song(
+        tempo: 120,
+        music:
+          together([
+            part(:whole, sample(#{inspect(sample)}, 4)),
+            part(:fast, sample(#{inspect(sample)}, 4, rate: 2)),
+            part(:held, sample(#{inspect(sample)}, 4, sustain: 0.5, release: 0.25)),
+            part(:tri, steps("x...", 1), synth: :triangle, defaults: [sustain: 0.5, release: 1]),
+            part(:kick, steps("x...", 1), synth: :kick)
+          ])
+      )
+      """)
+
+    assert {:ok, %{parts: parts}} = Page.data(song, path, 2.0)
+
+    assert Enum.map(parts, & &1.hits) == [
+             [[0.0, 1.0, 1.0]],
+             [[0.0, 1.0, 0.5]],
+             [[0.0, 1.0, 0.375]],
+             [[0.0, 1.0, 0.75]],
+             [[0.0, 1.0, 0.0]]
+           ]
+  end
+
   test "shows a song that plays until mx stops for as long as its sound lasts", %{tmp_dir: dir} do
     {song, path} =
       load(dir, "song(tempo: 60, music: repeat(part(:a, seq(c4: 1, r: 1), synth: :fm)))\n")
