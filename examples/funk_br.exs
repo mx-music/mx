@@ -1,5 +1,5 @@
 defmodule Paredao.Synths do
-  @moduledoc "The synths written for Paredão: its 808 bass and its keyboard."
+  @moduledoc "The synths written for Paredão: its 808 bass, its snare and its keyboard."
 
   use Mx.Instrument
 
@@ -32,6 +32,24 @@ defmodule Paredao.Synths do
     (body + click) |> note_envelope(played)
   end
 
+  @doc "A funk snare: a low knock under a burst of noise about a tenth of a second long, its balance fitted to the genre's records."
+  attr :vel, :float, default: 0.8, range: 0..1, doc: "How hard it is struck."
+  envelope_attrs sustain: 1, release: 0.05
+
+  defsynth tcha(played) do
+    knock =
+      sine(hz: 190 * 2 ** envelope([{0, 0.5}, {0.03, 0, -3}]))
+      |> envelope([{0.001, 1}, {0.12, 0, -3}])
+      |> gain(0.8)
+
+    low = noise(:white) |> bandpass(hz: 360, q: 0.6) |> gain(1.5)
+    mid = noise(:white) |> bandpass(hz: 1100, q: 0.6) |> gain(0.55)
+    high = noise(:white) |> highpass(hz: 2500, q: 0.7) |> lowpass(hz: 7500, q: 0.7) |> gain(0.6)
+    burst = mix([low, mid, high]) |> envelope([{0.001, 1}, {0.06, 0.7, -1}, {0.17, 0, -2}])
+
+    (knock + burst) |> gain(0.5 * played.vel) |> note_envelope(played)
+  end
+
   @doc "A keyboard's lead: two saws a little apart over a square an octave below, through a filter that closes after the stroke."
   attr :note, :note, default: 67, doc: "The pitch, which a change glides."
 
@@ -57,15 +75,18 @@ defmodule Paredao do
   @moduledoc """
   Paredão, a funk in G minor at 92 bpm, in the manner the genre took from brega funk, written for
   mx and not transcribed from any record.
-  It is a beat and one hook, on five instruments.
-  The beat is the genre's: a kick on every beat, with softer strokes between them that make the
-  tresillo and one more before the bar ends, a tamborim tuned to the chord that answers the kick,
-  loudest on beats two and four, and rolls into the next bar, and a triangle in the baião's
-  sixteenths.
+  It is a beat and one hook, and the beat is the loudest thing in it.
+  A bar goes kick, snare, kick, kick, kick, snare, kick: the kick on every beat and an eighth
+  after the second, the snare a sixteenth before the second beat and before the fourth.
+  The 808, a synth written in this file, sounds under every kick as its boom: a sine that drops
+  onto a low note as it is struck and stops before the next stroke, so that the beat has gaps.
+  Its note is each bar's, G, E flat, D under B flat, and F, which turns to D to come back, and it
+  glides up an octave under the snare's roll.
+  The snare is a synth written in this file too, a burst of noise over a low knock, and it rolls
+  into every fourth bar.
+  A tamborim tuned to the chord plays the tresillo and rolls into the next bar, and a triangle
+  plays the baião's sixteenths.
   The second and fourth sixteenths of each beat come late, which is the beat's swing.
-  The bass is an 808, a synth written in this file: a sine that drops onto its note as it is
-  struck, which holds a note from each stroke of the tresillo and glides up where its line slides.
-  Its notes go round four bars, G, E flat, B flat and F, which turns to D to come back.
   The hook is a keyboard's, another synth written in this file, which slurs into its high notes
   and back down from them.
   The kick is Karoryfer's Big Rusty Drums, under Creative Commons 0, and the tamborim and the
@@ -79,31 +100,37 @@ defmodule Paredao do
   @kick {:github, "sfzinstruments/karoryfer.big-rusty-drums",
          "f07ce00df34a46b6b08375be56fe116cf15782bc", "Samples/kick_24/kick/kick/k_vl14_rr1.flac"}
 
-  part :kick, fx: [level: [amp: 0.55]]
+  part :kick, fx: [level: [amp: 0.22]]
 
   part :bass,
     synth: :sub808,
-    defaults: [drive: 0.6],
-    fx: [distortion: [distort: 0.55, mix: 0.4], level: [amp: 0.3]]
+    defaults: [drive: 0.7],
+    fx: [distortion: [distort: 0.4, mix: 0.3], level: [amp: 0.75]]
 
-  part :tamborim, synth: :tamborim, fx: [level: [amp: 1.6]] ++ @room
+  part :snare,
+    synth: :tcha,
+    fx: [distortion: [distort: 0.5, mix: 0.4], level: [amp: 0.85], reverb: [room: 0.3, mix: 0.1]]
+
+  part :tamborim, synth: :tamborim, fx: [level: [amp: 1.4]] ++ @room
   part :triangle, synth: :triangle, defaults: [amp: 0.8, pan: 0.3], fx: @room
 
   part :keyboard,
     synth: :teclado,
     fx: [
-      level: [amp: 0.85],
+      level: [amp: 0.8],
       echo: [phase: 0.75, decay: 2, mix: 0.18],
       reverb: [room: 0.6, damp: 0.5, mix: 0.2]
     ]
 
   def song, do: swung(seq([intro(), beat(false), break(), beat(true), outro()]))
 
-  # The hook's last two bars with the triangle, and a roll into the beat.
+  # The hook's last two bars with the triangle, and the snare growing from sixteenths to
+  # thirty-seconds into the beat.
   defp intro do
     together([
       part(:keyboard, hook(2..3)),
       part(:triangle, triangle(2)),
+      part(:snare, build()),
       part(:tamborim, delay(roll(1), 7))
     ])
   end
@@ -114,30 +141,34 @@ defmodule Paredao do
     high = if octave?, do: [transpose(hook, 12)], else: []
 
     together([
-      part(:kick, kick(4)),
+      part(:kick, kick(2)),
       part(:bass, bass(2)),
+      part(:snare, snare(2)),
       part(:tamborim, together([tamborim(2), delay(roll(1), 31)])),
       part(:triangle, triangle(8)),
       part(:keyboard, together([hook | high]))
     ])
   end
 
-  # The kick and the bass stop for four bars: the tamborim and the triangle under the hook, and a
-  # longer roll.
+  # The kick stops for four bars and the 808 sounds once a bar: the snare, the tamborim and the
+  # triangle under the hook, and the snare growing into the beat again.
   defp break do
     together([
+      part(:bass, boom(~MX"g1:16 eb1:16 d1:16 f1:16")),
+      part(:snare, seq([repeat(steps(~MX"...8.......8...."s, 0.25), 2), build()])),
       part(:tamborim, together([tamborim(1), delay(roll(2), 14)])),
       part(:triangle, triangle(4)),
       part(:keyboard, hook(0..3))
     ])
   end
 
-  # Two more bars of the hook over the kick, and a last stroke.
+  # Two more bars of the beat under the hook, and a last stroke.
   defp outro do
     together([
-      part(:kick, seq([kick(1), sample(@kick, 4)])),
+      part(:kick, seq([repeat(kick_bar(), 2), sample(@kick, 4)])),
+      part(:snare, seq([repeat(snare_bar(), 2), rest(4)])),
       part(:keyboard, hook(0..1)),
-      part(:bass, delay(note(:g1, 4, sustain: 2), 8))
+      part(:bass, seq([boom(Enum.take(bass_bars(), 2)), note(:g1, 4)]))
     ])
   end
 
@@ -178,41 +209,68 @@ defmodule Paredao do
     steps(pattern, 0.125, notes: scale(), each: fn step -> [vel: 0.3 + 0.6 * step / count] end)
   end
 
-  # The kick's two bars: every beat, softer strokes on the tresillo between beats one and three,
-  # and the last eighth, with one more a sixteenth before beat four in the second bar.
+  # The kick's four bars: three of its bar, and a fourth that leaves its last beat to the snare.
   defp kick(rounds) do
-    bars = [~MX"9..69.6.9...9.7."s, ~MX"9..69.6.9..59.7."s]
-    repeat(steps(bars, 0.25, sample: @kick, sustain: 0.35, release: 0.1), rounds)
+    last = steps(~MX"9...9.9.9......."s, 0.25, kick_options())
+    repeat(seq([repeat(kick_bar(), 3), last]), rounds)
   end
 
-  # The 808's four bars, a sixteenth to a word: it holds a note from each stroke of the tresillo,
-  # and glides up where a note follows a ~.
-  # Each note stops a little before its length is up.
+  # The kick's bar: each beat, and an eighth after the second.
+  defp kick_bar, do: steps(~MX"9...9.9.9...9..."s, 0.25, kick_options())
+
+  defp kick_options, do: [sample: @kick, sustain: 0.35, release: 0.1]
+
+  # The snare's four bars: three of its bar, and a fourth that rolls through its last beat.
+  defp snare(rounds) do
+    last = steps(~MX"...9.......96789"s, 0.25)
+    repeat(seq([repeat(snare_bar(), 3), last]), rounds)
+  end
+
+  # The snare's bar: a sixteenth before the second beat and before the fourth.
+  defp snare_bar, do: steps(~MX"...9.......9...."s, 0.25)
+
+  # Two bars of the snare alone, from sixteenths to thirty-seconds, growing.
+  defp build do
+    sixteenths = steps(~MX"2.2.3.3.3344"s, 0.25)
+    thirty_seconds = steps(~MX"45566778"s, 0.125)
+    seq([rest(4), sixteenths, thirty_seconds])
+  end
+
+  # The 808 under the kick, twice round its four bars, with a glide up an octave through the
+  # fourth bar's last beat.
   defp bass(rounds) do
-    bars = [
-      ~MX"g1:3 g1:3 g1:4 bb1:2 d2:2 f2:2",
-      ~MX"eb2:3 eb2:3 eb2:1.6 ~g2:2.4 eb2:2 d2:2 c2:2",
-      ~MX"bb1:3 bb1:3 bb1:4 d2:2 f2:2 g2:2",
-      ~MX"f2:3 f2:3 d2:4 d2:2 d2 ~d3:3"
-    ]
-
-    short = fn _step, steps -> [sustain: steps / 4 - 0.05] end
-    repeat(steps(bars, 0.25, slide: 0.3, each: short), rounds)
+    glide = steps(~MX"d1:0.8 ~d2:3.2", 0.25, slide: 0.3, vel: 0.5)
+    repeat(seq([boom(bass_bars()), glide]), rounds)
   end
+
+  # The 808's four bars, a sixteenth to a word: a note from each stroke of the kick, the fourth
+  # bar without its last beat.
+  defp bass_bars do
+    [
+      ~MX"g1:4 g1:2 g1:2 g1:4 g1:4",
+      ~MX"eb1:4 eb1:2 eb1:2 eb1:4 eb1:4",
+      ~MX"d1:4 d1:2 d1:2 d1:4 d1:4",
+      ~MX"f1:4 f1:2 f1:2 d1:4"
+    ]
+  end
+
+  # The 808 as the kick's boom: each note sounds for a little over a sixteenth and then stops.
+  defp boom(bars), do: steps(bars, 0.25, sustain: 0.3)
 
   # The tamborim's four bars in sixteenths, a character to each: a digit is the degree of G minor
   # the stroke is tuned to, and a dot is silence.
-  # It plays a degree of each bar's chord around the kick's strokes, loudest on beats two and
-  # four.
+  # It plays a degree of each bar's chord on the tresillo, loudest there, and three strokes in a
+  # row before the bar ends.
   defp tamborim(rounds) do
     bars = [
-      ~MX"....5..1.1..5.35"s,
-      ~MX"....6..3.3..6.16"s,
-      ~MX"....5..3.3..5.77"s,
-      ~MX"....4..2.2..4.55"s
+      ~MX"...1..5....1555."s,
+      ~MX"...3..6...31666."s,
+      ~MX"...3..5....3577."s,
+      ~MX"...2..4...42455."s
     ]
 
-    loud = fn step -> [vel: if(rem(step, 16) in [4, 12], do: 0.9, else: 0.55)] end
+    tresillo = [0, 3, 6, 8, 11, 14]
+    loud = fn step -> [vel: if(rem(step, 16) in tresillo, do: 0.9, else: 0.55)] end
     repeat(steps(bars, 0.25, notes: scale(), each: loud), rounds)
   end
 
