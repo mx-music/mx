@@ -4,15 +4,36 @@ defmodule Mx.MixProject do
   def project do
     [
       app: :mx,
-      source_url: "https://github.com/rodrigues/mx",
+      source_url: "https://github.com/mx-music/mx",
       version: "0.1.0",
       elixir: "~> 1.20",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      package: [licenses: ["MIT"]],
+      description: "Write music in Elixir, played by mxs, its own sound engine in Rust",
+      package: package(),
       docs: docs(),
       test_ignore_filters: [~r"^test/support/"]
+    ]
+  end
+
+  defp package do
+    [
+      licenses: ["MIT"],
+      links: %{"GitHub" => "https://github.com/mx-music/mx"},
+      files: ~w(
+        lib
+        priv/page.html
+        priv/samples.txt
+        native/mxs_nif/src
+        native/mxs_nif/Cargo.toml
+        native/mxs_nif/Cargo.lock
+        mix.exs
+        .formatter.exs
+        README.md
+        LICENSE
+        LICENSE-designs.md
+      )
     ]
   end
 
