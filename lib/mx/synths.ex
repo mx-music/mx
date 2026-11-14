@@ -17,27 +17,31 @@ defmodule Mx.Synths do
 
   @rate_options ~w(tremolo motor)
   @effect_buses [:in_bus, :out_bus]
-  @not_playable [:live_audio_mono, :live_audio_stereo, :mono_player, :stereo_player, :recorder]
+  @not_playable ~w(live_audio_mono live_audio_stereo mono_player stereo_player recorder)
+  @engine_beats Map.new(
+                  ~w(attack decay sustain release gap phase max_phase)a,
+                  &{Atom.to_string(&1), &1}
+                )
 
   @doc "Whether a loop can play a synth, a sampled instrument among them."
   def exists?(%Mx.Sampled{}), do: true
 
-  def exists?(synth) do
-    is_atom(synth) and synth not in @not_playable and not effect_name?(synth) and
-      Map.has_key?(catalog(), synth)
+  def exists?(synth) when is_atom(synth) or is_binary(synth) do
+    name = to_string(synth)
+    name not in @not_playable and not effect_name?(name) and Map.has_key?(catalog(), name)
   end
 
   @doc "Whether a synth takes an option."
   def option?(%Mx.Sampled{}, option) when is_atom(option), do: Mx.Sampled.option?(option)
 
-  def option?(synth, option) when is_atom(synth) and is_atom(option) do
-    Map.has_key?(Map.fetch!(catalog(), synth), option)
+  def option?(synth, option) when (is_atom(synth) or is_binary(synth)) and is_atom(option) do
+    Map.has_key?(Map.fetch!(catalog(), to_string(synth)), Atom.to_string(option))
   end
 
-  @doc "Every synth a loop can play."
+  @doc "Every synth a loop can play, by name."
   def synths, do: catalog() |> Map.keys() |> Enum.filter(&exists?/1)
 
-  @doc "Every effect, by its name in a song."
+  @doc "Every effect, by its name in a song as a string."
   def effects do
     for name <- Map.keys(catalog()), effect_name?(name), do: effect(name)
   end
@@ -56,34 +60,34 @@ defmodule Mx.Synths do
     to_seconds(fx(effect), opts, tempo)
   end
 
-  @doc "The synth an effect runs as."
-  def effect_synth(effect) when is_atom(effect), do: fx(effect)
-
   @doc "How long an effect chain keeps sounding after its last note ends."
   def tail_seconds(chain) when is_list(chain) do
     chain
     |> Enum.map(fn {effect, opts} ->
-      opts = Map.merge(Map.fetch!(catalog(), fx(effect)), Map.new(opts))
+      given = Map.new(opts, fn {key, value} -> {Atom.to_string(key), value} end)
+      opts = Map.merge(Map.fetch!(catalog(), fx(effect)), given)
       tail(effect, opts)
     end)
     |> Enum.sum()
   end
 
-  defp tail(:reverb, opts), do: min(opts.room * 10 + 1, 11)
-  defp tail(:echo, opts), do: opts.decay
-  defp tail(:chorus, opts), do: opts.decay
+  defp tail(:reverb, opts), do: min(opts["room"] * 10 + 1, 11)
+  defp tail(:echo, opts), do: opts["decay"]
+  defp tail(:chorus, opts), do: opts["decay"]
   defp tail(_effect, _opts), do: 1
 
   @doc "A synth's options with its times in seconds at a tempo, adding its time defaults, which are in beats too."
-  def to_seconds(synth, opts, tempo) when is_atom(synth) and is_list(opts) and is_number(tempo) do
+  def to_seconds(synth, opts, tempo)
+      when (is_atom(synth) or is_binary(synth)) and is_list(opts) and is_number(tempo) do
     seconds_per_beat = 60 / tempo
-    defaults = Map.fetch!(catalog(), synth)
+    defaults = Map.fetch!(catalog(), to_string(synth))
     given = given_to_seconds(synth, opts, tempo)
 
     implied =
-      for {key, default} <- defaults,
-          time_option?(synth, key),
+      for {name, default} <- defaults,
+          time_option?(synth, name),
           default > 0,
+          key = option_key(name),
           not Keyword.has_key?(opts, key),
           do: {key, default * seconds_per_beat}
 
@@ -91,39 +95,42 @@ defmodule Mx.Synths do
   end
 
   @doc "The options given with their times in seconds at a tempo, and their rates per second."
+  def given_to_seconds({:effect, effect}, opts, tempo) do
+    given_to_seconds(fx(effect), opts, tempo)
+  end
+
   def given_to_seconds(synth, opts, tempo)
-      when is_atom(synth) and is_list(opts) and is_number(tempo) do
+      when (is_atom(synth) or is_binary(synth)) and is_list(opts) and is_number(tempo) do
     seconds_per_beat = 60 / tempo
     Enum.map(opts, fn {key, value} -> {key, scale(synth, key, value, seconds_per_beat)} end)
   end
 
   defp scale(synth, key, value, seconds_per_beat) do
     cond do
-      time_option?(synth, key) and value > 0 -> value * seconds_per_beat
+      time_option?(synth, Atom.to_string(key)) and value > 0 -> value * seconds_per_beat
       Atom.to_string(key) in @rate_options -> value / seconds_per_beat
       true -> value
     end
   end
 
-  defp time_option?(synth, key) do
-    String.ends_with?(Atom.to_string(key), "_slide") or
-      key in Map.get(beats(), synth, MapSet.new())
+  defp time_option?(synth, name) do
+    String.ends_with?(name, "_slide") or name in Map.get(beats(), to_string(synth), MapSet.new())
   end
 
-  defp fx(effect), do: :"fx_#{effect}"
+  # An engine option in beats nobody names in Elixir has no atom yet, so those are listed; a defsynth option is already one.
+  defp option_key(name), do: @engine_beats[name] || String.to_existing_atom(name)
 
-  defp effect_name?(name), do: String.starts_with?(Atom.to_string(name), "fx_")
+  defp fx(effect), do: "fx_" <> Atom.to_string(effect)
 
-  defp effect(name) do
-    "fx_" <> effect = Atom.to_string(name)
-    String.to_atom(effect)
-  end
+  defp effect_name?(name), do: String.starts_with?(name, "fx_")
+
+  defp effect("fx_" <> effect), do: effect
 
   @doc "Whether an option picks a synth's sound when the note starts, so it cannot change while the note sounds: one that takes names, or one a clause of a synth written in Elixir matches on."
-  def fixed?(%Mx.Sampled{}, option), do: fixed?(:stereo_player, option)
+  def fixed?(%Mx.Sampled{}, option), do: fixed?("stereo_player", option)
 
   def fixed?(synth, option) do
-    match?({:names, _}, limits() |> Map.get(synth, %{}) |> Map.get(option)) or
+    match?({:names, _}, limit(synth, option)) or
       option in Mx.Instrument.matched(synth)
   end
 
@@ -146,14 +153,17 @@ defmodule Mx.Synths do
   end
 
   defp limit(%Mx.Sampled{}, :vel), do: {:range, 0, 1}
-  defp limit(%Mx.Sampled{}, option), do: limit(:stereo_player, option)
-  defp limit(synth, option), do: limits() |> Map.get(synth, %{}) |> Map.get(option)
+  defp limit(%Mx.Sampled{}, option), do: limit("stereo_player", option)
+
+  defp limit(synth, option) do
+    limits() |> Map.get(to_string(synth), %{}) |> Map.get(Atom.to_string(option))
+  end
 
   defp within?({:range, low, high}, value) when is_number(value) do
     (low == nil or value >= low) and (high == nil or value <= high)
   end
 
-  defp within?({:names, names}, value) when is_atom(value), do: value in names
+  defp within?({:names, names}, value) when is_atom(value), do: Atom.to_string(value) in names
   defp within?(_limit, _value), do: true
 
   defp takes({:range, low, nil}), do: "from #{number(low)} up"

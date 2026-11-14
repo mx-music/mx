@@ -27,27 +27,26 @@ defmodule Mx.Engine.Mxs do
   @impl Mx.Engine
   def start_link(opts), do: GenServer.start_link(__MODULE__, opts, name: __MODULE__)
 
-  @doc "The synths, players and effects mxs has, each with its options and their defaults."
+  @doc "The synths, players and effects mxs has, each with its options and their defaults, every name as a string."
   def catalog do
     Map.new(entries(), fn {name, specs} ->
       defaults = defaults(specs)
 
       defaults =
         if name in ~w(live_audio_mono live_audio_stereo) do
-          Map.put(defaults, :input, 1)
+          Map.put(defaults, "input", 1)
         else
           defaults
         end
 
-      {String.to_atom(name), defaults}
+      {name, defaults}
     end)
   end
 
   @doc "Each synth's and effect's options declared in beats, which a song gives in beats and mxs takes in seconds."
   def beats do
     Map.new(entries(), fn {name, specs} ->
-      {String.to_atom(name),
-       MapSet.new(for %{kind: "beats"} = spec <- specs, do: String.to_atom(spec.name))}
+      {name, MapSet.new(for %{kind: "beats"} = spec <- specs, do: spec.name)}
     end)
   end
 
@@ -67,14 +66,14 @@ defmodule Mx.Engine.Mxs do
   def limits do
     Map.new(synth_specs(), fn {name, specs} ->
       limits =
-        for spec <- specs, limit = limit(spec), into: %{}, do: {String.to_atom(spec.name), limit}
+        for spec <- specs, limit = limit(spec), into: %{}, do: {spec.name, limit}
 
-      {String.to_atom(name), limits}
+      {name, limits}
     end)
   end
 
   defp limit(%{kind: "name", values: [_ | _] = values}) do
-    {:names, Enum.map(values, &String.to_atom/1)}
+    {:names, values}
   end
 
   defp limit(%{low: low, high: high}) when low != nil or high != nil, do: {:range, low, high}
@@ -98,14 +97,9 @@ defmodule Mx.Engine.Mxs do
   # mxs glides any number option over its _slide partner, so each one is listed.
   defp defaults(specs) do
     Map.new(specs, fn spec ->
-      default = if spec.default_name, do: String.to_atom(spec.default_name), else: spec.default
-      {String.to_atom(spec.name), default}
+      {spec.name, spec.default_name || spec.default}
     end)
-    |> Map.merge(
-      Map.new(
-        for spec <- specs, spec.kind != "name", do: {String.to_atom(spec.name <> "_slide"), 0}
-      )
-    )
+    |> Map.merge(Map.new(for spec <- specs, spec.kind != "name", do: {spec.name <> "_slide", 0}))
   end
 
   @impl GenServer
@@ -264,7 +258,7 @@ defmodule Mx.Engine.Mxs do
   @doc "An event in the form the NIF takes."
   def event({:note, id, synth, note, params, chain}) do
     pitch = if note == nil, do: [], else: [note: note]
-    {:note, id, Atom.to_string(synth), options(pitch ++ params), key(chain)}
+    {:note, id, to_string(synth), options(pitch ++ params), key(chain)}
   end
 
   def event({:sample, id, %{sample: sample}, params, chain}) do

@@ -417,7 +417,7 @@ defmodule Mix.Tasks.Mx.Measure do
   end
 
   defp synth!(name) do
-    Enum.find(Synths.synths(), &(Atom.to_string(&1) == name)) ||
+    Enum.find(Synths.synths(), &(&1 == name)) ||
       Mix.raise("unknown synth #{name}")
   end
 

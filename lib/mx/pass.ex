@@ -8,7 +8,7 @@ defmodule Mx.Pass do
   Inputs and shared values come from the snapshot given in `:inputs`, and `trigger` from `:trigger`, so a pass given the same ones plays the same notes too.
 
   `record_play` and `record_sample` return a handle naming the events they recorded, and `effect` a handle naming one of the loop's effects.
-  A control step is recorded as `{beat, {:control, target, synth}, opts}`, where the target is `{:sounds, indexes}` or `{:effect, index}`, and the synth is the one whose options it changes.
+  A control step is recorded as `{beat, {:control, target, synth}, opts}`, where the target is `{:sounds, indexes}` or `{:effect, index}`, and the synth is the one whose options it changes, or `{:effect, effect}` for an effect's.
   """
 
   alias Mx.{Notes, Samples, Synths}
@@ -312,7 +312,7 @@ defmodule Mx.Pass do
       "effect #{effect} has"
     )
 
-    record({{:control, target, Synths.effect_synth(effect)}, control_values(opts)})
+    record({{:control, target, {:effect, effect}}, control_values(opts)})
     :ok
   end
 

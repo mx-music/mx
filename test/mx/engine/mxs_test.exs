@@ -38,8 +38,8 @@ defmodule Mx.Engine.MxsTest do
 
   describe "the synths mxs has" do
     test "are the ones a song can play, with the options each declares, amp and pan included" do
-      assert :piano in Synths.synths()
-      assert :berimbau in Synths.synths()
+      assert "piano" in Synths.synths()
+      assert "berimbau" in Synths.synths()
       assert Synths.option?(:piano, :pedal)
       assert Synths.option?(:piano, :pan)
       refute Synths.option?(:berimbau, :sustain)

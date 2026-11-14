@@ -72,7 +72,7 @@ defmodule Mix.Tasks.Mx.Import do
   end
 
   defp synth(name) do
-    case Enum.find(Mx.Synths.synths(), &(Atom.to_string(&1) == name)) do
+    case Enum.find(Mx.Synths.synths(), &(&1 == name)) do
       nil -> Mix.raise("unknown synth #{name}")
       synth -> synth
     end

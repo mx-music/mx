@@ -119,7 +119,7 @@ defmodule Mix.Tasks.Mx.Fit do
       Mix.raise("give the synth first, such as mix mx.fit clarinet")
     end
 
-    {Enum.find(Synths.synths(), &(Atom.to_string(&1) == name)) ||
+    {Enum.find(Synths.synths(), &(&1 == name)) ||
        Mix.raise("unknown synth #{name}"), rest}
   end
 
