@@ -6,7 +6,7 @@ It makes sound with mxs, its own sound engine in Rust.
 
 ## Guides
 
-- [The notation](documentation/notation.md): every function a song is written with, and the names of Sonic Pi's samples.
+- [The notation](documentation/notation.md): every function a song is written with.
 - [Instruments](documentation/instruments.md): the synths and effects with their options, how to write a synth, and how to measure one against recordings.
 - [Scores and hums](documentation/scores.md): importing a MusicXML score, scanning a printed one, and turning a hummed melody into a song.
 - [Examples](documentation/examples.md): the songs in `examples`.
