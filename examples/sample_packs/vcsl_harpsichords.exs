@@ -1,13 +1,18 @@
-import Mx
-
-# Bach's Prelude in C, BWV 846, the first of the Well-Tempered Clavier, on the harpsichords and organs of VCSL, Versilian Studios' Versilian Community Sample Library, under Creative Commons 0.
-# The prelude is one figure through 34 bars: two notes held in the left hand and three in the right played twice over them, so each bar is written here as its five notes, checked against music21's encoding of the score.
-# It changes instrument at its cadences so that each can be heard alone: the Italian harpsichord to the cadence in G, the French to the cadence in C, the English with its lute stop for the four bars that leave C, and the Flemish over the long G in the bass and to the end.
-# From the French harpsichord on, the Renaissance organ's 8-foot stop holds the two left-hand notes, and under the Flemish the pipe organ's quiet pedal holds the bass.
-# VCSL names each key an octave below the pitch mx names it by, and records each instrument at every second or third key.
+# Bach's Prelude in C, BWV 846, the first of the Well-Tempered Clavier, on the harpsichords and
+# organs of VCSL, Versilian Studios' Versilian Community Sample Library, under Creative Commons 0.
+# The prelude is one figure through 34 bars: two notes held in the left hand and three in the
+# right played twice over them, so each bar is written here as its five notes, checked against
+# music21's encoding of the score.
+# It changes instrument at its cadences so that each can be heard alone: the Italian harpsichord
+# to the cadence in G, the French to the cadence in C, the English with its lute stop for the four
+# bars that leave C, and the Flemish over the long G in the bass and to the end.
+# From the French harpsichord on, the Renaissance organ's 8-foot stop holds the two left-hand
+# notes, and under the Flemish the pipe organ's quiet pedal holds the bass.
+# VCSL names each key an octave below the pitch mx names it by, and records each instrument at
+# every second or third key.
 # The files are fetched as the song loads, about 320 MB.
 defmodule Prelude do
-  import Mx
+  use Mx.Song, tempo: 72
 
   @repo "sgossner/VCSL"
   @commit "c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e"
@@ -43,7 +48,7 @@ defmodule Prelude do
 
   @harpsichord [defaults: [release: 0.25], reverb: [room: 0.5, mix: 0.15]]
 
-  @parts [
+  @settings [
     italian: [level: 1.8] ++ @harpsichord,
     french: [level: 2.1] ++ @harpsichord,
     english: [level: 2.1] ++ @harpsichord,
@@ -52,31 +57,32 @@ defmodule Prelude do
     pedal: [level: 1.5, defaults: [attack: 0.05, release: 0.4], reverb: [room: 0.7, mix: 0.25]]
   ]
 
-  def instrument(name) do
+  # A part's options: its instrument's recorded keys, an octave below the pitch mx names them by,
+  # and its settings.
+  options = fn name ->
     {folder, prefix, suffix, keys} = @instruments[name]
+    settings = @settings[name]
 
-    sampled(
+    files =
       for key <- keys do
-        note = key |> String.downcase() |> String.replace("#", "s") |> String.to_atom()
+        note = key |> String.downcase() |> String.replace("#", "s") |> Mx.Notes.parse()
         path = "#{folder}/#{prefix}#{key}#{suffix}.wav"
-        {{:github, @repo, @commit, path}, note: pitch(note) + 12}
+        {{:github, @repo, @commit, path}, note: note + 12}
       end
-    )
+
+    [
+      synth: sampled(files),
+      defaults: settings[:defaults],
+      fx: [level: [amp: settings[:level]], reverb: settings[:reverb]]
+    ]
   end
 
-  def play(voices) do
-    together(
-      for {name, music} <- voices do
-        options = @parts[name]
-
-        part(name, music,
-          synth: instrument(name),
-          defaults: options[:defaults],
-          fx: [level: [amp: options[:level]], reverb: options[:reverb]]
-        )
-      end
-    )
-  end
+  part :italian, options.(:italian)
+  part :french, options.(:french)
+  part :english, options.(:english)
+  part :flemish, options.(:flemish)
+  part :organ, options.(:organ)
+  part :pedal, options.(:pedal)
 
   # Bars 1 to 31, each as the two held notes and the three above them.
   @bars [
@@ -119,8 +125,45 @@ defmodule Prelude do
     33 => {:c2, :b2, ~w(g4 b4 d5 f5 d5 b4 d5 b4 g4 b4 d4 f4 e4 d4)a}
   }
 
-  # A bar as the harpsichord plays it: the figure twice, its first two notes held under the other three.
-  def bar(number) when number <= 31 do
+  def song do
+    seq([
+      play(italian: bars(1..11)),
+      play(french: bars(12..19), organ: held(12..19)),
+      play(english: bars(20..23), organ: held(20..23)),
+      play(flemish: bars(24..34), organ: held(24..34), pedal: bass(24..34))
+    ])
+  end
+
+  defp play(voices) do
+    together(for {name, music} <- voices, do: part(name, music))
+  end
+
+  defp bars(range), do: seq(Enum.map(range, &bar/1))
+
+  # The two held notes of each bar, for the whole bar.
+  defp held(range) do
+    seq(
+      for number <- range do
+        case number do
+          34 -> note([:c2, :c3], 8)
+          number when number >= 32 -> note(Tuple.to_list(@runs[number]) |> Enum.take(2), 4)
+          number -> note(Enum.at(@bars, number - 1) |> Enum.take(2), 4)
+        end
+      end
+    )
+  end
+
+  # The bass alone.
+  defp bass(range) do
+    seq(
+      for number <- range,
+          do: note(if(number <= 30, do: :g2, else: :c2), if(number == 34, do: 8, else: 4))
+    )
+  end
+
+  # A bar as the harpsichord plays it: the figure twice, its first two notes held under the other
+  # three.
+  defp bar(number) when number <= 31 do
     [bass, tenor, first, second, third] = Enum.at(@bars, number - 1)
     upper = for name <- [first, second, third, first, second, third], do: note(name, 0.25)
 
@@ -134,7 +177,7 @@ defmodule Prelude do
     seq([half, half])
   end
 
-  def bar(number) when number in [32, 33] do
+  defp bar(number) when number in [32, 33] do
     {bass, tenor, run} = @runs[number]
 
     together([
@@ -144,39 +187,5 @@ defmodule Prelude do
     ])
   end
 
-  def bar(34), do: note([:c2, :c3, :e4, :g4, :c5], 8, strum: 0.08)
-
-  def bars(range), do: seq(Enum.map(range, &bar/1))
-
-  # The two held notes of each bar, for the whole bar.
-  def held(range) do
-    seq(
-      for number <- range do
-        case number do
-          34 -> note([:c2, :c3], 8)
-          number when number >= 32 -> note(Tuple.to_list(@runs[number]) |> Enum.take(2), 4)
-          number -> note(Enum.at(@bars, number - 1) |> Enum.take(2), 4)
-        end
-      end
-    )
-  end
-
-  # The bass alone.
-  def bass(range) do
-    seq(
-      for number <- range,
-          do: note(if(number <= 30, do: :g2, else: :c2), if(number == 34, do: 8, else: 4))
-    )
-  end
-
-  def music do
-    seq([
-      play(italian: bars(1..11)),
-      play(french: bars(12..19), organ: held(12..19)),
-      play(english: bars(20..23), organ: held(20..23)),
-      play(flemish: bars(24..34), organ: held(24..34), pedal: bass(24..34))
-    ])
-  end
+  defp bar(34), do: note([:c2, :c3, :e4, :g4, :c5], 8, strum: 0.08)
 end
-
-song(tempo: 72, music: Prelude.music())

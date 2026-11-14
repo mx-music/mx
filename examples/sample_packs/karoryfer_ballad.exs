@@ -1,13 +1,18 @@
-import Mx
-
-# Small Hours, a slow ballad in D minor at 72 bpm for five Karoryfer Samples libraries, each under Creative Commons 0: Weresax, Shinyguitar, Sneakybass, the Karoryfer and Bigcat cello, and Big Rusty Drums.
-# The alto saxophone plays the tune, softly the first time and harder the second, over an archtop guitar, a double bass and brushes.
-# The drummer stirs a brush round the snare the whole way through, a recording of nine seconds started again every two bars, and taps the other brush on two and four.
-# The cello joins under the second time through, then holds the chords while the guitar takes the middle four bars alone.
+# Small Hours, a slow ballad in D minor at 72 bpm for five Karoryfer Samples libraries, each under
+# Creative Commons 0: Weresax, Shinyguitar, Sneakybass, the Karoryfer and Bigcat cello, and Big
+# Rusty Drums.
+# The alto saxophone plays the tune, softly the first time and harder the second, over an archtop
+# guitar, a double bass and brushes.
+# The drummer stirs a brush round the snare the whole way through, a recording of nine seconds
+# started again every two bars, and taps the other brush on two and four.
+# The cello joins under the second time through, then holds the chords while the guitar takes the
+# middle four bars alone.
 # Every beat is split in three, the long note first, as a slow ballad is played.
-# Download them with mx samples download "sfzinstruments/karoryfer.weresax@a4d756b21d2a573aca0d840cce7e71ba5effd4c6:Samples/alto", and the same for the other folders named below.
+# Download them with mx samples download
+# "sfzinstruments/karoryfer.weresax@a4d756b21d2a573aca0d840cce7e71ba5effd4c6:Samples/alto", and
+# the same for the other folders named below.
 defmodule SmallHours do
-  import Mx
+  use Mx.Song, tempo: 72
 
   @sax {"sfzinstruments/karoryfer.weresax", "a4d756b21d2a573aca0d840cce7e71ba5effd4c6"}
   @guitar {"sfzinstruments/karoryfer.shinyguitar", "57243cca85277dbcc120ce17c6178032f93c80f3"}
@@ -17,8 +22,9 @@ defmodule SmallHours do
 
   file = fn {repo, commit}, path -> {:github, repo, commit, path} end
 
-  # The libraries name their notes in different octaves: the saxophone and the cello an octave below the pitch mx names, the bass an octave above, the guitar the same.
-  key = fn name, octaves -> pitch(String.to_atom(String.downcase(name))) + 12 * octaves end
+  # The libraries name their notes in different octaves: the saxophone and the cello an octave
+  # below the pitch mx names, the bass an octave above, the guitar the same.
+  key = fn name, octaves -> Mx.Notes.parse(String.downcase(name)) + 12 * octaves end
 
   # The saxophone through its condenser microphone: soft and hard, two takes of each.
   @alto for name <-
@@ -52,7 +58,8 @@ defmodule SmallHours do
                {file.(@cello, "Samples/sus/#{name}_#{dynamic}_#{bow}.wav"),
                 note: key.(name, 1), strength: strength, take: take}
 
-  # The brush stirred round the snare, from the overhead microphones: the two middle strengths of four.
+  # The brush stirred round the snare, from the overhead microphones: the two middle strengths of
+  # four.
   @stir for {layer, strength} <- [{2, 1}, {3, 2}],
             take <- 1..4,
             do:
@@ -61,111 +68,59 @@ defmodule SmallHours do
 
   drum = fn folder -> sampled(file.(@drums, "Samples/#{folder}")) end
 
-  @parts [
-    sax: [
-      synth: sampled(@alto),
-      defaults: [attack: 0.03, release: 0.3],
-      fx: [level: [amp: 1.0], reverb: [room: 0.75, mix: 0.3], pan: [pan: 0.1]]
-    ],
-    guitar: [
-      synth: sampled(@archtop),
-      defaults: [release: 0.5],
-      fx: [level: [amp: 0.9], reverb: [room: 0.6, mix: 0.2], pan: [pan: -0.4]]
-    ],
-    solo: [
-      synth: sampled(@archtop),
-      defaults: [release: 0.5],
-      fx: [level: [amp: 1.8], reverb: [room: 0.7, mix: 0.3], pan: [pan: -0.2]]
-    ],
-    bass: [
-      synth: sampled(@upright),
-      defaults: [release: 0.3],
-      fx: [level: [amp: 2.4]]
-    ],
-    cello: [
-      synth: sampled(@bowed),
-      defaults: [attack: 0.15, release: 0.6],
-      fx: [level: [amp: 2.0], reverb: [room: 0.75, mix: 0.3], pan: [pan: 0.45]]
-    ],
-    stir: [
-      synth: sampled(@stir),
-      defaults: [attack: 1, release: 1.5],
-      fx: [level: [amp: 8.0]]
-    ],
-    tap: [
-      synth: drum.("snare_14/brush/oh"),
-      defaults: [sustain: 1.5, release: 0.5],
-      fx: [level: [amp: 2.0]]
-    ],
-    dig: [
-      synth: drum.("snare_14/bdig/oh"),
-      defaults: [sustain: 1.5, release: 0.5],
-      fx: [level: [amp: 3.0]]
-    ],
-    foot: [
-      synth: drum.("hihat_14/chik/oh"),
-      defaults: [sustain: 1, release: 0.5],
-      fx: [level: [amp: 0.5]]
-    ],
-    ride: [
-      synth: drum.("ride_22/brush/oh"),
-      defaults: [sustain: 3, release: 3],
-      fx: [level: [amp: 7.0]]
-    ],
-    sizzle: [
-      synth: drum.("ride_sizzle_19/brush/oh"),
-      defaults: [sustain: 8, release: 4],
-      fx: [level: [amp: 3.0]]
-    ],
-    kick: [
-      synth: drum.("kick_24/kick/oh"),
-      defaults: [sustain: 1.5, release: 1],
-      fx: [level: [amp: 1.0]]
-    ]
-  ]
+  part :sax,
+    synth: sampled(@alto),
+    defaults: [attack: 0.03, release: 0.3],
+    fx: [level: [amp: 1.0], reverb: [room: 0.75, mix: 0.3], pan: [pan: 0.1]]
 
-  def play(voices) do
-    together(for {name, music} <- voices, do: part(name, music, @parts[name]))
-  end
+  part :guitar,
+    synth: sampled(@archtop),
+    defaults: [release: 0.5],
+    fx: [level: [amp: 0.9], reverb: [room: 0.6, mix: 0.2], pan: [pan: -0.4]]
 
-  # A note at a strength from 0 to 1: the strength picks the recording, and the level is left nearly as recorded.
-  defp dyn(vel), do: [vel: vel, amp: :math.pow(vel, -0.7)]
+  part :solo,
+    synth: sampled(@archtop),
+    defaults: [release: 0.5],
+    fx: [level: [amp: 1.8], reverb: [room: 0.7, mix: 0.3], pan: [pan: -0.2]]
 
-  # A line of notes and rests, each a name and a length in beats.
-  def line(notes, vel, options \\ []) do
-    seq(
-      for {name, beats} <- notes do
-        if name == :r, do: rest(beats), else: note(name, beats, dyn(vel) ++ options)
-      end
-    )
-  end
+  part :bass, synth: sampled(@upright), defaults: [release: 0.3], fx: [level: [amp: 2.4]]
 
-  # Bars of a drum in triplets, a character to each third of a beat: a digit is a stroke of that strength, a dot is silence.
-  def drum(patterns, bars \\ 1) do
-    bar = fn pattern ->
-      hits =
-        for {cell, index} <- Enum.with_index(String.graphemes(pattern)),
-            cell != ".",
-            do: {index / 3, hit(dyn(String.to_integer(cell) / 9))}
+  part :cello,
+    synth: sampled(@bowed),
+    defaults: [attack: 0.15, release: 0.6],
+    fx: [level: [amp: 2.0], reverb: [room: 0.75, mix: 0.3], pan: [pan: 0.45]]
 
-      at(hits, 4)
-    end
+  part :stir, synth: sampled(@stir), defaults: [attack: 1, release: 1.5], fx: [level: [amp: 8.0]]
 
-    repeat(seq(Enum.map(List.wrap(patterns), bar)), bars)
-  end
+  part :tap,
+    synth: drum.("snare_14/brush/oh"),
+    defaults: [sustain: 1.5, release: 0.5],
+    fx: [level: [amp: 2.0]]
 
-  # The stir, started again every two bars, each fading in under the end of the one before.
-  def stir(bars, vel \\ 0.3) do
-    seq(for _ <- 1..div(bars, 2), do: at([{0, hit(dyn(vel) ++ [sustain: 8.5])}], 8))
-  end
+  part :dig,
+    synth: drum.("snare_14/bdig/oh"),
+    defaults: [sustain: 1.5, release: 0.5],
+    fx: [level: [amp: 3.0]]
 
-  def brushes(bars) do
-    [
-      stir: stir(bars),
-      tap: drum("...4.....5..", bars),
-      foot: drum("...3.....3..", bars)
-    ]
-  end
+  part :foot,
+    synth: drum.("hihat_14/chik/oh"),
+    defaults: [sustain: 1, release: 0.5],
+    fx: [level: [amp: 0.5]]
+
+  part :ride,
+    synth: drum.("ride_22/brush/oh"),
+    defaults: [sustain: 3, release: 3],
+    fx: [level: [amp: 7.0]]
+
+  part :sizzle,
+    synth: drum.("ride_sizzle_19/brush/oh"),
+    defaults: [sustain: 8, release: 4],
+    fx: [level: [amp: 3.0]]
+
+  part :kick,
+    synth: drum.("kick_24/kick/oh"),
+    defaults: [sustain: 1.5, release: 1],
+    fx: [level: [amp: 1.0]]
 
   @chords %{
     dm6: [:f3, :b3, :d4, :a4],
@@ -189,49 +144,6 @@ defmodule SmallHours do
     [:dm6]
   ]
   @last_chords [[:dm6], [:bb9], [:em7b5, :a7], [:dm6]]
-
-  # The guitar under the tune: each chord strummed slowly and left to ring, and a soft answer on the last third of two when the chord lasts the bar.
-  def comp(bars) do
-    seq(
-      for bar <- bars do
-        case bar do
-          [chord] ->
-            seq([
-              note(@chords[chord], 1 + 2 / 3, dyn(0.45) ++ [strum: 0.06]),
-              note(Enum.drop(@chords[chord], 1), 2 + 1 / 3, dyn(0.2) ++ [strum: 0.03])
-            ])
-
-          [first, second] ->
-            seq([
-              note(@chords[first], 2, dyn(0.45) ++ [strum: 0.06]),
-              note(@chords[second], 2, dyn(0.45) ++ [strum: 0.06])
-            ])
-        end
-      end
-    )
-  end
-
-  # The bass in two: a note on one and on three, and now and then a short one leading into the next bar.
-  def in_two(bars) do
-    seq(
-      for bar <- bars do
-        case bar do
-          {first, second} ->
-            seq([note(first, 2, dyn(0.8)), note(second, 2, dyn(0.7))])
-
-          {first, second, lead} ->
-            seq([
-              note(first, 2, dyn(0.8)),
-              note(second, 1 + 2 / 3, dyn(0.7)),
-              note(lead, 1 / 3, dyn(0.6))
-            ])
-        end
-      end
-    )
-  end
-
-  # The bass walking, a note to each beat.
-  def walk(notes), do: seq(for name <- notes, do: note(name, 1, dyn(0.8)))
 
   @tune [
     r: 1,
@@ -276,8 +188,14 @@ defmodule SmallHours do
     {:d2, :a1, :cs2}
   ]
 
+  part :slowing, []
+
+  def song do
+    seq([intro(), tune(), tune_again(), middle(), last_time()])
+  end
+
   # Two bars of brushes, bass and guitar.
-  def intro do
+  defp intro do
     play(
       stir: stir(2),
       foot: drum("...2.....2..", 2),
@@ -287,7 +205,7 @@ defmodule SmallHours do
   end
 
   # The tune, the saxophone soft.
-  def tune do
+  defp tune do
     play(
       [
         sax: line(@tune ++ @falling, 0.4),
@@ -298,8 +216,9 @@ defmodule SmallHours do
     )
   end
 
-  # The tune again and harder, ending upward: the bass walks, the ride joins, and the cello holds a line under it.
-  def tune_again do
+  # The tune again and harder, ending upward: the bass walks, the ride joins, and the cello holds
+  # a line under it.
+  defp tune_again do
     play(
       [
         sax: line(@tune ++ @rising, 0.8),
@@ -319,7 +238,7 @@ defmodule SmallHours do
   end
 
   # The middle four bars: the guitar alone on top, the cello holding two notes of each chord.
-  def middle do
+  defp middle do
     play(
       [
         solo:
@@ -360,8 +279,9 @@ defmodule SmallHours do
     )
   end
 
-  # The first bar of the tune, its sixth and its ending, soft again, then two chords and the last one, slowing.
-  def last_time do
+  # The first bar of the tune, its sixth and its ending, soft again, then two chords and the last
+  # one, slowing.
+  defp last_time do
     play(
       sax:
         line(
@@ -390,7 +310,93 @@ defmodule SmallHours do
     |> then(&together([&1, part(:slowing, seq([rest(16), tempo(54, over: 6)]))]))
   end
 
-  def music, do: seq([intro(), tune(), tune_again(), middle(), last_time()])
-end
+  defp play(voices) do
+    together(for {name, music} <- voices, do: part(name, music))
+  end
 
-song(tempo: 72, music: SmallHours.music())
+  # The stir, started again every two bars, each fading in under the end of the one before.
+  defp stir(bars, vel \\ 0.3) do
+    seq(for _ <- 1..div(bars, 2), do: at([{0, hit(dyn(vel) ++ [sustain: 8.5])}], 8))
+  end
+
+  # Bars of a drum in triplets, a character to each third of a beat: a digit is a stroke of that
+  # strength, a dot is silence.
+  defp drum(patterns, bars \\ 1) do
+    bar = fn pattern ->
+      hits =
+        for {cell, index} <- Enum.with_index(String.graphemes(pattern)),
+            cell != ".",
+            do: {index / 3, hit(dyn(String.to_integer(cell) / 9))}
+
+      at(hits, 4)
+    end
+
+    repeat(seq(Enum.map(List.wrap(patterns), bar)), bars)
+  end
+
+  # The bass in two: a note on one and on three, and now and then a short one leading into the
+  # next bar.
+  defp in_two(bars) do
+    seq(
+      for bar <- bars do
+        case bar do
+          {first, second} ->
+            seq([note(first, 2, dyn(0.8)), note(second, 2, dyn(0.7))])
+
+          {first, second, lead} ->
+            seq([
+              note(first, 2, dyn(0.8)),
+              note(second, 1 + 2 / 3, dyn(0.7)),
+              note(lead, 1 / 3, dyn(0.6))
+            ])
+        end
+      end
+    )
+  end
+
+  # The guitar under the tune: each chord strummed slowly and left to ring, and a soft answer on
+  # the last third of two when the chord lasts the bar.
+  defp comp(bars) do
+    seq(
+      for bar <- bars do
+        case bar do
+          [chord] ->
+            seq([
+              note(@chords[chord], 1 + 2 / 3, dyn(0.45) ++ [strum: 0.06]),
+              note(Enum.drop(@chords[chord], 1), 2 + 1 / 3, dyn(0.2) ++ [strum: 0.03])
+            ])
+
+          [first, second] ->
+            seq([
+              note(@chords[first], 2, dyn(0.45) ++ [strum: 0.06]),
+              note(@chords[second], 2, dyn(0.45) ++ [strum: 0.06])
+            ])
+        end
+      end
+    )
+  end
+
+  # A line of notes and rests, each a name and a length in beats.
+  defp line(notes, vel, options \\ []) do
+    seq(
+      for {name, beats} <- notes do
+        if name == :r, do: rest(beats), else: note(name, beats, dyn(vel) ++ options)
+      end
+    )
+  end
+
+  defp brushes(bars) do
+    [
+      stir: stir(bars),
+      tap: drum("...4.....5..", bars),
+      foot: drum("...3.....3..", bars)
+    ]
+  end
+
+  # The bass walking, a note to each beat.
+  defp walk(notes), do: seq(for name <- notes, do: note(name, 1, dyn(0.8)))
+
+  # A note at a strength from 0 to 1: the strength picks the recording, and the level is left
+  # nearly as recorded.
+  defp dyn(vel), do: [vel: vel, amp: :math.pow(vel, -0.7)]
+end

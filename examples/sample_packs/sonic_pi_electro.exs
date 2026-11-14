@@ -1,56 +1,28 @@
-import Mx
-
-# Dial Tone, an electro track in G minor at 126 bpm made only of the electronic samples Sonic Pi ships, which are under Creative Commons 0.
-# The beat is electro's: the 808 kick pushed off the beat, a snare and a snap on two and four, sixteenth hats and a cowbell.
-# The bass is bass_trance_c and the arpeggio elec_blip, each a single note moved to the others by its rate, over four bars of G minor, G minor, E flat and F.
-# The pads, the robot voices and the telephone are the pack's tbd, mehackit and glitch samples as recorded.
+# Dial Tone, an electro track in G minor at 126 bpm made only of the electronic samples Sonic Pi
+# ships, which are under Creative Commons 0.
+# The beat is electro's: the 808 kick pushed off the beat, a snare and a snap on two and four,
+# sixteenth hats and a cowbell.
+# The bass is bass_trance_c and the arpeggio elec_blip, each a single note moved to the others by
+# its rate, over four bars of G minor, G minor, E flat and F.
+# The pads, the robot voices and the telephone are the pack's tbd, mehackit and glitch samples as
+# recorded.
 # Download them with mx samples download sonic_pi.
 defmodule DialTone do
-  import Mx
+  use Mx.Song, tempo: 126
 
-  @parts [
-    kick: [fx: [level: [amp: 0.65]]],
-    snare: [fx: [level: [amp: 0.5], reverb: [room: 0.4, mix: 0.15]]],
-    hats: [fx: [level: [amp: 0.3], pan: [pan: 0.25]]],
-    bells: [fx: [level: [amp: 0.35], pan: [pan: -0.3]]],
-    clicks: [fx: [level: [amp: 0.3], echo: [phase: 0.375, decay: 2, mix: 0.3], pan: [pan: -0.4]]],
-    bass: [fx: [level: [amp: 0.33]]],
-    arp: [fx: [level: [amp: 0.8], echo: [phase: 0.75, decay: 3, mix: 0.35], pan: [pan: 0.3]]],
-    pads: [fx: [level: [amp: 0.35], reverb: [room: 0.8, mix: 0.4]]],
-    voices: [fx: [level: [amp: 0.4], echo: [phase: 0.5, decay: 3, mix: 0.3]]],
-    bed: [fx: [level: [amp: 0.5]]]
-  ]
+  part :kick, fx: [level: [amp: 0.65]]
+  part :snare, fx: [level: [amp: 0.5], reverb: [room: 0.4, mix: 0.15]]
+  part :hats, fx: [level: [amp: 0.3], pan: [pan: 0.25]]
+  part :bells, fx: [level: [amp: 0.35], pan: [pan: -0.3]]
 
-  def play(voices) do
-    together(for {name, music} <- voices, do: part(name, music, @parts[name]))
-  end
+  part :clicks,
+    fx: [level: [amp: 0.3], echo: [phase: 0.375, decay: 2, mix: 0.3], pan: [pan: -0.4]]
 
-  # The rate that moves a recording by so many semitones.
-  defp semitones(steps), do: :math.pow(2, steps / 12)
-
-  # Bars of one sample in sixteenths, a character to each: a digit is a stroke of that level, a dot is silence.
-  def strokes(name, patterns, bars \\ 1) do
-    bar = fn pattern ->
-      hits =
-        for {cell, index} <- Enum.with_index(String.graphemes(pattern)),
-            cell != ".",
-            do: {index / 4, sample(name, 0, amp: String.to_integer(cell) / 9)}
-
-      at(hits, 4)
-    end
-
-    repeat(seq(Enum.map(List.wrap(patterns), bar)), bars)
-  end
-
-  # A bar of a pitched sample in sixteenths, as semitones from its recorded note, nil a silent step.
-  def line(name, notes, amp \\ 1.0) do
-    hits =
-      for {note, index} <- Enum.with_index(notes), note != nil do
-        {index / 4, sample(name, 0, rate: semitones(note), amp: amp, sustain: 0.2, release: 0.05)}
-      end
-
-    at(hits, 4)
-  end
+  part :bass, fx: [level: [amp: 0.33]]
+  part :arp, fx: [level: [amp: 0.8], echo: [phase: 0.75, decay: 3, mix: 0.35], pan: [pan: 0.3]]
+  part :pads, fx: [level: [amp: 0.35], reverb: [room: 0.8, mix: 0.4]]
+  part :voices, fx: [level: [amp: 0.4], echo: [phase: 0.5, decay: 3, mix: 0.3]]
+  part :bed, fx: [level: [amp: 0.5]]
 
   # The bass, from its C: the root and its octave, with the notes that lead on.
   @bass [
@@ -68,55 +40,12 @@ defmodule DialTone do
     [3, 7, 10, 15, 10, 7, 3, 7, 10, 15, 19, 15, 10, 7, 10, 15]
   ]
 
-  def bass(times), do: repeat(seq(for bar <- @bass, do: line(:bass_trance_c, bar)), times)
-
-  def arp(times, up \\ 0) do
-    repeat(
-      seq(for bar <- @arp, do: line(:elec_blip, Enum.map(bar, &(&1 + up)), 1.5)),
-      times
-    )
-  end
-
-  def pads(times) do
-    repeat(
-      seq([
-        sample(:tbd_pad_1, 4, attack: 0.2, release: 0.5),
-        sample(:tbd_pad_2, 4, attack: 0.2, release: 0.5),
-        sample(:tbd_pad_4, 4, attack: 0.2, release: 0.5),
-        sample(:tbd_pad_3, 4, attack: 0.2, release: 0.5)
-      ]),
-      times
-    )
-  end
-
-  def beat(bars) do
-    [
-      kick: strokes(:bd_808, ["9..7..9.....9...", "9..7..9...7.9..."], div(bars, 2)),
-      hats:
-        together([
-          strokes(:hat_cab, "7353735373537353", bars),
-          strokes(:hat_gnu, ["..............5.", "......5.......5."], div(bars, 2))
-        ])
-    ]
-  end
-
-  def backbeat(bars) do
-    [
-      snare:
-        together([
-          strokes(:elec_snare, "....8.......8...", bars),
-          strokes(:perc_snap, "....6.......6..3", bars)
-        ])
-    ]
-  end
-
-  # A voice at the start of every other bar.
-  def voices(names) do
-    seq(for name <- names, do: sample(name, 8))
+  def song do
+    seq([intro(), build(), main(), middle(), last(), ending()])
   end
 
   # The telephone dials over the pads, and the hats come in.
-  def intro do
+  defp intro do
     play(
       bed: sample(:tbd_fxbed_loop, 16),
       pads: pads(1),
@@ -133,7 +62,7 @@ defmodule DialTone do
   end
 
   # The kick and the bass.
-  def build do
+  defp build do
     play(
       [bass: bass(1), clicks: strokes(:elec_tick, "9..9..9..9..9.9.", 4)] ++
         beat(4) ++ [snare: seq([rest(12), strokes(:elec_hi_snare, "....5.5.5.667789")])]
@@ -141,7 +70,7 @@ defmodule DialTone do
   end
 
   # Eight bars of everything, the robots answering.
-  def main do
+  defp main do
     play(
       [
         bass: bass(2),
@@ -154,7 +83,7 @@ defmodule DialTone do
   end
 
   # Four bars without the kick: pads, glitches and a snare that fills up.
-  def middle do
+  defp middle do
     play(
       pads: pads(1),
       arp: arp(1, -12),
@@ -170,7 +99,7 @@ defmodule DialTone do
   end
 
   # Twelve bars, the arpeggio an octave up for the last eight.
-  def last do
+  defp last do
     play(
       [
         bass: bass(3),
@@ -187,7 +116,7 @@ defmodule DialTone do
   end
 
   # A last kick, a chime and a robot.
-  def ending do
+  defp ending do
     play(
       kick: sample(:bd_808, 8),
       bells: sample(:elec_chime, 8),
@@ -196,7 +125,83 @@ defmodule DialTone do
     )
   end
 
-  def music, do: seq([intro(), build(), main(), middle(), last(), ending()])
-end
+  defp play(voices) do
+    together(for {name, music} <- voices, do: part(name, music))
+  end
 
-song(tempo: 126, music: DialTone.music())
+  defp pads(times) do
+    repeat(
+      seq([
+        sample(:tbd_pad_1, 4, attack: 0.2, release: 0.5),
+        sample(:tbd_pad_2, 4, attack: 0.2, release: 0.5),
+        sample(:tbd_pad_4, 4, attack: 0.2, release: 0.5),
+        sample(:tbd_pad_3, 4, attack: 0.2, release: 0.5)
+      ]),
+      times
+    )
+  end
+
+  # Bars of one sample in sixteenths, a character to each: a digit is a stroke of that level, a
+  # dot is silence.
+  defp strokes(name, patterns, bars \\ 1) do
+    bar = fn pattern ->
+      hits =
+        for {cell, index} <- Enum.with_index(String.graphemes(pattern)),
+            cell != ".",
+            do: {index / 4, sample(name, 0, amp: String.to_integer(cell) / 9)}
+
+      at(hits, 4)
+    end
+
+    repeat(seq(Enum.map(List.wrap(patterns), bar)), bars)
+  end
+
+  defp bass(times), do: repeat(seq(for bar <- @bass, do: line(:bass_trance_c, bar)), times)
+
+  defp beat(bars) do
+    [
+      kick: strokes(:bd_808, ["9..7..9.....9...", "9..7..9...7.9..."], div(bars, 2)),
+      hats:
+        together([
+          strokes(:hat_cab, "7353735373537353", bars),
+          strokes(:hat_gnu, ["..............5.", "......5.......5."], div(bars, 2))
+        ])
+    ]
+  end
+
+  defp arp(times, up \\ 0) do
+    repeat(
+      seq(for bar <- @arp, do: line(:elec_blip, Enum.map(bar, &(&1 + up)), 1.5)),
+      times
+    )
+  end
+
+  # A voice at the start of every other bar.
+  defp voices(names) do
+    seq(for name <- names, do: sample(name, 8))
+  end
+
+  defp backbeat(bars) do
+    [
+      snare:
+        together([
+          strokes(:elec_snare, "....8.......8...", bars),
+          strokes(:perc_snap, "....6.......6..3", bars)
+        ])
+    ]
+  end
+
+  # A bar of a pitched sample in sixteenths, as semitones from its recorded note, nil a silent
+  # step.
+  defp line(name, notes, amp \\ 1.0) do
+    hits =
+      for {note, index} <- Enum.with_index(notes), note != nil do
+        {index / 4, sample(name, 0, rate: semitones(note), amp: amp, sustain: 0.2, release: 0.05)}
+      end
+
+    at(hits, 4)
+  end
+
+  # The rate that moves a recording by so many semitones.
+  defp semitones(steps), do: :math.pow(2, steps / 12)
+end

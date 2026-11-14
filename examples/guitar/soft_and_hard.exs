@@ -1,10 +1,14 @@
-import Mx
-
 defmodule SoftAndHard do
-  import Mx
+  use Mx.Song, tempo: 72
+
+  part :guitar, synth: :guitar, defaults: [amp: 0.5], fx: [reverb: [room: 0.4, mix: 0.2]]
+
+  def song do
+    part(:guitar, loop(16, fn pass, _ -> phrase(pass) end))
+  end
 
   # The phrase at the pass's strength, softly, then harder, then as hard as the guitar goes.
-  def phrase(pass) do
+  defp phrase(pass) do
     vel = ring([0.3, 0.6, 1], pass)
 
     phrase = [
@@ -32,13 +36,3 @@ defmodule SoftAndHard do
     seq(notes ++ [note(:a2, 0, vel: vel), rest(4)])
   end
 end
-
-song(
-  tempo: 72,
-  music:
-    part(:guitar, loop(16, fn pass, _ -> SoftAndHard.phrase(pass) end),
-      synth: :guitar,
-      defaults: [amp: 0.5],
-      fx: [reverb: [room: 0.4, mix: 0.2]]
-    )
-)

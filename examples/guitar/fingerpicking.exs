@@ -1,10 +1,14 @@
-import Mx
-
 defmodule Fingerpicking do
-  import Mx
+  use Mx.Song, tempo: 84
+
+  part :guitar, synth: :guitar, fx: [reverb: [room: 0.35, mix: 0.18]]
+
+  def song do
+    part(:guitar, loop(3, fn pass, _ -> bar(pass) end))
+  end
 
   # A bar of 3/4 as six eighths, a chord of the progression to each bar.
-  def bar(pass) do
+  defp bar(pass) do
     {bass, i, m, a} =
       ring(
         [
@@ -20,7 +24,8 @@ defmodule Fingerpicking do
         pass
       )
 
-    # The string, how hard it is plucked, and how long it rings before the next pluck on it, in eighths.
+    # The string, how hard it is plucked, and how long it rings before the next pluck on it, in
+    # eighths.
     picks = [{bass, 0.7, 6}, {i, 0.5, 4}, {m, 0.55, 2}, {a, 0.6, 6}, {m, 0.45, 4}, {i, 0.4, 2}]
 
     seq(
@@ -29,12 +34,3 @@ defmodule Fingerpicking do
     )
   end
 end
-
-song(
-  tempo: 84,
-  music:
-    part(:guitar, loop(3, fn pass, _ -> Fingerpicking.bar(pass) end),
-      synth: :guitar,
-      fx: [reverb: [room: 0.35, mix: 0.18]]
-    )
-)

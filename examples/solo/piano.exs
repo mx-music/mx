@@ -1,17 +1,36 @@
-import Mx
-
-# A solo for the piano written for mx: its whole range, chords softly and then hard, runs over a bass, and its lowest and highest notes.
-
+# A solo for the piano written for mx: its whole range, chords softly and then hard, runs over a
+# bass, and its lowest and highest notes.
 defmodule Piano do
-  import Mx
+  use Mx.Song, tempo: 84
 
-  # C major, A minor, F major and G major, two beats each.
-  def chords, do: [[48, 55, 60, 64], [45, 52, 57, 60], [41, 48, 53, 57], [43, 50, 55, 59]]
+  part :piano, synth: :piano
 
-  # Every C, E, G and A from A0 to C8, the piano's lowest and highest notes.
-  def keyboard, do: Enum.filter(21..108, &(rem(&1, 12) in [0, 4, 7, 9]))
+  def song do
+    repeat(seq(form()))
+  end
 
-  def strokes(:sweep) do
+  # The form, each of its passes a section.
+  defp form do
+    sections =
+      for {section, count} <- [sweep: 1, soft_chords: 1, loud_chords: 1, runs: 2, extremes: 1],
+          _ <- 1..count,
+          do: section
+
+    Enum.with_index(sections, fn section, pass ->
+      part(:piano, piano(section, pass))
+    end)
+  end
+
+  # A pass of piano, as 8 beats.
+  defp piano(section, _pass) do
+    notes =
+      for {beat, notes, vel, sustain} <- strokes(section),
+          do: {beat, note(notes, sustain, vel: vel)}
+
+    at(notes, 8)
+  end
+
+  defp strokes(:sweep) do
     notes = keyboard() ++ Enum.reverse(keyboard())
 
     notes
@@ -19,17 +38,18 @@ defmodule Piano do
     |> Enum.map(fn {note, index} -> {index * 8 / length(notes), [note], 0.6, 0.5} end)
   end
 
-  def strokes(:soft_chords) do
+  defp strokes(:soft_chords) do
     for {chord, index} <- Enum.with_index(chords()), do: {index * 2, chord, 0.2, 1.8}
   end
 
-  def strokes(:loud_chords) do
+  defp strokes(:loud_chords) do
     for {chord, index} <- Enum.with_index(chords()),
         do: {index * 2, Enum.map(chord, &(&1 + 12)), 0.75, 1.8}
   end
 
-  # The bass holds each chord's root an octave down while the right hand runs up and down its notes in sixteenths.
-  def strokes(:runs) do
+  # The bass holds each chord's root an octave down while the right hand runs up and down its
+  # notes in sixteenths.
+  defp strokes(:runs) do
     for {chord, index} <- Enum.with_index(chords()), step <- 0..7 do
       tones = Enum.map(chord, &(&1 + 12)) ++ Enum.map(chord, &(&1 + 24))
       run = tones ++ Enum.reverse(tones)
@@ -44,7 +64,7 @@ defmodule Piano do
     |> List.flatten()
   end
 
-  def strokes(:extremes) do
+  defp strokes(:extremes) do
     [
       {0, [21], 1, 3},
       {1, [108], 1, 2.5},
@@ -54,26 +74,9 @@ defmodule Piano do
     ]
   end
 
-  # A pass of piano, as 8 beats.
-  def piano(section, _pass) do
-    notes =
-      for {beat, notes, vel, sustain} <- strokes(section),
-          do: {beat, note(notes, sustain, vel: vel)}
+  # Every C, E, G and A from A0 to C8, the piano's lowest and highest notes.
+  defp keyboard, do: Enum.filter(21..108, &(rem(&1, 12) in [0, 4, 7, 9]))
 
-    at(notes, 8)
-  end
-
-  # The form, each of its passes a section.
-  def form do
-    sections =
-      for {section, count} <- [sweep: 1, soft_chords: 1, loud_chords: 1, runs: 2, extremes: 1],
-          _ <- 1..count,
-          do: section
-
-    Enum.with_index(sections, fn section, pass ->
-      part(:piano, piano(section, pass), synth: :piano)
-    end)
-  end
+  # C major, A minor, F major and G major, two beats each.
+  defp chords, do: [[48, 55, 60, 64], [45, 52, 57, 60], [41, 48, 53, 57], [43, 50, 55, 59]]
 end
-
-song(tempo: 84, music: repeat(seq(Piano.form())))

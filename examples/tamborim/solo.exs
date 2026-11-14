@@ -1,16 +1,32 @@
-import Mx
-
-# A piece for the tamborim alone written for mx: its parts in a samba batucada, in 2/4, two beats to the bar.
-# The teleco-teco is a two-bar figure of sixteenths struck off the beat; the carreteiro strikes every sixteenth with the figure's strokes accented; a virada closes each phrase with a run of thirty-second strokes that swells into an accent.
+# A piece for the tamborim alone written for mx: its parts in a samba batucada, in 2/4, two beats
+# to the bar.
+# The teleco-teco is a two-bar figure of sixteenths struck off the beat; the carreteiro strikes
+# every sixteenth with the figure's strokes accented; a virada closes each phrase with a run of
+# thirty-second strokes that swells into an accent.
 defmodule Tamborim do
-  import Mx
+  use Mx.Song, tempo: 100
 
   @note 72.03
 
   # The teleco-teco's two bars, in sixteenths.
   @teleco_teco [0, 2, 5, 7, 9, 11, 14]
 
-  def teleco_teco do
+  part :tamborim, synth: :tamborim
+
+  def song do
+    repeat(form())
+  end
+
+  defp form do
+    seq([
+      part(:tamborim, teleco_teco()),
+      part(:tamborim, carreteiro()),
+      part(:tamborim, virada()),
+      part(:tamborim, carreteiro())
+    ])
+  end
+
+  defp teleco_teco do
     strokes =
       for repeat <- 0..3, sixteenth <- @teleco_teco do
         {4 * repeat + sixteenth / 4,
@@ -21,7 +37,7 @@ defmodule Tamborim do
   end
 
   # Every sixteenth, the teleco-teco's strokes accented and the rest soft.
-  def carreteiro do
+  defp carreteiro do
     strokes =
       for repeat <- 0..3, sixteenth <- 0..15 do
         vel = if sixteenth in @teleco_teco, do: 0.8, else: 0.4
@@ -31,8 +47,9 @@ defmodule Tamborim do
     at(strokes, 16)
   end
 
-  # Three repeats of the teleco-teco, then a bar of thirty-seconds that swells into an accent on the next downbeat.
-  def virada do
+  # Three repeats of the teleco-teco, then a bar of thirty-seconds that swells into an accent on
+  # the next downbeat.
+  defp virada do
     figure =
       for repeat <- 0..2, sixteenth <- @teleco_teco do
         {4 * repeat + sixteenth / 4, hit(note: @note, vel: 0.7)}
@@ -45,15 +62,4 @@ defmodule Tamborim do
 
     at(figure ++ run, 16)
   end
-
-  def form do
-    seq([
-      part(:tamborim, teleco_teco(), synth: :tamborim),
-      part(:tamborim, carreteiro(), synth: :tamborim),
-      part(:tamborim, virada(), synth: :tamborim),
-      part(:tamborim, carreteiro(), synth: :tamborim)
-    ])
-  end
 end
-
-song(tempo: 100, music: repeat(Tamborim.form()))

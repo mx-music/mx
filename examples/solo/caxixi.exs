@@ -1,9 +1,10 @@
-import Mx
-
-# A piece for the caxixi alone written for mx: its part in two of capoeira's toques, shaken with each of the berimbau's strokes.
-# In angola the berimbau buzzes twice and then plays its open note, and the caxixi leans on the open note; in são bento grande the strokes run on, and the caxixi leans on the first buzz of each pair and on the open note that closes the phrase.
+# A piece for the caxixi alone written for mx: its part in two of capoeira's toques, shaken with
+# each of the berimbau's strokes.
+# In angola the berimbau buzzes twice and then plays its open note, and the caxixi leans on the
+# open note; in são bento grande the strokes run on, and the caxixi leans on the first buzz of
+# each pair and on the open note that closes the phrase.
 defmodule Caxixi do
-  import Mx
+  use Mx.Song, tempo: 100
 
   # Two beats of angola as {beat, stroke}: two buzzes, then the open note.
   @angola [{0, :buzz}, {0.5, :buzz}, {1, :open}]
@@ -20,7 +21,22 @@ defmodule Caxixi do
     {3.5, :open}
   ]
 
-  def angola do
+  part :caxixi, synth: :caxixi
+
+  def song do
+    repeat(form())
+  end
+
+  defp form do
+    seq([
+      part(:caxixi, angola()),
+      part(:caxixi, angola()),
+      part(:caxixi, sao_bento_grande()),
+      part(:caxixi, sao_bento_grande())
+    ])
+  end
+
+  defp angola do
     strokes =
       for cycle <- 0..7, {beat, stroke} <- @angola do
         {2 * cycle + beat, hit(vel: if(stroke == :open, do: 0.85, else: 0.5))}
@@ -29,7 +45,7 @@ defmodule Caxixi do
     at(strokes, 16)
   end
 
-  def sao_bento_grande do
+  defp sao_bento_grande do
     strokes =
       for cycle <- 0..3, {beat, _stroke} <- @sao_bento_grande do
         accented = beat in [0, 2, 3.5]
@@ -38,15 +54,4 @@ defmodule Caxixi do
 
     at(strokes, 16)
   end
-
-  def form do
-    seq([
-      part(:caxixi, angola(), synth: :caxixi),
-      part(:caxixi, angola(), synth: :caxixi),
-      part(:caxixi, sao_bento_grande(), synth: :caxixi),
-      part(:caxixi, sao_bento_grande(), synth: :caxixi)
-    ])
-  end
 end
-
-song(tempo: 100, music: repeat(Caxixi.form()))

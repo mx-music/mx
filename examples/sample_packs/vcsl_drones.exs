@@ -1,14 +1,19 @@
-import Mx
-
-# Still Water, a slow piece for the sounds of VCSL that are held rather than struck, Versilian Studios' Versilian Community Sample Library, under Creative Commons 0: didgeridoo, two ocarinas, wine glasses, ocean drum, Nepalese hand bells, darbuka, and the toy train whistle, ball whistle and siren whistle.
-# The didgeridoo's note is the C sharp two octaves below middle C, and it is recorded as long notes and phrases of ten to fifteen seconds, so the piece lays one after another as a drone from beginning to end.
-# Over it the wine glasses hold D sharp, F sharp and B, the larger ocarina plays a tune in the five notes C sharp, E, F sharp, G sharp and B, and the small ocarina answers it an octave above.
-# Two of the glasses and the darbuka were recorded a little off those notes, so each is played at the rate that brings it to them.
+# Still Water, a slow piece for the sounds of VCSL that are held rather than struck, Versilian
+# Studios' Versilian Community Sample Library, under Creative Commons 0: didgeridoo, two ocarinas,
+# wine glasses, ocean drum, Nepalese hand bells, darbuka, and the toy train whistle, ball whistle
+# and siren whistle.
+# The didgeridoo's note is the C sharp two octaves below middle C, and it is recorded as long
+# notes and phrases of ten to fifteen seconds, so the piece lays one after another as a drone from
+# beginning to end.
+# Over it the wine glasses hold D sharp, F sharp and B, the larger ocarina plays a tune in the
+# five notes C sharp, E, F sharp, G sharp and B, and the small ocarina answers it an octave above.
+# Two of the glasses and the darbuka were recorded a little off those notes, so each is played at
+# the rate that brings it to them.
 # The tempo is 60, so a beat is a second.
 # VCSL names the ocarinas' keys an octave below the pitch mx names them by.
 # The files are fetched as the song loads, about 120 MB.
 defmodule StillWater do
-  import Mx
+  use Mx.Song, tempo: 60
 
   @repo "sgossner/VCSL"
   @commit "c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e"
@@ -28,7 +33,8 @@ defmodule StillWater do
 
   bell = fn name -> vcsl.("Idiophones/Struck Idiophones/Hand Bells, Nepalese/HB_#{name}.wav") end
 
-  # Each sound as its file and the options it plays with: the gain that brings it level with the others, and the rate where it needs tuning.
+  # Each sound as its file and the options it plays with: the gain that brings it level with the
+  # others, and the rate where it needs tuning.
   @sounds %{
     long_note: {didgeridoo.("Sus2"), amp: 3.5},
     second_note: {didgeridoo.("Sus3"), amp: 1.2},
@@ -56,7 +62,7 @@ defmodule StillWater do
 
   ocarina = fn folder, prefix, suffix, names ->
     for name <- names do
-      note = name |> String.downcase() |> String.replace("#", "s") |> String.to_atom()
+      note = name |> String.downcase() |> String.replace("#", "s") |> Mx.Notes.parse()
       {blown.("#{folder}/#{prefix}#{name}#{suffix}.wav"), note: pitch(note) + 12}
     end
   end
@@ -77,52 +83,26 @@ defmodule StillWater do
   @far [room: 0.9, mix: 0.5]
   @near [room: 0.8, mix: 0.3]
 
-  @parts [
-    didgeridoo: [fx: [level: [amp: 5.0], reverb: [room: 0.7, mix: 0.2]]],
-    glasses: [fx: [level: [amp: 0.9], reverb: @far, pan: [pan: 0.3]]],
-    water: [fx: [level: [amp: 3.0], reverb: @near]],
-    bells: [fx: [level: [amp: 2.5], reverb: @far, pan: [pan: -0.3]]],
-    whistles: [fx: [level: [amp: 2.0], reverb: @far, pan: [pan: -0.4]]],
-    darbuka: [fx: [level: [amp: 1.5], reverb: @near, pan: [pan: 0.15]]],
-    ocarina: [
-      synth: sampled(@ocarina),
-      defaults: [attack: 0.05, release: 0.4],
-      fx: [level: [amp: 0.6], reverb: @near, pan: [pan: -0.15]]
-    ],
-    small_ocarina: [
-      synth: sampled(@small_ocarina),
-      defaults: [attack: 0.05, release: 0.4],
-      fx: [level: [amp: 1.5], reverb: @far, pan: [pan: 0.25]]
-    ]
-  ]
+  part :didgeridoo, fx: [level: [amp: 5.0], reverb: [room: 0.7, mix: 0.2]]
+  part :glasses, fx: [level: [amp: 0.9], reverb: @far, pan: [pan: 0.3]]
+  part :water, fx: [level: [amp: 3.0], reverb: @near]
+  part :bells, fx: [level: [amp: 2.5], reverb: @far, pan: [pan: -0.3]]
+  part :whistles, fx: [level: [amp: 2.0], reverb: @far, pan: [pan: -0.4]]
+  part :darbuka, fx: [level: [amp: 1.5], reverb: @near, pan: [pan: 0.15]]
+
+  part :ocarina,
+    synth: sampled(@ocarina),
+    defaults: [attack: 0.05, release: 0.4],
+    fx: [level: [amp: 0.6], reverb: @near, pan: [pan: -0.15]]
+
+  part :small_ocarina,
+    synth: sampled(@small_ocarina),
+    defaults: [attack: 0.05, release: 0.4],
+    fx: [level: [amp: 1.5], reverb: @far, pan: [pan: 0.25]]
 
   @length 100
 
-  # A part from its sounds and the seconds they start at.
-  def sounds(name, entries) do
-    hits =
-      for {second, sound} <- entries do
-        {file, options} = @sounds[sound]
-        {second, sample(file, 0, options)}
-      end
-
-    part(name, at(hits, @length), @parts[name])
-  end
-
-  # A part from its notes: each the second it starts at, the note, and how long it is held.
-  def notes(name, entries) do
-    hits = for {second, pitches, seconds} <- entries, do: {second, note(pitches, seconds)}
-    part(name, at(hits, @length), @parts[name])
-  end
-
-  # The darbuka's slow figure from second 40 to second 72: a low stroke and two high ones every four seconds.
-  def darbuka do
-    for bar <- 0..7, {offset, sound} <- [{0, :doum}, {1.5, :tek}, {3, :tek}] do
-      {40 + bar * 4 + offset, sound}
-    end
-  end
-
-  def music do
+  def song do
     together([
       sounds(
         :didgeridoo,
@@ -189,6 +169,29 @@ defmodule StillWater do
       ])
     ])
   end
-end
 
-song(tempo: 60, music: StillWater.music())
+  # A part from its sounds and the seconds they start at.
+  defp sounds(name, entries) do
+    hits =
+      for {second, sound} <- entries do
+        {file, options} = @sounds[sound]
+        {second, sample(file, 0, options)}
+      end
+
+    part(name, at(hits, @length))
+  end
+
+  # The darbuka's slow figure from second 40 to second 72: a low stroke and two high ones every
+  # four seconds.
+  defp darbuka do
+    for bar <- 0..7, {offset, sound} <- [{0, :doum}, {1.5, :tek}, {3, :tek}] do
+      {40 + bar * 4 + offset, sound}
+    end
+  end
+
+  # A part from its notes: each the second it starts at, the note, and how long it is held.
+  defp notes(name, entries) do
+    hits = for {second, pitches, seconds} <- entries, do: {second, note(pitches, seconds)}
+    part(name, at(hits, @length))
+  end
+end

@@ -1,24 +1,35 @@
-import Mx
-
 # A solo for the drum kit written for mx from the kit's standard vocabulary.
-# It builds the beat of James Brown's "Funky Drummer" in the steps of Ethan Hein's "Building the Funky Drummer beat", https://www.ethanhein.com/wp/2023/building-the-funky-drummer-beat/: sixteenths on the hi-hat, the kick and the backbeat, the snare's ghost notes, and the hi-hat opening for a sixteenth.
-# Then come the rudiments, as the Percussive Arts Society's forty give them: the single paradiddle between the hi-hat and the snare, flams, a drag, and a single stroke roll from the snare's softest stroke to its hardest.
-# The solo plays over the feet, the kick on one and three and the hi-hat closed on two and four: accents every third sixteenth for three bars, until the count meets the first beat again, on the snare, the high tom and down the toms; sextuplets down the drums; the toms answered by flams; and threes between the kick and the hands.
+# It builds the beat of James Brown's "Funky Drummer" in the steps of Ethan Hein's "Building the
+# Funky Drummer beat", https://www.ethanhein.com/wp/2023/building-the-funky-drummer-beat/:
+# sixteenths on the hi-hat, the kick and the backbeat, the snare's ghost notes, and the hi-hat
+# opening for a sixteenth.
+# Then come the rudiments, as the Percussive Arts Society's forty give them: the single paradiddle
+# between the hi-hat and the snare, flams, a drag, and a single stroke roll from the snare's
+# softest stroke to its hardest.
+# The solo plays over the feet, the kick on one and three and the hi-hat closed on two and four:
+# accents every third sixteenth for three bars, until the count meets the first beat again, on the
+# snare, the high tom and down the toms; sextuplets down the drums; the toms answered by flams;
+# and threes between the kick and the hands.
 # The beat comes back, and the last crash rings and is choked.
 defmodule Drums do
-  import Mx
+  use Mx.Song, tempo: 96
 
   @kit ~w(kick snare closed_hihat open_hihat high_tom mid_tom low_tom crash)a
 
-  # A bar is four beats, a character to each step of a drum: a digit is a stroke from 1, the softest, to 9, a dot is silence, and spaces are left out.
-  # A drum's bar is written in sixteenths as 16 steps, in sextuplets as 24 and in thirty-seconds as 32.
-  # On the snare f is a flam, a soft stroke just before a hard one, and d a drag, two soft strokes before a hard one; on the crash c is a stroke rung for three beats and then choked.
-  # The open hi-hat rings for a sixteenth, until the next stroke closes it, and o is a stroke that rings for an eighth.
+  # A bar is four beats, a character to each step of a drum: a digit is a stroke from 1, the
+  # softest, to 9, a dot is silence, and spaces are left out.
+  # A drum's bar is written in sixteenths as 16 steps, in sextuplets as 24 and in thirty-seconds
+  # as 32.
+  # On the snare f is a flam, a soft stroke just before a hard one, and d a drag, two soft strokes
+  # before a hard one; on the crash c is a stroke rung for three beats and then choked.
+  # The open hi-hat rings for a sixteenth, until the next stroke closes it, and o is a stroke that
+  # rings for an eighth.
   @hats "7353 7353 7353 7353"
   @kicks "7.7. .... ..7. .7.."
   @ghosts ".... 8..2 .2.2 8..2"
 
-  # The whole beat: the hi-hat opens on the sixteenth before the third beat and the one after the fourth.
+  # The whole beat: the hi-hat opens on the sixteenth before the third beat and the one after the
+  # fourth.
   @beat [
     closed_hihat: "7353 735. 7353 7.53",
     open_hihat: ".... ...6 .... .6..",
@@ -26,12 +37,42 @@ defmodule Drums do
     kick: @kicks
   ]
 
-  # A single paradiddle, right left right right, left right left left, with the right hand on the hi-hat and the left on the snare, whose stroke on two and four is the backbeat.
+  # A single paradiddle, right left right right, left right left left, with the right hand on the
+  # hi-hat and the left on the snare, whose stroke on two and four is the backbeat.
   @paradiddle [closed_hihat: "5.33 .3.. 5.33 .3..", snare: ".2.. 8.22 .2.. 8.22"]
 
   @feet [closed_hihat: ".... 4... .... 4...", kick: "6... .... 6... ...."]
 
-  def bars do
+  # How long before its hard stroke a flam's soft one falls, in beats, and how far apart a drag's
+  # two soft ones are.
+  @grace 0.05
+
+  part :kick, synth: :kick
+  part :snare, synth: :snare, defaults: [amp: 0.5]
+  part :closed_hihat, synth: :closed_hihat, defaults: [amp: 0.7]
+  part :open_hihat, synth: :open_hihat, defaults: [amp: 0.5]
+  part :high_tom, synth: :high_tom, defaults: [amp: 0.5]
+  part :mid_tom, synth: :mid_tom, defaults: [amp: 0.5]
+  part :low_tom, synth: :low_tom, defaults: [amp: 0.5]
+  part :crash, synth: :crash, defaults: [amp: 0.5]
+
+  def song do
+    repeat(seq(form()))
+  end
+
+  # The form, each of its passes a bar.
+  defp form do
+    for patterns <- bars() do
+      together(
+        for drum <- @kit do
+          pattern = Keyword.get(patterns, drum, "")
+          part(drum, bar(drum, pattern))
+        end
+      )
+    end
+  end
+
+  defp bars do
     [
       [closed_hihat: @hats],
       [closed_hihat: @hats, kick: @kicks, snare: ".... 8... .... 8..."],
@@ -94,25 +135,8 @@ defmodule Drums do
     ]
   end
 
-  # How long before its hard stroke a flam's soft one falls, in beats, and how far apart a drag's two soft ones are.
-  @grace 0.05
-
-  # The kick is mx's own, written by ear, and takes amp where the measured drums take vel; the measured drums play at half their level, and the hi-hat a little above it, so strokes together stay below full scale.
-  def strokes(:kick, digit), do: [{0, [amp: vel(digit) / 2]}]
-  def strokes(:snare, "f"), do: [{-@grace, [vel: 0.3]}, {0, [vel: 1]}]
-
-  def strokes(:snare, "d"),
-    do: [{-2 * @grace, [vel: 0.25]}, {-@grace, [vel: 0.25]}, {0, [vel: 1]}]
-
-  def strokes(:crash, "c"), do: [{0, [vel: 1, sustain: 3, release: 0.1]}]
-  def strokes(:open_hihat, "o"), do: [{0, [vel: 0.67, sustain: 0.5, release: 0.05]}]
-  def strokes(:open_hihat, digit), do: [{0, [vel: vel(digit), sustain: 0.25, release: 0.05]}]
-  def strokes(_drum, digit), do: [{0, [vel: vel(digit)]}]
-
-  defp vel(digit), do: Float.round(String.to_integer(digit) / 9, 2)
-
   # A bar of one drum, as 4 beats.
-  def bar(drum, pattern) do
+  defp bar(drum, pattern) do
     steps = pattern |> String.replace(" ", "") |> String.graphemes()
     per_beat = length(steps) / 4
 
@@ -127,21 +151,20 @@ defmodule Drums do
     if hits == [], do: rest(4), else: at(hits, 4)
   end
 
-  defp defaults(:kick), do: []
-  defp defaults(:closed_hihat), do: [amp: 0.7]
-  defp defaults(_drum), do: [amp: 0.5]
+  # The kick is mx's own, written by ear, and takes amp where the measured drums take vel; the
+  # measured drums play at half their level, and the hi-hat a little above it, so strokes together
+  # stay below full scale.
+  defp strokes(:kick, digit), do: [{0, [amp: vel(digit) / 2]}]
+  defp strokes(:snare, "f"), do: [{-@grace, [vel: 0.3]}, {0, [vel: 1]}]
 
-  # The form, each of its passes a bar.
-  def form do
-    for patterns <- bars() do
-      together(
-        for drum <- @kit do
-          pattern = Keyword.get(patterns, drum, "")
-          part(drum, bar(drum, pattern), synth: drum, defaults: defaults(drum))
-        end
-      )
-    end
+  defp strokes(:snare, "d") do
+    [{-2 * @grace, [vel: 0.25]}, {-@grace, [vel: 0.25]}, {0, [vel: 1]}]
   end
-end
 
-song(tempo: 96, music: repeat(seq(Drums.form())))
+  defp strokes(:crash, "c"), do: [{0, [vel: 1, sustain: 3, release: 0.1]}]
+  defp strokes(:open_hihat, "o"), do: [{0, [vel: 0.67, sustain: 0.5, release: 0.05]}]
+  defp strokes(:open_hihat, digit), do: [{0, [vel: vel(digit), sustain: 0.25, release: 0.05]}]
+  defp strokes(_drum, digit), do: [{0, [vel: vel(digit)]}]
+
+  defp vel(digit), do: Float.round(String.to_integer(digit) / 9, 2)
+end

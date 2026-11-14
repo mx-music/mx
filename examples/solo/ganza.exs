@@ -1,35 +1,36 @@
-import Mx
-
 # A beat is a quarter note of samba's 2/4, so a pass is two bars of sixteenths.
-
 defmodule Ganza do
-  import Mx
+  use Mx.Song, tempo: 100
 
-  # Four samba ganzá patterns from https://kkfsamba2014.wordpress.com/2014/10/01/samba-patterns-for-ganza/, a sixteenth each:
-  # F pushes the ganzá forward for a down stroke, B pulls it back for an up stroke, and O rests.
-  def pattern(:one), do: "FBFB FBFB FBFB FBFB"
-  def pattern(:two), do: "FOBO FOBO FOBO FOBO"
-  def pattern(:three), do: "FOOB FOOB FOOB FOOB"
-  def pattern(:four), do: "FBOF BFOB FBOF BFOB"
+  part :ganza, synth: :ganza
+  part :shaker, synth: :shaker
 
-  # Each stroke as {beat, up, vel}; the accent on each beat's first sixteenth is mx's own, since the patterns mark none.
-  def strokes(section) do
-    steps = section |> pattern() |> String.replace(" ", "") |> String.graphemes()
+  def song do
+    repeat(seq(form()))
+  end
 
-    for {stroke, step} <- Enum.with_index(steps), stroke != "O" do
-      vel = if rem(step, 4) == 0, do: 0.85, else: 0.45
-      {step * 0.25, if(stroke == "B", do: 1, else: 0), vel}
-    end
+  # The form, each of its passes a section.
+  defp form do
+    sections =
+      for {section, count} <- [one: 4, two: 2, three: 2, four: 4], _ <- 1..count, do: section
+
+    Enum.with_index(sections, fn section, pass ->
+      together([
+        part(:ganza, ganza(section, pass)),
+        part(:shaker, shaker(section, pass))
+      ])
+    end)
   end
 
   # A pass of ganza, as 4 beats.
-  def ganza(section, _pass) do
+  defp ganza(section, _pass) do
     hits = for {beat, up, vel} <- strokes(section), do: {beat, hit(up: up, vel: vel)}
     at(hits, 4)
   end
 
-  # A pass of the shaker, as 4 beats: silent in the first section, then down on the beats and up between them.
-  def shaker(section, _pass) do
+  # A pass of the shaker, as 4 beats: silent in the first section, then down on the beats and up
+  # between them.
+  defp shaker(section, _pass) do
     if section == :one do
       rest(4)
     else
@@ -39,18 +40,22 @@ defmodule Ganza do
     end
   end
 
-  # The form, each of its passes a section.
-  def form do
-    sections =
-      for {section, count} <- [one: 4, two: 2, three: 2, four: 4], _ <- 1..count, do: section
+  # Each stroke as {beat, up, vel}; the accent on each beat's first sixteenth is mx's own, since
+  # the patterns mark none.
+  defp strokes(section) do
+    steps = section |> pattern() |> String.replace(" ", "") |> String.graphemes()
 
-    Enum.with_index(sections, fn section, pass ->
-      together([
-        part(:ganza, ganza(section, pass), synth: :ganza),
-        part(:shaker, shaker(section, pass), synth: :shaker)
-      ])
-    end)
+    for {stroke, step} <- Enum.with_index(steps), stroke != "O" do
+      vel = if rem(step, 4) == 0, do: 0.85, else: 0.45
+      {step * 0.25, if(stroke == "B", do: 1, else: 0), vel}
+    end
   end
-end
 
-song(tempo: 100, music: repeat(seq(Ganza.form())))
+  # Four samba ganzá patterns from
+  # https://kkfsamba2014.wordpress.com/2014/10/01/samba-patterns-for-ganza/, a sixteenth each:
+  # F pushes the ganzá forward for a down stroke, B pulls it back for an up stroke, and O rests.
+  defp pattern(:one), do: "FBFB FBFB FBFB FBFB"
+  defp pattern(:two), do: "FOBO FOBO FOBO FOBO"
+  defp pattern(:three), do: "FOOB FOOB FOOB FOOB"
+  defp pattern(:four), do: "FBOF BFOB FBOF BFOB"
+end

@@ -1,38 +1,70 @@
-import Mx
-
-# House Kit, a feature for Virtuosity Drums: a jazz kit played with sticks by Austin McMahon, recorded by Versilian Studios through six microphones, with its percussion, under Creative Commons 0.
-# The kit plays a mambo, swings, trades fours with the band and comes back to the mambo, at 184 bpm, over Dm7, G7, Cmaj7 and A7; the bass line is the floor tom, tuned to each note.
-# In the mambo the right hand plays the cáscara on the floor tom's rim and then on the ride's bell, the left the son clave as cross-sticks, 2-3, and the feet the bombo and the hi-hat on two and four.
-# In the swing the ride plays its beat with the hi-hat on two and four, the bass drum feathered under the walking bass and the snare comping in ghost notes.
-# The first four is on the snare and toms in triplets, the second on the toms with the snares off, ending in a buzz roll.
-# Every stroke picks one of the strengths the kit was recorded at, up to 36 for the snare, and the drums sound through their close, overhead and room microphones.
-# Download the kit with mx samples download "sfzinstruments/virtuosity_drums@9f04cf9a734527edfbb0a4eee1f674e45bbf71bc:Samples/oh", and the same for kickmic, snaremic, room and perc/close.
+# House Kit, a feature for Virtuosity Drums: a jazz kit played with sticks by Austin McMahon,
+# recorded by Versilian Studios through six microphones, with its percussion, under Creative
+# Commons 0.
+# The kit plays a mambo, swings, trades fours with the band and comes back to the mambo, at 184
+# bpm, over Dm7, G7, Cmaj7 and A7; the bass line is the floor tom, tuned to each note.
+# In the mambo the right hand plays the cáscara on the floor tom's rim and then on the ride's
+# bell, the left the son clave as cross-sticks, 2-3, and the feet the bombo and the hi-hat on two
+# and four.
+# In the swing the ride plays its beat with the hi-hat on two and four, the bass drum feathered
+# under the walking bass and the snare comping in ghost notes.
+# The first four is on the snare and toms in triplets, the second on the toms with the snares off,
+# ending in a buzz roll.
+# Every stroke picks one of the strengths the kit was recorded at, up to 36 for the snare, and the
+# drums sound through their close, overhead and room microphones.
+# Download the kit with mx samples download
+# "sfzinstruments/virtuosity_drums@9f04cf9a734527edfbb0a4eee1f674e45bbf71bc:Samples/oh", and the
+# same for kickmic, snaremic, room and perc/close.
 defmodule Virtuosity do
-  import Mx
+  use Mx.Song, tempo: 184
 
   @repo "sfzinstruments/virtuosity_drums"
   @commit "9f04cf9a734527edfbb0a4eee1f674e45bbf71bc"
 
-  # Each voice of the kit: its drum, its stroke, the strengths and takes recorded, how many beats it rings and fades over, and the level of each microphone.
+  # Each voice of the kit: its drum, its stroke, the strengths and takes recorded, how many beats
+  # it rings and fades over, and the part and level of each microphone.
   @kit [
-    kick: {"kick", "snon", 4, 4, {1.5, 1}, [kickmic: 0.8, oh: 0.5, room: 0.4]},
-    snare: {"snare", "center", 36, nil, {1.5, 1}, [snaremic: 0.7, oh: 0.7, room: 0.5]},
-    cross_stick: {"snare", "crossstick", 16, nil, {2, 1}, [snaremic: 0.9, oh: 1.0]},
-    rimshot: {"snare", "rimshot", 12, nil, {5, 2}, [snaremic: 0.5, oh: 0.5, room: 0.5]},
-    flam: {"snare", "flam", 12, nil, {4, 1.5}, [snaremic: 0.6, oh: 0.6, room: 0.5]},
-    buzz: {"snare", "buzz", 12, nil, {2, 1}, [snaremic: 0.6, oh: 0.6, room: 0.4]},
-    snares_off: {"snareoff", "center", 12, nil, {5, 2}, [snaremic: 0.6, oh: 0.6, room: 0.6]},
-    high_tom: {"htom", "center", 16, nil, {3, 2}, [oh: 0.8, room: 0.6]},
-    low_tom: {"ltom", "center", 16, nil, {4, 2}, [oh: 0.8, room: 0.6]},
-    rim: {"ltom", "crossstick", 10, nil, {2, 1}, [oh: 1.3, room: 0.5]},
-    pedal: {"hh", "pedal", 3, 4, {1.5, 0.5}, [oh: 2.5]},
-    ride: {"ride", "ride", 3, 4, {4, 3}, [oh: 3.0]},
-    bell: {"ride", "bell", 3, 3, {2, 2}, [oh: 1.6]},
-    crash: {"crash", "crash", 3, 4, {16, 6}, [oh: 0.9, room: 0.5]},
-    sizzle: {"crash", "sizzle", 3, 4, {34, 6}, [oh: 0.5, room: 0.4]}
+    kick:
+      {"kick", "snon", 4, 4, {1.5, 1},
+       [{:kick_kickmic, :kickmic, 0.8}, {:kick_oh, :oh, 0.5}, {:kick_room, :room, 0.4}]},
+    snare:
+      {"snare", "center", 36, nil, {1.5, 1},
+       [{:snare_snaremic, :snaremic, 0.7}, {:snare_oh, :oh, 0.7}, {:snare_room, :room, 0.5}]},
+    cross_stick:
+      {"snare", "crossstick", 16, nil, {2, 1},
+       [{:cross_stick_snaremic, :snaremic, 0.9}, {:cross_stick_oh, :oh, 1.0}]},
+    rimshot:
+      {"snare", "rimshot", 12, nil, {5, 2},
+       [{:rimshot_snaremic, :snaremic, 0.5}, {:rimshot_oh, :oh, 0.5}, {:rimshot_room, :room, 0.5}]},
+    flam:
+      {"snare", "flam", 12, nil, {4, 1.5},
+       [{:flam_snaremic, :snaremic, 0.6}, {:flam_oh, :oh, 0.6}, {:flam_room, :room, 0.5}]},
+    buzz:
+      {"snare", "buzz", 12, nil, {2, 1},
+       [{:buzz_snaremic, :snaremic, 0.6}, {:buzz_oh, :oh, 0.6}, {:buzz_room, :room, 0.4}]},
+    snares_off:
+      {"snareoff", "center", 12, nil, {5, 2},
+       [
+         {:snares_off_snaremic, :snaremic, 0.6},
+         {:snares_off_oh, :oh, 0.6},
+         {:snares_off_room, :room, 0.6}
+       ]},
+    high_tom:
+      {"htom", "center", 16, nil, {3, 2},
+       [{:high_tom_oh, :oh, 0.8}, {:high_tom_room, :room, 0.6}]},
+    low_tom:
+      {"ltom", "center", 16, nil, {4, 2}, [{:low_tom_oh, :oh, 0.8}, {:low_tom_room, :room, 0.6}]},
+    rim: {"ltom", "crossstick", 10, nil, {2, 1}, [{:rim_oh, :oh, 1.3}, {:rim_room, :room, 0.5}]},
+    pedal: {"hh", "pedal", 3, 4, {1.5, 0.5}, [{:pedal_oh, :oh, 2.5}]},
+    ride: {"ride", "ride", 3, 4, {4, 3}, [{:ride_oh, :oh, 3.0}]},
+    bell: {"ride", "bell", 3, 3, {2, 2}, [{:bell_oh, :oh, 1.6}]},
+    crash: {"crash", "crash", 3, 4, {16, 6}, [{:crash_oh, :oh, 0.9}, {:crash_room, :room, 0.5}]},
+    sizzle:
+      {"crash", "sizzle", 3, 4, {34, 6}, [{:sizzle_oh, :oh, 0.5}, {:sizzle_room, :room, 0.4}]}
   ]
 
-  # Each percussion instrument: its files' names up to the take, softest first, its takes, how it rings, its level and where it sits from left to right.
+  # Each percussion instrument: its files' names up to the take, softest first, its takes, how it
+  # rings, its level and where it sits from left to right.
   @percussion [
     claves: {"claves/Claves1_Hit_v", ~w(1 2 3), 8, {1, 0.5}, 0.6, 0.4},
     cowbell: {"cowbell/Cowbell1_Normal_v", ~w(1 2 3), 7, {1, 0.5}, 0.5, -0.4},
@@ -43,128 +75,9 @@ defmodule Virtuosity do
     guiro_short: {"guiro/Guiro_Fast", [""], 8, {1, 0.5}, 0.45, 0.5}
   ]
 
-  defp file(path), do: {:github, @repo, @commit, "Samples/" <> path}
-
-  defp kit_files(mic, drum, stroke, strengths, takes) do
-    for strength <- 1..strengths,
-        take <- if(takes, do: Enum.map(1..takes, &"_rr#{&1}"), else: [""]) do
-      file("#{mic}/#{drum}/#{mic}_#{drum}_#{stroke}_vl#{strength}#{take}.flac")
-    end
-  end
-
-  # The music on a voice of the kit through each of its microphones, on a percussion instrument, or on the bass.
-  # The bass is the floor tom, whose stroke sounds at 113 Hz, halfway from A2 to B flat 2, played faster or slower to each pitch as a timpani would be tuned.
-  def on(:bass, music) do
-    together(
-      for {mic, level} <- [oh: 0.8, room: 0.35] do
-        files = for file <- kit_files(mic, "ltom", "center", 16, nil), do: {file, note: 45.49}
-
-        part(:"bass_#{mic}", music,
-          synth: sampled(files),
-          defaults: [vel: 0.6, amp: 1.4],
-          fx: [level: [amp: level]]
-        )
-      end
-    )
-  end
-
-  def on(name, music) do
-    # The hi-hat's pedal was recorded from the foot's first movement, 0.08 beats before the cymbals close, so it starts that much early.
-    music = if name == :pedal, do: Mx.swing(music, &(&1 - 0.08)), else: music
-
-    case @kit[name] do
-      {drum, stroke, strengths, takes, {ring, fade}, mics} ->
-        together(
-          for {mic, level} <- mics do
-            part(:"#{name}_#{mic}", music,
-              synth: sampled(kit_files(mic, drum, stroke, strengths, takes)),
-              defaults: [sustain: ring, release: fade],
-              fx: [level: [amp: level]]
-            )
-          end
-        )
-
-      nil ->
-        {prefix, layers, takes, {ring, fade}, level, pan} = @percussion[name]
-
-        files =
-          for {layer, strength} <- Enum.with_index(layers, 1), take <- 1..takes do
-            {file("perc/close/#{prefix}#{layer}_rr#{take}_Close.wav"),
-             strength: strength, take: take}
-          end
-
-        part(name, music,
-          synth: sampled(files),
-          defaults: [sustain: ring, release: fade],
-          fx: [level: [amp: level], pan: [pan: pan]]
-        )
-    end
-  end
-
-  def play(voices), do: together(for {name, music} <- voices, do: on(name, music))
-
-  # A stroke from 1, the softest, to 9: the strength picks the recording, and the level is left nearly as recorded.
-  def stroke(strength) do
-    vel = strength / 9
-    hit(vel: vel, amp: :math.pow(vel, -0.7))
-  end
-
-  # Bars of strokes, a character to each step: a digit is a stroke of that strength, a dot is silence, and spaces are left out.
-  def strokes(patterns, per_beat) do
-    seq(
-      for pattern <- List.wrap(patterns) do
-        cells = pattern |> String.replace(" ", "") |> String.graphemes()
-
-        hits =
-          for {cell, index} <- Enum.with_index(cells),
-              cell != ".",
-              do: {index / per_beat, stroke(String.to_integer(cell))}
-
-        if hits == [],
-          do: rest(length(cells) / per_beat),
-          else: at(hits, length(cells) / per_beat)
-      end
-    )
-  end
-
-  # The mambo is written in eighths, eight to a bar, and the swing in triplets, twelve to a bar.
-  def eighths(patterns), do: strokes(patterns, 2)
-  def triplets(patterns), do: strokes(patterns, 3)
-
   @clave "..7.7... 7..7..7."
   @cascara "5.8.85.5 8.58.5.5"
   @bell "5.9.95.5 9.59.5.5"
-
-  # The conga tumbao: soft tips, a slap on two and two open tones on four, the last of them on the tumba every other bar.
-  def tumbao(cycles) do
-    [
-      conga_muted: repeat(eighths("338333.. 338333.."), cycles),
-      conga: repeat(eighths("......77 ......7."), cycles),
-      tumba: repeat(eighths("........ .......8"), cycles)
-    ]
-  end
-
-  # The güiro: a long scrape on each beat and two short ones after it.
-  def guiro(bars) do
-    [
-      guiro_long: repeat(eighths("6...6..."), bars),
-      guiro_short: repeat(eighths("..44..44"), bars)
-    ]
-  end
-
-  # The bass tumbao: the fifth on the and of two, and the next chord's root on four, held over the bar line.
-  def bass_tumbao(cycles) do
-    bars =
-      for {fifth, next_root} <- [a2: :g2, d3: :c3, g2: :a2, e2: :d2] do
-        seq([
-          rest(1.5),
-          note(fifth, 1.5, sustain: 1.5, release: 1),
-          note(next_root, 1, sustain: 2.5, release: 1)
-        ])
-      end
-
-    repeat(seq(bars), cycles)
-  end
 
   @walk [
     ~w(d2 f2 a2 ab2)a,
@@ -177,86 +90,8 @@ defmodule Virtuosity do
     ~w(a2 g2 e2 cs2)a
   ]
 
-  def walk(bars) do
-    seq(
-      for bar <- bars,
-          pitch <- Enum.at(@walk, bar),
-          do: note(pitch, 1, sustain: 1.2, release: 0.8)
-    )
-  end
-
-  # The kit alone, then the clave, the congas and the güiro, and the abanico, the timbalero's rimshot and roll into the tune.
-  def intro do
-    play(
-      [
-        rim: repeat(eighths(@cascara), 4),
-        pedal: repeat(eighths("..5...5."), 8),
-        cross_stick: seq([rest(8), repeat(eighths(@clave), 3)]),
-        kick: seq([rest(8), repeat(eighths("...5..3."), 6)]),
-        claves: seq([rest(16), repeat(eighths(@clave), 2)]),
-        rimshot: seq([rest(28), eighths("....8...")]),
-        buzz: seq([rest(28), eighths(".....468")])
-      ] ++ delay(16, tumbao(2)) ++ delay(24, guiro(2))
-    )
-  end
-
-  defp delay(beats, voices),
-    do: for({name, music} <- voices, do: {name, seq([rest(beats), music])})
-
-  # The mambo: the cáscara on the floor tom's rim.
-  def mambo do
-    play(
-      [
-        crash: eighths("8......."),
-        rim: repeat(eighths(@cascara), 4),
-        cross_stick: repeat(eighths(@clave), 4),
-        kick: seq([eighths("8..6..4."), repeat(eighths("...6..4."), 7)]),
-        pedal: repeat(eighths("..5...5."), 8),
-        claves: repeat(eighths(@clave), 4),
-        bass: bass_tumbao(2)
-      ] ++ tumbao(4) ++ guiro(8)
-    )
-  end
-
-  # The mambo again with the cáscara on the ride's bell, the campana on the cowbell, and the left hand between a cross-stick on two and the toms on four, as the congas go.
-  def mambo_bell(ending) do
-    play(
-      [
-        crash: eighths("8......."),
-        bell: repeat(eighths(@bell), 4),
-        cowbell: repeat(eighths("9.4.7.447.447.44"), 4),
-        cross_stick: repeat(eighths("..7....."), 8),
-        high_tom: seq([repeat(eighths("......6."), 7), rest(4)]),
-        low_tom: seq([repeat(eighths(".......6"), 7), rest(4)]),
-        kick: seq([eighths("8..6..4."), repeat(eighths("...6..4."), 7)]),
-        pedal: repeat(eighths("..5...5."), 8),
-        claves: repeat(eighths(@clave), 4),
-        bass: bass_tumbao(2)
-      ] ++ ending ++ tumbao(4) ++ guiro(8)
-    )
-  end
-
-  # The fill out of the mambo, on the last bar's three and four.
-  def setup do
-    [flam: seq([rest(28), eighths("....8...")]), snare: seq([rest(28), eighths("......68")])]
-  end
-
   @ride "5..8.45..8.4"
   @feet [pedal: "...5.....5..", kick: "3..3..3..3.."]
-
-  # The swing: the ride's beat, the hi-hat on two and four, the bass drum feathered, and the snare comping.
-  def swing(walk_bars, comping, kicks) do
-    bars = length(walk_bars)
-
-    play(
-      crash: triplets("7..........."),
-      ride: repeat(triplets(@ride), bars),
-      pedal: repeat(triplets(@feet[:pedal]), bars),
-      kick: triplets(kicks),
-      snare: triplets(comping),
-      bass: walk(walk_bars)
-    )
-  end
 
   @comping [
     "........3...",
@@ -280,89 +115,51 @@ defmodule Virtuosity do
     "...3.45.67.8"
   ]
 
-  def feathered(bars, bombs \\ %{}) do
-    for bar <- 0..(bars - 1), do: Map.get(bombs, bar, @feet[:kick])
+  # A drum's files through one microphone, at each strength and take recorded.
+  kit_files = fn mic, drum, stroke, strengths, takes ->
+    for strength <- 1..strengths,
+        take <- if(takes, do: Enum.map(1..takes, &"_rr#{&1}"), else: [""]) do
+      path = "Samples/#{mic}/#{drum}/#{mic}_#{drum}_#{stroke}_vl#{strength}#{take}.flac"
+      {:github, @repo, @commit, path}
+    end
   end
 
-  # The first four: accents on the snare over ghosted triplets, an answer on the toms, accents every fourth triplet, and a run down the drums.
-  def first_four do
-    play(
-      pedal: repeat(triplets(@feet[:pedal]), 4),
-      snare:
-        triplets(["833 833 833 8..", ".44 .44 8.. ...", "844 484 448 444", "678 ... ... ..."]),
-      high_tom:
-        triplets(["... ... ... ...", "8.. 8.. ... ...", "... ... ... ...", "... 678 ... ..."]),
-      low_tom:
-        triplets(["... ... ... ...", "... ... .88 8..", "... ... ... ...", "... ... 789 ..."]),
-      kick:
-        triplets(["... ... ... ..6", "... ... ... ...", "7.. ... ... ...", "... ... ... 9.."]),
-      flam: triplets(["... ... ... ...", "... ... ... ...", "... ... ... ...", "... ... ... 9.."])
-    )
+  # Each voice of the kit is a part for each of its microphones.
+  for {_voice, {drum, stroke, strengths, takes, {ring, fade}, mics}} <- @kit,
+      {name, mic, level} <- mics do
+    part name,
+      synth: sampled(kit_files.(mic, drum, stroke, strengths, takes)),
+      defaults: [sustain: ring, release: fade],
+      fx: [level: [amp: level]]
   end
 
-  # The second four, with the snares off: a tune on the floor tom, the snare drum and the high tom, then a buzz roll that grows into the band.
-  def second_four do
-    play(
-      pedal: repeat(triplets(@feet[:pedal]), 3),
-      low_tom:
-        triplets(["7.. ... ... ...", "7.. ... ... ...", "... 7.. ... 8..", "... ... ... ..."]),
-      snares_off:
-        triplets(["... ..6 ... 6..", "... ..6 ... 6.6", "..7 ... ..7 ...", "... ... ... ..."]),
-      high_tom:
-        triplets(["... ... 7.. ...", "... ... 7.7 ...", "8.. ... 8.. ...", "... ... ... ..."]),
-      kick:
-        triplets(["... ... ... ...", "... ... ... ...", "... 6.. ... .6.", "7.. ... ... ..."]),
-      buzz: triplets(["... ... ... ...", "... ... ... ...", "... ... ... ...", "234 456 678 899"])
-    )
-  end
-
-  # The mambo's last chord: a roll on the snare that grows over two bars, and one stroke on everything.
-  def ending do
-    roll = fn mic, level ->
-      layer = fn strength, opts ->
-        sample(
-          file("#{mic}/snare/#{mic}_snare_roll_vl#{strength}.wav"),
-          0.5,
-          [from: 1.0, amp: level] ++ opts
-        )
+  # Each percussion instrument is a part, recorded close.
+  for {name, {prefix, layers, takes, {ring, fade}, level, pan}} <- @percussion do
+    files =
+      for {layer, strength} <- Enum.with_index(layers, 1), take <- 1..takes do
+        path = "Samples/perc/close/#{prefix}#{layer}_rr#{take}_Close.wav"
+        {{:github, @repo, @commit, path}, strength: strength, take: take}
       end
 
-      part(
-        :"roll_#{mic}",
-        at(
-          [
-            {0, layer.(3, attack: 1.5, sustain: 1.5, release: 1)},
-            {2, layer.(4, attack: 1.5, sustain: 1.5, release: 1)},
-            {4.5, layer.(5, attack: 2, sustain: 1.4, release: 0.1)}
-          ],
-          8
-        )
-      )
-    end
-
-    last = seq([rest(8), eighths("8.......")])
-
-    together([
-      roll.("snaremic", 1.5),
-      roll.("oh", 1.8),
-      roll.("room", 1.5),
-      play(
-        kick: last,
-        rimshot: last,
-        low_tom: last,
-        sizzle: last,
-        crash: last,
-        bass:
-          seq([
-            rest(8),
-            note(:d2, 4, vel: 0.9, sustain: 12, release: 4),
-            rest(20)
-          ])
-      )
-    ])
+    part name,
+      synth: sampled(files),
+      defaults: [sustain: ring, release: fade],
+      fx: [level: [amp: level], pan: [pan: pan]]
   end
 
-  def music do
+  # The bass is the floor tom, whose stroke sounds at 113 Hz, halfway from A2 to B flat 2, played
+  # faster or slower to each pitch as a timpani would be tuned.
+  for {name, mic, level} <- [{:bass_oh, :oh, 0.8}, {:bass_room, :room, 0.35}] do
+    files = for file <- kit_files.(mic, "ltom", "center", 16, nil), do: {file, note: 45.49}
+    part name, synth: sampled(files), defaults: [vel: 0.6, amp: 1.4], fx: [level: [amp: level]]
+  end
+
+  # The last roll's recordings through each microphone.
+  part :roll_snaremic, []
+  part :roll_oh, []
+  part :roll_room, []
+
+  def song do
     seq([
       intro(),
       mambo(),
@@ -385,6 +182,255 @@ defmodule Virtuosity do
       ending()
     ])
   end
-end
 
-song(tempo: 184, music: Virtuosity.music())
+  # The kit alone, then the clave, the congas and the güiro, and the abanico, the timbalero's
+  # rimshot and roll into the tune.
+  defp intro do
+    play(
+      [
+        rim: repeat(eighths(@cascara), 4),
+        pedal: repeat(eighths("..5...5."), 8),
+        cross_stick: seq([rest(8), repeat(eighths(@clave), 3)]),
+        kick: seq([rest(8), repeat(eighths("...5..3."), 6)]),
+        claves: seq([rest(16), repeat(eighths(@clave), 2)]),
+        rimshot: seq([rest(28), eighths("....8...")]),
+        buzz: seq([rest(28), eighths(".....468")])
+      ] ++ later(16, tumbao(2)) ++ later(24, guiro(2))
+    )
+  end
+
+  # The mambo: the cáscara on the floor tom's rim.
+  defp mambo do
+    play(
+      [
+        crash: eighths("8......."),
+        rim: repeat(eighths(@cascara), 4),
+        cross_stick: repeat(eighths(@clave), 4),
+        kick: seq([eighths("8..6..4."), repeat(eighths("...6..4."), 7)]),
+        pedal: repeat(eighths("..5...5."), 8),
+        claves: repeat(eighths(@clave), 4),
+        bass: bass_tumbao(2)
+      ] ++ tumbao(4) ++ guiro(8)
+    )
+  end
+
+  # The mambo again with the cáscara on the ride's bell, the campana on the cowbell, and the left
+  # hand between a cross-stick on two and the toms on four, as the congas go.
+  defp mambo_bell(ending) do
+    play(
+      [
+        crash: eighths("8......."),
+        bell: repeat(eighths(@bell), 4),
+        cowbell: repeat(eighths("9.4.7.447.447.44"), 4),
+        cross_stick: repeat(eighths("..7....."), 8),
+        high_tom: seq([repeat(eighths("......6."), 7), rest(4)]),
+        low_tom: seq([repeat(eighths(".......6"), 7), rest(4)]),
+        kick: seq([eighths("8..6..4."), repeat(eighths("...6..4."), 7)]),
+        pedal: repeat(eighths("..5...5."), 8),
+        claves: repeat(eighths(@clave), 4),
+        bass: bass_tumbao(2)
+      ] ++ ending ++ tumbao(4) ++ guiro(8)
+    )
+  end
+
+  # The fill out of the mambo, on the last bar's three and four.
+  defp setup do
+    [flam: seq([rest(28), eighths("....8...")]), snare: seq([rest(28), eighths("......68")])]
+  end
+
+  # The swing: the ride's beat, the hi-hat on two and four, the bass drum feathered, and the snare
+  # comping.
+  defp swing(walk_bars, comping, kicks) do
+    bars = length(walk_bars)
+
+    play(
+      crash: triplets("7..........."),
+      ride: repeat(triplets(@ride), bars),
+      pedal: repeat(triplets(@feet[:pedal]), bars),
+      kick: triplets(kicks),
+      snare: triplets(comping),
+      bass: walk(walk_bars)
+    )
+  end
+
+  defp feathered(bars, bombs) do
+    for bar <- 0..(bars - 1), do: Map.get(bombs, bar, @feet[:kick])
+  end
+
+  # The first four: accents on the snare over ghosted triplets, an answer on the toms, accents
+  # every fourth triplet, and a run down the drums.
+  defp first_four do
+    play(
+      pedal: repeat(triplets(@feet[:pedal]), 4),
+      snare:
+        triplets(["833 833 833 8..", ".44 .44 8.. ...", "844 484 448 444", "678 ... ... ..."]),
+      high_tom:
+        triplets(["... ... ... ...", "8.. 8.. ... ...", "... ... ... ...", "... 678 ... ..."]),
+      low_tom:
+        triplets(["... ... ... ...", "... ... .88 8..", "... ... ... ...", "... ... 789 ..."]),
+      kick:
+        triplets(["... ... ... ..6", "... ... ... ...", "7.. ... ... ...", "... ... ... 9.."]),
+      flam: triplets(["... ... ... ...", "... ... ... ...", "... ... ... ...", "... ... ... 9.."])
+    )
+  end
+
+  # The second four, with the snares off: a tune on the floor tom, the snare drum and the high
+  # tom, then a buzz roll that grows into the band.
+  defp second_four do
+    play(
+      pedal: repeat(triplets(@feet[:pedal]), 3),
+      low_tom:
+        triplets(["7.. ... ... ...", "7.. ... ... ...", "... 7.. ... 8..", "... ... ... ..."]),
+      snares_off:
+        triplets(["... ..6 ... 6..", "... ..6 ... 6.6", "..7 ... ..7 ...", "... ... ... ..."]),
+      high_tom:
+        triplets(["... ... 7.. ...", "... ... 7.7 ...", "8.. ... 8.. ...", "... ... ... ..."]),
+      kick:
+        triplets(["... ... ... ...", "... ... ... ...", "... 6.. ... .6.", "7.. ... ... ..."]),
+      buzz: triplets(["... ... ... ...", "... ... ... ...", "... ... ... ...", "234 456 678 899"])
+    )
+  end
+
+  # The mambo's last chord: a roll on the snare that grows over two bars, and one stroke on
+  # everything.
+  defp ending do
+    roll = fn name, mic, level ->
+      layer = fn strength, opts ->
+        sample(
+          file("#{mic}/snare/#{mic}_snare_roll_vl#{strength}.wav"),
+          0.5,
+          [from: 1.0, amp: level] ++ opts
+        )
+      end
+
+      part(
+        name,
+        at(
+          [
+            {0, layer.(3, attack: 1.5, sustain: 1.5, release: 1)},
+            {2, layer.(4, attack: 1.5, sustain: 1.5, release: 1)},
+            {4.5, layer.(5, attack: 2, sustain: 1.4, release: 0.1)}
+          ],
+          8
+        )
+      )
+    end
+
+    last = seq([rest(8), eighths("8.......")])
+
+    together([
+      roll.(:roll_snaremic, "snaremic", 1.5),
+      roll.(:roll_oh, "oh", 1.8),
+      roll.(:roll_room, "room", 1.5),
+      play(
+        kick: last,
+        rimshot: last,
+        low_tom: last,
+        sizzle: last,
+        crash: last,
+        bass:
+          seq([
+            rest(8),
+            note(:d2, 4, vel: 0.9, sustain: 12, release: 4),
+            rest(20)
+          ])
+      )
+    ])
+  end
+
+  defp play(voices), do: together(for {name, music} <- voices, do: on(name, music))
+
+  # The mambo is written in eighths, eight to a bar, and the swing in triplets, twelve to a bar.
+  defp eighths(patterns), do: strokes(patterns, 2)
+  defp triplets(patterns), do: strokes(patterns, 3)
+
+  defp later(beats, voices) do
+    for {name, music} <- voices, do: {name, seq([rest(beats), music])}
+  end
+
+  # The conga tumbao: soft tips, a slap on two and two open tones on four, the last of them on the
+  # tumba every other bar.
+  defp tumbao(cycles) do
+    [
+      conga_muted: repeat(eighths("338333.. 338333.."), cycles),
+      conga: repeat(eighths("......77 ......7."), cycles),
+      tumba: repeat(eighths("........ .......8"), cycles)
+    ]
+  end
+
+  # The güiro: a long scrape on each beat and two short ones after it.
+  defp guiro(bars) do
+    [
+      guiro_long: repeat(eighths("6...6..."), bars),
+      guiro_short: repeat(eighths("..44..44"), bars)
+    ]
+  end
+
+  # The bass tumbao: the fifth on the and of two, and the next chord's root on four, held over the
+  # bar line.
+  defp bass_tumbao(cycles) do
+    bars =
+      for {fifth, next_root} <- [a2: :g2, d3: :c3, g2: :a2, e2: :d2] do
+        seq([
+          rest(1.5),
+          note(fifth, 1.5, sustain: 1.5, release: 1),
+          note(next_root, 1, sustain: 2.5, release: 1)
+        ])
+      end
+
+    repeat(seq(bars), cycles)
+  end
+
+  defp walk(bars) do
+    seq(
+      for bar <- bars,
+          pitch <- Enum.at(@walk, bar),
+          do: note(pitch, 1, sustain: 1.2, release: 0.8)
+    )
+  end
+
+  defp file(path), do: {:github, @repo, @commit, "Samples/" <> path}
+
+  # The music on a voice of the kit through each of its microphones, on a percussion instrument,
+  # or on the bass.
+  defp on(:bass, music), do: together([part(:bass_oh, music), part(:bass_room, music)])
+
+  defp on(name, music) do
+    # The hi-hat's pedal was recorded from the foot's first movement, 0.08 beats before the
+    # cymbals close, so it starts that much early.
+    music = if name == :pedal, do: Mx.swing(music, &(&1 - 0.08)), else: music
+
+    case @kit[name] do
+      {_, _, _, _, _, mics} -> together(for {mic_part, _, _} <- mics, do: part(mic_part, music))
+      nil -> part(name, music)
+    end
+  end
+
+  # Bars of strokes, a character to each step: a digit is a stroke of that strength, a dot is
+  # silence, and spaces are left out.
+  defp strokes(patterns, per_beat) do
+    seq(
+      for pattern <- List.wrap(patterns) do
+        cells = pattern |> String.replace(" ", "") |> String.graphemes()
+
+        hits =
+          for {cell, index} <- Enum.with_index(cells),
+              cell != ".",
+              do: {index / per_beat, stroke(String.to_integer(cell))}
+
+        if hits == [] do
+          rest(length(cells) / per_beat)
+        else
+          at(hits, length(cells) / per_beat)
+        end
+      end
+    )
+  end
+
+  # A stroke from 1, the softest, to 9: the strength picks the recording, and the level is left
+  # nearly as recorded.
+  defp stroke(strength) do
+    vel = strength / 9
+    hit(vel: vel, amp: :math.pow(vel, -0.7))
+  end
+end

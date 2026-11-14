@@ -1,19 +1,25 @@
-import Mx
-
-# A piece for the cuíca alone, playing its part in a roda de samba, in 2/4, as Luiz Guimarães notates it in "A percussão da roda de samba" (UNIRIO).
-# The stick is rubbed back and forth on every sixteenth, and the other hand on the head gives three sounds: the fundamental, with the head free, the medium one, with the hand resting on it, and the high one, with a finger pressing its centre.
+# A piece for the cuíca alone, playing its part in a roda de samba, in 2/4, as Luiz Guimarães
+# notates it in "A percussão da roda de samba" (UNIRIO).
+# The stick is rubbed back and forth on every sixteenth, and the other hand on the head gives
+# three sounds: the fundamental, with the head free, the medium one, with the hand resting on it,
+# and the high one, with a finger pressing its centre.
 # The base plays the fundamental on each beat and three medium strokes after it.
-# The roda's two-bar pattern leaves the second beat for a high stroke on its second half, held over the barline, and comes back down through three fundamental strokes.
-# The variation rests on the beat, answers with three high strokes, and goes on in syncopated medium ones.
-# The third and fourth sixteenths of a beat come early, as Naveda, Gouyon, Guedes and Leman measured across samba recordings.
-# Each sound's note, scoop and level are those of the strokes of reinsamba's pack "Cuica" on Freesound, which the synth plays back.
+# The roda's two-bar pattern leaves the second beat for a high stroke on its second half, held
+# over the barline, and comes back down through three fundamental strokes.
+# The variation rests on the beat, answers with three high strokes, and goes on in syncopated
+# medium ones.
+# The third and fourth sixteenths of a beat come early, as Naveda, Gouyon, Guedes and Leman
+# measured across samba recordings.
+# Each sound's note, scoop and level are those of the strokes of reinsamba's pack "Cuica" on
+# Freesound, which the synth plays back.
 defmodule Cuica do
-  import Mx
+  use Mx.Song, tempo: 100
 
   # Where the four sixteenths of a beat start.
   @sixteenths [0, 0.25, 0.46, 0.71]
 
-  # Each pattern's strokes: the sixteenth it starts on, its sound and how many sixteenths it lasts.
+  # Each pattern's strokes: the sixteenth it starts on, its sound and how many sixteenths it
+  # lasts.
   @base [{0, :low, 1}, {1, :mid, 1}, {2, :mid, 1}, {3, :mid, 1}]
   @roda [
     {0, :low, 1},
@@ -41,22 +47,27 @@ defmodule Cuica do
     {15, :mid, 1}
   ]
 
-  def pattern(:base), do: {@base, 1}
-  def pattern(:roda), do: {@roda, 4}
-  def pattern(:variation), do: {@variation, 4}
+  part :cuica, synth: :cuica
 
-  # The fundamental is strongest on the beat; the medium strokes rise into their note as the stick goes one way and fall into it as it comes back.
-  def sound(:low, sixteenth) when rem(sixteenth, 4) == 0, do: [note: 64.15, vel: 0.95, scoop: 0.8]
-  def sound(:low, _), do: [note: 64.25, vel: 0.85, scoop: 0.3]
-  def sound(:mid, sixteenth) when rem(sixteenth, 2) == 0, do: [note: 76.8, vel: 0.7, scoop: 1.0]
-  def sound(:mid, _), do: [note: 75.7, vel: 0.85, scoop: -1.1]
-  def sound(:high, _), do: [note: 80.5, vel: 0.9]
-  def sound(:held, _), do: [note: 78.4, vel: 0.9]
+  def song do
+    repeat(form())
+  end
 
-  def beat(sixteenth), do: div(sixteenth, 4) + Enum.at(@sixteenths, rem(sixteenth, 4))
+  defp form do
+    base = List.duplicate(:base, 8)
+
+    seq([
+      play(base),
+      play([:roda, :roda, :roda, :roda]),
+      play([:variation, :roda, :variation]),
+      play([:roda, :roda, :roda]),
+      play(base),
+      play([:variation, :roda])
+    ])
+  end
 
   # The patterns named, one after another, each stroke lasting until its sixteenths are up.
-  def play(names) do
+  defp play(names) do
     {strokes, beats} =
       Enum.reduce(names, {[], 0}, fn name, {strokes, from} ->
         {pattern, beats} = pattern(name)
@@ -70,21 +81,24 @@ defmodule Cuica do
         {strokes ++ played, from + beats}
       end)
 
-    part(:cuica, at(strokes, beats), synth: :cuica)
+    part(:cuica, at(strokes, beats))
   end
 
-  def form do
-    base = List.duplicate(:base, 8)
+  defp pattern(:base), do: {@base, 1}
+  defp pattern(:roda), do: {@roda, 4}
+  defp pattern(:variation), do: {@variation, 4}
 
-    seq([
-      play(base),
-      play([:roda, :roda, :roda, :roda]),
-      play([:variation, :roda, :variation]),
-      play([:roda, :roda, :roda]),
-      play(base),
-      play([:variation, :roda])
-    ])
+  defp beat(sixteenth), do: div(sixteenth, 4) + Enum.at(@sixteenths, rem(sixteenth, 4))
+
+  # The fundamental is strongest on the beat; the medium strokes rise into their note as the stick
+  # goes one way and fall into it as it comes back.
+  defp sound(:low, sixteenth) when rem(sixteenth, 4) == 0 do
+    [note: 64.15, vel: 0.95, scoop: 0.8]
   end
+
+  defp sound(:low, _), do: [note: 64.25, vel: 0.85, scoop: 0.3]
+  defp sound(:mid, sixteenth) when rem(sixteenth, 2) == 0, do: [note: 76.8, vel: 0.7, scoop: 1.0]
+  defp sound(:mid, _), do: [note: 75.7, vel: 0.85, scoop: -1.1]
+  defp sound(:high, _), do: [note: 80.5, vel: 0.9]
+  defp sound(:held, _), do: [note: 78.4, vel: 0.9]
 end
-
-song(tempo: 100, music: repeat(Cuica.form()))

@@ -1,19 +1,29 @@
-import Mx
-
-# A solo for the cajón written for mx, from Peru, where the cajón comes from, to flamenco, which took it up in 1977, and to the grooves it plays in place of a drum kit.
-# The festejo is in 12/8, felt as a dotted quarter to the beat, as http://hugoalcazar.blogspot.com/2008/04/j.html explains; its strokes are written for mx.
-# The rumba flamenca groups its eight eighths as 3+3+2 and accents the second and fourth beats, by Wikipedia's article on it: the bass tone on the first beat and the eighth after the second, and the slap on two and four.
-# The bulerías is a cycle of twelve counts that starts on 12 and accents 12, 3, 6, 8 and 10, or 12, 3, 7, 8 and 10, by Wikipedia's article on it; here a count is an eighth, 208 to the minute, and the last cycle closes on 10.
-# The last groove is a rock beat moved from the kit in the three steps of https://www.thomann.co.uk/onlineexpert_page_cajon_traditional_and_modern_grooves.html: the bass tone for the kick and the slap for the snare, then soft slaps so every eighth is played, then every sixteenth.
+# A solo for the cajón written for mx, from Peru, where the cajón comes from, to flamenco, which
+# took it up in 1977, and to the grooves it plays in place of a drum kit.
+# The festejo is in 12/8, felt as a dotted quarter to the beat, as
+# http://hugoalcazar.blogspot.com/2008/04/j.html explains; its strokes are written for mx.
+# The rumba flamenca groups its eight eighths as 3+3+2 and accents the second and fourth beats, by
+# Wikipedia's article on it: the bass tone on the first beat and the eighth after the second, and
+# the slap on two and four.
+# The bulerías is a cycle of twelve counts that starts on 12 and accents 12, 3, 6, 8 and 10, or
+# 12, 3, 7, 8 and 10, by Wikipedia's article on it; here a count is an eighth, 208 to the minute,
+# and the last cycle closes on 10.
+# The last groove is a rock beat moved from the kit in the three steps of
+# https://www.thomann.co.uk/onlineexpert_page_cajon_traditional_and_modern_grooves.html: the bass
+# tone for the kick and the slap for the snare, then soft slaps so every eighth is played, then
+# every sixteenth.
 # It ends on a roll of slaps that grows into the bass tone.
 defmodule Cajon do
-  import Mx
+  use Mx.Song, tempo: 104
 
-  # Each pass is written as its beats and its cells: B is the bass tone, S the slap, s a softer slap, g a ghost stroke, a slap at its softest, X the bass tone at its hardest and . a rest; spaces are left out.
+  # Each pass is written as its beats and its cells: B is the bass tone, S the slap, s a softer
+  # slap, g a ghost stroke, a slap at its softest, X the bass tone at its hardest and . a rest;
+  # spaces are left out.
   @festejo [{4, "B.g S.g Bg. S.g"}, {4, "Bgg Sgg Bgg SgS"}]
   @rumba [{4, "B.SB ..S."}, {4, "B.gg S.B. g.gg S.gg"}]
 
-  # Which accents of the bulerías are bass tones and which are slaps, and the cycle that closes on 10, are written for mx.
+  # Which accents of the bulerías are bass tones and which are slaps, and the cycle that closes on
+  # 10, are written for mx.
   @bulerias [
     {6, "Bgg Bgg Bg Bg Bg"},
     {6, "Bgg Bgg Sg Sg Sg"},
@@ -30,19 +40,24 @@ defmodule Cajon do
 
   @ending [{4, "gggggggg ggggssss ssssSSSS X......."}, {4, "X"}]
 
-  def passes do
+  part :cajon, synth: :cajon
+
+  def song do
+    repeat(seq(form()))
+  end
+
+  # The form, each of its passes a bar or, in the bulerías, a cycle of twelve counts.
+  defp form do
+    for pass <- passes(), do: part(:cajon, cajon(pass))
+  end
+
+  defp passes do
     twice = fn passes -> Enum.flat_map(passes, &[&1, &1]) end
     twice.(@festejo) ++ twice.(@rumba) ++ @bulerias ++ @rock ++ @ending
   end
 
-  def stroke("B"), do: [slap: 0, vel: 0.8]
-  def stroke("X"), do: [slap: 0, vel: 0.95]
-  def stroke("S"), do: [slap: 1, vel: 0.9]
-  def stroke("s"), do: [slap: 1, vel: 0.6]
-  def stroke("g"), do: [slap: 1, vel: 0.35]
-
   # A pass of cajon.
-  def cajon({beats, cells}) do
+  defp cajon({beats, cells}) do
     letters = cells |> String.replace(" ", "") |> String.graphemes()
     step = beats / length(letters)
 
@@ -55,10 +70,9 @@ defmodule Cajon do
     at(hits, beats)
   end
 
-  # The form, each of its passes a bar or, in the bulerías, a cycle of twelve counts.
-  def form do
-    for pass <- passes(), do: part(:cajon, cajon(pass), synth: :cajon)
-  end
+  defp stroke("B"), do: [slap: 0, vel: 0.8]
+  defp stroke("X"), do: [slap: 0, vel: 0.95]
+  defp stroke("S"), do: [slap: 1, vel: 0.9]
+  defp stroke("s"), do: [slap: 1, vel: 0.6]
+  defp stroke("g"), do: [slap: 1, vel: 0.35]
 end
-
-song(tempo: 104, music: repeat(seq(Cajon.form())))

@@ -1,11 +1,16 @@
-import Mx
-
 defmodule BassLine do
-  import Mx
+  use Mx.Song, tempo: 96
+
+  part :bass, synth: :guitar, fx: [reverb: [room: 0.3, mix: 0.12]]
+
+  def song do
+    part(:bass, loop(4, fn pass, _ -> walk(pass) end))
+  end
 
   # A bar's walk as four quarter notes, the root louder.
-  def walk(pass) do
-    # The steps of each walk from its root: down through the seventh and the fifth to a semitone above the next root.
+  defp walk(pass) do
+    # The steps of each walk from its root: down through the seventh and the fifth to a semitone
+    # above the next root.
     down = [-2, -3, -1]
 
     walks = [
@@ -35,12 +40,3 @@ defmodule BassLine do
     seq(notes)
   end
 end
-
-song(
-  tempo: 96,
-  music:
-    part(:bass, loop(4, fn pass, _ -> BassLine.walk(pass) end),
-      synth: :guitar,
-      fx: [reverb: [room: 0.3, mix: 0.12]]
-    )
-)

@@ -1,14 +1,23 @@
-import Mx
-
-# Tranquility Base, a piece made only of public recordings, at 136 bpm, where Sputnik's beep, every 0.44 seconds, falls on the beat.
-# It goes round C minor 9, A flat major 7, E flat major 7 and B flat, two bars each, chords that all hold the E flat Sputnik beeps near.
-# VCSL's marimba plays the bass and an ostinato, its vibraphone the chords, struck and bowed, its hand chimes the melody, and its wine glasses, tuned by their rate, hold E flat major 7 over everything.
-# Its bass drum, snare, hi-hat, frame drum, shaker, claps and tom keep time, each choosing strengths and alternating takes, with its cymbal, timpani, gong and wind chimes at the turns.
-# NASA's recordings tell the story over it: Kennedy's challenge, the liftoff of Apollo 11, Apollo 13's problem through a bitcrusher, the landing stuttered into the drop, the first step, and the return.
-# VCSL is Versilian Studios' Versilian Community Sample Library, under Creative Commons 0, downloaded with mx samples download "sgossner/VCSL@c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e:Idiophones" and the same for Membranophones
-# NASA's recordings are in the folder beside this file, from https://nssdc.gsfc.nasa.gov/planetary/sound/index.html, courtesy of NASA.
+# Tranquility Base, a piece made only of public recordings, at 136 bpm, where Sputnik's beep,
+# every 0.44 seconds, falls on the beat.
+# It goes round C minor 9, A flat major 7, E flat major 7 and B flat, two bars each, chords that
+# all hold the E flat Sputnik beeps near.
+# VCSL's marimba plays the bass and an ostinato, its vibraphone the chords, struck and bowed, its
+# hand chimes the melody, and its wine glasses, tuned by their rate, hold E flat major 7 over
+# everything.
+# Its bass drum, snare, hi-hat, frame drum, shaker, claps and tom keep time, each choosing
+# strengths and alternating takes, with its cymbal, timpani, gong and wind chimes at the turns.
+# NASA's recordings tell the story over it: Kennedy's challenge, the liftoff of Apollo 11, Apollo
+# 13's problem through a bitcrusher, the landing stuttered into the drop, the first step, and the
+# return.
+# VCSL is Versilian Studios' Versilian Community Sample Library, under Creative Commons 0,
+# downloaded with mx samples download
+# "sgossner/VCSL@c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e:Idiophones" and the same for
+# Membranophones
+# NASA's recordings are in the folder beside this file, from
+# https://nssdc.gsfc.nasa.gov/planetary/sound/index.html, courtesy of NASA.
 defmodule TranquilityBase do
-  import Mx
+  use Mx.Song, tempo: 136
 
   @repo "sgossner/VCSL"
   @commit "c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e"
@@ -21,7 +30,7 @@ defmodule TranquilityBase do
 
   # VCSL names each key an octave below the pitch mx names it by: its A2 sounds at 220 Hz.
   key = fn name ->
-    name = name |> String.downcase() |> String.replace("#", "s") |> String.to_atom()
+    name = name |> String.downcase() |> String.replace("#", "s") |> Mx.Notes.parse()
     pitch(name) + 12
   end
 
@@ -87,269 +96,113 @@ defmodule TranquilityBase do
   @magnificent Path.join(@nasa, "a11magnif.aiff")
   @problem Path.join(@nasa, "apollo_13_problem.wav")
 
-  # Each chord's bass notes, as root, fifth, octave and the note that leads to the next chord, the root and the leading note doubled an octave up, then its voicings.
-  @chords [
-    %{
-      bass: [[:c2, :c3], :g2, :c3, [:bb1, :bb2]],
-      vibes: [:bb3, :eb4, :g4, :d5],
-      marimba: [:g4, :bb4, :c5, :eb5, :g5],
-      pad: [:eb4, :g4, :d5],
-      lead: [g5: 1.5, bb5: 0.5, c6: 2, bb5: 1, g5: 3]
-    },
-    %{
-      bass: [[:ab1, :ab2], :eb2, :ab2, [:d2, :d3]],
-      vibes: [:c4, :eb4, :g4, :bb4],
-      marimba: [:ab4, :bb4, :c5, :eb5, :g5],
-      pad: [:eb4, :ab4, :c5],
-      lead: [eb5: 1.5, g5: 0.5, bb5: 2, g5: 1, f5: 3]
-    },
-    %{
-      bass: [[:eb2, :eb3], :bb2, :eb3, [:c2, :c3]],
-      vibes: [:g3, :bb3, :d4, :f4],
-      marimba: [:g4, :bb4, :d5, :eb5, :g5],
-      pad: [:eb4, :g4, :bb4],
-      lead: [g5: 1.5, bb5: 0.5, eb6: 2, d6: 1, bb5: 3]
-    },
-    %{
-      bass: [[:bb1, :bb2], :f2, :bb2, [:d2, :d3]],
-      vibes: [:bb3, :c4, :f4, :bb4],
-      marimba: [:f4, :bb4, :c5, :d5, :f5],
-      pad: [:f4, :bb4, :d5],
-      lead: [c6: 1.5, bb5: 0.5, f5: 2, g5: 1, f5: 3]
-    }
-  ]
-
   @drum [sustain: 1, release: 1]
 
-  @parts [
-    kick: [synth: sampled(@kick), defaults: [amp: 0.6] ++ @drum],
-    snare: [
-      synth: sampled(@snare),
-      defaults: [amp: 0.6] ++ @drum,
-      fx: [reverb: [room: 0.4, mix: 0.15]]
-    ],
-    hat: [
-      synth: sampled(@hat),
-      defaults: [amp: 1.2, sustain: 0.4, release: 0.2],
-      fx: [hpf: [cutoff: 80], flanger: [phase: 8, feedback: 0.3, mix: 0.3]]
-    ],
-    open_hat: [
-      synth: sampled(@open_hat),
-      defaults: [amp: 0.3, sustain: 0.4, release: 0.3],
-      fx: [hpf: [cutoff: 80]]
-    ],
-    frame: [
-      synth: sampled(@frame),
-      defaults: [amp: 0.8] ++ @drum,
-      fx: [reverb: [room: 0.5, mix: 0.25]]
-    ],
-    shaker: [
-      synth: sampled(@shaker),
-      defaults: [normalize: true, amp: 0.15, sustain: 0.3, release: 0.1],
-      fx: [hpf: [cutoff: 90], pan: [pan: 0.35]]
-    ],
-    claps: [
-      synth: sampled(@claps),
-      defaults: [amp: 0.25, sustain: 0.5, release: 0.3],
-      fx: [reverb: [room: 0.6, mix: 0.3]]
-    ],
-    tom: [fx: [reverb: [room: 0.5, mix: 0.25]]],
-    turns: [fx: [reverb: [room: 0.8, mix: 0.3]]],
-    bass: [
-      synth: sampled(@marimba),
-      defaults: [normalize: true, amp: 0.54, release: 0.5],
-      fx: [lpf: [cutoff: 67]]
-    ],
-    marimba: [
-      synth: sampled(@marimba),
-      defaults: [normalize: true, amp: 0.32, release: 0.5],
-      fx: [rlpf: [cutoff: 72, res: 0.4], ping_pong: [phase: 0.75, feedback: 0.5, mix: 0.3]]
-    ],
-    vibes: [
-      synth: sampled(@vibes),
-      defaults: [normalize: true, amp: 0.13, release: 3],
-      fx: [
-        tremolo: [phase: 0.5, depth: 0.35, wave: 3],
-        ping_pong: [phase: 0.75, feedback: 0.4, mix: 0.2],
-        reverb: [room: 0.7, mix: 0.3]
-      ]
-    ],
-    bowed: [
-      synth: sampled(@bowed),
-      defaults: [normalize: true, amp: 0.08, attack: 1, release: 4],
-      fx: [chorus: [mix: 0.4], reverb: [room: 0.9, mix: 0.5]]
-    ],
-    lead: [
-      synth: sampled(@chimes),
-      defaults: [normalize: true, amp: 0.27, release: 2],
-      fx: [echo: [phase: 1.5, decay: 6, mix: 0.35], reverb: [room: 0.8, mix: 0.35]]
-    ],
-    glass: [fx: [chorus: [mix: 0.4], reverb: [room: 0.9, mix: 0.4]]],
-    gate: [
-      fx: [
-        slicer: [phase: 0.5, pulse_width: 0.5, amp_min: 0.05, smooth: 0.01],
-        ping_pong: [phase: 0.75, feedback: 0.5, mix: 0.3],
-        reverb: [room: 0.8, mix: 0.3]
-      ]
-    ],
-    ocean: [
-      fx: [wobble: [phase: 16, cutoff_min: 80, cutoff_max: 125, res: 0.2, wave: 3]]
-    ],
-    sputnik: [fx: [lpf: [cutoff: 100], echo: [phase: 1.5, decay: 4, mix: 0.25]]],
-    rocket: [fx: [flanger: [phase: 4, feedback: 0.5, mix: 0.5], reverb: [room: 0.9, mix: 0.4]]],
-    radio: [
-      fx: [
-        bitcrusher: [bits: 6, sample_rate: 5000, mix: 0.8],
-        ping_pong: [phase: 0.75, feedback: 0.5, mix: 0.35]
-      ]
-    ],
-    voice: [
-      fx: [
-        hpf: [cutoff: 50],
-        echo: [phase: 0.75, decay: 6, mix: 0.3],
-        reverb: [room: 0.7, mix: 0.3]
-      ]
+  part :kick, synth: sampled(@kick), defaults: [amp: 0.6] ++ @drum
+
+  part :snare,
+    synth: sampled(@snare),
+    defaults: [amp: 0.6] ++ @drum,
+    fx: [reverb: [room: 0.4, mix: 0.15]]
+
+  part :hat,
+    synth: sampled(@hat),
+    defaults: [amp: 1.2, sustain: 0.4, release: 0.2],
+    fx: [hpf: [cutoff: 80], flanger: [phase: 8, feedback: 0.3, mix: 0.3]]
+
+  part :open_hat,
+    synth: sampled(@open_hat),
+    defaults: [amp: 0.3, sustain: 0.4, release: 0.3],
+    fx: [hpf: [cutoff: 80]]
+
+  part :frame,
+    synth: sampled(@frame),
+    defaults: [amp: 0.8] ++ @drum,
+    fx: [reverb: [room: 0.5, mix: 0.25]]
+
+  part :shaker,
+    synth: sampled(@shaker),
+    defaults: [normalize: true, amp: 0.15, sustain: 0.3, release: 0.1],
+    fx: [hpf: [cutoff: 90], pan: [pan: 0.35]]
+
+  part :claps,
+    synth: sampled(@claps),
+    defaults: [amp: 0.25, sustain: 0.5, release: 0.3],
+    fx: [reverb: [room: 0.6, mix: 0.3]]
+
+  part :tom, fx: [reverb: [room: 0.5, mix: 0.25]]
+  part :turns, fx: [reverb: [room: 0.8, mix: 0.3]]
+
+  part :bass,
+    synth: sampled(@marimba),
+    defaults: [normalize: true, amp: 0.54, release: 0.5],
+    fx: [lpf: [cutoff: 67]]
+
+  part :marimba,
+    synth: sampled(@marimba),
+    defaults: [normalize: true, amp: 0.32, release: 0.5],
+    fx: [rlpf: [cutoff: 72, res: 0.4], ping_pong: [phase: 0.75, feedback: 0.5, mix: 0.3]]
+
+  part :vibes,
+    synth: sampled(@vibes),
+    defaults: [normalize: true, amp: 0.13, release: 3],
+    fx: [
+      tremolo: [phase: 0.5, depth: 0.35, wave: 3],
+      ping_pong: [phase: 0.75, feedback: 0.4, mix: 0.2],
+      reverb: [room: 0.7, mix: 0.3]
     ]
-  ]
 
-  # A bar of drum hits, each character a sixth of a beat: x loud, o soft, a dot silent.
-  def hits(pattern, loud, soft) do
-    steps = pattern |> String.replace(" ", "") |> String.graphemes()
+  part :bowed,
+    synth: sampled(@bowed),
+    defaults: [normalize: true, amp: 0.08, attack: 1, release: 4],
+    fx: [chorus: [mix: 0.4], reverb: [room: 0.9, mix: 0.5]]
 
-    hits =
-      for {step, index} <- Enum.with_index(steps),
-          step != ".",
-          do: {index / 6, hit(vel: if(step == "x", do: loud, else: soft))}
+  part :lead,
+    synth: sampled(@chimes),
+    defaults: [normalize: true, amp: 0.27, release: 2],
+    fx: [echo: [phase: 1.5, decay: 6, mix: 0.35], reverb: [room: 0.8, mix: 0.35]]
 
-    at(hits, length(steps) / 6)
-  end
+  part :glass, fx: [chorus: [mix: 0.4], reverb: [room: 0.9, mix: 0.4]]
 
-  # A line of notes, each character a sixth of a beat: a digit plays that note of the list, counted from 1, until the next note, loud on the beat and soft off it, and a dot is silent.
-  def figure(pattern, notes, loud, soft) do
-    steps = pattern |> String.replace(" ", "") |> String.graphemes()
-    total = length(steps)
-    starts = for {step, index} <- Enum.with_index(steps), step != ".", do: {index, step}
-    stops = Enum.drop(Enum.map(starts, &elem(&1, 0)), 1) ++ [total]
-
-    entries =
-      for {{index, step}, stop} <- Enum.zip(starts, stops) do
-        vel = if rem(index, 6) == 0, do: loud, else: soft
-
-        {index / 6,
-         note(Enum.at(notes, String.to_integer(step) - 1), (stop - index) / 6, vel: vel)}
-      end
-
-    at(entries, total / 6)
-  end
-
-  # The four chords, two bars each, played by the function.
-  def cycle(fun), do: seq(Enum.map(@chords, fun))
-
-  def groove(bars) do
-    [
-      kick: repeat(hits("x.....x..... x.....o.....", 0.9, 0.4), bars),
-      snare: repeat(hits("............ x...........", 0.8, 0.4), bars),
-      hat: repeat(hits("x.ox.ox.ox.o x.ox.ox.ox.o", 0.5, 0.25), bars),
-      frame: repeat(hits("..x..o..x.o. ..x..o..xox.", 0.7, 0.35), bars)
+  part :gate,
+    fx: [
+      slicer: [phase: 0.5, pulse_width: 0.5, amp_min: 0.05, smooth: 0.01],
+      ping_pong: [phase: 0.75, feedback: 0.5, mix: 0.3],
+      reverb: [room: 0.8, mix: 0.3]
     ]
-  end
 
-  def shaker(bars), do: repeat(hits("o..x..o..x.o o..x..o..xo.", 0.9, 0.5), bars)
-  def claps(bars), do: repeat(hits("............ x.........o.", 0.9, 0.5), bars)
+  part :ocean, fx: [wobble: [phase: 16, cutoff_min: 80, cutoff_max: 125, res: 0.2, wave: 3]]
+  part :sputnik, fx: [lpf: [cutoff: 100], echo: [phase: 1.5, decay: 4, mix: 0.25]]
+  part :rocket, fx: [flanger: [phase: 4, feedback: 0.5, mix: 0.5], reverb: [room: 0.9, mix: 0.4]]
 
-  def open_hat(bars) do
-    repeat(hits("........................ .....................x..", 0.9, 0.5), div(bars, 2))
-  end
+  part :radio,
+    fx: [
+      bitcrusher: [bits: 6, sample_rate: 5000, mix: 0.8],
+      ping_pong: [phase: 0.75, feedback: 0.5, mix: 0.35]
+    ]
 
-  # Six strokes of the tom falling from E flat to G over the last two beats.
-  def fill(beats) do
-    strokes =
-      for {semitones, amp} <-
-            Enum.zip([6.2, 6.2, 3.2, 3.2, 1.2, -1.8], [0.4, 0.5, 0.55, 0.65, 0.7, 0.85]) do
-        sample(@tom, 1 / 3, rate: :math.pow(2, semitones / 12), amp: amp, sustain: 1, release: 1)
-      end
+  part :voice,
+    fx: [
+      hpf: [cutoff: 50],
+      echo: [phase: 0.75, decay: 6, mix: 0.3],
+      reverb: [room: 0.7, mix: 0.3]
+    ]
 
-    seq([rest(beats - 2) | strokes])
-  end
+  def song, do: seq([signal(), liftoff(), problem(), tranquility(), home()])
 
-  def bass(chord) do
-    figure("1........1.. ...3..2....1 1........3.. ...2..4.....", chord.bass, 0.9, 0.7)
-  end
-
-  def ostinato(chord) do
-    figure("1..3.54..2.. 5..3.24..1.. 1..3.54..2.. 5..4.35..2.4", chord.marimba, 0.8, 0.55)
-  end
-
-  def comp(chord) do
-    at(
-      [
-        {0, note(chord.vibes, 2.5, vel: 0.8, strum: 0.03)},
-        {2.5, note(chord.vibes, 1.5, vel: 0.5)},
-        {5.5, note(chord.vibes, 2.5, vel: 0.65, strum: 0.03)}
-      ],
-      8
-    )
-  end
-
-  def held(chord), do: note(chord.vibes, 8, vel: 0.6, strum: 0.05)
-  def pad(chord), do: note(chord.pad, 8, vel: 0.8)
-  def lead(chord), do: seq(for {name, beats} <- chord.lead, do: note(name, beats, vel: 0.8))
-
-  # Sputnik's beep, one stretch of four of its periods fitted to a bar.
-  def beeps(beats, amp) do
-    seq(
-      for _ <- 1..div(beats, 4),
-          do: sample(@sputnik, 4, from: 0.3, to: 2.06, beats: 4, amp: amp)
-    )
-  end
-
-  def ocean(beats) do
-    sample(@ocean, beats,
-      normalize: true,
-      amp: 0.43,
-      attack: 4,
-      sustain: beats - 8,
-      release: 4
-    )
-  end
-
-  # The glasses come in one after another over the first three eighths of the beats, and each fades in and out.
-  def glasses(beats, amp) do
-    entries =
-      for {{file, cents, pan}, index} <- Enum.with_index(@glass) do
-        start = index * beats / 8
-        length = beats - start
-
-        {start,
-         sample(file, length,
-           rate: :math.pow(2, cents / 1200),
-           normalize: true,
-           amp: amp,
-           attack: 4,
-           sustain: length - 4,
-           release: 4,
-           pan: pan
-         )}
-      end
-
-    at(entries, beats)
-  end
-
-  def turn(file, opts), do: sample(file, 0, [normalize: true] ++ opts)
-  def landing(beats, opts \\ []), do: sample(@landing, beats, opts)
-
-  # Sputnik over the ocean and the glasses, then Kennedy's challenge over the four chords bowed, and a cymbal and a timpani roll rising to liftoff.
-  def signal do
+  # Sputnik over the ocean and the glasses, then Kennedy's challenge over the four chords bowed,
+  # and a cymbal and a timpani roll rising to liftoff.
+  defp signal do
     section(48,
       ocean: ocean(48),
       glass: seq([glasses(32, 0.16), glasses(16, 0.16)]),
       sputnik: seq([beeps(16, 0.25), beeps(32, 0.12)]),
-      bowed: seq([rest(16), cycle(&pad/1)]),
+      bowed: delay(cycle(&pad/1), 16),
       vibes:
         at(
           [
-            {16, note(hd(@chords).vibes, 8, vel: 0.45, strum: 0.08)},
-            {32, note(Enum.at(@chords, 2).vibes, 8, vel: 0.45, strum: 0.08)}
+            {16, note(hd(chords()).vibes, 8, vel: 0.45, strum: 0.08)},
+            {32, note(Enum.at(chords(), 2).vibes, 8, vel: 0.45, strum: 0.08)}
           ],
           48
         ),
@@ -367,8 +220,9 @@ defmodule TranquilityBase do
     )
   end
 
-  # The band comes in with the liftoff, and the marimba's ostinato opens up over the second time round.
-  def liftoff do
+  # The band comes in with the liftoff, and the marimba's ostinato opens up over the second time
+  # round.
+  defp liftoff do
     section(
       64,
       [
@@ -379,18 +233,19 @@ defmodule TranquilityBase do
         vibes: seq([cycle(&held/1), cycle(&comp/1)]),
         marimba:
           together([
-            seq([rest(32), cycle(&ostinato/1)]),
+            delay(cycle(&ostinato/1), 32),
             at([{32, change({:marimba, :rlpf}, cutoff: 112, cutoff_slide: 24)}], 64)
           ]),
-        shaker: seq([rest(32), shaker(8)]),
+        shaker: delay(shaker(8), 32),
         turns: at([{0, turn(@crash, amp: 0.25)}, {32, turn(@crash, amp: 0.2)}], 64),
         tom: seq([fill(32), fill(32)])
       ] ++ groove(16)
     )
   end
 
-  # Apollo 13's problem stops the band, then a snare roll, a bass drum and a cymbal rise under the landing, "The Eagle" cut and repeated ever higher, until "The Eagle has landed" alone.
-  def problem do
+  # Apollo 13's problem stops the band, then a snare roll, a bass drum and a cymbal rise under the
+  # landing, "The Eagle" cut and repeated ever higher, until "The Eagle has landed" alone.
+  defp problem do
     roll =
       for {from, step} <- [{16, 1}, {20, 1 / 2}, {24, 1 / 3}, {28, 1 / 6}],
           count <- 0..(round(4 / step) - 1),
@@ -431,14 +286,14 @@ defmodule TranquilityBase do
       glass: glasses(32, 0.16),
       bowed:
         seq([
-          pad(hd(@chords)),
-          pad(Enum.at(@chords, 1)),
+          pad(hd(chords())),
+          pad(Enum.at(chords(), 1)),
           note([:f4, :bb4, :d5], 14, vel: 0.8)
         ]),
-      vibes: note(hd(@chords).vibes, 8, vel: 0.5, strum: 0.08),
-      frame: seq([repeat(hits("x....o...... x....o......", 0.6, 0.3), 4), rest(16)]),
-      hat: seq([rest(16), repeat(hits("x..o..x..o.. x..o..x..o..", 0.4, 0.2), 3)]),
-      kick: seq([rest(22), repeat(hits("x.....", 0.7, 0.4), 8)]),
+      vibes: note(hd(chords()).vibes, 8, vel: 0.5, strum: 0.08),
+      frame: seq([repeat(hits(~MX"x....o...... x....o......"s, 0.6, 0.3), 4), rest(16)]),
+      hat: delay(repeat(hits(~MX"x..o..x..o.. x..o..x..o.."s, 0.4, 0.2), 3), 16),
+      kick: delay(repeat(hits(~MX"x....."s, 0.7, 0.4), 8), 22),
       snare: at(roll, 32),
       rocket:
         at(
@@ -469,8 +324,9 @@ defmodule TranquilityBase do
     )
   end
 
-  # The drop: the gong, the band with claps under the first step, and the second time round the marimba again and the hand chimes' melody over the glasses cut into eighths.
-  def tranquility do
+  # The drop: the gong, the band with claps under the first step, and the second time round the
+  # marimba again and the hand chimes' melody over the glasses cut into eighths.
+  defp tranquility do
     section(
       64,
       [
@@ -485,14 +341,14 @@ defmodule TranquilityBase do
           ),
         sputnik: beeps(64, 0.1),
         glass: glasses(32, 0.12),
-        gate: seq([rest(32), glasses(32, 0.2)]),
+        gate: delay(glasses(32, 0.2), 32),
         bass: repeat(cycle(&bass/1), 2),
         vibes: repeat(cycle(&comp/1), 2),
-        marimba: seq([rest(32), cycle(&ostinato/1)]),
-        lead: seq([rest(32), cycle(&lead/1)]),
+        marimba: delay(cycle(&ostinato/1), 32),
+        lead: delay(cycle(&lead/1), 32),
         shaker: shaker(16),
         claps: claps(16),
-        open_hat: seq([rest(32), open_hat(8)]),
+        open_hat: delay(open_hat(8), 32),
         turns:
           at(
             [
@@ -507,21 +363,22 @@ defmodule TranquilityBase do
     )
   end
 
-  # The band stops on the gong, and the ocean, the glasses and Sputnik are left under "magnificent desolation" and Kennedy's last words.
-  def home do
-    [ab, bb, eb] = [Enum.at(@chords, 1), Enum.at(@chords, 3), Enum.at(@chords, 2)]
+  # The band stops on the gong, and the ocean, the glasses and Sputnik are left under "magnificent
+  # desolation" and Kennedy's last words.
+  defp home do
+    [a_flat, b_flat, e_flat] = [Enum.at(chords(), 1), Enum.at(chords(), 3), Enum.at(chords(), 2)]
 
     section(40,
       ocean: ocean(40),
       glass: glasses(32, 0.16),
       sputnik: seq([beeps(16, 0.12), beeps(8, 0.1), beeps(8, 0.06)]),
-      bowed: seq([pad(ab), pad(bb), note(eb.pad, 16, vel: 0.8)]),
+      bowed: seq([pad(a_flat), pad(b_flat), note(e_flat.pad, 16, vel: 0.8)]),
       vibes:
         at(
           [
-            {0, note(ab.vibes, 8, vel: 0.55, strum: 0.08)},
-            {8, note(bb.vibes, 8, vel: 0.5, strum: 0.08)},
-            {16, note(eb.vibes, 8, vel: 0.7, strum: 0.08)},
+            {0, note(a_flat.vibes, 8, vel: 0.55, strum: 0.08)},
+            {8, note(b_flat.vibes, 8, vel: 0.5, strum: 0.08)},
+            {16, note(e_flat.vibes, 8, vel: 0.7, strum: 0.08)},
             {28, note([:eb4, :g4, :bb4, :f5], 8, vel: 0.6, strum: 0.15)}
           ],
           40
@@ -555,16 +412,168 @@ defmodule TranquilityBase do
     )
   end
 
-  def form, do: [signal(), liftoff(), problem(), tranquility(), home()]
+  defp groove(bars) do
+    [
+      kick: repeat(hits(~MX"x.....x..... x.....o....."s, 0.9, 0.4), bars),
+      snare: repeat(hits(~MX"............ x..........."s, 0.8, 0.4), bars),
+      hat: repeat(hits(~MX"x.ox.ox.ox.o x.ox.ox.ox.o"s, 0.5, 0.25), bars),
+      frame: repeat(hits(~MX"..x..o..x.o. ..x..o..xox."s, 0.7, 0.35), bars)
+    ]
+  end
+
+  defp shaker(bars), do: repeat(hits(~MX"o..x..o..x.o o..x..o..xo."s, 0.9, 0.5), bars)
+  defp claps(bars), do: repeat(hits(~MX"............ x.........o."s, 0.9, 0.5), bars)
+
+  defp open_hat(bars) do
+    repeat(hits(~MX"........................ .....................x.."s, 0.9, 0.5), div(bars, 2))
+  end
+
+  # Six strokes of the tom falling from E flat to G over the last two beats.
+  defp fill(beats) do
+    strokes =
+      for {semitones, amp} <-
+            Enum.zip([6.2, 6.2, 3.2, 3.2, 1.2, -1.8], [0.4, 0.5, 0.55, 0.65, 0.7, 0.85]) do
+        sample(@tom, 1 / 3, rate: :math.pow(2, semitones / 12), amp: amp, sustain: 1, release: 1)
+      end
+
+    delay(seq(strokes), beats - 2)
+  end
+
+  defp bass(chord) do
+    figure("1........1.. ...3..2....1 1........3.. ...2..4.....", chord.bass, 0.9, 0.7)
+  end
+
+  defp ostinato(chord) do
+    figure("1..3.54..2.. 5..3.24..1.. 1..3.54..2.. 5..4.35..2.4", chord.marimba, 0.8, 0.55)
+  end
+
+  defp comp(chord) do
+    at(
+      [
+        {0, note(chord.vibes, 2.5, vel: 0.8, strum: 0.03)},
+        {2.5, note(chord.vibes, 1.5, vel: 0.5)},
+        {5.5, note(chord.vibes, 2.5, vel: 0.65, strum: 0.03)}
+      ],
+      8
+    )
+  end
+
+  defp held(chord), do: note(chord.vibes, 8, vel: 0.6, strum: 0.05)
+  defp pad(chord), do: note(chord.pad, 8, vel: 0.8)
+  defp lead(chord), do: seq(for {name, beats} <- chord.lead, do: note(name, beats, vel: 0.8))
+
+  # Sputnik's beep, one stretch of four of its periods fitted to a bar.
+  defp beeps(beats, amp) do
+    seq(
+      for _ <- 1..div(beats, 4),
+          do: sample(@sputnik, 4, from: 0.3, to: 2.06, beats: 4, amp: amp)
+    )
+  end
+
+  defp ocean(beats) do
+    sample(@ocean, beats,
+      normalize: true,
+      amp: 0.43,
+      attack: 4,
+      sustain: beats - 8,
+      release: 4
+    )
+  end
+
+  # The glasses come in one after another over the first three eighths of the beats, and each
+  # fades in and out.
+  defp glasses(beats, amp) do
+    entries =
+      for {{file, cents, pan}, index} <- Enum.with_index(@glass) do
+        start = index * beats / 8
+        length = beats - start
+
+        {start,
+         sample(file, length,
+           rate: :math.pow(2, cents / 1200),
+           normalize: true,
+           amp: amp,
+           attack: 4,
+           sustain: length - 4,
+           release: 4,
+           pan: pan
+         )}
+      end
+
+    at(entries, beats)
+  end
+
+  defp turn(file, opts), do: sample(file, 0, [normalize: true] ++ opts)
+  defp landing(beats, opts), do: sample(@landing, beats, opts)
 
   # Each part's music, padded to the section's beats.
-  def section(beats, parts) do
+  defp section(beats, parts) do
     together(
       for {name, music} <- parts do
-        part(name, together([rest(beats), music]), Keyword.fetch!(@parts, name))
+        part(name, together([rest(beats), music]))
       end
     )
   end
-end
 
-song(tempo: 136, music: seq(TranquilityBase.form()))
+  # A bar of drum hits, each character a sixth of a beat: x loud, o soft, a dot silent.
+  defp hits(pattern, loud, soft) do
+    steps(pattern, 1 / 6, strokes: [x: [vel: loud], o: [vel: soft]])
+  end
+
+  # A line of notes, each character a sixth of a beat: a digit plays that note of the list,
+  # counted from 1, until the next note, loud on the beat and soft off it, and a dot is silent.
+  defp figure(pattern, notes, loud, soft) do
+    steps = pattern |> String.replace(" ", "") |> String.graphemes()
+    total = length(steps)
+    starts = for {step, index} <- Enum.with_index(steps), step != ".", do: {index, step}
+    stops = Enum.drop(Enum.map(starts, &elem(&1, 0)), 1) ++ [total]
+
+    entries =
+      for {{index, step}, stop} <- Enum.zip(starts, stops) do
+        vel = if rem(index, 6) == 0, do: loud, else: soft
+
+        {index / 6,
+         note(Enum.at(notes, String.to_integer(step) - 1), (stop - index) / 6, vel: vel)}
+      end
+
+    at(entries, total / 6)
+  end
+
+  # The four chords, two bars each, played by the function.
+  defp cycle(fun), do: seq(Enum.map(chords(), fun))
+
+  # Each chord's bass notes, as root, fifth, octave and the note that leads to the next chord, the
+  # root and the leading note doubled an octave up, then its voicings.
+  defp chords do
+    [
+      %{
+        bass: [[:c2, :c3], :g2, :c3, [:bb1, :bb2]],
+        vibes: [:bb3, :eb4, :g4, :d5],
+        marimba: [:g4, :bb4, :c5, :eb5, :g5],
+        pad: [:eb4, :g4, :d5],
+        lead: [g5: 1.5, bb5: 0.5, c6: 2, bb5: 1, g5: 3]
+      },
+      %{
+        bass: [[:ab1, :ab2], :eb2, :ab2, [:d2, :d3]],
+        vibes: [:c4, :eb4, :g4, :bb4],
+        marimba: [:ab4, :bb4, :c5, :eb5, :g5],
+        pad: [:eb4, :ab4, :c5],
+        lead: [eb5: 1.5, g5: 0.5, bb5: 2, g5: 1, f5: 3]
+      },
+      %{
+        bass: [[:eb2, :eb3], :bb2, :eb3, [:c2, :c3]],
+        vibes: [:g3, :bb3, :d4, :f4],
+        marimba: [:g4, :bb4, :d5, :eb5, :g5],
+        pad: [:eb4, :g4, :bb4],
+        lead: [g5: 1.5, bb5: 0.5, eb6: 2, d6: 1, bb5: 3]
+      },
+      %{
+        bass: [[:bb1, :bb2], :f2, :bb2, [:d2, :d3]],
+        vibes: [:bb3, :c4, :f4, :bb4],
+        marimba: [:f4, :bb4, :c5, :d5, :f5],
+        pad: [:f4, :bb4, :d5],
+        lead: [c6: 1.5, bb5: 0.5, f5: 2, g5: 1, f5: 3]
+      }
+    ]
+  end
+end

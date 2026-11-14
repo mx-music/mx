@@ -1,29 +1,77 @@
-import Mx
-
-# Raga Bhupali for flute and tabla, as a bansuri player lays it out: a slow alap without a beat, a drut gat in teentaal, taans, and a tihai landing on sam.
-# The gat is built on Bhupali's pakad, G R S .D S R G, and the taans on the alankars that climb and fall in threes.
-# Each breath is one note whose later changes move it from swara to swara, so the air runs on through a phrase: a tongued note dips the breath, a slurred one only moves the pitch, and a glide, the bansuri's meend, slides into it.
+# Raga Bhupali for flute and tabla, as a bansuri player lays it out: a slow alap without a beat, a
+# drut gat in teentaal, taans, and a tihai landing on sam.
+# The gat is built on Bhupali's pakad, G R S .D S R G, and the taans on the alankars that climb
+# and fall in threes.
+# Each breath is one note whose later changes move it from swara to swara, so the air runs on
+# through a phrase: a tongued note dips the breath, a slurred one only moves the pitch, and a
+# glide, the bansuri's meend, slides into it.
 defmodule Bhupali do
-  import Mx
+  use Mx.Song, tempo: 240
 
-  def sa, do: 67
+  part :flute, synth: :flute
+  part :tabla_na, synth: :tabla_na, defaults: [amp: 0.5]
+  part :tabla_tun, synth: :tabla_tun, defaults: [amp: 0.5]
+  part :tabla_ghe, synth: :tabla_ghe, defaults: [amp: 0.5]
 
-  # Each swara's cents above Sa, as just intervals; a dot before a swara is the octave below, a quote after it the octave above.
-  def swara(token) do
-    octave =
-      cond do
-        String.starts_with?(token, ".") -> -12
-        String.ends_with?(token, "'") -> 12
-        true -> 0
-      end
-
-    name = token |> String.trim_leading(".") |> String.trim_trailing("'")
-    steps = %{"S" => 0, "R" => 204, "G" => 386, "P" => 702, "D" => 884}
-    Float.round(sa() + octave + cents(steps[name]), 2)
+  def song do
+    repeat(seq(form()))
   end
 
-  # The alap's breaths, each token a swara and its beats: ~ glides into it, _ slurs to it, and a bare swara is tongued; @ moves the breath to that vel over the swara.
-  def alap do
+  defp form do
+    for section <- [:alap, :gat, :gat, :taans, :tihai, :sam] do
+      together([
+        part(:flute, flute(section, 0)),
+        part(:tabla_na, tabla(section, :tabla_na)),
+        part(:tabla_tun, tabla(section, :tabla_tun)),
+        part(:tabla_ghe, tabla(section, :tabla_ghe))
+      ])
+    end
+  end
+
+  # A section's breaths one after another from its first beat, at the vel given.
+  defp flute(:alap, _pass) do
+    breaths = for {beat, vel, text} <- alap(), do: {beat, elem(breath(text, vel), 1)}
+    at(breaths, 160)
+  end
+
+  defp flute(:gat, _pass), do: run(breaths(:gat), 0.6, 0, 16)
+
+  defp flute(:taans, _pass) do
+    [first, second, third, fourth, fifth] = breaths(:taans)
+    seq([run([first, second, third], 0.85, 0, 24), run([fourth, fifth], 1.0, 0, 24)])
+  end
+
+  defp flute(:tihai, _pass) do
+    [tihai] = breaths(:tihai)
+    at([{6, elem(breath(tihai, 0.9, 12), 1)}], 16)
+  end
+
+  defp flute(:sam, _pass), do: rest(16)
+
+  # A section's theka, every cycle of it, louder on sam; the alap has none, and the last sam only
+  # its dha.
+  defp tabla(:alap, _synth), do: rest(160)
+
+  defp tabla(:sam, synth) do
+    hits = if synth in strokes("dha"), do: [{0, hit(vel: 0.85)}], else: []
+    at(hits, 16)
+  end
+
+  defp tabla(section, synth) do
+    cycles = if section == :taans, do: 3, else: 1
+
+    entries =
+      for cycle <- 0..(cycles - 1),
+          {bol, matra} <- Enum.with_index(theka()),
+          synth in strokes(bol),
+          do: {cycle * 16 + matra, hit(vel: if(matra == 0, do: 0.85, else: 0.6))}
+
+    at(entries, cycles * 16)
+  end
+
+  # The alap's breaths, each token a swara and its beats: ~ glides into it, _ slurs to it, and a
+  # bare swara is tongued; @ moves the breath to that vel over the swara.
+  defp alap do
     [
       {0, 0.35, "S:10@0.5 _S:6@0.75 ~.D:4 ~S:10@0.4"},
       {33, 0.45, ".D:2.4 S:2.4 R:4.8@0.6 ~G:10@0.8 _R:3.2 ~S:8.8@0.45"},
@@ -32,38 +80,10 @@ defmodule Bhupali do
     ]
   end
 
-  # The gat and taans as matras, one cell to each: a cell's swaras divide its matra evenly, - holds the swara before, and | takes a breath.
-  def matras(:gat), do: "G R,S .D,S R,G -,P G,D P,G R,S -|G P,D S',D P,G R,G P,D P,G R,S -"
-
-  def matras(:taans) do
-    "S R G R,G P G P,D P D S',- -,S' D P D,P G P G,R G R S,- -|S R,G R,G P,G P,D P,D S',D S',- -|S' D,P D,P G,P G,R G,R S,.D S,- -|" <>
-      "S R G P,D S' R' G',P' - - -,G' R' S' D,P G R S,- - - -|S R G R,G P G P,D P D S',R' S' D P"
-  end
-
-  # D P G R S three times from the seventh matra, its last Sa on the next sam and held there.
-  def matras(:tihai), do: "D P,G R,S -,- -,D P,G R,S -,- -,D P,G R,S"
-
-  # A breath's tokens from cells, each swara lasting its share of the matra.
-  def breaths(section) do
-    for chunk <- String.split(matras(section), "|") do
-      chunk
-      |> String.split(",")
-      |> Enum.flat_map(fn cell ->
-        swaras = String.split(cell)
-        Enum.map(swaras, &{&1, 1 / length(swaras)})
-      end)
-      |> Enum.reduce([], fn
-        {"-", beats}, [{swara, held} | rest] -> [{swara, held + beats} | rest]
-        token, tokens -> [token | tokens]
-      end)
-      |> Enum.reverse()
-      |> Enum.map_join(" ", fn {swara, beats} -> "#{swara}:#{Float.round(beats, 3)}" end)
-    end
-  end
-
   # One breath as a note: the first swara starts it and each later one is a change at its beat.
-  # A tongued swara dips the breath to a quarter over about 30 ms and brings it back, at 240 beats a minute.
-  def breath(text, vel, last \\ nil) do
+  # A tongued swara dips the breath to a quarter over about 30 ms and brings it back, at 240 beats
+  # a minute.
+  defp breath(text, vel, last \\ nil) do
     tokens = Enum.map(String.split(text), &token/1)
 
     tokens =
@@ -93,7 +113,44 @@ defmodule Bhupali do
      )}
   end
 
-  def token(text) do
+  defp run(texts, vel, start, length) do
+    {notes, _} =
+      Enum.map_reduce(texts, start, fn text, beat ->
+        {held, note} = breath(text, vel)
+        {{beat, note}, beat + held}
+      end)
+
+    at(notes, length)
+  end
+
+  # A breath's tokens from cells, each swara lasting its share of the matra.
+  defp breaths(section) do
+    for chunk <- String.split(matras(section), "|") do
+      chunk
+      |> String.split(",")
+      |> Enum.flat_map(fn cell ->
+        swaras = String.split(cell)
+        Enum.map(swaras, &{&1, 1 / length(swaras)})
+      end)
+      |> Enum.reduce([], fn
+        {"-", beats}, [{swara, held} | rest] -> [{swara, held + beats} | rest]
+        token, tokens -> [token | tokens]
+      end)
+      |> Enum.reverse()
+      |> Enum.map_join(" ", fn {swara, beats} -> "#{swara}:#{Float.round(beats, 3)}" end)
+    end
+  end
+
+  defp strokes("dha"), do: [:tabla_na, :tabla_ghe]
+  defp strokes("dhin"), do: [:tabla_tun, :tabla_ghe]
+  defp strokes("tin"), do: [:tabla_tun]
+  defp strokes(_bol), do: [:tabla_na]
+
+  # Teentaal's theka, a bol to each matra from sam: dha is na over ghe, dhin tun over ghe, and the
+  # khali, matras 9 to 12, leaves the bayan out.
+  defp theka, do: ~w(dha dhin dhin dha dha dhin dhin dha na tin tin na ta dhin dhin dha)
+
+  defp token(text) do
     [body | swell] = String.split(text, "@")
     [name, beats] = String.split(body, ":")
     {beats, ""} = Float.parse(beats)
@@ -106,87 +163,45 @@ defmodule Bhupali do
     end
   end
 
-  def moves(:tongue, note, _beats, now, at) do
+  defp moves(:tongue, note, _beats, now, at) do
     [
       {max(at - 0.12, 0), vel: now * 0.25, vel_slide: 0.08},
       {at, note: note, note_slide: 0, vel: now, vel_slide: 0.12}
     ]
   end
 
-  def moves(:slur, note, _beats, _now, at), do: [{at, note: note, note_slide: 0}]
+  defp moves(:slur, note, _beats, _now, at), do: [{at, note: note, note_slide: 0}]
 
-  def moves(:glide, note, beats, _now, at) do
+  defp moves(:glide, note, beats, _now, at) do
     [{at, note: note, note_slide: min(beats * 0.5, 1.2)}]
   end
 
-  # A section's breaths one after another from its first beat, at the vel given.
-  def flute(:alap, _pass) do
-    breaths = for {beat, vel, text} <- alap(), do: {beat, elem(breath(text, vel), 1)}
-    at(breaths, 160)
+  # Each swara's cents above Sa, as just intervals; a dot before a swara is the octave below, a
+  # quote after it the octave above.
+  defp swara(token) do
+    octave =
+      cond do
+        String.starts_with?(token, ".") -> -12
+        String.ends_with?(token, "'") -> 12
+        true -> 0
+      end
+
+    name = token |> String.trim_leading(".") |> String.trim_trailing("'")
+    steps = %{"S" => 0, "R" => 204, "G" => 386, "P" => 702, "D" => 884}
+    Float.round(sa() + octave + cents(steps[name]), 2)
   end
 
-  def flute(:gat, _pass), do: run(breaths(:gat), 0.6, 0, 16)
+  # The gat and taans as matras, one cell to each: a cell's swaras divide its matra evenly, -
+  # holds the swara before, and | takes a breath.
+  defp matras(:gat), do: "G R,S .D,S R,G -,P G,D P,G R,S -|G P,D S',D P,G R,G P,D P,G R,S -"
 
-  def flute(:taans, _pass) do
-    [first, second, third, fourth, fifth] = breaths(:taans)
-    seq([run([first, second, third], 0.85, 0, 24), run([fourth, fifth], 1.0, 0, 24)])
+  defp matras(:taans) do
+    "S R G R,G P G P,D P D S',- -,S' D P D,P G P G,R G R S,- -|S R,G R,G P,G P,D P,D S',D S',- -|S' D,P D,P G,P G,R G,R S,.D S,- -|" <>
+      "S R G P,D S' R' G',P' - - -,G' R' S' D,P G R S,- - - -|S R G R,G P G P,D P D S',R' S' D P"
   end
 
-  def flute(:tihai, _pass) do
-    [tihai] = breaths(:tihai)
-    at([{6, elem(breath(tihai, 0.9, 12), 1)}], 16)
-  end
+  # D P G R S three times from the seventh matra, its last Sa on the next sam and held there.
+  defp matras(:tihai), do: "D P,G R,S -,- -,D P,G R,S -,- -,D P,G R,S"
 
-  def flute(:sam, _pass), do: rest(16)
-
-  def run(texts, vel, start, length) do
-    {notes, _} =
-      Enum.map_reduce(texts, start, fn text, beat ->
-        {held, note} = breath(text, vel)
-        {{beat, note}, beat + held}
-      end)
-
-    at(notes, length)
-  end
-
-  # Teentaal's theka, a bol to each matra from sam: dha is na over ghe, dhin tun over ghe, and the khali, matras 9 to 12, leaves the bayan out.
-  def theka, do: ~w(dha dhin dhin dha dha dhin dhin dha na tin tin na ta dhin dhin dha)
-
-  def strokes("dha"), do: [:tabla_na, :tabla_ghe]
-  def strokes("dhin"), do: [:tabla_tun, :tabla_ghe]
-  def strokes("tin"), do: [:tabla_tun]
-  def strokes(_bol), do: [:tabla_na]
-
-  # A section's theka, every cycle of it, louder on sam; the alap has none, and the last sam only its dha.
-  def tabla(:alap, _synth), do: rest(160)
-
-  def tabla(:sam, synth) do
-    hits = if synth in strokes("dha"), do: [{0, hit(vel: 0.85)}], else: []
-    at(hits, 16)
-  end
-
-  def tabla(section, synth) do
-    cycles = if section == :taans, do: 3, else: 1
-
-    entries =
-      for cycle <- 0..(cycles - 1),
-          {bol, matra} <- Enum.with_index(theka()),
-          synth in strokes(bol),
-          do: {cycle * 16 + matra, hit(vel: if(matra == 0, do: 0.85, else: 0.6))}
-
-    at(entries, cycles * 16)
-  end
-
-  def form do
-    for section <- [:alap, :gat, :gat, :taans, :tihai, :sam] do
-      together([
-        part(:flute, flute(section, 0), synth: :flute),
-        part(:tabla_na, tabla(section, :tabla_na), synth: :tabla_na, defaults: [amp: 0.5]),
-        part(:tabla_tun, tabla(section, :tabla_tun), synth: :tabla_tun, defaults: [amp: 0.5]),
-        part(:tabla_ghe, tabla(section, :tabla_ghe), synth: :tabla_ghe, defaults: [amp: 0.5])
-      ])
-    end
-  end
+  defp sa, do: 67
 end
-
-song(tempo: 240, music: repeat(seq(Bhupali.form())))
