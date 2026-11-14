@@ -4,14 +4,67 @@ mx is a library for writing music in Elixir.
 You write a song as a file, and mx plays it and applies your changes each time you save.
 It makes sound with mxs, its own sound engine in Rust.
 
-## Guides
+## A song
 
-- [The notation](documentation/notation.md): every function a song is written with.
-- [Instruments](documentation/instruments.md): the synths and effects with their options, how to write a synth, and how to measure one against recordings.
-- [Scores and hums](documentation/scores.md): importing a MusicXML score, scanning a printed one, and turning a hummed melody into a song.
-- [Examples](documentation/examples.md): the songs in `examples`.
-- [Architecture](documentation/architecture.md): how a song file becomes sound.
-- [Setting up Audiveris](documentation/audiveris.md), for `mix mx.scan`.
+A song is an Elixir file that starts with `import Mx` and ends with `song`:
+
+```elixir
+import Mx
+
+bar = fn bass, chord -> together([note(bass, 3), delay(note(chord, 2), 1)]) end
+left = seq([bar.(:g2, [:b3, :d4, :fs4]), bar.(:d2, [:a3, :cs4, :fs4])])
+
+melody = seq(r: 1, fs5: 1, a5: 1, g5: 1, fs5: 1, cs5: 1, b4: 1, cs5: 1, d5: 1, a4: 3, fs4: 12)
+
+room = [reverb: [room: 0.4, mix: 0.15]]
+
+song(
+  tempo: 72,
+  music:
+    repeat(
+      together([
+        part(:right, melody, synth: :piano, fx: room, defaults: [vel: 0.5, pedal: 1]),
+        part(:left, repeat(left, 4), synth: :piano, fx: room, defaults: [vel: 0.3, pedal: 1])
+      ])
+    )
+)
+```
+
+It sounds like this:
+
+<video src="https://github.com/user-attachments/assets/805f6f99-ce9b-4ed4-ad7e-0418e647a440" controls></video>
+
+It is the opening of Erik Satie's first Gymnopédie, of 1888.
+`note` plays a pitch or a chord for a number of beats, `seq` plays notes one after another, and `together` starts its items at once.
+In each bar of the left hand, `delay` starts the chord a beat after the bass note.
+`part` gives music to a synth, through effects, and `repeat` plays the whole again until mx stops.
+[The notation](documentation/notation.md) describes every function a song is written with.
+
+Play the file with `mix mx.play`:
+
+```sh
+mix mx.play song.exs
+```
+
+mx plays the song until it ends or you press Enter.
+Save the file while it plays and the new version takes over at the end of the section playing.
+A version that does not load prints its error, and the previous version keeps playing.
+
+`--record session.wav` records what you play to a WAV file, and `--render song.wav` writes the song to a WAV file without playing it.
+[Playing, recording and rendering](documentation/playing.md) describes both.
+
+## Longer pieces
+
+The same notation writes whole pieces.
+Each video plays a song in `examples` from start to end, as mx renders it, over its spectrogram.
+
+Debussy's Clair de lune on mx's piano, a synth, from [examples/piano/clair_de_lune.exs](https://github.com/mx-music/mx/blob/main/examples/piano/clair_de_lune.exs):
+
+<video src="https://github.com/user-attachments/assets/e2256f68-cba3-40c1-8166-ebf1c1a65c81" controls></video>
+
+An afrobeat groove mixed as a dub, with a sampled drum kit and keyboard over mx's double bass, from [examples/afrobeat.exs](https://github.com/mx-music/mx/blob/main/examples/afrobeat.exs):
+
+<video src="https://github.com/user-attachments/assets/be2f2355-f117-4eef-b5e1-bc5c2be42f02" controls></video>
 
 ## Install
 
@@ -23,94 +76,21 @@ Add mx to the dependencies in your Mix project's `mix.exs`:
 {:mx, "~> 0.1.0"}
 ```
 
-To play Sonic Pi's samples, download its sample pack once:
+## Instruments
+
+mx's synths and effects are its own designs.
+Beside the basic waveforms, most synths imitate a real instrument and were fitted to recordings of it: piano, guitar, the bowed strings, the winds, mallet instruments, and percussion.
+[Instruments](documentation/instruments.md) lists every synth and effect with its options, and shows how to write a synth.
+
+A song also plays sound files, sampled instruments made from folders of recordings, and the samples of Sonic Pi's pack, which is 35 MB, under Creative Commons 0, and downloaded once:
 
 ```sh
 mix mx.samples.download sonic_pi
 ```
 
-The pack is 35 MB, under Creative Commons 0, and goes to your cache folder rather than the repository.
-Run the command again to finish an interrupted download.
+## Scores and hums
 
-## Play a song
-
-```sh
-mix mx.play song.exs
-```
-
-mx plays the song until it ends or you press Enter.
-Save the file and the new version takes over at the end of the section playing.
-A part added to the file joins at the next section, and a part removed from it stops at the end of its pass.
-A version that does not load prints its error with the line, and the previous version keeps playing.
-
-To keep what you play, record it to a stereo WAV file:
-
-```sh
-mix mx.play song.exs --record session.wav
-```
-
-Recording starts before the first note, carries on without a gap when you save the song, and ends when you press Enter, once the notes still sounding have faded or after four seconds at most.
-mx then prints where it wrote the recording, how long it is, and its peak in dB below full scale.
-The recording is 32-bit floating point, which keeps a sound louder than full scale, but it distorts once played or converted; when that happens mx says how many times the recording clipped and when it first did, and lowering the amp of the loudest parts records it cleanly.
-A file that already exists is refused unless you add `--force`, and so is a path mx cannot write; both are checked before anything plays.
-
-To hear what a song does without playing it aloud, render it to a stereo WAV file instead:
-
-```sh
-mix mx.play song.exs --render song.wav
-```
-
-The render holds what `--record` would, as fast as the machine renders it and with no sound: it starts at the song's first beat and ends once the music has ended and the notes still sounding have faded, or after four seconds at most.
-Music that plays until mx stops needs `--seconds`, the length to render, such as `--seconds 60`.
-Rendering a song twice writes the same file.
-mx prints the same report as for a recording, and refuses a file that exists unless you add `--force`.
-A render sends no MIDI or OSC and has no input, so mx names each part that sends MIDI or OSC, or waits for input, and leaves it out.
-`--render` cannot go with `--record`, nor with a song that has `live_audio`.
-
-In a clone of mx, `examples/ambient.exs` is a demo to start from, a slow ambient piece of pads, keys, bells and samples through reverb and echo:
-
-```sh
-mix mx.play examples/ambient.exs
-```
-
-The folder `examples` holds more songs: pieces for a band, such as a salsa, a choro, a dub and three ragas, and solos for single instruments.
-[documentation/examples.md](documentation/examples.md) describes each one.
-
-To see what each part plays without hearing it, from a clone of mx:
-
-```sh
-mix mx.print song.exs
-```
-
-## Write a song
-
-A song is an Elixir file that starts with `import Mx` and ends with `song`:
-
-```elixir
-import Mx
-
-melody = seq(e4: 1, g4: 1, a4: 2, g4: 1, e4: 1, d4: 2)
-bass = seq(a2: 4, e2: 4)
-
-song(
-  tempo: 90,
-  music:
-    repeat(
-      together([
-        part(:flute, melody, synth: :flute, fx: :reverb),
-        part(:bass, bass, synth: :double_bass)
-      ])
-    )
-)
-```
-
-`seq` plays notes one after another and `together` starts its items at once.
-`part` gives music to a synth, through effects, and `loop` works its music out again on every pass, from MIDI and OSC inputs if the song reads them.
-A song also plays samples and sends MIDI and OSC.
-[documentation/notation.md](documentation/notation.md) describes every function.
-
-## Start from a score or a hum
-
+mx can start a song from music that already exists.
 `mix mx.import` turns a MusicXML score into a song, `mix mx.scan` reads a scanned score into MusicXML, and `mix mx.hum` turns a recording of a melody you hum, sing or whistle into a song:
 
 ```sh
@@ -119,29 +99,27 @@ mix mx.scan page.pdf
 mix mx.hum hum.wav --tempo 90
 ```
 
-`mix mx.scan` runs Audiveris, which is installed apart from mx.
-[documentation/scores.md](documentation/scores.md) describes the three commands.
+[Scores and hums](documentation/scores.md) describes the three commands.
 
-## Synths, effects and samples
+## Live input and output
 
-mx's synths and effects are its own designs, in mxs; it ships none of Sonic Pi's.
-Beside the basic waveforms, most synths imitate a real instrument and were fitted to recordings of it: piano, guitar, the bowed strings, the winds, mallet instruments, and percussion.
-A song also plays the samples of Sonic Pi's pack, sound files, and sampled instruments made from folders of recordings.
-[documentation/instruments.md](documentation/instruments.md) lists every synth and effect with its options.
+A song reads MIDI and OSC inputs, sends MIDI and OSC, and plays live audio through its effects.
+A `loop` works its music out again on every pass, so what it plays can follow an input.
+[The notation](documentation/notation.md) describes each.
 
-## Tests
+## Examples
 
-```sh
-mix test
-mix test --only engine
-```
+The folder `examples` in the repository holds more songs: pieces for a band, such as a salsa, a choro, a dub and three ragas, and solos for single instruments.
+`examples/ambient.exs` is a demo to start from.
+[Examples](documentation/examples.md) describes each one.
 
-The tests tagged `engine` play or render sound through mxs, the design tests among them, and are left out of a plain `mix test`.
-The test tagged `timing` sends MIDI and OSC for a minute and checks when they arrive; run it with `mix test --only timing`.
-The tests tagged `iowa` measure the University of Iowa's guitar recordings; download the mono guitar files from https://theremin.music.uiowa.edu/MISguitar.html, unzip them, and run `MX_IOWA_GUITAR=folder mix test --only iowa`.
-The tests tagged `iowa` also measure the Iowa flute played mf, with and without vibrato, from https://theremin.music.uiowa.edu/MISflute.html, in the folder `MX_IOWA_FLUTE` names, and render mx's flute.
-They also fit mx's clarinet to the Iowa Bb clarinet, from https://theremin.music.uiowa.edu/MISBbclarinet.html, in the folder `MX_IOWA_CLARINET` names.
-The tests tagged `vsco` measure the cowbell hits of the VSCO 2 Community Edition percussion, from https://github.com/sgossner/VSCO-2-CE; run them with `MX_VSCO_PERCUSSION=folder mix test --only vsco`.
-The tests tagged `vcsl` measure the Versilian Community Sample Library, from https://github.com/sgossner/VCSL; run them with `MX_VCSL=folder mix test --only vcsl`, where the folder is the library's root, and they render mx's synths.
-The tests tagged `audiveris` scan pages of the Bach-Gesellschaft's St Matthew Passion with Audiveris and take two to three minutes; set it up as documentation/audiveris.md describes and run them with `mix test --only audiveris`.
-`scripts/lint.sh` runs credo, the project's style rules, the formatter, ex_dna's check for duplicated code, a check that every public function has a `@doc`, and a check for compile-time cycles; it needs ripgrep.
+## Guides
+
+- [Playing, recording and rendering](documentation/playing.md): `mix mx.play` and its options.
+- [The notation](documentation/notation.md): every function a song is written with.
+- [Instruments](documentation/instruments.md): the synths and effects with their options, how to write a synth, and how to measure one against recordings.
+- [Scores and hums](documentation/scores.md): importing a MusicXML score, scanning a printed one, and turning a hummed melody into a song.
+- [Examples](documentation/examples.md): the songs in `examples`.
+- [Architecture](documentation/architecture.md): how a song file becomes sound.
+- [Setting up Audiveris](documentation/audiveris.md), for `mix mx.scan`.
+- [Working on mx](documentation/development.md): the tests and the lint script.

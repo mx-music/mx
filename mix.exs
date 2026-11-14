@@ -71,17 +71,21 @@ defmodule Mx.MixProject do
       main: "readme",
       extras: [
         "README.md",
+        "documentation/playing.md",
         "documentation/notation.md",
         "documentation/instruments.md",
         "documentation/scores.md",
         "documentation/examples.md",
         "documentation/audiveris.md",
-        "documentation/architecture.md"
+        "documentation/architecture.md",
+        "documentation/development.md"
       ],
       groups_for_extras: [
-        Guides: ~w(notation instruments scores examples) |> Enum.map(&"documentation/#{&1}.md"),
+        Guides:
+          ~w(playing notation instruments scores examples)
+          |> Enum.map(&"documentation/#{&1}.md"),
         Setup: ["documentation/audiveris.md"],
-        Internals: ["documentation/architecture.md"]
+        Internals: ["documentation/architecture.md", "documentation/development.md"]
       ],
       assets: %{"documentation/assets" => "assets"},
       before_closing_body_tag: &docs_body_tag/1,
