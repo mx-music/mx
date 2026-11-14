@@ -107,7 +107,8 @@ defmodule Mx.Measure.HitsTest do
     assert_in_delta fifty, -3, 1.5
   end
 
-  # Partials at ratios of the lowest, each at its level, all fading 60 dB over `fade` seconds, struck at once.
+  # Partials at ratios of the lowest, each at its level, all fading 60 dB over `fade` seconds,
+  # struck at once.
   defp hit(lowest, partials, fade) do
     seconds = fade * 1.2
 

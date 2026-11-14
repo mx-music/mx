@@ -64,7 +64,8 @@ defmodule Mx.Measure.HeldTest do
     assert Held.notes(silence ++ tone(440, 0.03) ++ quiet, @rate, 69) == []
   end
 
-  # Twelve harmonics at 1/number of the first, or as many as asked, rising linearly over the attack.
+  # Twelve harmonics at 1/number of the first, or as many as asked, rising linearly over the
+  # attack.
   defp tone(f0, seconds, opts \\ []) do
     attack = Keyword.get(opts, :attack, 0.01)
     count = Keyword.get(opts, :harmonics, 12)

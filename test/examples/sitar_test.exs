@@ -52,7 +52,8 @@ defmodule Mx.Examples.SitarTest do
     capture_io(fn -> Mix.Tasks.Mx.Print.run([@song, "--pass", pass]) end)
   end
 
-  # An input device that answers the first line asked for after a delay, as a person pressing Enter would.
+  # An input device that answers the first line asked for after a delay, as a person pressing
+  # Enter would.
   defp enter_after(ms) do
     receive do
       {:io_request, from, ref, {:get_line, _, _}} ->

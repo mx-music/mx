@@ -28,8 +28,10 @@ defmodule Mx.Examples.CajonTest do
     assert rumba == [{0.0, 0, 0.8}, {1.0, 1, 0.9}, {1.5, 0, 0.8}, {3.0, 1, 0.9}]
 
     filled = strokes(print(6))
-    assert for({beat, 0, _vel} <- filled, do: beat) == [0.0, 1.5]
-    assert for({beat, 1, 0.9} <- filled, do: beat) == [1.0, 3.0]
+    tones = for {beat, 0, _vel} <- filled, do: beat
+    slaps = for {beat, 1, 0.9} <- filled, do: beat
+    assert tones == [0.0, 1.5]
+    assert slaps == [1.0, 3.0]
   end
 
   test "the bulerías accents 12, 3, 6, 8 and 10, then 12, 3, 7, 8 and 10, and the last cycle closes on 10" do
@@ -101,7 +103,8 @@ defmodule Mx.Examples.CajonTest do
     capture_io(fn -> Mix.Tasks.Mx.Print.run([@song, "--pass", pass]) end)
   end
 
-  # An input device that answers the first line asked for after a delay, as a person pressing Enter would.
+  # An input device that answers the first line asked for after a delay, as a person pressing
+  # Enter would.
   defp enter_after(ms) do
     receive do
       {:io_request, from, ref, {:get_line, _, _}} ->

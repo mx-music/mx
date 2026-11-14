@@ -1,5 +1,6 @@
 defmodule Mx.Examples.TimelineTest do
-  # Each example plays every step it played before it moved to the new notation, at the same beat with the same options.
+  # Each example plays every step it played before it moved to the new notation, at the same beat
+  # with the same options.
   # It points mx at the whole sample pack, which other tests must not see, so it runs alone.
   use ExUnit.Case, async: false
 

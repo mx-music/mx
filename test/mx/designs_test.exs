@@ -137,8 +137,10 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # Measured from the University of Iowa Electronic Music Studios' guitar, played mf, as medians over its notes:
-  # the seconds a harmonic takes to fade 60 dB, and its level against A2's fundamental, by the harmonic's frequency.
+  # Measured from the University of Iowa Electronic Music Studios' guitar, played mf, as medians
+  # over its notes:
+  # the seconds a harmonic takes to fade 60 dB, and its level against A2's fundamental, by the
+  # harmonic's frequency.
   @guitar_fades %{
     {80, 160} => 10.29,
     {160, 250} => 3.48,
@@ -219,12 +221,14 @@ defmodule Mx.DesignsTest do
     assert last_sound(damped) < 1.2
   end
 
-  # Measured from the Steinway B grand of the Versilian Community Sample Library without the sustain pedal.
-  # Every fourth semitone from C2 to C7, at its three strengths: each band's median level against C2's fundamental,
-  # and the seconds a harmonic takes to fade 60 dB.
-  # Its soft notes' harmonics above 1 kHz sit near the recordings' noise floor, which stretches their measured fades,
-  # so those fades are left out.
-  # The tables are measured against the piano with `aftersound: 0, uneven: 0`: each harmonic at one rate of fade, as the tables give it, and every key on the keyboard's trend.
+  # Measured from the Steinway B grand of the Versilian Community Sample Library without the
+  # sustain pedal.
+  # Every fourth semitone from C2 to C7, at its three strengths: each band's median level against
+  # C2's fundamental, and the seconds a harmonic takes to fade 60 dB.
+  # Its soft notes' harmonics above 1 kHz sit near the recordings' noise floor, which stretches
+  # their measured fades, so those fades are left out.
+  # The tables are measured against the piano with `aftersound: 0, uneven: 0`: each harmonic at
+  # one rate of fade, as the tables give it, and every key on the keyboard's trend.
   @trend [aftersound: 0, uneven: 0]
 
   @piano %{
@@ -315,7 +319,8 @@ defmodule Mx.DesignsTest do
     assert last_sound(short) < 0.8
   end
 
-  # Measured from the Steinway B of the VCSL with the sustain pedal down, every fourth semitone from C2 to C7, at its three strengths.
+  # Measured from the Steinway B of the VCSL with the sustain pedal down, every fourth semitone
+  # from C2 to C7, at its three strengths.
   @piano_pedal %{
     0.3 => %{
       {80, 160} => {6.5, 15.10},
@@ -362,8 +367,10 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # Measured from the Steinway B of the VCSL without the pedal, at A#0, C1, E1 and G#1, at its three strengths, against A#0's fundamental.
-  # At vel 1 the band from 1 to 1.6 kHz holds only the top few harmonics of G#1 and E1, which the recordings raise above the band below and the design does not, so its level is left out.
+  # Measured from the Steinway B of the VCSL without the pedal, at A#0, C1, E1 and G#1, at its
+  # three strengths, against A#0's fundamental.
+  # At vel 1 the band from 1 to 1.6 kHz holds only the top few harmonics of G#1 and E1, which the
+  # recordings raise above the band below and the design does not, so its level is left out.
   @piano_low %{
     0.3 => %{
       {80, 160} => {19.4, 15.74},
@@ -400,7 +407,8 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # The Steinway's A#0 played mf, 0.3 seconds in: its loudest bins from 700 to 1500 Hz stand 21.0 dB under those from 60 to 200 Hz.
+  # The Steinway's A#0 played mf, 0.3 seconds in: its loudest bins from 700 to 1500 Hz stand 21.0
+  # dB under those from 60 to 200 Hz.
   test "piano's lowest notes sound above their 24th harmonic, as loud as the Steinway's", ctx do
     sound = render(ctx, :piano, [note: 22, vel: 0.6, sustain: 60], 2)
     assert_in_delta loudest_bins(sound, 700, 1500) - loudest_bins(sound, 60, 200), -21.0, 6
@@ -421,7 +429,8 @@ defmodule Mx.DesignsTest do
     assert last_sound(damped) < 1.5
   end
 
-  # The Steinway's notes played mf, every fourth semitone from C2 to C6: the median note is 13.8 dB quieter one second after the strike, and 14.3 dB quieter again three seconds later.
+  # The Steinway's notes played mf, every fourth semitone from C2 to C6: the median note is 13.8
+  # dB quieter one second after the strike, and 14.3 dB quieter again three seconds later.
   test "a piano note fades fast after the strike and then slowly, as the Steinway's", ctx do
     drops =
       for note <- 36..84//4 do
@@ -435,7 +444,9 @@ defmodule Mx.DesignsTest do
     assert_in_delta later, -14.3, 6
   end
 
-  # The Steinway's keys played mf, every second semitone from C2 to C6: the levels of harmonics 2 to 6 against the key's fundamental stand a median 5.3 dB from the mean of the keys on either side.
+  # The Steinway's keys played mf, every second semitone from C2 to C6: the levels of harmonics 2
+  # to 6 against the key's fundamental stand a median 5.3 dB from the mean of the keys on either
+  # side.
   test "piano's keys differ from their neighbours as the Steinway's, and not at all with uneven 0",
        ctx do
     spread = fn opts ->
@@ -457,7 +468,8 @@ defmodule Mx.DesignsTest do
     assert spread.(uneven: 0) < 1
   end
 
-  # The Steinway's C6, E6, G#6 and C7 played mf: the first 4096 samples hold a median 15.9 dB less from 40 to 600 Hz, under the lowest harmonic, than in all.
+  # The Steinway's C6, E6, G#6 and C7 played mf: the first 4096 samples hold a median 15.9 dB less
+  # from 40 to 600 Hz, under the lowest harmonic, than in all.
   test "piano's hammer knocks under its high notes as loud as the Steinway's, and knock 0 leaves it out",
        ctx do
     knock = fn opts ->
@@ -481,8 +493,10 @@ defmodule Mx.DesignsTest do
     assert knock.(knock: 0) < -45
   end
 
-  # Measured from the organ of VSCO 2, every third key from C2 to C7 of its third manual, in its Quiet and Loud sets:
-  # the seconds a note takes to speak, and each band's median level while it holds, against C2's fundamental.
+  # Measured from the organ of VSCO 2, every third key from C2 to C7 of its third manual, in its
+  # Quiet and Loud sets:
+  # the seconds a note takes to speak, and each band's median level while it holds, against C2's
+  # fundamental.
   @organ %{
     0 => %{
       attack: 0.11,
@@ -542,8 +556,9 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # Measured from the same recordings, against the Loud set's median key: each key's held loudness in the Loud set,
-  # and the median of each octave's in the Quiet set, whose neighbouring keys differ by up to 20 dB.
+  # Measured from the same recordings, against the Loud set's median key: each key's held loudness
+  # in the Loud set, and the median of each octave's in the Quiet set, whose neighbouring keys
+  # differ by up to 20 dB.
   @organ_loudness %{
     1 => %{
       36 => 3.5,
@@ -613,10 +628,11 @@ defmodule Mx.DesignsTest do
     assert last_sound(sound) < 2.3
   end
 
-  # Measured from the University of Iowa's marimba struck with yarn mallets, every note from C2 to C7,
-  # at ff, mf and pp against vel 1, 0.6 and 0.3: each band's level as a note starts, against its loudest band,
-  # and the seconds it takes to fade 60 dB, as medians over the notes.
-  # A fade of nil is left out: pp's below 630 Hz and mf's above 4 kHz ring on near the recordings' noise floor.
+  # Measured from the University of Iowa's marimba struck with yarn mallets, every note from C2 to
+  # C7, at ff, mf and pp against vel 1, 0.6 and 0.3: each band's level as a note starts, against
+  # its loudest band, and the seconds it takes to fade 60 dB, as medians over the notes.
+  # A fade of nil is left out: pp's below 630 Hz and mf's above 4 kHz ring on near the recordings'
+  # noise floor.
   @marimba %{
     1 => %{
       {80, 160} => {-9.1, 3.14},
@@ -679,7 +695,8 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # The bars' overtones in the same recordings, as medians of their ratios to the note from C2 to D#3.
+  # The bars' overtones in the same recordings, as medians of their ratios to the note from C2 to
+  # D#3.
   test "marimba's overtones stand two octaves and a little over three octaves above its note",
        ctx do
     for note <- [36, 42, 48] do
@@ -695,7 +712,8 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # The same recordings are 17.9 dB louder ff than pp, as the median over their notes of the loudest half second.
+  # The same recordings are 17.9 dB louder ff than pp, as the median over their notes of the
+  # loudest half second.
   test "marimba at vel 1 is louder than at vel 0.3 by as much as a real marimba, and brighter",
        ctx do
     louder =
@@ -735,12 +753,13 @@ defmodule Mx.DesignsTest do
     assert last_sound(damped) < 0.4
   end
 
-  # Measured from the University of Iowa's vibraphone with the motor off, every note from C3 to F6,
-  # at ff, mf and pp against vel 1, 0.6 and 0.3, as the marimba's are.
+  # Measured from the University of Iowa's vibraphone with the motor off, every note from C3 to
+  # F6, at ff, mf and pp against vel 1, 0.6 and 0.3, as the marimba's are.
   # A level of nil is left out: ff's and mf's lowest band holds only the lowest notes,
   # which lie under the recordings' noise floor,
   # and mf's 1.6 to 2.5 kHz is quieter than both ff's and pp's, which the design does not follow.
-  # A fade of nil is left out: pp's from 400 Hz to 2.5 kHz ring on near the noise floor, longer than ff's;
+  # A fade of nil is left out: pp's from 400 Hz to 2.5 kHz ring on near the noise floor, longer
+  # than ff's;
   # ff's from 2.5 to 4 kHz is 31 percent short, and mf's from 4 to 6.3 kHz is 31 percent long.
   @vibraphone %{
     1 => %{
@@ -813,7 +832,8 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # The bars' overtones in the same recordings, as medians of their ratios to the note from C3 to B3.
+  # The bars' overtones in the same recordings, as medians of their ratios to the note from C3 to
+  # B3.
   test "vibraphone's overtones stand two octaves, a little over three octaves and four octaves above its note",
        ctx do
     for note <- [48, 53, 58] do
@@ -829,7 +849,8 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # The same recordings are 19.6 dB louder ff than pp, as the median over their notes of the loudest half second.
+  # The same recordings are 19.6 dB louder ff than pp, as the median over their notes of the
+  # loudest half second.
   test "vibraphone at vel 1 is louder than at vel 0.3 by as much as a real vibraphone, and brighter",
        ctx do
     louder =
@@ -878,12 +899,13 @@ defmodule Mx.DesignsTest do
     assert last_sound(damped) < 0.4
   end
 
-  # Measured from the University of Iowa's xylophone struck with rosewood mallets, every note from F4 to C8,
-  # at ff, mf and pp against vel 1, 0.6 and 0.3, as the marimba's are.
+  # Measured from the University of Iowa's xylophone struck with rosewood mallets, every note from
+  # F4 to C8, at ff, mf and pp against vel 1, 0.6 and 0.3, as the marimba's are.
   # ff's level from 1.6 to 2.5 kHz is left out:
   # the overtone a little over two and a half octaves up sets it on the low bars,
   # and at the level that keeps their lower bands right it is 7 dB louder than the recordings'.
-  # pp's fade from 250 to 400 Hz is left out: it rings on near the recordings' noise floor, longer than ff's.
+  # pp's fade from 250 to 400 Hz is left out: it rings on near the recordings' noise floor, longer
+  # than ff's.
   @xylophone %{
     1 => %{
       {250, 400} => {-22.7, 1.23},
@@ -948,7 +970,8 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # The bars' overtones in Iowa's rosewood xylophone, as medians of their ratios to the note from F4 to D#5.
+  # The bars' overtones in Iowa's rosewood xylophone, as medians of their ratios to the note from
+  # F4 to D#5.
   test "xylophone's overtones stand a twelfth and a little over two and a half octaves above its note",
        ctx do
     for note <- [65, 68, 71] do
@@ -964,7 +987,8 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # The same recordings are 25.6 dB louder ff than pp, as the median over their notes of the loudest half second.
+  # The same recordings are 25.6 dB louder ff than pp, as the median over their notes of the
+  # loudest half second.
   test "xylophone at vel 1 is louder than at vel 0.3 by as much as a real xylophone, and brighter",
        ctx do
     louder =
@@ -1003,8 +1027,8 @@ defmodule Mx.DesignsTest do
     assert high < low
   end
 
-  # Measured from the University of Iowa's orchestral bells struck with plastic mallets, every note from C5 to E8,
-  # at ff, mf and pp against vel 1, 0.6 and 0.3, as the marimba's are.
+  # Measured from the University of Iowa's orchestral bells struck with plastic mallets, every
+  # note from C5 to E8, at ff, mf and pp against vel 1, 0.6 and 0.3, as the marimba's are.
   # Each nil is a band the design misses, and is left out.
   # Levels: ff's from 400 Hz to 2.5 kHz are 7 to 11 dB off, mf's 630 Hz to 1 kHz is 8 dB loud,
   # and pp's 400 to 630 Hz and 2.5 to 4 kHz are 15 and 8 dB off.
@@ -1012,8 +1036,9 @@ defmodule Mx.DesignsTest do
   # mf's are 48 and 126 percent long from 400 to 630 Hz and 1.6 to 2.5 kHz,
   # and pp's are about half as long as the recordings' from 400 to 630 Hz and 1 to 1.6 kHz.
   # From 2.5 to 4 kHz, mf's and pp's fade in 1 s, against 3.73 s and 3.37 s:
-  # the overtone near 3.3 times the bars from G5 to E6 fades in 1 s, where the recordings' bars from G5 to B5 ring 4 to 7 s at mf,
-  # and at pp that overtone rings 15 to 20 dB louder than the recordings show it.
+  # the overtone near 3.3 times the bars from G5 to E6 fades in 1 s, where the recordings' bars
+  # from G5 to B5 ring 4 to 7 s at mf, and at pp that overtone rings 15 to 20 dB louder than the
+  # recordings show it.
   @glockenspiel %{
     1 => %{
       {400, 630} => {nil, nil},
@@ -1078,7 +1103,8 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # The bars' overtones in Iowa's plastic-mallet bells at ff, which stand lower above the note the higher the bar.
+  # The bars' overtones in Iowa's plastic-mallet bells at ff, which stand lower above the note the
+  # higher the bar.
   test "glockenspiel's overtones stand where the recordings' do, lower above the note the higher the bar",
        ctx do
     for {note, expected} <- [{72, [7.21, 11.3]}, {80, [6.55, 9.13]}, {88, [5.98, 7.08]}] do
@@ -1094,7 +1120,8 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # The same recordings are 24.0 dB louder ff than pp, as the median over their notes of the loudest half second.
+  # The same recordings are 24.0 dB louder ff than pp, as the median over their notes of the
+  # loudest half second.
   test "glockenspiel at vel 1 is louder than at vel 0.3 by as much as a real glockenspiel, and brighter",
        ctx do
     louder =
@@ -1133,8 +1160,9 @@ defmodule Mx.DesignsTest do
     assert last_sound(damped) < 0.4
   end
 
-  # Measured from the folk harp of Versilian Studios' Versilian Community Sample Library, every string from C2 to G#6,
-  # at its softer and louder strengths against vel 0.3 and 1, as medians over the notes by the harmonic's frequency:
+  # Measured from the folk harp of Versilian Studios' Versilian Community Sample Library, every
+  # string from C2 to G#6, at its softer and louder strengths against vel 0.3 and 1, as medians
+  # over the notes by the harmonic's frequency:
   # the seconds a harmonic takes to fade 60 dB, and its level against the fundamental of C2.
   @harp %{
     0.3 => %{
@@ -1175,7 +1203,8 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # The same recordings' harmonics are stretched 2.4e-4 at C4 and 8.4e-4 at G#6, as mix mx.measure prints it.
+  # The same recordings' harmonics are stretched 2.4e-4 at C4 and 8.4e-4 at G#6, as mix mx.measure
+  # prints it.
   test "harp's harmonics are stretched sharp, more the shorter the string, like the folk harp's",
        ctx do
     for {note, stretch} <- [{60, 2.4e-4}, {92, 8.4e-4}] do
@@ -1222,9 +1251,10 @@ defmodule Mx.DesignsTest do
     assert last_sound(damped) < 0.4
   end
 
-  # Measured from the University of Iowa's violin, bowed without vibrato on every string from G3 to B7,
-  # at pp, mf and ff against vel 0.3, 0.6 and 1, as medians over its notes:
-  # the seconds a note takes to swell in, and each band's level while it holds, against G3's fundamental.
+  # Measured from the University of Iowa's violin, bowed without vibrato on every string from G3
+  # to B7, at pp, mf and ff against vel 0.3, 0.6 and 1, as medians over its notes:
+  # the seconds a note takes to swell in, and each band's level while it holds, against G3's
+  # fundamental.
   @violin %{
     0.3 => %{
       attack: 0.75,
@@ -1346,10 +1376,12 @@ defmodule Mx.DesignsTest do
   end
 
   # Measured from the University of Iowa's violin, plucked on every string from G3 to B7,
-  # at pp, mf and ff against vel 0.3, 0.6 and 1, as medians over its notes by the harmonic's frequency:
+  # at pp, mf and ff against vel 0.3, 0.6 and 1, as medians over its notes by the harmonic's
+  # frequency:
   # the seconds a harmonic takes to fade 60 dB, and its level against G3's fundamental.
-  # The softer recordings' noise holds their fade times at 5 to 26 s from 630 Hz at mf and from 400 Hz at pp,
-  # as it does above 1 kHz at ff, where the harmonics stand over 20 dB below G3's; those fades, nil here, are left out.
+  # The softer recordings' noise holds their fade times at 5 to 26 s from 630 Hz at mf and from
+  # 400 Hz at pp, as it does above 1 kHz at ff, where the harmonics stand over 20 dB below G3's;
+  # those fades, nil here, are left out.
   @violin_pizz %{
     0.3 => %{
       {160, 250} => {3.27, 7.7},
@@ -1408,11 +1440,13 @@ defmodule Mx.DesignsTest do
     assert Held.note(still, @rate, 69).vibrato == nil
   end
 
-  # Measured from the University of Iowa's viola, bowed without vibrato on every string from C3 to Bb6,
-  # at pp, mf and ff against vel 0.3, 0.6 and 1, as medians over its notes:
-  # the seconds a note takes to swell in, and each band's level while it holds, against C3's fundamental.
-  # VSCO 2 has a viola section, several players in a room, whose bands stand 10 to 20 dB higher against its C3
-  # and whose noise between the harmonics is 15 to 20 dB louder; the viola follows Iowa's one player.
+  # Measured from the University of Iowa's viola, bowed without vibrato on every string from C3 to
+  # Bb6, at pp, mf and ff against vel 0.3, 0.6 and 1, as medians over its notes:
+  # the seconds a note takes to swell in, and each band's level while it holds, against C3's
+  # fundamental.
+  # VSCO 2 has a viola section, several players in a room, whose bands stand 10 to 20 dB higher
+  # against its C3 and whose noise between the harmonics is 15 to 20 dB louder; the viola follows
+  # Iowa's one player.
   @viola %{
     0.3 => %{
       attack: 0.53,
@@ -1500,11 +1534,13 @@ defmodule Mx.DesignsTest do
   end
 
   # Measured from the University of Iowa's viola, plucked on every string from C3 to Bb6,
-  # at pp, mf and ff against vel 0.3, 0.6 and 1, as medians over its notes by the harmonic's frequency:
+  # at pp, mf and ff against vel 0.3, 0.6 and 1, as medians over its notes by the harmonic's
+  # frequency:
   # each band's level against C3's fundamental.
   # Their fade times disagree from one dynamic to the next,
   # 160 to 250 Hz fading in 11.0 s at pp, 3.7 s at mf and 16.6 s at ff, so they are left out,
-  # and so are pp's 160 to 250 Hz, 20.7 dB, and mf's 80 to 160 Hz, -4.4 dB, which the viola misses by 9 and 6.4 dB.
+  # and so are pp's 160 to 250 Hz, 20.7 dB, and mf's 80 to 160 Hz, -4.4 dB, which the viola misses
+  # by 9 and 6.4 dB.
   @viola_pizz %{
     0.3 => %{
       {80, 160} => -0.8,
@@ -1559,10 +1595,12 @@ defmodule Mx.DesignsTest do
     assert Held.note(still, @rate, 60).vibrato == nil
   end
 
-  # Measured from the University of Iowa's cello, bowed without vibrato on every string from C2 to Bb5,
-  # at pp, mf and ff against vel 0.3, 0.6 and 1, as medians over its notes:
-  # the seconds a note takes to swell in, and each band's level while it holds, against C2's fundamental.
-  # The notes found below C2, onsets of noise, are left out; the measurement has no band below 80 Hz, where C2 sits.
+  # Measured from the University of Iowa's cello, bowed without vibrato on every string from C2 to
+  # Bb5, at pp, mf and ff against vel 0.3, 0.6 and 1, as medians over its notes:
+  # the seconds a note takes to swell in, and each band's level while it holds, against C2's
+  # fundamental.
+  # The notes found below C2, onsets of noise, are left out; the measurement has no band below 80
+  # Hz, where C2 sits.
   @cello %{
     0.3 => %{
       attack: 0.54,
@@ -1650,10 +1688,12 @@ defmodule Mx.DesignsTest do
   end
 
   # Measured from the University of Iowa's cello, plucked on every string from C2 to Bb5,
-  # at pp, mf and ff against vel 0.3, 0.6 and 1, as medians over its notes by the harmonic's frequency:
+  # at pp, mf and ff against vel 0.3, 0.6 and 1, as medians over its notes by the harmonic's
+  # frequency:
   # the seconds a harmonic takes to fade 60 dB, and its level against C2's fundamental.
-  # From 630 Hz, and from 250 Hz at pp, the fade times grow with the frequency as the recordings' noise holds them,
-  # and ff's 160 to 250 Hz and 400 to 630 Hz, 2.6 and 2.3 s, fall short of the bands either side;
+  # From 630 Hz, and from 250 Hz at pp, the fade times grow with the frequency as the recordings'
+  # noise holds them, and ff's 160 to 250 Hz and 400 to 630 Hz, 2.6 and 2.3 s, fall short of the
+  # bands either side;
   # those fades, nil here, are left out,
   # and so is mf's 80 to 160 Hz, 7.1 dB, which the cello misses by 7.2 dB.
   @cello_pizz %{
@@ -1716,15 +1756,18 @@ defmodule Mx.DesignsTest do
     assert Held.note(still, @rate, 48).vibrato == nil
   end
 
-  # Measured from the University of Iowa's double bass, bowed without vibrato on every string from E1 to G4,
-  # at pp, mf and ff against vel 0.3, 0.6 and 1, as medians over its notes:
-  # the seconds a note takes to swell in, and each band's level while it holds, against E1's fundamental.
-  # The notes found below E1, onsets of noise, are left out, and so are three files mix mx.measure --held stops on,
-  # ff's C4 to D4 on the D string and pp's C3 to A3 and C3 to B3 on the A and D strings.
+  # Measured from the University of Iowa's double bass, bowed without vibrato on every string from
+  # E1 to G4, at pp, mf and ff against vel 0.3, 0.6 and 1, as medians over its notes:
+  # the seconds a note takes to swell in, and each band's level while it holds, against E1's
+  # fundamental.
+  # The notes found below E1, onsets of noise, are left out, and so are three files mix
+  # mx.measure --held stops on, ff's C4 to D4 on the D string and pp's C3 to A3 and C3 to B3 on
+  # the A and D strings.
   # The measurement has no band below 80 Hz, where E1 sits.
-  # VSCO 2's solo contrabass stands within 6 dB of these up to 630 Hz and 7 to 10 dB above them from 400 Hz to 1.6 kHz,
-  # and its notes played with vibrato measure none.
-  # ff's attack, 0.16 s, is left out: the bowed string takes 0.21 s to settle at ff, as long as it takes to gather what it loses each period.
+  # VSCO 2's solo contrabass stands within 6 dB of these up to 630 Hz and 7 to 10 dB above them
+  # from 400 Hz to 1.6 kHz, and its notes played with vibrato measure none.
+  # ff's attack, 0.16 s, is left out: the bowed string takes 0.21 s to settle at ff, as long as it
+  # takes to gather what it loses each period.
   @double_bass %{
     0.3 => %{
       attack: 0.28,
@@ -1820,11 +1863,12 @@ defmodule Mx.DesignsTest do
   end
 
   # Measured from the University of Iowa's double bass, plucked on every string from E1 to G4,
-  # at pp, mf and ff against vel 0.3, 0.6 and 1, as medians over its notes by the harmonic's frequency:
+  # at pp, mf and ff against vel 0.3, 0.6 and 1, as medians over its notes by the harmonic's
+  # frequency:
   # the seconds a harmonic takes to fade 60 dB, and its level against E1's fundamental.
   # At ff the harmonics up to 630 Hz fade in 3.5 to 3.8 s;
-  # at mf and pp the recordings' noise draws the fades out the higher and the quieter the harmonic, to 5.5 to 19 s,
-  # and from 630 Hz at ff too; those fades, nil here, are left out.
+  # at mf and pp the recordings' noise draws the fades out the higher and the quieter the
+  # harmonic, to 5.5 to 19 s, and from 630 Hz at ff too; those fades, nil here, are left out.
   @double_bass_pizz %{
     0.3 => %{
       {80, 160} => {nil, 13.9},
@@ -1889,8 +1933,10 @@ defmodule Mx.DesignsTest do
 
   # Measured from the University of Iowa's flute, played without vibrato from B3 to Db7,
   # at pp, mf and ff against vel 0.3, 0.6 and 1, as medians over its notes:
-  # the seconds a note takes to speak, and each band's level while it holds, against B3's fundamental.
-  # VSCO 2's flute stands 10 to 29 dB above these from 400 Hz up, against its own lowest note; the flute follows Iowa.
+  # the seconds a note takes to speak, and each band's level while it holds, against B3's
+  # fundamental.
+  # VSCO 2's flute stands 10 to 29 dB above these from 400 Hz up, against its own lowest note; the
+  # flute follows Iowa.
   # mf's 400 to 630 Hz, 12.4 dB and 5 dB above ff's, is left out; the flute misses it by 6.1 dB.
   @flute %{
     0.3 => %{
@@ -1944,8 +1990,8 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # Measured from the same flute played with vibrato, and VSCO 2's flute played with vibrato at its one strength,
-  # against vel 0.3:
+  # Measured from the same flute played with vibrato, and VSCO 2's flute played with vibrato at
+  # its one strength, against vel 0.3:
   # the vibrato's rate in Hz and depth in cents, as medians over the notes.
   @flute_vibrato [
     {0.3, %{rate: 4.83, depth: 8.0}},
@@ -1996,9 +2042,12 @@ defmodule Mx.DesignsTest do
 
   # Measured from the University of Iowa's Bb clarinet, played without vibrato from D3 to C7,
   # at pp, mf and ff against vel 0.3, 0.6 and 1, as medians over its notes:
-  # the seconds a note takes to speak, and each band's level while it holds, against D3's fundamental.
-  # pp's recordings leave out seven quiet stretches between notes, whose fundamental stands over 40 dB below the notes'.
-  # From 400 Hz up, VSCO 2's clarinet stands 4 to 13 dB above these played loud, and 4 to 19 dB played soft;
+  # the seconds a note takes to speak, and each band's level while it holds, against D3's
+  # fundamental.
+  # pp's recordings leave out seven quiet stretches between notes, whose fundamental stands over
+  # 40 dB below the notes'.
+  # From 400 Hz up, VSCO 2's clarinet stands 4 to 13 dB above these played loud, and 4 to 19 dB
+  # played soft;
   # the clarinet follows Iowa.
   @clarinet %{
     0.3 => %{
@@ -2084,7 +2133,8 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # The reed and brass winds, their attacks fitted to their recordings', take up to half a second to settle, so their pitch is compared from after that.
+  # The reed and brass winds, their attacks fitted to their recordings', take up to half a second
+  # to settle, so their pitch is compared from after that.
   @spoken 0.5
 
   test "a clarinet has no vibrato by default, and vibrato grows as the note holds", ctx do
@@ -2097,8 +2147,10 @@ defmodule Mx.DesignsTest do
 
   # Measured from the University of Iowa's oboe, played without vibrato from Bb3 to Ab6,
   # at pp, mf and ff against vel 0.3, 0.6 and 1, as medians over its notes:
-  # the seconds a note takes to speak, and each band's level while it holds, against Bb3's fundamental.
-  # VSCO 2's oboe stands 13 to 18 dB above these in every band, as its Bb3's fundamental is that much weaker;
+  # the seconds a note takes to speak, and each band's level while it holds, against Bb3's
+  # fundamental.
+  # VSCO 2's oboe stands 13 to 18 dB above these in every band, as its Bb3's fundamental is that
+  # much weaker;
   # the shape of its bands matches, and the oboe follows Iowa.
   @oboe %{
     0.3 => %{
@@ -2190,9 +2242,11 @@ defmodule Mx.DesignsTest do
 
   # Measured from the University of Iowa's bassoon, played without vibrato from Bb1 to D5,
   # at pp, mf and ff against vel 0.3, 0.6 and 1, as medians over its notes:
-  # the seconds a note takes to speak, and each band's level while it holds, against Bb1's fundamental.
+  # the seconds a note takes to speak, and each band's level while it holds, against Bb1's
+  # fundamental.
   # There is no band below 80 Hz, though the bassoon reaches down to 58 Hz.
-  # VSCO 2's held bassoon stands about 40 dB above these, as its lowest note has almost no fundamental;
+  # VSCO 2's held bassoon stands about 40 dB above these, as its lowest note has almost no
+  # fundamental;
   # the bassoon follows Iowa.
   @bassoon %{
     0.3 => %{
@@ -2299,9 +2353,10 @@ defmodule Mx.DesignsTest do
     assert Held.note(still, @rate, 50).vibrato == nil
   end
 
-  # Measured from the tenor saxophone of the Versilian Community Sample Library, held without vibrato from Ab2 to E5,
-  # at its two strengths against vel 0.6 and 1, as medians over its notes:
-  # the seconds a note takes to speak, and each band's level while it holds, against Ab2's fundamental.
+  # Measured from the tenor saxophone of the Versilian Community Sample Library, held without
+  # vibrato from Ab2 to E5, at its two strengths against vel 0.6 and 1, as medians over its notes:
+  # the seconds a note takes to speak, and each band's level while it holds, against Ab2's
+  # fundamental.
   # The recordings go on up to E6, in the altissimo register, which the tenor_sax leaves out.
   @tenor_sax %{
     0.6 => %{
@@ -2375,10 +2430,12 @@ defmodule Mx.DesignsTest do
     assert_in_delta median(louder), 5.9, 6
   end
 
-  # Measured from the same saxophone's staccato notes up to E5, at its two strengths against vel 0.3 and 0.6.
+  # Measured from the same saxophone's staccato notes up to E5, at its two strengths against vel
+  # 0.3 and 0.6.
   # As medians over the notes: each band's level as the note starts, against the loudest band.
   # And the seconds it takes to fade 60 dB, with the notes held 0.15 s.
-  # Their 80 to 160 Hz band rings twice as long as every band above it, as the room would, and is left out.
+  # Their 80 to 160 Hz band rings twice as long as every band above it, as the room would, and is
+  # left out.
   @tenor_sax_staccato %{
     0.3 =>
       {[50, 52, 54, 56, 57, 60, 62, 64, 66, 68, 70, 72, 74, 76],
@@ -2455,7 +2512,8 @@ defmodule Mx.DesignsTest do
   # Measured from the University of Iowa's Bb trumpet, held without vibrato from E3 to Eb6,
   # at pp, mf and ff against vel 0.3, 0.6 and 1,
   # as medians over its notes, leaving out the quiet stretches between them:
-  # the seconds a note takes to speak, and each band's level while it holds, against E3's fundamental.
+  # the seconds a note takes to speak, and each band's level while it holds, against E3's
+  # fundamental.
   @trumpet %{
     0.3 => %{
       attack: 0.22,
@@ -2512,7 +2570,8 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # Iowa's Bb trumpet held with vibrato swings 4.9 times a second by 7 cents, as medians over its notes at mf.
+  # Iowa's Bb trumpet held with vibrato swings 4.9 times a second by 7 cents, as medians over its
+  # notes at mf.
   test "trumpet's vibrato at 0.095 follows Iowa's Bb trumpet played with vibrato", ctx do
     %{vibrato: vibrato} =
       Held.summary(bowed_notes(ctx, :trumpet, 52..86//4, vel: 0.6, vibrato: 0.095))
@@ -2560,7 +2619,8 @@ defmodule Mx.DesignsTest do
   # Measured from the University of Iowa's tenor trombone, held without vibrato from E2 to C5,
   # at pp, mf and ff against vel 0.3, 0.6 and 1,
   # as medians over its notes, leaving out the quiet stretches between them:
-  # the seconds a note takes to speak, and each band's level while it holds, against E2's fundamental.
+  # the seconds a note takes to speak, and each band's level while it holds, against E2's
+  # fundamental.
   @trombone %{
     0.3 => %{
       attack: 0.22,
@@ -2621,8 +2681,8 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # Iowa's trombone has no vibrato, and VSCO 2's tenor trombone held with vibrato measures one on 4 of its 12 notes,
-  # swinging 4.95 times a second by 13 cents, as medians over those notes.
+  # Iowa's trombone has no vibrato, and VSCO 2's tenor trombone held with vibrato measures one on
+  # 4 of its 12 notes, swinging 4.95 times a second by 13 cents, as medians over those notes.
   test "trombone's vibrato at 0.176 follows VSCO 2's tenor trombone played with vibrato", ctx do
     %{vibrato: vibrato} =
       Held.summary(bowed_notes(ctx, :trombone, 40..72//4, vel: 0.6, vibrato: 0.176))
@@ -2677,8 +2737,10 @@ defmodule Mx.DesignsTest do
   end
 
   # Measured from VSCO 2's F horn, held at its three strengths against vel 0.3, 0.6 and 1,
-  # on the notes it has at each, as medians over them, leaving out the quiet stretches between them:
-  # the seconds a note takes to speak, and each band's level while it holds, against C2's fundamental.
+  # on the notes it has at each, as medians over them, leaving out the quiet stretches between
+  # them:
+  # the seconds a note takes to speak, and each band's level while it holds, against C2's
+  # fundamental.
   @horn %{
     0.3 => %{
       notes: [36, 39, 43, 46, 50, 53, 57, 60, 74, 77],
@@ -2759,8 +2821,9 @@ defmodule Mx.DesignsTest do
     assert_in_delta median(louder), 14.4, 6
   end
 
-  # VSCO 2 records each note at its own gain, so how loud the horn is from note to note follows Iowa's horn,
-  # which grows 8.7 dB louder from C4 to C5 at mf and 5.9 dB at ff, measured on its loudest harmonics.
+  # VSCO 2 records each note at its own gain, so how loud the horn is from note to note follows
+  # Iowa's horn, which grows 8.7 dB louder from C4 to C5 at mf and 5.9 dB at ff, measured on its
+  # loudest harmonics.
   test "horn grows louder from C4 to C5 as Iowa's horn does", ctx do
     for vel <- [0.6, 1] do
       c4 = render(ctx, :horn, [note: 60, vel: vel, sustain: 2], 2)
@@ -2788,8 +2851,10 @@ defmodule Mx.DesignsTest do
   end
 
   # Measured from VSCO 2's tuba, held at its three strengths against vel 0.3, 0.6 and 1,
-  # on the notes it has at each from Bb1 up, as medians over them, leaving out the quiet stretches between them:
-  # the seconds a note takes to speak, and each band's level while it holds, against Bb1's fundamental.
+  # on the notes it has at each from Bb1 up, as medians over them, leaving out the quiet stretches
+  # between them:
+  # the seconds a note takes to speak, and each band's level while it holds, against Bb1's
+  # fundamental.
   # At its softest it has nothing to measure from 2.5 kHz up.
   @tuba %{
     0.3 => %{
@@ -2869,8 +2934,8 @@ defmodule Mx.DesignsTest do
     assert_in_delta median(louder), 21.9, 6
   end
 
-  # VSCO 2 records each note at its own gain, so how loud the tuba is from note to note follows Iowa's tuba,
-  # which grows 6.7 dB louder from C3 to C4 at mf, measured on its harmonics.
+  # VSCO 2 records each note at its own gain, so how loud the tuba is from note to note follows
+  # Iowa's tuba, which grows 6.7 dB louder from C3 to C4 at mf, measured on its harmonics.
   test "tuba grows louder from C3 to C4 as Iowa's tuba does at mf", ctx do
     c3 = render(ctx, :tuba, [note: 48, vel: 0.6, sustain: 2], 2)
     c4 = render(ctx, :tuba, [note: 60, vel: 0.6, sustain: 2], 2)
@@ -2903,8 +2968,10 @@ defmodule Mx.DesignsTest do
              highs(slap, 2000, 0, 0.2) / rms(slap, 0, 0.2)
   end
 
-  # Measured from the agogô of the Versilian Community Sample Library, as medians over its strokes:
-  # each band's level as the bell is struck, against its loudest band, and the seconds it takes to fade 60 dB.
+  # Measured from the agogô of the Versilian Community Sample Library, as medians over its
+  # strokes:
+  # each band's level as the bell is struck, against its loudest band, and the seconds it takes to
+  # fade 60 dB.
   # Below 630 Hz the recordings hold the room rather than the bell, so those bands are left out.
   @agogo %{
     low_agogo: %{
@@ -2965,7 +3032,8 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # Each band's level at 0 and 50 ms after the strike, from mix mx.measure --hits over the same recordings.
+  # Each band's level at 0 and 50 ms after the strike, from mix mx.measure --hits over the same
+  # recordings.
   # The stick's strike shows from 10 kHz up and fades within 100 ms.
   test "each agogô bell's bands at 0 and 50 ms follow VCSL's agogô, within 8 dB", ctx do
     for {synth, %{moments: moments}} <- @agogo do
@@ -3022,7 +3090,8 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # Measured from the small and the large shaker of the Versilian Community Sample Library, as medians:
+  # Measured from the small and the large shaker of the Versilian Community Sample Library, as
+  # medians:
   # each band's level as a stroke starts, against its loudest band,
   # and the seconds it takes to fade 60 dB, nil where it does not fade measurably.
   # The ganzá follows the small shaker, leaving out one up stroke too short to measure.
@@ -3138,10 +3207,12 @@ defmodule Mx.DesignsTest do
   # Measured from the CC0 recording "pandeiro A" by MeanRaccoon on Freesound.
   # The figures are medians over its strokes, sorted by their bands.
   # A thumb is loudest below 250 Hz, and at least 6 dB softer from 6.3 kHz.
-  # A slap is within 3 dB of its loudest from 400 to 2500 Hz, and at least 10 dB softer below 250 Hz.
+  # A slap is within 3 dB of its loudest from 400 to 2500 Hz, and at least 10 dB softer below 250
+  # Hz.
   # A heel stroke is within 6 dB of its loudest below 250 Hz, and within 3 dB from 6.3 kHz.
   # Fingertips are loudest from 6.3 kHz, and at least 8 dB softer below 250 Hz.
-  # Each band's level is taken at 0, 50 and 100 ms after the stroke's loudest moment, against its loudest band at 0 ms.
+  # Each band's level is taken at 0, 50 and 100 ms after the stroke's loudest moment, against its
+  # loudest band at 0 ms.
   # Fingertip strokes follow one another too closely to measure them at 100 ms.
   @pandeiro_bands [
     {80, 250},
@@ -3236,7 +3307,8 @@ defmodule Mx.DesignsTest do
   end
 
   # Measured from the cabasa of the Versilian Community Sample Library.
-  # Each band's level as a hit starts, against its loudest band, and the seconds it takes to fade 60 dB.
+  # Each band's level as a hit starts, against its loudest band, and the seconds it takes to fade
+  # 60 dB.
   @cabasa_hit %{
     {1000, 1600} => {-19.1, 0.69},
     {1600, 2500} => {-13.7, 0.67},
@@ -3246,7 +3318,8 @@ defmodule Mx.DesignsTest do
     {10_000, 16_000} => {0.0, 0.30}
   }
 
-  # Each band's level over a rub, against its loudest band, as the median of VCSL's four rubs at both strengths.
+  # Each band's level over a rub, against its loudest band, as the median of VCSL's four rubs at
+  # both strengths.
   @cabasa_rub %{
     {1000, 1600} => -26,
     {1600, 2500} => -21,
@@ -3316,7 +3389,8 @@ defmodule Mx.DesignsTest do
 
   # Measured from the cajón of the Versilian Community Sample Library at f.
   # The bass tone is its stroke named hit2, the slap hit1.
-  # Each band's level as a stroke starts, against its loudest band, and the seconds it takes to fade 60 dB.
+  # Each band's level as a stroke starts, against its loudest band, and the seconds it takes to
+  # fade 60 dB.
   @cajon_bass %{
     {80, 160} => {0.0, 0.46},
     {160, 250} => {-20.8, 0.33},
@@ -3374,7 +3448,8 @@ defmodule Mx.DesignsTest do
     assert strongest(slap, 0, 0.3) >= strongest(bass, 0, 0.3) - 2
   end
 
-  # VCSL's bass tone is 17.8 dB louder at f than at pp, and its slap 17.2 dB louder at fff than at mp.
+  # VCSL's bass tone is 17.8 dB louder at f than at pp, and its slap 17.2 dB louder at fff than at
+  # mp.
   test "a harder cajón stroke is louder by as much as VCSL's, and brighter", ctx do
     for slap <- [0, 1] do
       soft = render(ctx, :cajon, [slap: slap, vel: 0.3], 1)
@@ -3399,8 +3474,10 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # Measured from the bongos of the Versilian Community Sample Library at their middle strength, open and muted.
-  # Each band's level as a stroke starts, against its loudest band, and the seconds it takes to fade 60 dB.
+  # Measured from the bongos of the Versilian Community Sample Library at their middle strength,
+  # open and muted.
+  # Each band's level as a stroke starts, against its loudest band, and the seconds it takes to
+  # fade 60 dB.
   @bongos %{
     {:low_bongo, 0} => %{
       {80, 160} => {-29.4, 1.97},
@@ -3474,7 +3551,8 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # Measured with mix mx.measure --hits --partials 4 from Freesound's preview of plotzki's "X Surdo 2Barb.aiff", four open strokes:
+  # Measured with mix mx.measure --hits --partials 4 from Freesound's preview of plotzki's "X
+  # Surdo 2Barb.aiff", four open strokes:
   # each band's level as struck against the loudest band, and the seconds it fades 60 dB in.
   @surdo %{
     {80, 160} => {-3.7, 1.37},
@@ -3498,7 +3576,8 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # plotzki's open strokes ring on 66.4 to 67.5 Hz in 36127 and 36110, with a peak at twice it about 10 dB down.
+  # plotzki's open strokes ring on 66.4 to 67.5 Hz in 36127 and 36110, with a peak at twice it
+  # about 10 dB down.
   test "the surdo's open stroke rings on 66.6 Hz with a peak at twice it, and the muted one higher and shorter",
        ctx do
     [lowest, twice | _] = Hits.hit(render(ctx, :surdo, [], 4), @rate, 36, partials: 6).partials
@@ -3516,7 +3595,8 @@ defmodule Mx.DesignsTest do
     assert muted_fade <= open_fade / 2, "the muted stroke fades in #{muted_fade} s"
   end
 
-  # igorfiche01's surdo, "AKG 414 Surdo Processed.wav", rings on 85.9 Hz in the median of its 18 open strokes.
+  # igorfiche01's surdo, "AKG 414 Surdo Processed.wav", rings on 85.9 Hz in the median of its 18
+  # open strokes.
   test "the surdo tuned to F2 rings as igorfiche01's higher surdo does, and is louder struck harder",
        ctx do
     [lowest | _] = Hits.hit(render(ctx, :surdo, [note: 41], 4), @rate, 41, partials: 6).partials
@@ -3527,9 +3607,16 @@ defmodule Mx.DesignsTest do
     assert rms(hard, 0, 0.5) > rms(soft, 0, 0.5) * 2
   end
 
-  # Measured as the test below measures the synth, over the isolated strokes of reinsamba's pack "Cuica" on Freesound: 72 low ones with the head free, sounds 21715, 21719, 21723, 21724 and 21727, and 60 high ones with it pressed, sounds 21718 and 21720 to 21722, of which the 9 of 21720 stand alone.
-  # The pitch the stroke settles at, its second and third harmonics against the fundamental, how far under the note it starts and by when it is within 50 cents of it, and how long it lasts above 25 dB under its peak.
-  # The low strokes settle at 363 Hz, the synth's note with none given, start 203 cents under and last 0.2 s, their harmonics 22 and 35 dB under; the high ones standing alone start 210 cents under and last 0.14 s, their harmonics 19 and 20 dB under as the stroke dies.
+  # Measured as the test below measures the synth, over the isolated strokes of reinsamba's pack
+  # "Cuica" on Freesound: 72 low ones with the head free, sounds 21715, 21719, 21723, 21724 and
+  # 21727, and 60 high ones with it pressed, sounds 21718 and 21720 to 21722, of which the 9 of
+  # 21720 stand alone.
+  # The pitch the stroke settles at, its second and third harmonics against the fundamental, how
+  # far under the note it starts and by when it is within 50 cents of it, and how long it lasts
+  # above 25 dB under its peak.
+  # The low strokes settle at 363 Hz, the synth's note with none given, start 203 cents under and
+  # last 0.2 s, their harmonics 22 and 35 dB under; the high ones standing alone start 210 cents
+  # under and last 0.14 s, their harmonics 19 and 20 dB under as the stroke dies.
   @cuica_low 65.65
   @cuica_strokes %{
     @cuica_low => %{
@@ -3556,7 +3643,8 @@ defmodule Mx.DesignsTest do
       cents = fn a, b -> 1200 * :math.log2(a / b) end
       assert_in_delta cents.(median(settled), hz), 0, 30, "settles at #{median(settled)} Hz"
 
-      # Over 5 to 60 ms from where the stroke rises within 25 dB of its peak, the span the recordings' first five pitch frames covered.
+      # Over 5 to 60 ms from where the stroke rises within 25 dB of its peak, the span the
+      # recordings' first five pitch frames covered.
       starts =
         for {sound, at} <- Enum.zip(strokes, settled) do
           from = speaks(sound)
@@ -3601,7 +3689,8 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # reinsamba's strokes vary from one to the next: the scoop by about two thirds of itself and the pitch they settle at by 77 cents.
+  # reinsamba's strokes vary from one to the next: the scoop by about two thirds of itself and the
+  # pitch they settle at by 77 cents.
   test "no two cuíca strokes match: their scoops and the pitches they settle at vary", ctx do
     strokes = cuica_strokes(ctx, @cuica_low)
     settled = Enum.map(strokes, &pitch(window(&1, 0.13, 0.18), 363))
@@ -3630,7 +3719,9 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # The 143 low strokes of the pack's grooves, sounds 21716 and 21726, start 7 cents under the note they settle at; the second of a groove's two high strokes falls into its note from 80 cents over it.
+  # The 143 low strokes of the pack's grooves, sounds 21716 and 21726, start 7 cents under the
+  # note they settle at; the second of a groove's two high strokes falls into its note from 80
+  # cents over it.
   test "a cuíca stroke with a scoop of 0 starts on its note, and one under 0 falls into it",
        ctx do
     cents = fn stroke ->
@@ -3646,7 +3737,9 @@ defmodule Mx.DesignsTest do
     assert above > 80, "starts #{above} cents over its note"
   end
 
-  # Over the same grooves, 70 ms into a low stroke at 331 Hz, the second harmonic is 3 dB over the fundamental and the fourth 7 under, where the shell answers near 660 and 1320 Hz; the isolated strokes at 363 Hz miss both.
+  # Over the same grooves, 70 ms into a low stroke at 331 Hz, the second harmonic is 3 dB over the
+  # fundamental and the fourth 7 under, where the shell answers near 660 and 1320 Hz; the isolated
+  # strokes at 363 Hz miss both.
   test "a cuíca's low stroke at 330 Hz rings the shell with its second and fourth harmonics",
        ctx do
     stroke = render(ctx, :cuica, [note: 64, vel: 0.9, scoop: 0, sustain: 0.19], 0.4)
@@ -3659,13 +3752,16 @@ defmodule Mx.DesignsTest do
 
     assert_in_delta against.(2), 3, 4, "harmonic 2 at #{against.(2)} dB"
 
-    # The fourth is 4 dB under the fundamental in the strokes on the beat and 11 under in the softer ones after it.
+    # The fourth is 4 dB under the fundamental in the strokes on the beat and 11 under in the
+    # softer ones after it.
     assert_in_delta against.(4), -7, 5, "harmonic 4 at #{against.(4)} dB"
     assert against.(3) < -14, "harmonic 3 at #{against.(3)} dB"
   end
 
-  # Measured with mix mx.measure --hits --partials 6 from the Commons recording "Tamborim Sound.ogg" by Samba-x, converted to WAV, 45 strokes:
-  # each band's level at the strike against the loudest band, the seconds it fades 60 dB in, and its level 50 and 100 ms after the loudest moment.
+  # Measured with mix mx.measure --hits --partials 6 from the Commons recording "Tamborim
+  # Sound.ogg" by Samba-x, converted to WAV, 45 strokes:
+  # each band's level at the strike against the loudest band, the seconds it fades 60 dB in, and
+  # its level 50 and 100 ms after the loudest moment.
   @tamborim %{
     {160, 250} => {-25.4, 0.68, -29, -36},
     {250, 400} => {-15.7, 0.58, -19, -23},
@@ -3694,7 +3790,8 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # The recording's strokes ring on 524.3 Hz in the median, with strong peaks near 1.8 and 2.5 times it.
+  # The recording's strokes ring on 524.3 Hz in the median, with strong peaks near 1.8 and 2.5
+  # times it.
   test "the tamborim rings on 524 Hz with peaks near 1.8 and 2.5 times it, and an octave up with a note 12 higher",
        ctx do
     peaks = Hits.hit(render(ctx, :tamborim, [], 1.5), @rate, nil, partials: 6).partials
@@ -3718,7 +3815,8 @@ defmodule Mx.DesignsTest do
     assert rms(hard, 0, 0.3) > rms(soft, 0, 0.3) * 2
   end
 
-  # Caxixi.ogg by Freddythehat on Wikimedia Commons, measured with mix mx.measure --hits: each band's level and fade, and its level 50 and 100 ms after the loudest moment.
+  # Caxixi.ogg by Freddythehat on Wikimedia Commons, measured with mix mx.measure --hits: each
+  # band's level and fade, and its level 50 and 100 ms after the loudest moment.
   @caxixi %{
     {1000, 1600} => {-13.2, 4.41, -23, -27},
     {1600, 2500} => {-5.3, 2.68, -15, -19},
@@ -3811,9 +3909,12 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # Measured from VSCO 2's snare with its snares on, at its softest, middle and hardest strengths, which vel 0.3, 0.65 and 1 stand for.
-  # Each band's level as a stroke starts, against its loudest band, and the seconds it takes to fade 60 dB.
-  # Below 160 Hz the recordings hold only a hum, and at the softest strength the hum lengthens every band's fade, so those are left out.
+  # Measured from VSCO 2's snare with its snares on, at its softest, middle and hardest strengths,
+  # which vel 0.3, 0.65 and 1 stand for.
+  # Each band's level as a stroke starts, against its loudest band, and the seconds it takes to
+  # fade 60 dB.
+  # Below 160 Hz the recordings hold only a hum, and at the softest strength the hum lengthens
+  # every band's fade, so those are left out.
   @snare %{
     0.3 => %{
       {160, 250} => {0.0, nil},
@@ -3888,8 +3989,10 @@ defmodule Mx.DesignsTest do
   end
 
   # Measured from VSCO 2's crash cymbal at pp and ff, which vel 0.3 and 1 stand for.
-  # Each band's level as a stroke starts, against its loudest band, and the seconds it takes to fade 60 dB.
-  # Below 400 Hz the recordings' fades differ threefold from one strength to the next, so those are left out.
+  # Each band's level as a stroke starts, against its loudest band, and the seconds it takes to
+  # fade 60 dB.
+  # Below 400 Hz the recordings' fades differ threefold from one strength to the next, so those
+  # are left out.
   @crash %{
     0.3 => %{
       {80, 160} => {-20.7, nil},
@@ -3959,9 +4062,12 @@ defmodule Mx.DesignsTest do
     assert peak(choked, 0.62, 1) == 0
   end
 
-  # Measured from VCSL's hi-hat struck closed at its four strengths, which vel 0.3, 0.533, 0.767 and 1 stand for, and struck open, which vel 0.8 stands for.
-  # Each band's level as a stroke starts, against its loudest band, and the seconds it takes to fade 60 dB.
-  # Below 160 Hz the recordings hold mostly noise, as do the softest closed strokes' fades, so those are left out.
+  # Measured from VCSL's hi-hat struck closed at its four strengths, which vel 0.3, 0.533, 0.767
+  # and 1 stand for, and struck open, which vel 0.8 stands for.
+  # Each band's level as a stroke starts, against its loudest band, and the seconds it takes to
+  # fade 60 dB.
+  # Below 160 Hz the recordings hold mostly noise, as do the softest closed strokes' fades, so
+  # those are left out.
   @hihat %{
     {:closed_hihat, 0.3} => %{
       {160, 250} => {-23.4, nil},
@@ -4037,7 +4143,8 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # VCSL's hardest closed hi-hat stroke is 29.7 dB louder than its softest over the first 0.3 s, and its open stroke 3.6 dB louder than the hardest closed one.
+  # VCSL's hardest closed hi-hat stroke is 29.7 dB louder than its softest over the first 0.3 s,
+  # and its open stroke 3.6 dB louder than the hardest closed one.
   test "a harder hi-hat stroke is louder by as much as VCSL's, and brighter", ctx do
     soft = render(ctx, :closed_hihat, [vel: 0.3], 1)
     hard = render(ctx, :closed_hihat, [vel: 1], 1)
@@ -4075,9 +4182,12 @@ defmodule Mx.DesignsTest do
     assert peak(pedalled, 0.6, 1) == 0
   end
 
-  # Measured from VCSL's high and low toms struck with sticks at their three strengths, which vel 0.3, 0.65 and 1 stand for.
-  # Each band's level as a stroke starts, against its loudest band, and the seconds it takes to fade 60 dB.
-  # The quietest bands of the softest strokes fade into the recordings' noise, so those fades are left out.
+  # Measured from VCSL's high and low toms struck with sticks at their three strengths, which vel
+  # 0.3, 0.65 and 1 stand for.
+  # Each band's level as a stroke starts, against its loudest band, and the seconds it takes to
+  # fade 60 dB.
+  # The quietest bands of the softest strokes fade into the recordings' noise, so those fades are
+  # left out.
   @toms %{
     {:high_tom, 0.3} => %{
       {80, 160} => {-0.1, 1.45},
@@ -4170,7 +4280,8 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # VCSL's hardest stroke is 14.1 dB louder than its softest over the first 0.3 s on the high tom, and 10.6 dB on the low.
+  # VCSL's hardest stroke is 14.1 dB louder than its softest over the first 0.3 s on the high tom,
+  # and 10.6 dB on the low.
   test "a harder tom stroke is louder by as much as VCSL's, and brighter", ctx do
     for {drum, expected} <- [high_tom: 14.1, low_tom: 10.6] do
       soft = render(ctx, drum, [vel: 0.3], 1)
@@ -4202,9 +4313,12 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # Measured from VSCO 2's timpani 2 to 5, whose notes are near 47, 49, 52 and 54, at their three strengths, which vel 0.3, 0.65 and 1 stand for.
-  # Each band's median level as a stroke starts, against its loudest band, and the seconds it takes to fade 60 dB.
-  # At the softest strength the bands above 630 Hz fade into the recordings' noise, and those above 1 kHz are noise, so they are left out.
+  # Measured from VSCO 2's timpani 2 to 5, whose notes are near 47, 49, 52 and 54, at their three
+  # strengths, which vel 0.3, 0.65 and 1 stand for.
+  # Each band's median level as a stroke starts, against its loudest band, and the seconds it
+  # takes to fade 60 dB.
+  # At the softest strength the bands above 630 Hz fade into the recordings' noise, and those
+  # above 1 kHz are noise, so they are left out.
   @timpani %{
     0.3 => %{
       {80, 160} => {0.0, 1.90},
@@ -4275,7 +4389,8 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # VSCO 2's hardest timpani stroke is 26 dB louder than its softest over the first 0.3 s, the median over timpani 2 to 5.
+  # VSCO 2's hardest timpani stroke is 26 dB louder than its softest over the first 0.3 s, the
+  # median over timpani 2 to 5.
   test "a harder timpani stroke is louder by as much as VSCO 2's, and brighter", ctx do
     soft = render(ctx, :timpani, [note: 49, vel: 0.3], 1)
     hard = render(ctx, :timpani, [note: 49, vel: 1], 1)
@@ -4309,10 +4424,17 @@ defmodule Mx.DesignsTest do
     assert peak(damped, 0.7, 1) < 1.0e-4
   end
 
-  # Measured from VSCO 2's tumba, conga and quinto, which low_conga, mid_conga and high_conga stand for, struck open at three strengths, which vel 0.3, 0.6 and 1 stand for, and tapped with the fingers, which mute 1 at vel 0.3 stands for.
-  # Each band's median level as a stroke starts, against its loudest band, and the seconds it takes to fade 60 dB.
-  # The open strokes' fades above 1 kHz at the softest strength and above 2.5 kHz at the others disagree between strengths by up to three times, as the recordings' noise does, and are left out, as are the softest tumba's levels above 2.5 kHz.
-  # The first softest tumba stroke barely sounds, peaking 24 dB below the second, so the softest tumba is the second alone; the taps' fades of bands more than 20 dB below the loudest are left out.
+  # Measured from VSCO 2's tumba, conga and quinto, which low_conga, mid_conga and high_conga
+  # stand for, struck open at three strengths, which vel 0.3, 0.6 and 1 stand for, and tapped with
+  # the fingers, which mute 1 at vel 0.3 stands for.
+  # Each band's median level as a stroke starts, against its loudest band, and the seconds it
+  # takes to fade 60 dB.
+  # The open strokes' fades above 1 kHz at the softest strength and above 2.5 kHz at the others
+  # disagree between strengths by up to three times, as the recordings' noise does, and are left
+  # out, as are the softest tumba's levels above 2.5 kHz.
+  # The first softest tumba stroke barely sounds, peaking 24 dB below the second, so the softest
+  # tumba is the second alone; the taps' fades of bands more than 20 dB below the loudest are left
+  # out.
   @congas %{
     low_conga: %{
       0.3 => %{
@@ -4482,7 +4604,8 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # How much louder VSCO 2's hardest open stroke is than its softest, and how much quieter a tap is than the softest, over the first 0.3 s, the medians of their two takes.
+  # How much louder VSCO 2's hardest open stroke is than its softest, and how much quieter a tap
+  # is than the softest, over the first 0.3 s, the medians of their two takes.
   @conga_loudness %{low_conga: {10.0, -24.0}, mid_conga: {13.7, -25.0}, high_conga: {16.3, -31.5}}
 
   test "a harder conga stroke is louder by as much as VSCO 2's, and brighter, and a muted one as quiet as its taps",
@@ -4520,9 +4643,12 @@ defmodule Mx.DesignsTest do
     assert pitches == Enum.sort(pitches)
   end
 
-  # Measured from the University of Iowa's three tambourines, struck at pp, mf and ff, which vel 0.3, 0.6 and 1 stand for, from 160 Hz up.
-  # Each band's median level as a stroke starts, against its loudest band, and the seconds it takes to fade 60 dB.
-  # Below 400 Hz the softest strokes fall 40 dB within 100 ms and then fade slowly into the recordings' noise, so those fades are left out.
+  # Measured from the University of Iowa's three tambourines, struck at pp, mf and ff, which vel
+  # 0.3, 0.6 and 1 stand for, from 160 Hz up.
+  # Each band's median level as a stroke starts, against its loudest band, and the seconds it
+  # takes to fade 60 dB.
+  # Below 400 Hz the softest strokes fall 40 dB within 100 ms and then fade slowly into the
+  # recordings' noise, so those fades are left out.
   @tambourine %{
     0.3 => %{
       {160, 250} => {-28.6, nil},
@@ -4577,7 +4703,8 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # Iowa's ff tambourine strokes are 23.4 dB louder than their pp ones over the first 0.3 s, the median of the three tambourines.
+  # Iowa's ff tambourine strokes are 23.4 dB louder than their pp ones over the first 0.3 s, the
+  # median of the three tambourines.
   test "a harder tambourine stroke is louder by as much as Iowa's, and brighter", ctx do
     soft = render(ctx, :tambourine, [vel: 0.3], 1)
     hard = render(ctx, :tambourine, [vel: 1], 1)
@@ -4602,9 +4729,14 @@ defmodule Mx.DesignsTest do
     assert_in_delta long / short, 2, 0.4
   end
 
-  # Measured from the University of Iowa's 6- and 8-inch triangles at mf and ff, which vel 0.6 and 1 stand for, and from VCSL's triangles muted by the hand, which sustain 0 and a release of 1.1 s stand for.
-  # Each band's median level as a stroke starts, against its loudest band, and the seconds it takes to fade 60 dB.
-  # Below 1 kHz every recording is noise; Iowa's 1.6 to 2.5 kHz fades read 21 s and longer, and VCSL's triangles are 7 to 12 dB brighter from 1 to 4 kHz than Iowa's, open or muted, so those are left out, and only the muted strokes' fades are compared.
+  # Measured from the University of Iowa's 6- and 8-inch triangles at mf and ff, which vel 0.6 and
+  # 1 stand for, and from VCSL's triangles muted by the hand, which sustain 0 and a release of 1.1
+  # s stand for.
+  # Each band's median level as a stroke starts, against its loudest band, and the seconds it
+  # takes to fade 60 dB.
+  # Below 1 kHz every recording is noise; Iowa's 1.6 to 2.5 kHz fades read 21 s and longer, and
+  # VCSL's triangles are 7 to 12 dB brighter from 1 to 4 kHz than Iowa's, open or muted, so those
+  # are left out, and only the muted strokes' fades are compared.
   @triangle [
     {[vel: 0.6],
      %{
@@ -4652,7 +4784,8 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # Iowa's ff triangle strokes are 29.5 dB louder over the first 0.3 s than VCSL's softest, the median of each; Iowa's own pp strokes are lost in the room's noise.
+  # Iowa's ff triangle strokes are 29.5 dB louder over the first 0.3 s than VCSL's softest, the
+  # median of each; Iowa's own pp strokes are lost in the room's noise.
   test "a harder triangle stroke is louder by as much as the recordings', and brighter", ctx do
     soft = render(ctx, :triangle, [vel: 0.3], 1)
     hard = render(ctx, :triangle, [vel: 1], 1)
@@ -4676,8 +4809,11 @@ defmodule Mx.DesignsTest do
     assert peak(damped, 0.2, 1) == 0
   end
 
-  # Measured from the claves of VCSL and VSCO 2 at their three strengths, which vel 0.3, 0.6 and 1 stand for; the University of Iowa's claves are gated to silence within milliseconds of each stroke, so they are left out.
-  # Each band's median level as a stroke starts, against its loudest band, and the seconds it takes to fade 60 dB.
+  # Measured from the claves of VCSL and VSCO 2 at their three strengths, which vel 0.3, 0.6 and 1
+  # stand for; the University of Iowa's claves are gated to silence within milliseconds of each
+  # stroke, so they are left out.
+  # Each band's median level as a stroke starts, against its loudest band, and the seconds it
+  # takes to fade 60 dB.
   # Fades of over a second at the softer strengths are the recordings' noise, and are left out.
   @clave %{
     0.3 => %{
@@ -4724,7 +4860,8 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # The recordings' hardest clave strokes are 20.2 dB louder than their softest over the first 0.3 s, the medians of their four takes; the longest lasts 1.51 s.
+  # The recordings' hardest clave strokes are 20.2 dB louder than their softest over the first 0.3
+  # s, the medians of their four takes; the longest lasts 1.51 s.
   test "a harder clave stroke is louder by as much as the recordings', and brighter, a lower note sounds lower, and a stroke ends within the longest recording",
        ctx do
     soft = render(ctx, :clave, [vel: 0.3], 2)
@@ -4743,9 +4880,13 @@ defmodule Mx.DesignsTest do
     assert lowered < pitch * 0.8
   end
 
-  # Measured from the cowbells of VSCO 2 and VCSL: vel 0.3 stands for VSCO 2's two softest strengths, vel 1 for its two hardest with VCSL's open strokes, and vel 0.75 with muted: 1 for VCSL's muted strokes.
-  # Each band's median level as a stroke starts, against its loudest band, and the seconds it takes to fade 60 dB.
-  # Below 400 Hz the recordings hold only their room's noise, and so do fades of over 0.8 s, so they are left out.
+  # Measured from the cowbells of VSCO 2 and VCSL: vel 0.3 stands for VSCO 2's two softest
+  # strengths, vel 1 for its two hardest with VCSL's open strokes, and vel 0.75 with muted: 1 for
+  # VCSL's muted strokes.
+  # Each band's median level as a stroke starts, against its loudest band, and the seconds it
+  # takes to fade 60 dB.
+  # Below 400 Hz the recordings hold only their room's noise, and so do fades of over 0.8 s, so
+  # they are left out.
   @cowbell %{
     [vel: 0.3] => %{
       {400, 630} => {-1.6, 0.63},
@@ -4794,8 +4935,10 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # VSCO 2's hardest cowbell strokes are 25.0 dB louder than its softest over the first 0.3 s, the medians of their two takes; the longest recording, an open stroke of VCSL's, lasts 1.79 s.
-  # A harder stroke is duller, not brighter: its share above 2 kHz falls 3.4 dB, and above 4 kHz 3.3 dB.
+  # VSCO 2's hardest cowbell strokes are 25.0 dB louder than its softest over the first 0.3 s, the
+  # medians of their two takes; the longest recording, an open stroke of VCSL's, lasts 1.79 s.
+  # A harder stroke is duller, not brighter: its share above 2 kHz falls 3.4 dB, and above 4 kHz
+  # 3.3 dB.
   test "a harder cowbell stroke is louder and duller by as much as the recordings', a lower note sounds lower, and a stroke ends within the longest recording",
        ctx do
     soft = render(ctx, :cowbell, [vel: 0.3], 2)
@@ -4817,8 +4960,11 @@ defmodule Mx.DesignsTest do
     assert lowered < pitch * 0.8
   end
 
-  # Measured from the güiros of the University of Iowa and VSCO 2, all of their scrapes at the default length, and their short scrapes, Iowa's at mf and ff and VSCO 2's hits, at vel 0.8 and sustain 0.1.
-  # Each band's median level as a scrape starts, against its loudest band, and the seconds it takes to fade 60 dB.
+  # Measured from the güiros of the University of Iowa and VSCO 2, all of their scrapes at the
+  # default length, and their short scrapes, Iowa's at mf and ff and VSCO 2's hits, at vel 0.8 and
+  # sustain 0.1.
+  # Each band's median level as a scrape starts, against its loudest band, and the seconds it
+  # takes to fade 60 dB.
   @guiro %{
     [] => %{
       {400, 630} => {-17.9, 0.59},
@@ -4854,7 +5000,8 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # Iowa's ff scrapes are 12.1 dB louder than its pp scrape over the first 0.3 s, and their share above 2 kHz is 1.65 dB higher, above 4 kHz 3.45 dB; VSCO 2's longest recording lasts 2.64 s.
+  # Iowa's ff scrapes are 12.1 dB louder than its pp scrape over the first 0.3 s, and their share
+  # above 2 kHz is 1.65 dB higher, above 4 kHz 3.45 dB; VSCO 2's longest recording lasts 2.64 s.
   test "a harder guiro scrape is louder and brighter by as much as Iowa's, a lower note sounds lower, and a scrape ends within the longest recording",
        ctx do
     soft = render(ctx, :guiro, [vel: 0.3], 2)
@@ -4876,7 +5023,8 @@ defmodule Mx.DesignsTest do
     assert lowered < pitch * 0.8
   end
 
-  # VSCO 2's fast, medium and slow scrapes last 0.26, 0.63 and 1.33 s, and their ridges come 126, 98 and 40 times a second, the strongest beat of their loudness above 2 kHz.
+  # VSCO 2's fast, medium and slow scrapes last 0.26, 0.63 and 1.33 s, and their ridges come 126,
+  # 98 and 40 times a second, the strongest beat of their loudness above 2 kHz.
   test "a guiro scrape's ridges come as often as on VSCO 2's scrapes of its length", ctx do
     for {length, rate} <- [{0.26, 126}, {0.63, 98}, {1.33, 40}] do
       sound = render(ctx, :guiro, [sustain: length], length + 0.6)
@@ -4885,8 +5033,10 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # Measured from "Tanpura 10" by sankalp on Freesound, a big tanpura tuned Pa Sa Sa sa on Db3, as one drone held from its first sample to its last:
-  # each band's level of harmonics and of the noise between them, against the fundamental, and how long it holds within 12 dB of its loudest.
+  # Measured from "Tanpura 10" by sankalp on Freesound, a big tanpura tuned Pa Sa Sa sa on Db3, as
+  # one drone held from its first sample to its last:
+  # each band's level of harmonics and of the noise between them, against the fundamental, and how
+  # long it holds within 12 dB of its loudest.
   @tanpura %{
     held: 20.74,
     bands: %{
@@ -4925,8 +5075,10 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # At a gap of 1 beat at 60 beats a minute, the cycle is 6 seconds: Pa at 0, Sa at 2 and 3, and the low Sa at 4.
-  # Each string is checked once it rings, since a pluck on another string shows faintly at every low frequency.
+  # At a gap of 1 beat at 60 beats a minute, the cycle is 6 seconds: Pa at 0, Sa at 2 and 3, and
+  # the low Sa at 4.
+  # Each string is checked once it rings, since a pluck on another string shows faintly at every
+  # low frequency.
   test "tanpura plucks Pa, Sa, Sa and the low Sa two, one, one and two gaps apart, in beats",
        ctx do
     opts = Synths.to_seconds(:tanpura, [note: 49, gap: 1, sustain: 12], 60)
@@ -4953,8 +5105,10 @@ defmodule Mx.DesignsTest do
     assert brightness.(3.4, 3.9) > brightness.(2.6, 3.0) * 1.25
   end
 
-  # Measured with mix mx.measure --hits --partials 6 from the "tabla bols" pack by mmiron on Freesound, over each stroke's takes:
-  # each band's level as it is struck, against its loudest band, and the seconds it takes to fade 60 dB, with the peaks of one take as ratios to the lowest.
+  # Measured with mix mx.measure --hits --partials 6 from the "tabla bols" pack by mmiron on
+  # Freesound, over each stroke's takes:
+  # each band's level as it is struck, against its loudest band, and the seconds it takes to fade
+  # 60 dB, with the peaks of one take as ratios to the lowest.
   @tabla %{
     tabla_na: %{
       length: 2,
@@ -5096,8 +5250,10 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # Measured with mix mx.measure --hits over the first minute of "Berimbau jam without caxixi.wav" by EliasArtista on Freesound, 46 strokes:
-  # each band's level as the string is struck, against the loudest band, and 50, 100 and 200 ms after the loudest moment.
+  # Measured with mix mx.measure --hits over the first minute of "Berimbau jam without caxixi.wav"
+  # by EliasArtista on Freesound, 46 strokes:
+  # each band's level as the string is struck, against the loudest band, and 50, 100 and 200 ms
+  # after the loudest moment.
   @berimbau %{
     {80, 160} => {-22.5, [-23, -23, -26]},
     {160, 250} => {-10.0, [-12, -13, -15]},
@@ -5162,7 +5318,9 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # On uiop's "berimbau.aif" the gourd opens and closes against the belly every 0.43 seconds while the string rings: the 5th harmonic swings 20 to 25 dB against the 3rd, peaking as the 3rd dips, about 34 dB from peak to trough.
+  # On uiop's "berimbau.aif" the gourd opens and closes against the belly every 0.43 seconds while
+  # the string rings: the 5th harmonic swings 20 to 25 dB against the 3rd, peaking as the 3rd
+  # dips, about 34 dB from peak to trough.
   test "a berimbau's gourd swings its 5th harmonic against its 3rd every 0.43 seconds, as on uiop's recording, and gourd: 0 holds it still",
        ctx do
     swing = fn sound ->
@@ -5189,7 +5347,8 @@ defmodule Mx.DesignsTest do
     assert Enum.max(still) - Enum.min(still) < 6
   end
 
-  # No open recording has a buzzed stroke, so the buzz is designed, not measured: the coin resting on the wire damps the string and rattles against it.
+  # No open recording has a buzzed stroke, so the buzz is designed, not measured: the coin resting
+  # on the wire damps the string and rattles against it.
   test "a buzzed berimbau stroke dies within 0.2 seconds, brighter than an open one", ctx do
     open = render(ctx, :berimbau, [], 1)
     buzz = render(ctx, :berimbau, [buzz: 1], 1)
@@ -5211,7 +5370,8 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # Measured with mix mx.measure from "sitar01.flac" on Freesound, the first main string of a sitar plucked at E3, F3, G3 and G#3:
+  # Measured with mix mx.measure from "sitar01.flac" on Freesound, the first main string of a
+  # sitar plucked at E3, F3, G3 and G#3:
   # each band's fade in seconds and its level against E3's fundamental.
   @sitar %{
     notes: [52, 53, 55, 56],
@@ -5268,8 +5428,10 @@ defmodule Mx.DesignsTest do
     assert rms(hard, 0, 0.5) > rms(soft, 0, 0.5) * 2
   end
 
-  # Measured with mix mx.measure --held from the "Harmonium" pack by cabled_mess on Freesound, at C2, C3, A3, C4 and D5:
-  # the seconds a note takes to speak, and each band's level of harmonics and of the noise between them, against C2's fundamental.
+  # Measured with mix mx.measure --held from the "Harmonium" pack by cabled_mess on Freesound, at
+  # C2, C3, A3, C4 and D5:
+  # the seconds a note takes to speak, and each band's level of harmonics and of the noise between
+  # them, against C2's fundamental.
   @harmonium %{
     notes: [36, 48, 57, 60, 74],
     attack: 0.23,
@@ -5309,7 +5471,8 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # The measuring reads a swing of 3.85 times a second on any bright note at C2, a plain saw's too, so C2's vibrato is not checked.
+  # The measuring reads a swing of 3.85 times a second on any bright note at C2, a plain saw's
+  # too, so C2's vibrato is not checked.
   test "harmonium sounds its note with no vibrato, and a note tuned with cents at that pitch",
        ctx do
     for note <- [36, 48, 60, 74] do
@@ -5335,8 +5498,10 @@ defmodule Mx.DesignsTest do
     assert rms(hard, 0.5, 1) > rms(soft, 0.5, 1) * 2
   end
 
-  # Measured with mix mx.measure --held from Freesound's previews of "Accordeon master" by hammondman, at C3, E3, G3, C4, E4, G4, B4 and D5:
-  # the seconds a note takes to speak, the reeds' beating as a vibrato, and each band's level of harmonics and of the noise between them, against C3's fundamental.
+  # Measured with mix mx.measure --held from Freesound's previews of "Accordeon master" by
+  # hammondman, at C3, E3, G3, C4, E4, G4, B4 and D5:
+  # the seconds a note takes to speak, the reeds' beating as a vibrato, and each band's level of
+  # harmonics and of the noise between them, against C3's fundamental.
   @accordion %{
     notes: [48, 52, 55, 60, 64, 67, 71, 74],
     attack: 0.05,
@@ -5409,7 +5574,8 @@ defmodule Mx.DesignsTest do
     (length(levels) - Enum.find_index(Enum.reverse(levels), &(&1 > top / 10))) / 100
   end
 
-  # The strongest beat from 30 to 400 a second in the loudness above 2 kHz, taken 2000 times a second.
+  # The strongest beat from 30 to 400 a second in the loudness above 2 kHz, taken 2000 times a
+  # second.
   defp ridge_rate(sound, from, to) do
     coefficient = :math.exp(-2 * :math.pi() * 2000 / @rate)
     filtered = sound |> window(from, to) |> high_pass(coefficient) |> high_pass(coefficient)
@@ -5445,7 +5611,8 @@ defmodule Mx.DesignsTest do
     Enum.max(for step <- -4..4, do: goertzel(samples, hz * (1 + step * 0.005)))
   end
 
-  # Fifteen cuíca strokes at `note`, rendered half a second apart in a song, each cut to its 0.45 seconds.
+  # Fifteen cuíca strokes at `note`, rendered half a second apart in a song, each cut to its 0.45
+  # seconds.
   defp cuica_strokes(ctx, note) do
     song = Path.join(ctx.tmp_dir, "strokes.exs")
     out = Path.join(ctx.tmp_dir, "strokes.wav")
@@ -5478,7 +5645,8 @@ defmodule Mx.DesignsTest do
 
   defp peak(sound, from, to), do: sound |> window(from, to) |> Enum.map(&abs/1) |> Enum.max()
 
-  # The frequency within a fifth of `near` whose period the samples repeat best at, by autocorrelation, refined between lags.
+  # The frequency within a fifth of `near` whose period the samples repeat best at, by
+  # autocorrelation, refined between lags.
   defp pitch(samples, near) do
     tuple = List.to_tuple(samples)
     count = tuple_size(tuple)
@@ -5523,7 +5691,8 @@ defmodule Mx.DesignsTest do
     out
   end
 
-  # Each pandeiro band's level at 0, 50 and 100 ms after the loudest of the first 20 ms, in 1024-sample spectra.
+  # Each pandeiro band's level at 0, 50 and 100 ms after the loudest of the first 20 ms, in
+  # 1024-sample spectra.
   # Each level is against the loudest band at 0 ms.
   defp pandeiro_levels(sound) do
     sound = List.to_tuple(sound)
@@ -5546,7 +5715,8 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # Each band's level over the 50 ms stretches within 20 dB of the loudest, against the loudest band.
+  # Each band's level over the 50 ms stretches within 20 dB of the loudest, against the loudest
+  # band.
   defp band_levels(sound) do
     hop = round(0.05 * @rate)
     chunks = Enum.chunk_every(sound, hop)
@@ -5599,7 +5769,8 @@ defmodule Mx.DesignsTest do
     Enum.max(pitches) - Enum.min(pitches)
   end
 
-  # Counts the peaks of the level, in 50 ms windows louder than the two on each side, across a stretch.
+  # Counts the peaks of the level, in 50 ms windows louder than the two on each side, across a
+  # stretch.
   defp pulses(sound, from, to) do
     levels = for chunk <- Enum.chunk_every(window(sound, from, to), 2400), do: rms(chunk, 0, 0.05)
 
@@ -5630,7 +5801,8 @@ defmodule Mx.DesignsTest do
     |> length()
   end
 
-  # Each band's level within 6 dB and its fade within 30 percent of a table's, a nil leaving that figure out.
+  # Each band's level within 6 dB and its fade within 30 percent of a table's, a nil leaving that
+  # figure out.
   defp assert_bands(bands, table, label) do
     for {band, {level, fade}} <- table do
       %{level: synth_level, fade: synth_fade} = bands[band]
@@ -5648,7 +5820,8 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # The median level in dB of the loudest hundredth of the bins between two frequencies, over 65536 samples from 0.3 seconds in.
+  # The median level in dB of the loudest hundredth of the bins between two frequencies, over
+  # 65536 samples from 0.3 seconds in.
   defp loudest_bins(sound, low, high) do
     size = 65_536
     spectrum = Signal.spectrum(List.to_tuple(sound), round(0.3 * @rate), size)
@@ -5765,7 +5938,8 @@ defmodule Mx.DesignsTest do
     Enum.max_by(30..600//2, &goertzel(samples, &1))
   end
 
-  # The frequency whose period best lines the sound up with itself, taking the shortest period near the best.
+  # The frequency whose period best lines the sound up with itself, taking the shortest period
+  # near the best.
   defp pitch(sound, from, to) do
     samples = sound |> window(from, to) |> List.to_tuple()
     size = min(tuple_size(samples), 4096) - 1200

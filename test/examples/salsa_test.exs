@@ -79,7 +79,8 @@ defmodule Mx.Examples.SalsaTest do
     part |> String.split("\n\n") |> hd()
   end
 
-  # An input device that answers the first line asked for after a delay, as a person pressing Enter would.
+  # An input device that answers the first line asked for after a delay, as a person pressing
+  # Enter would.
   defp enter_after(ms) do
     receive do
       {:io_request, from, ref, {:get_line, _, _}} ->

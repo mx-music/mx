@@ -89,7 +89,8 @@ defmodule Mx.MeasureTest do
     assert Measure.file(silent, 45) == {:error, "found no notes in #{silent}"}
   end
 
-  # Twelve harmonics at 1/number of the first, each fading 60 dB over fade seconds, stretched sharp by a stiffness.
+  # Twelve harmonics at 1/number of the first, each fading 60 dB over fade seconds, stretched
+  # sharp by a stiffness.
   defp tone(f0, rate, seconds, opts \\ []) do
     fade = Keyword.get(opts, :fade, 3)
     stretch = Keyword.get(opts, :stretch, 0)

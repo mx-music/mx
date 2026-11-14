@@ -39,10 +39,12 @@ defmodule Mx.Examples.CowbellTest do
     assert print(4) =~
              ~r/contracampana, pass 4, [^\n]*\nbeat 0 +play vel: 1, amp: 0.3, note: 75\n/
 
-    assert for({beat, _} <- strokes(4, "contracampana"), do: beat) == pattern
+    contracampana = for {beat, _} <- strokes(4, "contracampana"), do: beat
+    assert contracampana == pattern
     assert strokes(4, "campana") == []
 
-    assert for({beat, _} <- strokes(6, "contracampana"), do: beat) == pattern
+    contracampana = for {beat, _} <- strokes(6, "contracampana"), do: beat
+    assert contracampana == pattern
     assert strokes(6, "campana") == strokes(2, "campana")
 
     changuito = for {beat, _} <- strokes(10, "contracampana"), do: beat
@@ -52,7 +54,8 @@ defmodule Mx.Examples.CowbellTest do
   test "the campana plays the standard pattern of 12/8 twice to a pass, and both bells end on one hard open stroke" do
     standard = for {beat, _} <- strokes(12, "campana"), do: beat
     pulses = [0, 2, 4, 5, 7, 9, 11]
-    assert standard == for(half <- [0, 4], pulse <- pulses, do: round3(half + pulse / 3))
+    twice = for half <- [0, 4], pulse <- pulses, do: round3(half + pulse / 3)
+    assert standard == twice
 
     assert strokes(16, "campana") == [{0, "vel: 1"}]
     assert strokes(16, "contracampana") == [{0, "vel: 1"}]
@@ -105,7 +108,8 @@ defmodule Mx.Examples.CowbellTest do
     capture_io(fn -> Mix.Tasks.Mx.Print.run([@song, "--pass", pass]) end)
   end
 
-  # An input device that answers the first line asked for after a delay, as a person pressing Enter would.
+  # An input device that answers the first line asked for after a delay, as a person pressing
+  # Enter would.
   defp enter_after(ms) do
     receive do
       {:io_request, from, ref, {:get_line, _, _}} ->

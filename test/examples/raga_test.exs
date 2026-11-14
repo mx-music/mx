@@ -7,7 +7,9 @@ defmodule Mx.Examples.RagaTest do
   @passes 0..15
   @gat 9..15
 
-  # Page 33's sthayi and antara, one cell to each matra from khali, its main notes only: + joins the notes of one matra, _ holds within it, - holds the matra before and ~ glides into a note on the same pluck.
+  # Page 33's sthayi and antara, one cell to each matra from khali, its main notes only: + joins
+  # the notes of one matra, _ holds within it, - holds the matra before and ~ glides into a note
+  # on the same pluck.
   @sthayi [
     ~w(S+R G+M P+D N+S' N+D P+M G+R S+S P - ~G M+P+D P R - R),
     ~w(S' S' - N+N P - M+P D+N S' R - P R .N R S)
@@ -18,7 +20,8 @@ defmodule Mx.Examples.RagaTest do
   ]
   @steps %{0 => "S", 204 => "R", 386 => "G", 590 => "M", 702 => "P", 884 => "D", 1088 => "N"}
 
-  # mx.print does not name a pass's section, so each is told by what plays: the gat has the tabla, the jor the chikari to a pulse, and the alap neither.
+  # mx.print does not name a pass's section, so each is told by what plays: the gat has the tabla,
+  # the jor the chikari to a pulse, and the alap neither.
   test "the tanpura drones from the first beat to the last, through alap, jor and gat in turn" do
     assert print(0) =~ ~r/^tanpura, pass 0.*\nbeat 0 +play 49 vel: 0.5, gap: 1, sustain: 256,/m
 
@@ -172,7 +175,8 @@ defmodule Mx.Examples.RagaTest do
 
   defp round_beat(beat), do: Float.round(beat * 1.0, 3)
 
-  # A printed note as a swara of Yaman on Sa C#3, with a dot below or a quote above for the octaves, or nil when it is none.
+  # A printed note as a swara of Yaman on Sa C#3, with a dot below or a quote above for the
+  # octaves, or nil when it is none.
   defp name(note) do
     cents = round((String.to_float(note) - 49) * 100)
     octave = Integer.floor_div(cents, 1200)
@@ -187,7 +191,8 @@ defmodule Mx.Examples.RagaTest do
     capture_io(fn -> Mix.Tasks.Mx.Print.run([@song, "--pass", pass]) end)
   end
 
-  # An input device that answers the first line asked for after a delay, as a person pressing Enter would.
+  # An input device that answers the first line asked for after a delay, as a person pressing
+  # Enter would.
   defp enter_after(ms) do
     receive do
       {:io_request, from, ref, {:get_line, _, _}} ->

@@ -120,7 +120,8 @@ defmodule Mx.Examples.MidnightTest do
     for [_, note] <- Regex.scan(~r/play ([\d.]+) /, part), do: note
   end
 
-  # An input device that answers the first line asked for after a delay, as a person pressing Enter would.
+  # An input device that answers the first line asked for after a delay, as a person pressing
+  # Enter would.
   defp enter_after(ms) do
     receive do
       {:io_request, from, ref, {:get_line, _, _}} ->

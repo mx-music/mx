@@ -145,7 +145,8 @@ defmodule Mx.Examples.CaboclinhoTest do
 
   defp interval(note), do: Float.round(:math.fmod(note - @tonic + 120, 12), 2)
 
-  # A pass's strokes on one loop split into its eight bars of 2/4, each stroke's beat counted from its bar in beats of the toque.
+  # A pass's strokes on one loop split into its eight bars of 2/4, each stroke's beat counted from
+  # its bar in beats of the toque.
   defp bars(pass, loop, unit) do
     strokes = events(pass, loop)
 
@@ -191,7 +192,8 @@ defmodule Mx.Examples.CaboclinhoTest do
     end
   end
 
-  # An input device that answers the first line asked for after a delay, as a person pressing Enter would.
+  # An input device that answers the first line asked for after a delay, as a person pressing
+  # Enter would.
   defp enter_after(ms) do
     receive do
       {:io_request, from, ref, {:get_line, _, _}} ->

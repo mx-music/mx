@@ -17,7 +17,8 @@ defmodule Mx.Instruments.Marimba do
     freq = hz(hit.note)
     vel = hit.vel
 
-    # The seconds a note fades 60 dB in: 4.6 at C2, halving every 17 semitones, and every 16 more above F#5.
+    # The seconds a note fades 60 dB in: 4.6 at C2, halving every 17 semitones, and every 16 more
+    # above F#5.
     ring = 4.6 * 2 ** ((hit.note - 36) / -17) * 2 ** (max(hit.note - 78, 0) / -16)
     # The tube takes a moment to answer the bar, so the note starts at a quarter of its level.
     swell = 0.45 * 2 ** ((hit.note - 36) / -18)

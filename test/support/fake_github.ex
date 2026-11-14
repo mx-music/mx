@@ -17,7 +17,8 @@ defmodule Mx.FakeGitHub do
   def start(repos, opts \\ []) do
     dir = Keyword.fetch!(opts, :dir)
     File.mkdir_p!(dir)
-    :persistent_term.put(__MODULE__, %{repos: repos, limited: Keyword.get(opts, :limited, false)})
+    state = %{repos: repos, limited: Keyword.get(opts, :limited, false)}
+    Application.put_env(:mx, __MODULE__, state)
     :inets.start()
 
     {:ok, server} =
@@ -42,7 +43,7 @@ defmodule Mx.FakeGitHub do
 
     on_exit(fn ->
       :inets.stop(:httpd, server)
-      :persistent_term.erase(__MODULE__)
+      Application.delete_env(:mx, __MODULE__)
 
       for {key, value} <- settings do
         if value, do: Application.put_env(:mx, key, value), else: Application.delete_env(:mx, key)
@@ -59,7 +60,7 @@ defmodule Mx.FakeGitHub do
   def unquote(:do)(data) do
     %{path: path} = URI.parse(to_string(mod(data, :request_uri)))
     segments = path |> String.split("/", trim: true) |> Enum.map(&URI.decode/1)
-    {:proceed, [response: answer(segments, :persistent_term.get(__MODULE__))]}
+    {:proceed, [response: answer(segments, Application.fetch_env!(:mx, __MODULE__))]}
   end
 
   defp answer(["raw", owner, repo, ref | path], %{repos: repos}) do

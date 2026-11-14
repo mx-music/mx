@@ -1,5 +1,7 @@
 defmodule Mx.WindsTest do
-  # The Philharmonia Orchestra's samples, from https://philharmonia.co.uk/resources/sound-samples/, unzipped into the folder MX_PHILHARMONIA names, with Woodwind and Brass in it.
+  # The Philharmonia Orchestra's samples, from
+  # https://philharmonia.co.uk/resources/sound-samples/, unzipped into the folder MX_PHILHARMONIA
+  # names, with Woodwind and Brass in it.
   # They are MP3s, so ffmpeg turns each into a WAV first.
   use ExUnit.Case, async: false
 
@@ -10,7 +12,8 @@ defmodule Mx.WindsTest do
   @moduletag :tmp_dir
   @rate 48_000
 
-  # Each legato phrase as mix mx.hum transcribes it at 60 beats a minute, each note with its seconds.
+  # Each legato phrase as mix mx.hum transcribes it at 60 beats a minute, each note with its
+  # seconds.
   @phrases %{
     flute:
       {"Woodwind/flute/flute_C5_phrase_mezzo-forte_legato.mp3",
@@ -111,7 +114,9 @@ defmodule Mx.WindsTest do
     end
   end
 
-  # The median dip in dB at a slur over the Philharmonia's legato phrases, with a note mid-range to slur from; the clarinet's and oboe's from the bass clarinet's and cor anglais', the trumpet's from the trombone's and horn's.
+  # The median dip in dB at a slur over the Philharmonia's legato phrases, with a note mid-range
+  # to slur from; the clarinet's and oboe's from the bass clarinet's and cor anglais', the
+  # trumpet's from the trombone's and horn's.
   # The tuba, whose lowest notes dip 6 dB at most, is left out.
   @dips %{
     clarinet: {-6.0, 62},
@@ -218,7 +223,8 @@ defmodule Mx.WindsTest do
     {samples, rate}
   end
 
-  # The longest stretch, in seconds, whose level over 10 ms windows every 5 ms stands more than 20 dB below the loudest, between the first and last windows within 20 dB of it.
+  # The longest stretch, in seconds, whose level over 10 ms windows every 5 ms stands more than 20
+  # dB below the loudest, between the first and last windows within 20 dB of it.
   defp longest_gap({samples, rate}), do: longest_gap(samples, rate)
   defp longest_gap(samples), do: longest_gap(samples, @rate)
 
@@ -240,7 +246,8 @@ defmodule Mx.WindsTest do
     longest * hop / rate
   end
 
-  # The level in dB of 50 ms windows every half second, from the first window within 30 dB of the loudest.
+  # The level in dB of 50 ms windows every half second, from the first window within 30 dB of the
+  # loudest.
   defp half_seconds({samples, rate}) do
     levels = samples |> windows(div(rate, 2), div(rate, 20)) |> Enum.map(&db/1)
     floor = Enum.max(levels) - 30

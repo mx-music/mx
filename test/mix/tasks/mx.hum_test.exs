@@ -192,7 +192,8 @@ defmodule Mix.Tasks.Mx.HumTest do
     end
   end
 
-  # A count-in of four clicks, then the hum a little off the beat, each note ending before the next, as a voice does.
+  # A count-in of four clicks, then the hum a little off the beat, each note ending before the
+  # next, as a voice does.
   defp twinkle(rate) do
     beat = 60 / 100
     start = 4 * beat
@@ -237,7 +238,8 @@ defmodule Mix.Tasks.Mx.HumTest do
     path
   end
 
-  # AIFF: 16-bit big-endian samples, the same in both channels, and the rate as an 80-bit extended float.
+  # AIFF: 16-bit big-endian samples, the same in both channels, and the rate as an 80-bit extended
+  # float.
   defp write_stereo_aiff(ctx, name, samples, rate) do
     path = Path.join(ctx.tmp_dir, name)
 

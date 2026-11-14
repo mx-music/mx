@@ -5,7 +5,8 @@ defmodule Mix.Tasks.Mx.ScanModelTest do
 
   alias Mix.Tasks.Mx.Scan
 
-  # The last page of Joplin's Maple Leaf Rag, engraved from the music21 corpus's encoding and photographed.
+  # The last page of Joplin's Maple Leaf Rag, engraved from the music21 corpus's encoding and
+  # photographed.
   @page "test/support/scans/rag-photo-3.jpg"
 
   @moduletag :transcriber

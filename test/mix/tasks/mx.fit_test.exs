@@ -71,7 +71,8 @@ defmodule Mix.Tasks.Mx.FitTest do
     assert output =~ ~r/^score [\d.]+$/m
   end
 
-  # Notes held six seconds that swell in over three reach their held level only if the synth holds as long.
+  # Notes held six seconds that swell in over three reach their held level only if the synth holds
+  # as long.
   @tag :engine
   test "renders each note as long as the recordings hold theirs", ctx do
     files = recordings(ctx, "long", sustain: 6, attack: 3)
@@ -173,7 +174,8 @@ defmodule Mix.Tasks.Mx.FitTest do
     end
   end
 
-  # The University of Iowa Electronic Music Studios' Bb clarinet recordings, from https://theremin.music.uiowa.edu/MISBbclarinet.html, in the folder MX_IOWA_CLARINET names.
+  # The University of Iowa Electronic Music Studios' Bb clarinet recordings, from
+  # https://theremin.music.uiowa.edu/MISBbclarinet.html, in the folder MX_IOWA_CLARINET names.
   describe "the Iowa clarinet recordings" do
     @describetag :iowa
 
@@ -221,7 +223,8 @@ defmodule Mix.Tasks.Mx.FitTest do
     end
   end
 
-  # The clarinet's own notes C4, C#4 and D4 at vel 0.6 unless given, each held two seconds unless given, in a file of its own.
+  # The clarinet's own notes C4, C#4 and D4 at vel 0.6 unless given, each held two seconds unless
+  # given, in a file of its own.
   defp recordings(ctx, name, opts) do
     dir = Path.join(ctx.tmp_dir, name)
     File.mkdir_p!(dir)
@@ -234,7 +237,8 @@ defmodule Mix.Tasks.Mx.FitTest do
     end
   end
 
-  # The clarinet's C4 held eight seconds, jumping to its full level every 1.5 seconds and fading 25 dB before the next, as a drone is plucked again and again.
+  # The clarinet's C4 held eight seconds, jumping to its full level every 1.5 seconds and fading
+  # 25 dB before the next, as a drone is plucked again and again.
   defp drone(ctx) do
     dir = Path.join(ctx.tmp_dir, "drone")
     File.mkdir_p!(dir)

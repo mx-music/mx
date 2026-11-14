@@ -110,7 +110,8 @@ defmodule Mx.Hum.RecorderTest do
              capture(fn -> Recorder.record("/missing/hum.wav", tempo: 90) end)
   end
 
-  # Plays a hum given in beats from beat 0 in place of the input, and records it for the count-in and some beats more.
+  # Plays a hum given in beats from beat 0 in place of the input, and records it for the count-in
+  # and some beats more.
   defp record(ctx, hum, beats, tempo, opts \\ []) do
     beat = 60 / tempo
     seconds = (4 + beats) * beat
@@ -139,7 +140,8 @@ defmodule Mx.Hum.RecorderTest do
     recording
   end
 
-  # Each click's time and peak: the first 5 ms block a tenth of the loudest or more, at least 0.2 s after the last.
+  # Each click's time and peak: the first 5 ms block a tenth of the loudest or more, at least 0.2
+  # s after the last.
   defp peaks(samples, rate) do
     block = div(rate, 200)
 

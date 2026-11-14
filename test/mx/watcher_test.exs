@@ -94,7 +94,8 @@ defmodule Mx.WatcherTest do
     refute_received {:song, _}
   end
 
-  # The watcher inherits the test supervisor's group leader, so capture_io in the test does not reach it.
+  # The watcher inherits the test supervisor's group leader, so capture_io in the test does not
+  # reach it.
   defp silence_stdout(pid) do
     {:ok, device} = StringIO.open("")
     Process.group_leader(pid, device)

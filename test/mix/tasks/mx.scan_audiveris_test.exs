@@ -119,7 +119,8 @@ defmodule Mix.Tasks.Mx.ScanAudiverisTest do
     end
   end
 
-  # The share of each part of the reference chorale's notes, in order, found in the best matching part read.
+  # The share of each part of the reference chorale's notes, in order, found in the best matching
+  # part read.
   defp matches(scanned, bars) do
     {:ok, reference} = Mx.Score.read(@reference)
 

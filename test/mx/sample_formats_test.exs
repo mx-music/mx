@@ -27,7 +27,8 @@ defmodule Mx.SampleFormatsTest do
              {:error, "sample file #{path} cannot play: it is not a FLAC, WAV or AIFF file"}
   end
 
-  # Versilian Studios' Versilian Community Sample Library, from https://github.com/sgossner/VCSL, in the folder MX_VCSL names.
+  # Versilian Studios' Versilian Community Sample Library, from https://github.com/sgossner/VCSL,
+  # in the folder MX_VCSL names.
   describe "VCSL" do
     @describetag :vcsl
     @describetag timeout: 900_000
@@ -58,7 +59,8 @@ defmodule Mx.SampleFormatsTest do
     end
   end
 
-  # NASA's recording of the Apollo 11 landing, an 8-bit mono AIFF file, from https://nssdc.gsfc.nasa.gov/planetary/lunar/a11landing.aiff, in the folder MX_NASA names.
+  # NASA's recording of the Apollo 11 landing, an 8-bit mono AIFF file, from
+  # https://nssdc.gsfc.nasa.gov/planetary/lunar/a11landing.aiff, in the folder MX_NASA names.
   describe "AIFF" do
     @describetag :nasa
 

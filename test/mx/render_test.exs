@@ -1,5 +1,6 @@
 defmodule Mx.RenderTest do
-  # The clock and the engine a render drives are the application's own, so renders run one at a time.
+  # The clock and the engine a render drives are the application's own, so renders run one at a
+  # time.
   use ExUnit.Case, async: false
 
   import ExUnit.CaptureIO
@@ -168,7 +169,8 @@ defmodule Mx.RenderTest do
     recorded = Path.join(dir, "recorded.wav")
     rendered = Path.join(dir, "rendered.wav")
 
-    # The song ends by itself, so Enter is never pressed: what the player prints is taken, and its wait for a line is never answered.
+    # The song ends by itself, so Enter is never pressed: what the player prints is taken, and its
+    # wait for a line is never answered.
     silent = spawn(&quiet/0)
     leader = Process.group_leader()
     Process.group_leader(self(), silent)
@@ -181,7 +183,8 @@ defmodule Mx.RenderTest do
 
     assert {:ok, _} = render("examples/dubwise.exs", rendered)
 
-    # A recording starts as the engine does, before the song has loaded its samples, so both are compared from their first sound.
+    # A recording starts as the engine does, before the song has loaded its samples, so both are
+    # compared from their first sound.
     assert_in_delta seconds(recorded), seconds(rendered), 0.25
 
     for {recorded_level, rendered_level} <- Enum.zip(levels(recorded), levels(rendered)),
@@ -216,7 +219,8 @@ defmodule Mx.RenderTest do
     end
   end
 
-  # The samples from the first sound on, and how many make a second; a recording is at the sound card's rate, a render at 48 kHz.
+  # The samples from the first sound on, and how many make a second; a recording is at the sound
+  # card's rate, a render at 48 kHz.
   defp sounding(path) do
     %{channels: channels, rate: rate} = Recording.read_wav(path)
     wav = File.read!(path)

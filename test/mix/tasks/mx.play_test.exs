@@ -52,7 +52,8 @@ defmodule Mix.Tasks.Mx.PlayTest do
   end
 
   @tag :engine
-  # fm with no depth is a sine at 0.6, and a centred pan sends amp / √2 to each channel, so amp 0.5 peaks at -13.5 dB.
+  # fm with no depth is a sine at 0.6, and a centred pan sends amp / √2 to each channel, so amp
+  # 0.5 peaks at -13.5 dB.
   test "a recording of one sine at amp 0.5 peaks at -13.5 dB, with no warning", ctx do
     [line] =
       record(ctx, "seq([note(72, 0, amp: 0.5, depth: 0, sustain: 0.5), rest(8)])", synth: :fm)

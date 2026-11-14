@@ -106,7 +106,9 @@ defmodule Mx.Examples.DrumsTest do
         do: number(beat)
   end
 
-  defp beats(printed, drum), do: for({beat, _vel} <- strokes(printed, drum), do: beat)
+  defp beats(printed, drum) do
+    for {beat, _vel} <- strokes(printed, drum), do: beat
+  end
 
   # One drum's strokes in a printed pass, as {beat, vel}.
   defp strokes(printed, drum) do
@@ -130,7 +132,8 @@ defmodule Mx.Examples.DrumsTest do
     capture_io(fn -> Mix.Tasks.Mx.Print.run([@song, "--pass", pass]) end)
   end
 
-  # An input device that answers the first line asked for after a delay, as a person pressing Enter would.
+  # An input device that answers the first line asked for after a delay, as a person pressing
+  # Enter would.
   defp enter_after(ms) do
     receive do
       {:io_request, from, ref, {:get_line, _, _}} ->

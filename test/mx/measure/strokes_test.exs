@@ -71,7 +71,8 @@ defmodule Mx.Measure.StrokesTest do
     assert Strokes.file("missing.wav") == {:error, "cannot read missing.wav"}
   end
 
-  # A stroke of 150 ms whose level rises from 34 dB down and falls back, with harmonics at 1, 1 and 0.5, starting 100 cents flat for 40 ms.
+  # A stroke of 150 ms whose level rises from 34 dB down and falls back, with harmonics at 1, 1
+  # and 0.5, starting 100 cents flat for 40 ms.
   defp stroke(hz) do
     count = round(0.15 * @rate)
 

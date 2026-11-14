@@ -34,7 +34,8 @@ defmodule Mx.EffectsTest do
     assert difference(right, dry_right) < -100
   end
 
-  # Holding at 44100 Hz repeats about one sample in twelve, which alone leaves this saw 30 dB from dry.
+  # Holding at 44100 Hz repeats about one sample in twelve, which alone leaves this saw 30 dB from
+  # dry.
   test "a bitcrusher at 4 bits and 4000 Hz is coarse, at 16 bits and 44100 Hz near dry, and at 48000 Hz dry",
        ctx do
     {dry, _} = saw(ctx, [], [])
@@ -187,7 +188,8 @@ defmodule Mx.EffectsTest do
     strength_at(held, 440 * 2 ** ((note - 69) / 12))
   end
 
-  # How much the 8th harmonic of note 48 moves over two seconds in windows of 50 ms, against its mean.
+  # How much the 8th harmonic of note 48 moves over two seconds in windows of 50 ms, against its
+  # mean.
   defp sweep(samples) do
     window = round(0.05 * @rate)
     hz = 8 * 440 * 2 ** ((48 - 69) / 12)

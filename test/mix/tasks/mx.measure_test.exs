@@ -379,7 +379,8 @@ defmodule Mix.Tasks.Mx.MeasureTest do
     attack = :erlang.float_to_binary(summary.attack, decimals: 2)
     assert output =~ ~r/^attack +#{Regex.escape(attack)} s$/m
 
-    # The WAV holds 32-bit samples, which can move a band far below the fundamental by a printed tenth of a dB.
+    # The WAV holds 32-bit samples, which can move a band far below the fundamental by a printed
+    # tenth of a dB.
     for %{band: {low, high}, level: level} <- summary.bands, level != nil do
       [_, printed] = Regex.run(~r/^#{low}-#{high} Hz +([-+][\d.]+) dB/m, output)
       assert_in_delta String.to_float(printed), level, 0.15
@@ -440,7 +441,8 @@ defmodule Mix.Tasks.Mx.MeasureTest do
     end
   end
 
-  # The University of Iowa Electronic Music Studios' flute recordings, from https://theremin.music.uiowa.edu/MISflute.html, in the folder MX_IOWA_FLUTE names.
+  # The University of Iowa Electronic Music Studios' flute recordings, from
+  # https://theremin.music.uiowa.edu/MISflute.html, in the folder MX_IOWA_FLUTE names.
   describe "the Iowa flute recordings" do
     @describetag :iowa
 
@@ -488,7 +490,8 @@ defmodule Mix.Tasks.Mx.MeasureTest do
     end
   end
 
-  # The VSCO 2 Community Edition percussion, from https://github.com/sgossner/VSCO-2-CE, in the folder MX_VSCO_PERCUSSION names.
+  # The VSCO 2 Community Edition percussion, from https://github.com/sgossner/VSCO-2-CE, in the
+  # folder MX_VSCO_PERCUSSION names.
   describe "the VSCO 2 cowbell recordings" do
     @describetag :vsco
 
@@ -514,7 +517,8 @@ defmodule Mix.Tasks.Mx.MeasureTest do
     end
   end
 
-  # Versilian Studios' Versilian Community Sample Library, from https://github.com/sgossner/VCSL, in the folder MX_VCSL names.
+  # Versilian Studios' Versilian Community Sample Library, from https://github.com/sgossner/VCSL,
+  # in the folder MX_VCSL names.
   describe "the VCSL agogô recordings" do
     @describetag :vcsl
 
@@ -551,7 +555,8 @@ defmodule Mix.Tasks.Mx.MeasureTest do
             capture: :all_but_first
           )
 
-        # From 10 kHz the bells hold the stick's strike over a quiet tail, which a fade's straight line does not fit.
+        # From 10 kHz the bells hold the stick's strike over a quiet tail, which a fade's straight
+        # line does not fit.
         # The design tests hold that band to its levels over time instead.
         rows =
           for [low, fade, level] <- rows,
@@ -568,7 +573,8 @@ defmodule Mix.Tasks.Mx.MeasureTest do
     end
   end
 
-  # The small and the large shaker of the Versilian Community Sample Library, in the folder MX_VCSL names.
+  # The small and the large shaker of the Versilian Community Sample Library, in the folder
+  # MX_VCSL names.
   describe "the VCSL shaker recordings" do
     @describetag :vcsl
 
@@ -577,7 +583,8 @@ defmodule Mix.Tasks.Mx.MeasureTest do
       %{dir: Path.join(dir, "Idiophones/Struck Idiophones")}
     end
 
-    # One small up stroke, Mid_ShakerLowFaster_Up_rr2.wav, is too short to measure, so it is left out.
+    # One small up stroke, Mid_ShakerLowFaster_Up_rr2.wav, is too short to measure, so it is left
+    # out.
     test "prints the ganza and the shaker beside their strokes, within 6 dB and 30 percent from 1 kHz up",
          %{dir: dir} do
       small = Path.join(dir, "Shaker, Small")
@@ -618,7 +625,9 @@ defmodule Mix.Tasks.Mx.MeasureTest do
     end
   end
 
-  # The University of Iowa Electronic Music Studios' guitar recordings, from https://theremin.music.uiowa.edu/MISguitar.html, unzipped into the folder MX_IOWA_GUITAR names.
+  # The University of Iowa Electronic Music Studios' guitar recordings, from
+  # https://theremin.music.uiowa.edu/MISguitar.html, unzipped into the folder MX_IOWA_GUITAR
+  # names.
   # The cabasa of the Versilian Community Sample Library, in the folder MX_VCSL names.
   describe "the VCSL cabasa recordings" do
     @describetag :vcsl
@@ -656,7 +665,8 @@ defmodule Mix.Tasks.Mx.MeasureTest do
     end
   end
 
-  # The cajón of the Versilian Community Sample Library, whose bass tone is the stroke named hit2 and slap hit1.
+  # The cajón of the Versilian Community Sample Library, whose bass tone is the stroke named hit2
+  # and slap hit1.
   describe "the VCSL cajón recordings" do
     @describetag :vcsl
 
@@ -691,7 +701,8 @@ defmodule Mix.Tasks.Mx.MeasureTest do
     end
   end
 
-  # The bongos of the Versilian Community Sample Library, open and muted, at their middle strength.
+  # The bongos of the Versilian Community Sample Library, open and muted, at their middle
+  # strength.
   describe "the VCSL bongo recordings" do
     @describetag :vcsl
 
@@ -733,7 +744,8 @@ defmodule Mix.Tasks.Mx.MeasureTest do
     end
   end
 
-  # The Steinway B grand of the Versilian Community Sample Library without the sustain pedal, at its three strengths.
+  # The Steinway B grand of the Versilian Community Sample Library without the sustain pedal, at
+  # its three strengths.
   describe "the VCSL Steinway recordings" do
     @describetag :vcsl
 
@@ -742,8 +754,8 @@ defmodule Mix.Tasks.Mx.MeasureTest do
       %{dir: Path.join(dir, "Chordophones/Zithers/Grand Piano, Steinway B/NoSus")}
     end
 
-    # The soft notes' harmonics above 1 kHz sit near the noise floor, which stretches their measured fades,
-    # so those fades are left out.
+    # The soft notes' harmonics above 1 kHz sit near the noise floor, which stretches their
+    # measured fades, so those fades are left out.
     test "prints the piano beside every fourth semitone from C2 to C7, within 6 dB and 30 percent up to 4 kHz",
          %{dir: dir} do
       names = ~w(C Cs D Ds E F Fs G Gs A As B)
@@ -838,7 +850,8 @@ defmodule Mix.Tasks.Mx.MeasureTest do
     for [row] <- Regex.scan(~r/^\d+-\d+ Hz .* dB +[-+]\d+% .*$/m, output), do: row
   end
 
-  # Partials at ratios of the lowest, each at its level, all fading 60 dB over `fade` seconds, struck at once.
+  # Partials at ratios of the lowest, each at its level, all fading 60 dB over `fade` seconds,
+  # struck at once.
   defp partials_hit(lowest, partials, fade) do
     for index <- 0..(round(fade * 1.2 * 48_000) - 1) do
       time = index / 48_000
@@ -869,7 +882,8 @@ defmodule Mix.Tasks.Mx.MeasureTest do
     end
   end
 
-  # A stroke of 150 ms whose level rises from 34 dB down and falls back, with harmonics at 1, 1 and 0.5, starting 100 cents flat for 40 ms.
+  # A stroke of 150 ms whose level rises from 34 dB down and falls back, with harmonics at 1, 1
+  # and 0.5, starting 100 cents flat for 40 ms.
   defp rub(hz) do
     count = round(0.15 * 48_000)
 

@@ -52,7 +52,8 @@ defmodule Mx.Timeline do
   defp pass_events(loop, pass) do
     {:ok, %{events: events, beats: beats}} = Pass.events(loop, pass)
 
-    # A control names sounds by their place in the pass, which differs between notations, so it names them by beat and note.
+    # A control names sounds by their place in the pass, which differs between notations, so it
+    # names them by beat and note.
     indexed = Enum.with_index(events, fn event, index -> {index, event} end) |> Map.new()
 
     events =

@@ -31,7 +31,8 @@ defmodule Mx.Examples.TranquilityBaseTest do
     assert guide =~ ~s(mx samples download "sgossner/VCSL@#{@commit}:Idiophones")
   end
 
-  # Versilian Studios' Versilian Community Sample Library at the commit the piece names, in the folder MX_VCSL names, standing in for the GitHub cache, with the network cut.
+  # Versilian Studios' Versilian Community Sample Library at the commit the piece names, in the
+  # folder MX_VCSL names, standing in for the GitHub cache, with the network cut.
   describe "with VCSL" do
     @describetag :vcsl
     @describetag :tmp_dir
