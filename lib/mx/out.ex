@@ -3,7 +3,7 @@ defmodule Mx.Out do
   Sends MIDI and OSC to other devices and programs at their time.
 
   These have no timestamps, so loops hand each message here ahead of time, and it is sent at the moment.
-  The process wakes 2 ms before a message is due and waits out the rest by reading the clock, which keeps messages within a millisecond of their time; Erlang timers alone run 1 to 7 ms late (see the mx-00011 notes).
+  The process wakes 2 ms before a message is due and waits out the rest by reading the clock, which keeps messages within a millisecond of their time; Erlang timers alone run 1 to 7 ms late.
 
   A MIDI message goes to the output port it names, or to every connected output port when it names none.
   A port that is not connected, or an OSC destination that cannot be reached, prints one warning naming it, and its messages are dropped.

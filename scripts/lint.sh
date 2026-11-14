@@ -162,6 +162,7 @@ run_check "Avoid 'dbg/2'; it's a debugging tool and should not be committed." 'd
 run_check "Avoid 'IEx.pry/0' or 'IEx.break!/2'; they are for interactive debugging only." 'IEx\.(pry|break!)'
 run_check "Avoid 'IO.inspect/2'; use a proper logger for application code." -g '!scripts/*.exs' 'IO\.inspect'
 run_check "Remove 'WIP' or 'wip' markers before committing." '\bwip\b'
+run_check "Don't reference tickets; code and docs say what is there, without a project's notes" -tmd -tsh -P '\b[a-z][a-z-]*-\d{5}\b'
 run_check "Don't leave TODOs in the codebase; track them as tickets instead." 'TODO'
 run_check "Avoid 'Kernel.binding/1' in application code; it is for debugging." -g "lib/**/*" 'binding\(\)'
 run_check "No open browser calls" 'open_browser'
@@ -234,7 +235,10 @@ run_check "Don't pipe inside a capture like '&(&1 |> foo() |> bar())'; extract a
 run_check "Use to_timeout/1" ":timer\.(seconds|minutes|hours)"
 run_check "Avoid sleep, if you really need, use Process.sleep" ":timer\.sleep"
 
+# Each file writing a persistent term is excluded until the writes move to boot.
 run_check "Avoid ':persistent_term.put/2'; it has global VM-wide side effects" \
+          -g '!lib/mx/clock.ex' \
+          -g '!lib/mx/instrument.ex' \
           -g '!lib/mx/engine/mxs.ex' \
           -g '!lib/mx/synths.ex' \
           -g '!lib/mx/transcriber.ex' \
