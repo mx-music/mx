@@ -345,10 +345,10 @@ defmodule Mx.GitHubSamplesTest do
     assert File.read!("bin/mx") =~ "mx samples download SOURCE"
   end
 
-  test "the README shows downloading Sonic Pi's pack, a VCSL sample, and a VCSL folder ahead of time" do
-    readme = File.read!("README.md")
-    assert readme =~ "mx samples download sonic_pi"
-    assert readme =~ ~s(sample({:github, "sgossner/VCSL")
-    assert readme =~ ~s(mx samples download "sgossner/VCSL@)
+  test "the README shows downloading Sonic Pi's pack, and the notation guide a VCSL sample and a VCSL folder ahead of time" do
+    assert File.read!("README.md") =~ "mx samples download sonic_pi"
+    guide = File.read!("documentation/notation.md")
+    assert guide =~ ~s(sample({:github, "sgossner/VCSL")
+    assert guide =~ ~s(mx samples download "sgossner/VCSL@)
   end
 end

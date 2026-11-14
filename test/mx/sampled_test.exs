@@ -230,8 +230,8 @@ defmodule Mx.SampledTest do
     assert output =~ "beat 0  sample #{file} amp: 1, sustain: 1, rate: 1.122462048309373"
   end
 
-  test "the README describes sampled instruments" do
-    assert File.read!("README.md") =~ "synth: sampled("
+  test "the notation guide describes sampled instruments" do
+    assert File.read!("documentation/notation.md") =~ "`sampled(folder)` makes an instrument"
   end
 
   # The peak level of each hundredth of a second of a WAV file in dB, or :silent.
@@ -249,7 +249,8 @@ defmodule Mx.SampledTest do
     end
   end
 
-  # Versilian Studios' Versilian Community Sample Library, from https://github.com/sgossner/VCSL, in the folder MX_VCSL names.
+  # Versilian Studios' Versilian Community Sample Library, from https://github.com/sgossner/VCSL,
+  # in the folder MX_VCSL names.
   describe "VCSL" do
     @describetag :vcsl
 

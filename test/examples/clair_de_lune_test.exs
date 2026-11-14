@@ -5,6 +5,8 @@ defmodule Mx.Examples.ClairDeLuneTest do
 
   @song "examples/piano/clair_de_lune.exs"
 
+  Code.require_file("../../examples/piano/clair_de_lune_score.exs", __DIR__)
+
   setup_all do
     {:ok, song} = Mx.Song.load(@song)
     %{song: song}
@@ -88,7 +90,8 @@ defmodule Mx.Examples.ClairDeLuneTest do
 
   defp pass_beats(pass), do: Float.round(ClairDeLune.warp(pass + 1, 9), 3)
 
-  # An input device that answers the first line asked for after a delay, as a person pressing Enter would.
+  # An input device that answers the first line asked for after a delay, as a person pressing
+  # Enter would.
   defp enter_after(ms) do
     receive do
       {:io_request, from, ref, {:get_line, _, _}} ->

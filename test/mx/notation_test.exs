@@ -1,9 +1,8 @@
 defmodule Mx.NotationTest do
   use ExUnit.Case, async: true
 
-  test "the README's notation describes every word a song can use" do
-    [_, after_heading] = String.split(File.read!("README.md"), "## The notation\n")
-    [notation | _] = String.split(after_heading, "\n## ")
+  test "the notation guide describes every word a song can use" do
+    notation = File.read!("documentation/notation.md")
 
     words = Mx.__info__(:functions) |> Enum.map(&elem(&1, 0)) |> Enum.uniq()
 

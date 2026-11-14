@@ -144,11 +144,12 @@ defmodule Mx.SampleLevelTest do
              "sample #{tone} normalize: true\n"
   end
 
-  test "the README describes normalize" do
-    assert File.read!("README.md") =~ "`normalize: true`"
+  test "the notation guide describes normalize" do
+    assert File.read!("documentation/notation.md") =~ "`normalize: true`"
   end
 
-  # Versilian Studios' Versilian Community Sample Library, from https://github.com/sgossner/VCSL, in the folder MX_VCSL names.
+  # Versilian Studios' Versilian Community Sample Library, from https://github.com/sgossner/VCSL,
+  # in the folder MX_VCSL names.
   describe "VCSL" do
     @describetag :vcsl
 
@@ -185,7 +186,8 @@ defmodule Mx.SampleLevelTest do
     end
   end
 
-  # NASA's recording of the Apollo 11 landing, from https://nssdc.gsfc.nasa.gov/planetary/lunar/a11landing.aiff, in the folder MX_NASA names.
+  # NASA's recording of the Apollo 11 landing, from
+  # https://nssdc.gsfc.nasa.gov/planetary/lunar/a11landing.aiff, in the folder MX_NASA names.
   describe "AIFF" do
     @describetag :nasa
 

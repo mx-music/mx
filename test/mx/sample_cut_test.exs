@@ -84,7 +84,8 @@ defmodule Mx.SampleCutTest do
     assert_in_delta length(forwards) / 48_000, 0.25, 0.001
     assert_in_delta length(backwards) / 48_000, 0.25, 0.001
 
-    # A quarter and three quarters of the way through, the ramp reads 0.3125 and 0.4375 seconds in.
+    # A quarter and three quarters of the way through, the ramp reads 0.3125 and 0.4375 seconds
+    # in.
     assert_in_delta quarters(forwards), 0.3125 / 0.4375, 0.01
     assert_in_delta quarters(backwards), 0.4375 / 0.3125, 0.01
   end
@@ -132,9 +133,12 @@ defmodule Mx.SampleCutTest do
            """
   end
 
-  test "the README describes from, to, beats, slices and slice" do
-    readme = File.read!("README.md")
-    for option <- ~w(from to beats slices slice), do: assert(readme =~ "`#{option}`")
+  test "the notation guide describes from, to, beats, slices and slice" do
+    guide = File.read!("documentation/notation.md")
+
+    for option <- ~w(from to beats slices slice) do
+      assert guide =~ ~r/`[^`]*\b#{option}\b[^`]*`/
+    end
   end
 
   defp quarters(sound) do
@@ -163,7 +167,8 @@ defmodule Mx.SampleCutTest do
     path
   end
 
-  # The left channel of a sample played with options from an offline engine, from its first sound to its last.
+  # The left channel of a sample played with options from an offline engine, from its first sound
+  # to its last.
   defp play(path, opts) do
     {:ok, engine} = Native.start(false, false)
     {:ok, {sample, _channels}} = Native.load_sample(engine, path)
