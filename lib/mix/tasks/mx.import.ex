@@ -39,7 +39,7 @@ defmodule Mix.Tasks.Mx.Import do
 
     parts = Enum.map(score.parts, &{&1, Map.get(synths, &1.name, :tri)})
     song = song(score, parts, tempo, Path.basename(path), out)
-    File.write!(out, [Code.format_string!(song), "\n"])
+    File.write!(out, [Code.format_string!(song, locals_without_parens: [part: 2]), "\n"])
 
     Mix.shell().info("Wrote #{out}")
 
@@ -127,62 +127,86 @@ defmodule Mix.Tasks.Mx.Import do
         |> Enum.all?(fn {_number, musics} -> length(Enum.uniq(musics)) == 1 end)
       end)
 
-    modules =
-      Enum.map_join(Enum.zip(rendered, names), "\n", fn {bars, name} ->
-        clauses =
-          bars
-          |> Enum.uniq_by(&if(same?, do: elem(&1, 0), else: {elem(&1, 0), elem(&1, 1)}))
-          |> Enum.sort_by(&{elem(&1, 0), elem(&1, 1)})
-          |> Enum.map_join("\n", fn {number, time, music} ->
-            key = if same?, do: "#{number}", else: "{#{number}, #{time}}"
-            line = "  def bar(#{key}), do: #{music}"
+    bars =
+      Enum.map_join(Enum.zip(rendered, names), "\n\n", fn {bars, name} ->
+        bars
+        |> Enum.uniq_by(&if(same?, do: elem(&1, 0), else: {elem(&1, 0), elem(&1, 1)}))
+        |> Enum.sort_by(&{elem(&1, 0), elem(&1, 1)})
+        |> Enum.map_join("\n", fn {number, time, music} ->
+          key = if same?, do: "#{number}", else: "{#{number}, #{time}}"
+          line = "  defp bar(:#{name}, #{key}), do: #{music}"
 
-            if String.length(line) > 98 do
-              "  def bar(#{key}) do\n    #{music}\n  end"
-            else
-              line
-            end
-          end)
-
-        "defmodule #{song_module}.#{Macro.camelize(name)} do\n  import Mx\n\n#{clauses}\nend\n"
+          if String.length(line) > 98 do
+            "  defp bar(:#{name}, #{key}) do\n    #{music}\n  end"
+          else
+            line
+          end
+        end)
       end)
 
     order = if same?, do: order(score.runs), else: inspect(times(score.order))
 
-    players =
-      Enum.map_join(Enum.zip(parts, names), ",\n", fn {{_part, synth}, name} ->
+    declarations =
+      Enum.map_join(Enum.zip(parts, names), "\n", fn {{_part, synth}, name} ->
         defaults = if Mx.Synths.option?(synth, :vel), do: ", defaults: [vel: 0.6]", else: ""
+        "  part :#{name}, synth: :#{synth}#{defaults}"
+      end)
 
-        "      part(:#{name}, seq(Enum.map(order, &#{song_module}.#{Macro.camelize(name)}.bar/1)), synth: :#{synth}#{defaults})"
+    players =
+      Enum.map_join(names, ",\n", fn name ->
+        "      part(:#{name}, seq(Enum.map(order(), &bar(:#{name}, &1))))"
       end)
 
     title = title(score.title)
     beats = format_beats(beats(score))
 
+    header =
+      [
+        "#{title}, imported from #{file} by mix mx.import.",
+        "Each part's bars are written one to a line where they fit, as the bar's number and its music; a bar of several voices plays them together.",
+        "A note's length is in beats, a quarter note being a beat; a note tied over a bar line sounds for the whole tie, given as its sustain, and the note it ties into is a rest.",
+        "Notes play at vel 0.6, and a dynamic marked in the score gives the notes after it another vel.",
+        "The whole score plays once, #{beats} beats."
+      ]
+      |> Enum.map_join("\n", &comment/1)
+
     """
-    import Mx
+    #{header}
+    defmodule #{song_module} do
+      use Mx.Song, tempo: #{tempo}
 
-    # #{title}, imported from #{file} by mix mx.import.
-    # Each part's bars are written one to a line where they fit, as the bar's number and its music; a bar of several voices plays them together.
-    # A note's length is in beats, a quarter note being a beat; a note tied over a bar line sounds for the whole tie, given as its sustain, and the note it ties into is a rest.
-    # Notes play at vel 0.6, and a dynamic marked in the score gives the notes after it another vel.
-    # The whole score plays once, #{beats} beats.
+    #{declarations}
 
-    #{modules}
-    # The bars in the order the score plays them, its repeats taken.
-    order = #{order}
-
-    song(
-      tempo: #{tempo},
-      music:
+      def song do
         together([
     #{players}
         ])
-    )
+      end
+
+      # The bars in the order the score plays them, its repeats taken.
+      defp order, do: #{order}
+
+    #{bars}
+    end
     """
   end
 
-  # Modules are named after the song, so two songs whose parts share a name can load side by side.
+  # Each sentence a comment of its own, wrapped at 98 columns.
+  defp comment(sentence) do
+    sentence
+    |> String.split(" ")
+    |> Enum.reduce([], fn
+      word, [line | lines] when byte_size(line) + byte_size(word) < 96 ->
+        [line <> " " <> word | lines]
+
+      word, lines ->
+        [word | lines]
+    end)
+    |> Enum.reverse()
+    |> Enum.map_join("\n", &("# " <> &1))
+  end
+
+  # The module is named after the song, so two songs whose parts share a name can load side by side.
   defp song_module(out) do
     name =
       out

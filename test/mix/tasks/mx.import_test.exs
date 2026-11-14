@@ -19,17 +19,17 @@ defmodule Mix.Tasks.Mx.ImportTest do
     import!([ctx.score, "--tempo", "100"])
     song = File.read!(ctx.song)
 
-    assert song =~ "\nimport Mx\n" or String.starts_with?(song, "import Mx\n")
-    assert song =~ "tempo: 100,\n"
+    assert song =~ "\ndefmodule Bwv1407 do\n  use Mx.Song, tempo: 100\n"
 
-    assert Regex.scan(~r/^      part\(:(\w+), .*synth: :tri\)/m, song, capture: :all_but_first) ==
+    assert Regex.scan(~r/^  part :(\w+), synth: :tri$/m, song, capture: :all_but_first) ==
              [["soprano"], ["alto"], ["tenor"], ["bass"]]
   end
 
   test "the soprano starts on eb4 and g4 as quarter notes and bb4 as a dotted quarter", ctx do
     import!([ctx.score, "--tempo", "100"])
 
-    assert File.read!(ctx.song) =~ "\n  def bar(1), do: seq(eb4: 1, g4: 1, bb4: 1.5, bb4: 0.5)\n"
+    assert File.read!(ctx.song) =~
+             "\n  defp bar(:soprano, 1), do: seq(eb4: 1, g4: 1, bb4: 1.5, bb4: 0.5)\n"
 
     soprano = print(ctx.song, "soprano")
     assert soprano =~ ~r/^beat 0 +play 63 sustain: 1$/m
@@ -43,14 +43,11 @@ defmodule Mix.Tasks.Mx.ImportTest do
 
     song = File.read!(ctx.song)
 
-    assert song =~
-             "part(:soprano, seq(Enum.map(order, &Bwv1407.Soprano.bar/1)),\n        synth: :oboe,\n        defaults: [vel: 0.6]\n      )"
-
-    assert song =~ "part(:alto, seq(Enum.map(order, &Bwv1407.Alto.bar/1)), synth: :tri)"
-    assert song =~ "part(:tenor, seq(Enum.map(order, &Bwv1407.Tenor.bar/1)), synth: :tri)"
-
-    assert song =~
-             "part(:bass, seq(Enum.map(order, &Bwv1407.Bass.bar/1)), synth: :cello, defaults: [vel: 0.6])"
+    assert song =~ "\n  part :soprano, synth: :oboe, defaults: [vel: 0.6]\n"
+    assert song =~ "\n  part :alto, synth: :tri\n"
+    assert song =~ "\n  part :tenor, synth: :tri\n"
+    assert song =~ "\n  part :bass, synth: :cello, defaults: [vel: 0.6]\n"
+    assert song =~ "\n      part(:soprano, seq(Enum.map(order(), &bar(:soprano, &1)))),\n"
 
     assert print(ctx.song, "soprano") =~ ~r/^beat 0 +play 63 sustain: 1, vel: 0.6$/m
     assert output =~ "Soprano on oboe: 62 notes from :eb4 to :g5\n"
@@ -69,7 +66,7 @@ defmodule Mix.Tasks.Mx.ImportTest do
   test "the first 8 bars play twice and bars 9 to 18 once, 99 beats, and the song ends", ctx do
     import!([ctx.score, "--tempo", "100"])
 
-    assert File.read!(ctx.song) =~ "\norder = Enum.concat([1..8, 1..8, 9..18])\n"
+    assert File.read!(ctx.song) =~ "\n  defp order, do: Enum.concat([1..8, 1..8, 9..18])\n"
     assert print(ctx.song, "soprano") =~ "soprano, 99 beats at 100 bpm\n"
 
     # Bar 8 has 3 beats, so the repeat starts again on beat 31, and bar 9's pickup takes 1.
@@ -86,7 +83,7 @@ defmodule Mix.Tasks.Mx.ImportTest do
     song = File.read!(ctx.song)
 
     assert song =~
-             "\n  def bar(1) do\n    seq([\n      note(:eb3, 2, sustain: 2.5),\n      rest(0.5),\n      note(:g3, 0.5),\n      note(:bb3, 0.5),\n      note(:ab3, 0.5)\n    ])\n  end\n"
+             "\n  defp bar(:bass, 1) do\n    seq([\n      note(:eb3, 2, sustain: 2.5),\n      rest(0.5),\n      note(:g3, 0.5),\n      note(:bb3, 0.5),\n      note(:ab3, 0.5)\n    ])\n  end\n"
 
     assert length(Regex.scan(~r/, sustain: /, song)) == 2
 
@@ -98,13 +95,11 @@ defmodule Mix.Tasks.Mx.ImportTest do
   test "writes one line per bar, each with its number", ctx do
     import!([ctx.score, "--tempo", "100"])
 
-    [_, soprano] =
-      Regex.run(~r/defmodule Bwv1407.Soprano do\n(.*?)\nend\n/s, File.read!(ctx.song))
-
-    numbers = Regex.scan(~r/^  def bar\((\d+)\), do: /m, soprano, capture: :all_but_first)
+    song = File.read!(ctx.song)
+    numbers = Regex.scan(~r/^  defp bar\(:soprano, (\d+)\), do: /m, song, capture: :all_but_first)
 
     assert numbers == Enum.map(1..18, &[Integer.to_string(&1)])
-    assert soprano =~ "\n  def bar(9), do: seq(bb4: 1)\n"
+    assert song =~ "\n  defp bar(:soprano, 9), do: seq(bb4: 1)\n"
   end
 
   test "a score without a tempo is refused unless --tempo gives one", ctx do
@@ -120,7 +115,7 @@ defmodule Mix.Tasks.Mx.ImportTest do
     path = score!(dir, "marked.musicxml", [{"Flute", [attributes(4) <> mark <> note("C", 5, 4)]}])
     import!([path])
 
-    assert File.read!(Path.join(dir, "marked.exs")) =~ "tempo: 72,\n"
+    assert File.read!(Path.join(dir, "marked.exs")) =~ "use Mx.Song, tempo: 72\n"
   end
 
   test "a dotted quarter in 6/8 lasts 1.5 beats", %{tmp_dir: dir} do
@@ -132,7 +127,7 @@ defmodule Mix.Tasks.Mx.ImportTest do
     import!([path, "--tempo", "60"])
     song = Path.join(dir, "six.exs")
 
-    assert File.read!(song) =~ "\n  def bar(1), do: seq(g4: 1.5, a4: 1.5)\n"
+    assert File.read!(song) =~ "\n  defp bar(:oboe, 1), do: seq(g4: 1.5, a4: 1.5)\n"
     assert print(song, "oboe") =~ ~r/^beat 1.5 +play 69 sustain: 1.5$/m
   end
 
@@ -147,7 +142,7 @@ defmodule Mix.Tasks.Mx.ImportTest do
     output = import!([path, "--tempo", "60"])
     song = Path.join(dir, "clarinet.exs")
 
-    assert File.read!(song) =~ "\n  def bar(1), do: seq(c5: 4)\n"
+    assert File.read!(song) =~ "\n  defp bar(:clarinet_in_bb, 1), do: seq(c5: 4)\n"
     assert output =~ "Clarinet in Bb on tri: 1 notes from :c5 to :c5\n"
     assert print(song, "clarinet_in_bb") =~ ~r/^beat 0 +play 72 sustain: 4$/m
   end
@@ -167,7 +162,7 @@ defmodule Mix.Tasks.Mx.ImportTest do
     song = Path.join(dir, "voices.exs")
 
     assert File.read!(song) =~
-             "\n  def bar(1), do: together([seq([note([:c5, :e4, :g4], 2), note(:d5, 2)]), seq(c3: 4)])\n"
+             "\n  defp bar(:piano, 1), do: together([seq([note([:c5, :e4, :g4], 2), note(:d5, 2)]), seq(c3: 4)])\n"
 
     piano = print(song, "piano")
 
@@ -192,7 +187,7 @@ defmodule Mix.Tasks.Mx.ImportTest do
     song = Path.join(dir, "loud.exs")
 
     assert File.read!(song) =~
-             "\n  def bar(1), do: seq([note(:c4, 2, vel: 0.45), note(:d4, 2, vel: 0.45)])\n  def bar(2), do: seq([note(:e4, 2, vel: 0.45), note(:f4, 2, vel: 0.8)])\n"
+             "\n  defp bar(:violin, 1), do: seq([note(:c4, 2, vel: 0.45), note(:d4, 2, vel: 0.45)])\n  defp bar(:violin, 2), do: seq([note(:e4, 2, vel: 0.45), note(:f4, 2, vel: 0.8)])\n"
 
     violin = print(song, "violin")
     assert violin =~ ~r/^beat 0 +play 60 vel: 0.45, sustain: 2$/m
@@ -215,7 +210,7 @@ defmodule Mix.Tasks.Mx.ImportTest do
     import!([path, "--tempo", "60"])
     song = Path.join(dir, "endings.exs")
 
-    assert File.read!(song) =~ "\norder = Enum.concat([1..1, 2..2, 1..1, 3..3, 4..4])\n"
+    assert File.read!(song) =~ "\n  defp order, do: Enum.concat([1..1, 2..2, 1..1, 3..3, 4..4])\n"
 
     notes =
       Regex.scan(~r/^beat (\d+) +play (\d+)/m, print(song, "flute"), capture: :all_but_first)
@@ -258,7 +253,7 @@ defmodule Mix.Tasks.Mx.ImportTest do
     assert File.read!(ctx.song) == "old"
 
     import!([ctx.score, "--tempo", "100", "--force"])
-    assert File.read!(ctx.song) =~ "import Mx\n"
+    assert File.read!(ctx.song) =~ "use Mx.Song, tempo: 100\n"
   end
 
   test "--out names another path for the song", %{tmp_dir: dir} = ctx do
