@@ -323,6 +323,7 @@ ACRONYMS=(
   "AIFC"
   "AIFF"
   "API"
+  "BPM"
   "FFT"
   "FLAC"
   "FM"
