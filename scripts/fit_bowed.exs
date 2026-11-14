@@ -44,7 +44,7 @@ defmodule FitBowed do
 
   def measure(synth, vel, gains, dir, extra \\ []) do
     {notes, _} = @recorded[synth]
-    eq = (gains |> Enum.with_index() |> Enum.reject(&is_nil(elem(&1, 0))) |> Enum.map(fn {g, i} -> {:"eq#{i}", g} end)) ++ extra
+    eq = (gains |> Enum.with_index() |> Enum.reject(&is_nil(elem(&1, 0))) |> Enum.map(fn {g, i} -> {"eq#{i}", g} end)) ++ extra
 
     notes
     |> Task.async_stream(fn note -> Held.note(render(synth, [note: note, vel: vel, vibrato: 0, sustain: 2.5] ++ eq, 3, dir), 48_000, note) end, timeout: :infinity)
@@ -146,7 +146,7 @@ if args != [] do
   dir = Path.join(System.tmp_dir!(), "mxs-fit-bowed")
   File.mkdir_p!(dir)
   [synth | rest] = args
-  synth = String.to_atom(synth)
+  synth = String.to_existing_atom(synth)
 
   case rest do
     ["body"] -> FitBowed.body(synth, dir)
