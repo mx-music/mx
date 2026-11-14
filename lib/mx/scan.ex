@@ -7,10 +7,12 @@ defmodule Mx.Scan do
 
   alias Vix.Vips.{Image, Operation}
 
+  @compile {:no_warn_undefined, [Image, Operation, Vix.Vips.Interpolate]}
+
   @spacing 20
 
   @doc "Prepares a page, and returns it with its staff line spacing before and after, and the degrees it was turned."
-  def prepare(%Image{} = page) do
+  def prepare(page) when is_struct(page, Image) do
     clean = page |> gray() |> crop() |> flatten() |> clean()
     before = spacing(clean)
     scaled = if before, do: scale(clean, @spacing / before), else: clean
@@ -20,7 +22,7 @@ defmodule Mx.Scan do
   end
 
   @doc "A page as one band of 8-bit gray."
-  def gray(%Image{} = page) do
+  def gray(page) when is_struct(page, Image) do
     page =
       if Image.has_alpha?(page) do
         Operation.flatten!(page, background: [255.0])
@@ -109,7 +111,7 @@ defmodule Mx.Scan do
   A system is the staves joined by a bar line running from each staff to the next, or a single staff joined to none.
   Each reaches halfway to its neighbours, but no further than six staff line spacings from its outer staff lines.
   """
-  def systems(%Image{} = page) do
+  def systems(page) when is_struct(page, Image) do
     height = Image.height(page)
     ink = Operation.relational_const!(page, :VIPS_OPERATION_RELATIONAL_LESS, [160.0])
 
@@ -407,7 +409,7 @@ defmodule Mx.Scan do
   end
 
   @doc "The distance in pixels from one staff line to the next, or nil on a page without staves."
-  def spacing(%Image{} = page) do
+  def spacing(page) when is_struct(page, Image) do
     width = Image.width(page)
     height = Image.height(page)
 

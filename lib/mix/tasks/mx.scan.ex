@@ -21,6 +21,8 @@ defmodule Mix.Tasks.Mx.Scan do
   alias Mx.{ABC, Audiveris, Scan, Transcriber}
   alias Vix.Vips.{Image, Operation}
 
+  @compile {:no_warn_undefined, [Image, Operation]}
+
   @dpi 300
 
   @impl true
@@ -30,6 +32,7 @@ defmodule Mix.Tasks.Mx.Scan do
         strict: [out: :string, pages: :string, raw: :boolean, model: :boolean, force: :boolean]
       )
 
+    if not Code.ensure_loaded?(Image), do: Mix.raise(missing_dep(:vix, "~> 0.43"))
     out = Keyword.get(opts, :out, Path.rootname(path) <> ".mxl")
     if not File.regular?(path), do: Mix.raise("cannot read #{path}")
     pdf = String.downcase(Path.extname(path)) == ".pdf"
@@ -44,6 +47,7 @@ defmodule Mix.Tasks.Mx.Scan do
 
     if Keyword.get(opts, :model, false) do
       if raw, do: Mix.raise(raw_with_model())
+      if not Code.ensure_loaded?(Pythonx), do: Mix.raise(missing_dep(:pythonx, "~> 0.4.11"))
       images = write_pages(path, pdf, pages, false, dir)
       transcribe(images, path, out, dir)
     else
@@ -142,6 +146,11 @@ defmodule Mix.Tasks.Mx.Scan do
       :ok = Image.write_to_file(image, file)
       {page, file, info}
     end
+  end
+
+  defp missing_dep(name, requirement) do
+    dep = inspect({name, requirement})
+    "mix mx.scan needs #{name}; add #{dep} to the deps in your mix.exs"
   end
 
   defp missing do

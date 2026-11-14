@@ -52,8 +52,8 @@ defmodule Mx.MixProject do
   defp deps do
     [
       {:midiex, "~> 0.6.4"},
-      {:vix, "~> 0.43"},
-      {:pythonx, "~> 0.4.11"},
+      {:vix, "~> 0.43", optional: true},
+      {:pythonx, "~> 0.4.11", optional: true},
       {:rustler, "~> 0.38.0", runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.40", only: [:dev, :test], runtime: false},

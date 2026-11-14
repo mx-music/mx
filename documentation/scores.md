@@ -63,6 +63,8 @@ mx examples/erbarme_dich/dub.exs
 
 `mix mx.scan` reads the music on a scanned score into MusicXML, ready for `mix mx.import`.
 It runs Audiveris, an open source optical music recognition program, which is installed apart from mx as [audiveris.md](audiveris.md) describes, along with poppler for PDFs.
+It also needs vix, and `--model` needs pythonx; both are optional dependencies of mx, so add `{:vix, "~> 0.43"}` and `{:pythonx, "~> 0.4.11"}` to your deps to scan.
+
 ```sh
 mix mx.scan score.pdf
 ```

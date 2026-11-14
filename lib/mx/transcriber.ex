@@ -6,6 +6,8 @@ defmodule Mx.Transcriber do
   It runs in Python inside this OS process, through Pythonx: the first run installs Python, PyTorch and transformers with uv, and downloads the model into the Hugging Face cache.
   """
 
+  @compile {:no_warn_undefined, Pythonx}
+
   @model "rokotmidi/rokot-omr-2b"
   @width 1400
 
@@ -74,7 +76,9 @@ defmodule Mx.Transcriber do
   defp python(fun) do
     {:ok, fun.()}
   rescue
-    error in Pythonx.Error ->
+    error ->
+      if not is_struct(error, Pythonx.Error), do: reraise(error, __STACKTRACE__)
+
       exception =
         error
         |> Exception.message()
