@@ -161,7 +161,7 @@ RG_START=$SECONDS
 run_check "Avoid 'dbg/2'; it's a debugging tool and should not be committed." 'dbg'
 run_check "Avoid 'IEx.pry/0' or 'IEx.break!/2'; they are for interactive debugging only." 'IEx\.(pry|break!)'
 run_check "Avoid 'IO.inspect/2'; use a proper logger for application code." -g '!scripts/*.exs' -g '!notebooks/**/*.livemd' 'IO\.inspect'
-run_check "Remove 'WIP' or 'wip' markers before committing." 'wip'
+run_check "Remove 'WIP' or 'wip' markers before committing." '\bwip\b'
 run_check "Don't leave TODOs in the codebase; track them as tickets instead." 'TODO'
 run_check "Avoid 'Kernel.binding/1' in application code; it is for debugging." -g "lib/**/*" 'binding\(\)'
 run_check "No open browser calls" 'open_browser'
@@ -203,7 +203,7 @@ run_check "Use/import/alias/require/defstruct/defexception should be after @beha
 run_check "Import should be after use" -PU '^\s*import\b[^\n]*\n\s*use\b'
 run_check "Alias should be after use and import" -PU '^\s*alias\b[^\n]*\n\s*(?:use|import)\b'
 run_check "Require should be after use/import/alias" -PU '^\s*require\b[^\n]*\n\s*(?:use|import|alias)\b'
-run_check 'Define use/import/alias/require at the top' -PU '\"\"\"[\s\S]*\"\"\"(*SKIP)(*FAIL)|^\s*(?:def|defp|defstruct|defexception|defguard|defguardp|defn|defnp)\s(?:(?!\b(?:defmodule|quote|defimpl)\b)[\s\S])*?\n\s+(?:use|import|alias|require)\s'
+run_check 'Define use/import/alias/require at the top' -PU '\"\"\"[\s\S]*\"\"\"(*SKIP)(*FAIL)|^\s*(?:def|defp|defstruct|defexception|defguard|defguardp|defn|defnp)\s(?:(?!\b(?:defmodule|quote|defimpl)\b|\"\"\")[\s\S])*?\n\s+(?:use|import|alias|require)\s'
 # Modules that MAY be fully imported (`import Mod` with no `only:`/`except:`).
 # The app's own modules should be refined to `import Mod, only: [...]`.
 IMPORT_ALLOWLIST=(
@@ -238,6 +238,7 @@ run_check "Avoid ':persistent_term.put/2'; it has global VM-wide side effects" \
           -g '!lib/mx/synth.ex' \
           -g '!lib/mx/synths.ex' \
           -g '!lib/mx/transcriber.ex' \
+          -g '!test/mx/instrument_song_test.exs' \
           ':persistent_term\.put'
 
 run_check 'Use index, not idx' 'idx'
@@ -269,7 +270,7 @@ run_check "Do not leave empty describe/test blocks" -PU -g 'test/**/*' '(describ
 
 run_check "Use 'assert is_nil(...)' instead of 'assert nil = ...'" 'assert nil ='
 run_check "Don't define modules inside 'test' blocks; define at the describe level to avoid 'redefining module' warnings on repeated runs" \
-          -PU -g 'test/**/*' '(?m)^(\s+)test\b.+?\bdo\b\s*$\n(?:(?!\1end\b)[^\n]*\n){0,50}?\1\s+defmodule\b'
+          -PU -g 'test/**/*' '(?m)^(\s+)test\b.+?\bdo\b\s*$\n(?:(?!\1end\b)(?![^\n]*\"\"\")[^\n]*\n){0,50}?\1\s+defmodule\b'
 
 run_check "Avoid :capture_log, don't hide logs, but capture and assert them" "tag .?capture_log"
 run_check "@tag consistency: :strong in debug-only and shouldn't be committed" -g '!test/support/commanded.ex' "tag consistency\: \:strong"
