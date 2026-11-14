@@ -288,7 +288,8 @@ defmodule Mx.Measure.Strokes do
     |> List.to_tuple()
   end
 
-  # The frames where the level dips at least 7 dB under what surrounds it, 20 frames or more apart.
+  # The frames where the level dips at least 7 dB under what surrounds it, 20 frames or more
+  # apart.
   defp dips(smooth) do
     last = tuple_size(smooth) - 1
 
@@ -408,7 +409,8 @@ defmodule Mx.Measure.Strokes do
     %{at: frame.at, hz: nil, harmonics: nil, wave: nil, level: frame.level}
   end
 
-  # The harmonics that best fit the sound around a frame, at the pitch within 3% of the one followed that leaves least.
+  # The harmonics that best fit the sound around a frame, at the pitch within 3% of the one
+  # followed that leaves least.
   defp fit(frame, heard, window, rate) do
     weighted = Enum.zip_with(heard, window, &(&1 * &2))
 
@@ -482,7 +484,8 @@ defmodule Mx.Measure.Strokes do
     [(target - dot(coefficients, solved)) / lead | solved]
   end
 
-  # The frames of one stroke as a pitch, harmonics and noise at every frame, against its loudest frame.
+  # The frames of one stroke as a pitch, harmonics and noise at every frame, against its loudest
+  # frame.
   defp clean(fitted, body, ignore) do
     count = length(fitted)
     kept = fitted |> Enum.map(& &1.hz) |> List.to_tuple() |> same_stroke(body)
@@ -525,7 +528,8 @@ defmodule Mx.Measure.Strokes do
     |> then(&%{hz: settled, frames: &1})
   end
 
-  # The frames that have a pitch, out from the middle of the stroke until the pitch jumps to a neighbouring stroke's.
+  # The frames that have a pitch, out from the middle of the stroke until the pitch jumps to a
+  # neighbouring stroke's.
   defp same_stroke(pitches, body) do
     voiced = for index <- 0..(tuple_size(pitches) - 1), elem(pitches, index), do: index
     middle = Enum.min_by(voiced, &abs(&1 - div(body, 2)))
@@ -563,13 +567,15 @@ defmodule Mx.Measure.Strokes do
   # The level of a sound made of harmonics of these amplitudes.
   defp sounding(harmonics), do: :math.sqrt(dot(harmonics, harmonics) / 2)
 
-  # Past the first and last frame with a pitch, the harmonics are the nearest ones, no louder than the sound.
+  # Past the first and last frame with a pitch, the harmonics are the nearest ones, no louder than
+  # the sound.
   defp outside(%{harmonics: harmonics, level: level} = frame) do
     gain = min(1, level / max(sounding(harmonics), 1.0e-9))
     %{frame | harmonics: Enum.map(harmonics, &(&1 * gain))}
   end
 
-  # The noise is kept 15 dB under the frame's level, and the harmonics raised to the rest of it, by 12 dB at most.
+  # The noise is kept 15 dB under the frame's level, and the harmonics raised to the rest of it,
+  # by 12 dB at most.
   defp toned(%{harmonics: harmonics, level: level, noise: noise} = frame) do
     noise = min(noise, level * 10 ** (@noise_under / 20))
     rest = :math.sqrt(max(level * level - noise * noise, 0.0))

@@ -199,7 +199,8 @@ defmodule Mx.ABC do
     state.bars |> Enum.reverse() |> stop_open_ending()
   end
 
-  # Regex.scan names its captures alphabetically: bar, chord, deco, field, grace, note, rest, text, tuplet.
+  # Regex.scan names its captures alphabetically: bar, chord, deco, field, grace, note, rest,
+  # text, tuplet.
   defp kind([bar, chord, deco, field, grace, note, rest, text, tuplet]) do
     Enum.find_value(
       [

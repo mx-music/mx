@@ -170,7 +170,8 @@ defmodule Mx.Signal do
     20 * :math.log10(1 + (cutoff / freq) ** 8)
   end
 
-  # Robert Bristow-Johnson's high-pass and low-pass biquads: the input and output of the two samples before weigh into each output.
+  # Robert Bristow-Johnson's high-pass and low-pass biquads: the input and output of the two
+  # samples before weigh into each output.
   defp biquad(samples, rate, hz, quality, kind \\ :high) do
     angle = 2 * :math.pi() * hz / rate
     alpha = :math.sin(angle) / (2 * quality)

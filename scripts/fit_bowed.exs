@@ -1,6 +1,9 @@
-# Fits the band gains of mx's bowed strings to the University of Iowa's recordings, measuring as mx's designs test does.
-# Run from mx, with mxs built beside it by cargo build --release: mix run scripts/fit_bowed.exs violin [rounds], or with score in place of rounds to print the fitted figures.
-# The recordings' medians, and the notes each is measured over, are copied from mx's test/mx/designs_test.exs.
+# Fits the band gains of mx's bowed strings to the University of Iowa's recordings, measuring as
+# mx's designs test does.
+# Run from mx, with mxs built beside it by cargo build --release: mix run scripts/fit_bowed.exs
+# violin [rounds], or with score in place of rounds to print the fitted figures.
+# The recordings' medians, and the notes each is measured over, are copied from mx's
+# test/mx/designs_test.exs.
 
 args = System.argv()
 System.argv([])
@@ -63,9 +66,12 @@ defmodule FitBowed do
     {attack, Enum.map(@bands, &bands[&1])}
   end
 
-  # Fits the body corner, shared by every vel, to the misses' mean, and each vel's band gains to what is left, a little each round.
-  # A band the recordings do not measure keeps 0, and so does the band holding the lowest note's fundamental, which every band is measured against.
-  # No gain goes beyond 30 dB either way, past which a peak or notch colours the sound more than a miss of a few dB does.
+  # Fits the body corner, shared by every vel, to the misses' mean, and each vel's band gains to
+  # what is left, a little each round.
+  # A band the recordings do not measure keeps 0, and so does the band holding the lowest note's
+  # fundamental, which every band is measured against.
+  # No gain goes beyond 30 dB either way, past which a peak or notch colours the sound more than a
+  # miss of a few dB does.
   def fit(synth, rounds, dir) do
     {notes, _} = @recorded[synth]
     lowest = 440 * :math.pow(2, (Enum.min(notes) - 69) / 12)
@@ -108,7 +114,8 @@ defmodule FitBowed do
     IO.puts("body #{Float.round(body, 1)} Hz")
   end
 
-  # Each body corner's misses against the recordings with no gains, and their spread, which gains then have to make up.
+  # Each body corner's misses against the recordings with no gains, and their spread, which gains
+  # then have to make up.
   def body(synth, dir) do
     {notes, _} = @recorded[synth]
     lowest = 440 * :math.pow(2, (Enum.min(notes) - 69) / 12)

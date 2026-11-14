@@ -50,7 +50,8 @@ defmodule Mx.Engine.Mxs do
     end)
   end
 
-  # Each entry's own options, then those every note, sample or effect takes, which win over its own.
+  # Each entry's own options, then those every note, sample or effect takes, which win over its
+  # own.
   defp entries do
     {_synths, note, sample, effects, effect} = Native.catalog()
 
@@ -400,7 +401,8 @@ defmodule Mx.Engine.Mxs do
     end
   end
 
-  # Changes a live audio's options in place, or starts it anew when its input, channels or effects change.
+  # Changes a live audio's options in place, or starts it anew when its input, channels or effects
+  # change.
   defp put_live(engine, playing, live, tempo, now) do
     synth = if live.stereo, do: :live_audio_stereo, else: :live_audio_mono
     opts = Synths.to_seconds(synth, live.opts, tempo)

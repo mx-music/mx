@@ -119,7 +119,8 @@ defmodule Mix.Tasks.Mx.Import do
     names = loop_names(Enum.map(parts, fn {part, _synth} -> part.name end))
     rendered = Enum.map(parts, fn {part, synth} -> render(part, synth, score.order) end)
 
-    # A bar plays the same wherever the score plays it, unless a tie into it or out of it differs, and then each time it plays is written apart.
+    # A bar plays the same wherever the score plays it, unless a tie into it or out of it differs,
+    # and then each time it plays is written apart.
     same? =
       Enum.all?(rendered, fn bars ->
         bars
@@ -209,7 +210,8 @@ defmodule Mix.Tasks.Mx.Import do
     |> Enum.map_join("\n", &("  " <> &1))
   end
 
-  # The module is named after the song, so two songs whose parts share a name can load side by side.
+  # The module is named after the song, so two songs whose parts share a name can load side by
+  # side.
   defp song_module(out) do
     name =
       out
@@ -231,7 +233,8 @@ defmodule Mix.Tasks.Mx.Import do
     keys
   end
 
-  # Each time a bar plays, as {number, time, music}, with ties resolved in the order the bars play.
+  # Each time a bar plays, as {number, time, music}, with ties resolved in the order the bars
+  # play.
   defp render(part, synth, order) do
     bars = Map.new(part.bars, &{&1.number, &1})
     keys = times(order)
@@ -267,7 +270,8 @@ defmodule Mix.Tasks.Mx.Import do
     end
   end
 
-  # Follows each tie into the next note of its name in its voice, in the order the bars play, and gives the note that starts it the length of the whole tie.
+  # Follows each tie into the next note of its name in its voice, in the order the bars play, and
+  # gives the note that starts it the length of the whole tie.
   defp ties(bars, keys) do
     {_start, _open, sustains, continued} =
       Enum.reduce(keys, {0, %{}, %{}, MapSet.new()}, fn {number, _time} = key,
@@ -320,7 +324,8 @@ defmodule Mix.Tasks.Mx.Import do
   defp vel("f"), do: 0.8
   defp vel(mark) when mark in ["ff", "fff", "ffff"], do: 1
 
-  # A voice of plain notes and rests is a keyword seq; one with chords, dynamics or ties writes each note.
+  # A voice of plain notes and rests is a keyword seq; one with chords, dynamics or ties writes
+  # each note.
   defp voice_music(items) do
     plain? =
       Enum.all?(items, fn {heads, beats, vel, _sustain?} ->

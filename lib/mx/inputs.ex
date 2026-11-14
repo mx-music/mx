@@ -71,7 +71,8 @@ defmodule Mx.Inputs do
     Process.flag(:trap_exit, true)
     inputs = self()
 
-    # A port midiex cannot connect to stops its listener, which is trapped and leaves the other ports listening.
+    # A port midiex cannot connect to stops its listener, which is trapped and leaves the other
+    # ports listening.
     for port <- if(Keyword.get(opts, :midi, true), do: Midiex.ports(:input), else: []) do
       {:ok, listener} = Midiex.Listener.start_link(port: port)
       Midiex.Listener.add_handler(listener, fn msg -> send(inputs, {:midi_in, msg.data}) end)
@@ -218,7 +219,8 @@ defmodule Mx.Inputs do
     end)
   end
 
-  # Keeps each value a snapshot may still read: those set from the earliest beat a followed loop has not worked out, and the last before it that has played.
+  # Keeps each value a snapshot may still read: those set from the earliest beat a followed loop
+  # has not worked out, and the last before it that has played.
   defp prune(state) do
     earliest = state.loops |> Map.values() |> Enum.map(&elem(&1, 0)) |> Enum.min(fn -> nil end)
     now = Mx.Clock.now()

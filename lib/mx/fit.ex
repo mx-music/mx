@@ -209,7 +209,8 @@ defmodule Mx.Fit do
     end
   end
 
-  # The figures are named after their version, whether they measure drones, the files, their notes and vels, and each file's size and time of change.
+  # The figures are named after their version, whether they measure drones, the files, their notes
+  # and vels, and each file's size and time of change.
   defp cache_path(dynamics, drone) do
     key =
       for {vel, files} <- [{{@version, drone}, []} | dynamics] do

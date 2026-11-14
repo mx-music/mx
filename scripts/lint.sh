@@ -355,7 +355,8 @@ done
 ACRONYMS_JOINED=$(printf '%s|' "${ACRONYMS_BAD_PATTERNS[@]}")
 ACRONYMS_JOINED=${ACRONYMS_JOINED%"|"}
 
-# Matches whole words and PascalCase segments (CsvExport); camelCase names (responseMimeType) belong to JS or external APIs.
+# Matches whole words and PascalCase segments (CsvExport); camelCase names (responseMimeType)
+# belong to JS or external APIs.
 run_check \
   "Use 100%-uppercase acronyms (e.g. CPU, not Cpu), also inside names (CSVExport, not CsvExport)" \
   -P "\\b(?:[A-Z][A-Za-z0-9]*?(?<=[a-z0-9]))?(?:${ACRONYMS_JOINED})(?![a-z])"

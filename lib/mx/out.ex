@@ -33,7 +33,8 @@ defmodule Mx.Out do
     Process.flag(:trap_exit, true)
     {:ok, socket} = :gen_udp.open(0, [:binary, active: false])
 
-    # The first port listing starts CoreMIDI and takes most of a second, so it happens before any message is due.
+    # The first port listing starts CoreMIDI and takes most of a second, so it happens before any
+    # message is due.
     Midiex.ports(:output)
 
     state = %{
@@ -97,7 +98,8 @@ defmodule Mx.Out do
     end
   end
 
-  # Looks a host up when its message is scheduled, ahead of time, so a slow lookup never delays a send.
+  # Looks a host up when its message is scheduled, ahead of time, so a slow lookup never delays a
+  # send.
   defp resolve(state, {:osc, {host, _port}, _packet}) when not is_map_key(state.hosts, host) do
     put_in(state.hosts[host], :inet.getaddr(to_charlist(host), :inet))
   end

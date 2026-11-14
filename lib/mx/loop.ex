@@ -166,7 +166,8 @@ defmodule Mx.Loop do
 
   defp run_passes(state, timeline, _now, _horizon), do: {state, timeline}
 
-  # The cue puts the pass's tempo changes on the timeline, so every time in the pass is worked out from the timeline it returns.
+  # The cue puts the pass's tempo changes on the timeline, so every time in the pass is worked out
+  # from the timeline it returns.
   defp run_pass(state, timeline) do
     start = state.next_start
     state = %{state | loaded: Map.merge(state.loaded, state.arrived), arrived: %{}}
@@ -300,7 +301,8 @@ defmodule Mx.Loop do
       for {effect, opts} <- state.loop.fx,
           do: {effect, Synths.effect_to_seconds(effect, opts, tempo)}
 
-    # A part that changes all its playing sounds plays them in a group of its own, which an empty chain gives it.
+    # A part that changes all its playing sounds plays them in a group of its own, which an empty
+    # chain gives it.
     grouped = chain != [] or match?(%{changed: true}, state.loop.music)
 
     if chain == state.chain and grouped == (state.fx != nil) do

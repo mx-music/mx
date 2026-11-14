@@ -117,7 +117,8 @@ defmodule Mx.Synths do
     String.ends_with?(name, "_slide") or name in Map.get(beats(), to_string(synth), MapSet.new())
   end
 
-  # An engine option in beats nobody names in Elixir has no atom yet, so those are listed; a defsynth option is already one.
+  # An engine option in beats nobody names in Elixir has no atom yet, so those are listed; a
+  # defsynth option is already one.
   defp option_key(name), do: @engine_beats[name] || String.to_existing_atom(name)
 
   defp fx(effect), do: "fx_" <> Atom.to_string(effect)

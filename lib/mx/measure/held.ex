@@ -179,7 +179,8 @@ defmodule Mx.Measure.Held do
     end
   end
 
-  # The fundamental within 6% of the guess whose first six harmonics hold the most energy, over the held spectra.
+  # The fundamental within 6% of the guess whose first six harmonics hold the most energy, over
+  # the held spectra.
   defp pitch(spectra, guess, bin) do
     steps = round(guess * 0.12 / 0.05)
 
@@ -225,7 +226,8 @@ defmodule Mx.Measure.Held do
     end
   end
 
-  # The loudest bin's position and level, refined between bins only when it is louder than both its neighbours.
+  # The loudest bin's position and level, refined between bins only when it is louder than both
+  # its neighbours.
   defp peak(spectrum, bins) do
     peak = Enum.max_by(bins, &elem(spectrum, &1))
     level = elem(spectrum, peak)
@@ -288,7 +290,8 @@ defmodule Mx.Measure.Held do
         do: at
   end
 
-  # The seconds from where the sound starts, 40 dB below its held level, until it first comes within 0.5 dB of it.
+  # The seconds from where the sound starts, 40 dB below its held level, until it first comes
+  # within 0.5 dB of it.
   defp attack(segment, rate, held, centre) do
     window = round(0.01 * rate)
     step = round(0.001 * rate)
@@ -319,7 +322,8 @@ defmodule Mx.Measure.Held do
     reach_time - start
   end
 
-  # The pitch of the strongest of the first four harmonics in short frames across the held part, in cents.
+  # The pitch of the strongest of the first four harmonics in short frames across the held part,
+  # in cents.
   # The frames average the swing over their length.
   # So the depth is divided by what a Hann window keeps of a swing at that rate.
   defp vibrato(sound, held, f0, harmonics, rate, centre) do

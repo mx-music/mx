@@ -144,7 +144,8 @@ defmodule Mx.Music do
     end
   end
 
-  # A GitHub sample is downloaded once the song has loaded, where the loop playing it can be named, and its cut checked as it plays.
+  # A GitHub sample is downloaded once the song has loaded, where the loop playing it can be
+  # named, and its cut checked as it plays.
   defp check_ref({:github, _repo, _ref, _path} = ref, _opts), do: Mx.Samples.check_github(ref)
 
   defp check_ref(ref, _opts) when is_tuple(ref) do
@@ -390,7 +391,8 @@ defmodule Mx.Music do
     raise ArgumentError, "steps takes a string, a list of strings or a ~MX pattern, not #{other}"
   end
 
-  # A word that glides joins the note before it: the note lasts through it, and changes to its pitch where it starts.
+  # A word that glides joins the note before it: the note lasts through it, and changes to its
+  # pitch where it starts.
   defp glided(cells) do
     cells
     |> Enum.reduce([], fn
@@ -459,7 +461,8 @@ defmodule Mx.Music do
   defp stroke(nil, beats, opts), do: %Note{pitch: :own_note, beats: beats, opts: opts}
   defp stroke(ref, beats, opts), do: sample(ref, beats, opts)
 
-  # What a character or a word sounds: a stroke of strokes:, x, a digit as a note of notes: or as a level, or else a note's name.
+  # What a character or a word sounds: a stroke of strokes:, x, a digit as a note of notes: or as
+  # a level, or else a note's name.
   defp sound(token, own) do
     stroke = Enum.find(own[:strokes] || [], fn {name, _opts} -> to_string(name) == token end)
     digit = if token =~ ~r/^[0-9]$/, do: String.to_integer(token)
@@ -541,7 +544,8 @@ defmodule Mx.Music do
     %Loop{fun: fun, on: on, line: fun_line(fun)}
   end
 
-  # The line of a function written at the top of the song, which keeps its line as it is evaluated; a function of a module keeps none.
+  # The line of a function written at the top of the song, which keeps its line as it is
+  # evaluated; a function of a module keeps none.
   defp fun_line(fun) do
     with {:module, :erl_eval} <- Function.info(fun, :module),
          {:env, [entry | _]} when is_tuple(entry) <- Function.info(fun, :env) do
@@ -730,7 +734,8 @@ defmodule Mx.Music do
     {events, changes}
   end
 
-  # A tempo change in a section that takes no time, such as seq([tempo(140), section]), starts the next section.
+  # A tempo change in a section that takes no time, such as seq([tempo(140), section]), starts the
+  # next section.
   defp carry_tempos(changes, lengths) do
     {carried, waiting} =
       changes
@@ -811,7 +816,8 @@ defmodule Mx.Music do
     {timed, triggered ++ now}
   end
 
-  # A part's notes and loops in each section, the length each section plays as a pass, and the number of loop passes before each.
+  # A part's notes and loops in each section, the length each section plays as a pass, and the
+  # number of loop passes before each.
   defp part_sections(part, played, lengths) do
     held = Synths.option?(part.synth, :sustain) and not Keyword.has_key?(part.defaults, :sustain)
 
@@ -899,7 +905,8 @@ defmodule Mx.Music do
   def beats(%Loop{beats: beats, times: times}), do: beats * times
   def beats(%Seq{items: items}), do: Enum.reduce(items, 0, &plus(beats(&1), &2))
 
-  # As long as the longest item that ends, so a loop with no end plays as long as the music beside it; a loop started by on: has no length to end with.
+  # As long as the longest item that ends, so a loop with no end plays as long as the music beside
+  # it; a loop started by on: has no length to end with.
   def beats(%Together{items: items}) do
     timed = Enum.reject(items, &triggered?/1)
 
@@ -1032,7 +1039,8 @@ defmodule Mx.Music do
     :ok
   end
 
-  # A function written at the top of the song runs evaluated, so an error in it carries no line of the song; the loop's own line stands in.
+  # A function written at the top of the song runs evaluated, so an error in it carries no line of
+  # the song; the loop's own line stands in.
   defp run_loop(music, line, fun, pass) do
     returned(fun.(pass, inputs()))
   rescue
@@ -1060,7 +1068,8 @@ defmodule Mx.Music do
     end
   end
 
-  # Plays each note from its beat, leaving out the notes that start at or after a cut, and holding a note its length where the synth takes sustain.
+  # Plays each note from its beat, leaving out the notes that start at or after a cut, and holding
+  # a note its length where the synth takes sustain.
   defp record(music, events, offset, cut) do
     steps =
       for {beat, _part, step} <- events, cut == :infinity or beat + offset < cut do
@@ -1147,7 +1156,8 @@ defmodule Mx.Music do
 
   defp through_repeat(music), do: [music]
 
-  # Every note of the music as {beat, part, note}, and every loop as {beat, part, {:loop, loop, cut}}, cut being the beat its last pass stops at.
+  # Every note of the music as {beat, part, note}, and every loop as {beat, part, {:loop, loop,
+  # cut}}, cut being the beat its last pass stops at.
   defp flatten(%Note{} = note, beat, part, _cut) do
     if part == nil do
       written = written(note)
@@ -1250,7 +1260,8 @@ defmodule Mx.Music do
     end
   end
 
-  # Each part once, in the order it first plays, refusing a name played with other options elsewhere.
+  # Each part once, in the order it first plays, refusing a name played with other options
+  # elsewhere.
   defp parts(played) do
     played
     |> List.flatten()
@@ -1295,7 +1306,8 @@ defmodule Mx.Music do
   defp own_notes(%Swing{music: music}), do: own_notes(music)
   defp own_notes(_music), do: []
 
-  # A note lasts its length on a synth that takes sustain, unless the note or the part's defaults give one.
+  # A note lasts its length on a synth that takes sustain, unless the note or the part's defaults
+  # give one.
   defp held(music, synth, defaults) do
     if Synths.option?(synth, :sustain) and not Keyword.has_key?(defaults, :sustain) do
       map_own_notes(music, fn

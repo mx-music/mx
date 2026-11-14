@@ -148,7 +148,8 @@ defmodule Mx.Measure do
     end
   end
 
-  # The harmonic nearest the target, and its level in the first spectrum before the filter's loss is added back.
+  # The harmonic nearest the target, and its level in the first spectrum before the filter's loss
+  # is added back.
   defp harmonic(context, number, target) do
     %{spectra: [first | _] = spectra, f0: f0, bin: bin, floor: floor} = context
     bins = max(ceil((target - f0 / 4) / bin), 1)..floor((target + f0 / 4) / bin)

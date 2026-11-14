@@ -150,7 +150,8 @@ defmodule Mx.Measure.Hits do
   end
 
   # A band's level as the hit starts is the loudest of the first three frames.
-  # A band less than 10 dB above its own quietest frame, or 60 dB below the loudest band, is left out.
+  # A band less than 10 dB above its own quietest frame, or 60 dB below the loudest band, is left
+  # out.
   defp bands(tracks, times) do
     starts = Map.new(tracks, fn {band, track} -> {band, track |> Enum.take(3) |> Enum.max()} end)
     loudest = starts |> Map.values() |> Enum.max()
@@ -167,7 +168,8 @@ defmodule Mx.Measure.Hits do
     end
   end
 
-  # Each band's level at each moment after the loudest of the first three frames, against the loudest band then.
+  # Each band's level at each moment after the loudest of the first three frames, against the
+  # loudest band then.
   # A moment past the hit's last frame is nil, and a level more than 40 dB down is -40.
   defp track_moments(tracks) do
     first =
@@ -188,7 +190,8 @@ defmodule Mx.Measure.Hits do
     end
   end
 
-  # The strongest peaks of a spectrum of the hit's start, each at least 3% and four bins from a stronger one.
+  # The strongest peaks of a spectrum of the hit's start, each at least 3% and four bins from a
+  # stronger one.
   defp peaks(sound, rate, cutoff) do
     {spectrum, levels, loudest, bin} = start_spectrum(sound, rate)
 
@@ -231,7 +234,8 @@ defmodule Mx.Measure.Hits do
     {spectrum, List.to_tuple(levels), Enum.max(levels), rate / size}
   end
 
-  # The bins of the loudest local peaks above `floor`, from `first` up, each apart from a stronger one kept.
+  # The bins of the loudest local peaks above `floor`, from `first` up, each apart from a stronger
+  # one kept.
   defp strongest(levels, floor, first, apart, count) do
     max(first, 1)..(tuple_size(levels) - 2)//1
     |> Enum.filter(fn at ->

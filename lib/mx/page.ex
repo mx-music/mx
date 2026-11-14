@@ -62,7 +62,8 @@ defmodule Mx.Page do
     end
   end
 
-  # Each pass that starts before the sound ends, the last first, as its timeline, the beat it starts on, its events and its length.
+  # Each pass that starts before the sound ends, the last first, as its timeline, the beat it
+  # starts on, its events and its length.
   defp passes(loop, song, seconds) do
     sections = loop.music.sections
     window = elem(sections, tuple_size(sections) - 1).beats

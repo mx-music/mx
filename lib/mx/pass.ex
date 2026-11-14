@@ -54,7 +54,8 @@ defmodule Mx.Pass do
     end
   end
 
-  # A sampled key plays its takes in turn, each pass carrying on as though the passes before it played the key as often, so a pass always plays the same takes.
+  # A sampled key plays its takes in turn, each pass carrying on as though the passes before it
+  # played the key as often, so a pass always plays the same takes.
   defp take_turns(events, pass) do
     played = Enum.frequencies(for {_, {:sampled, takes, _}, _} <- events, do: takes)
 
@@ -136,7 +137,8 @@ defmodule Mx.Pass do
   defp player(%Mx.Sampled{}), do: :stereo_player
   defp player(synth), do: synth
 
-  # Each note's options, taking its own value from an option given a list, one value per note as written.
+  # Each note's options, taking its own value from an option given a list, one value per note as
+  # written.
   defp note_opts(opts, count, chord?) do
     for {option, values} <- opts, is_list(values) do
       given = length(values)

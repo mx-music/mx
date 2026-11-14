@@ -13,7 +13,8 @@ defmodule Mx.Sampled do
 
   defstruct [:source, keys: %{}]
 
-  # The sample players' options, but for the rate, start and finish a sampled instrument works out itself, and with vel.
+  # The sample players' options, but for the rate, start and finish a sampled instrument works out
+  # itself, and with vel.
   @not_options [:rate, :rate_slide, :start, :finish]
 
   @doc """

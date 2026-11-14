@@ -92,7 +92,8 @@ defmodule Mx.Recording do
     %{channels: channels, rate: rate, block_align: block_align, bits: bits, data: data}
   end
 
-  # One pass over the samples: the loudest, and each frame with a sample at full scale that follows one without.
+  # One pass over the samples: the loudest, and each frame with a sample at full scale that
+  # follows one without.
   defp scan(<<sample::little-signed-24, rest::binary>>, :int24, channels, index, acc) do
     full = sample == @full_scale - 1 or sample == -@full_scale
     step(abs(sample), full, rest, :int24, channels, index, acc)

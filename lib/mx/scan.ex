@@ -158,7 +158,8 @@ defmodule Mx.Scan do
   end
 
   # The staves on the page, as the rows of their top and bottom lines. Each row is scored by the
-  # long thin horizontal lines at it and at the four rows a staff line spacing below, and the staves
+  # long thin horizontal lines at it and at the four rows a staff line spacing below, and the
+  # staves
   # are the best scoring rows at least half as good as the best, six spacings or more apart.
   # Beams are taken out first, as they are half a spacing thick and lie against the lines.
   defp staves_in(ink) do

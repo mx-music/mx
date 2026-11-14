@@ -37,7 +37,8 @@ defmodule Mx.Audiveris do
     end
   end
 
-  # Audiveris names a page's MusicXML after the image, and numbers the movements when a page holds more than one.
+  # Audiveris names a page's MusicXML after the image, and numbers the movements when a page holds
+  # more than one.
   defp scores(dir, image) do
     base = Path.rootname(Path.basename(image))
 

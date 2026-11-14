@@ -203,7 +203,8 @@ defmodule Mx.Band do
     pids = for {loop, start, _} <- starts, do: {state.loops[loop.name], start, loop.on}
     for {pid, start, nil} <- pids, is_number(start), do: worked_out.(pid, start)
 
-    # A render ticks every loop itself, one at a time, so their notes reach the engine in the same order on every run.
+    # A render ticks every loop itself, one at a time, so their notes reach the engine in the same
+    # order on every run.
     if not Mx.Clock.rendering?() do
       for {pid, _, _} <- pids, do: send(pid, :tick)
     end
@@ -247,7 +248,8 @@ defmodule Mx.Band do
     |> elem(1)
   end
 
-  # A part of a song written as music joins at the next section, the next pass another part starts.
+  # A part of a song written as music joins at the next section, the next pass another part
+  # starts.
   defp later_start(state, %{music: music, name: name}) when music != nil do
     playing =
       Enum.any?(state.loops, fn {other, _} -> other != name and music?(state.song, other) end)

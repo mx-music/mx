@@ -129,7 +129,8 @@ defmodule Mx.Song do
     Process.put(@key, %__MODULE__{})
 
     try do
-      # Seeded from the file, so the random numbers a song's music is built with are the same on every load.
+      # Seeded from the file, so the random numbers a song's music is built with are the same on
+      # every load.
       :rand.seed(:exsss, {:erlang.phash2(Path.expand(path)), 0, 0})
 
       case eval_file(path) do
@@ -157,11 +158,13 @@ defmodule Mx.Song do
     end
   end
 
-  # Elixir logs why a module did not compile and raises without the line, so the first error it logged names it.
+  # Elixir logs why a module did not compile and raises without the line, so the first error it
+  # logged names it.
   defp eval_file(path) do
     {result, diagnostics} =
       Code.with_diagnostics([log: true], fn ->
-        # A module the song file defines is compiled again on every load, which is no conflict to warn about.
+        # A module the song file defines is compiled again on every load, which is no conflict to
+        # warn about.
         ignoring = Code.get_compiler_option(:ignore_module_conflict)
         Code.put_compiler_option(:ignore_module_conflict, true)
 
@@ -226,7 +229,8 @@ defmodule Mx.Song do
     end
   end
 
-  # The line of the song file running when an error was raised, which Elixir keeps in the stacktrace even for code at the top of the file.
+  # The line of the song file running when an error was raised, which Elixir keeps in the
+  # stacktrace even for code at the top of the file.
   defp song_line(stacktrace, path) do
     file = Path.expand(path)
 

@@ -290,7 +290,8 @@ defmodule Mix.Tasks.Mx.Measure do
   defp moment(nil), do: "-"
   defp moment(level), do: signed(round(level), 0)
 
-  # Up to three recorded hits whose bands are nearest the median, then the synth's hit three times, at one peak.
+  # Up to three recorded hits whose bands are nearest the median, then the synth's hit three
+  # times, at one peak.
   defp compare(out, measured, recorded, synth, given) do
     picked =
       measured
@@ -324,7 +325,8 @@ defmodule Mix.Tasks.Mx.Measure do
     )
   end
 
-  # The hit from 5 ms before it starts, up to the next hit, high-passed at 30 Hz and at the rate notes render at.
+  # The hit from 5 ms before it starts, up to the next hit, high-passed at 30 Hz and at the rate
+  # notes render at.
   defp recorded_hit({path, _note, hit, to}) do
     {:ok, %{rate: rate, samples: samples}} = Audio.read(path)
     from = max(round((hit.start - 0.005) * rate), 0)

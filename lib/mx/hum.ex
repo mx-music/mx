@@ -62,8 +62,10 @@ defmodule Mx.Hum do
     floor = loudest * 10 ** (@floor_db / 20)
     around = levels |> List.to_tuple() |> nearby_peaks()
 
-    # pYIN centres frame i on sample i * hop, so dropping half a window centres it on frame i's level.
-    # A frame with no clear period lands on pYIN's longest period, so it searches below the lowest pitch kept.
+    # pYIN centres frame i on sample i * hop, so dropping half a window centres it on frame i's
+    # level.
+    # A frame with no clear period lands on pYIN's longest period, so it searches below the lowest
+    # pitch kept.
     voiced =
       sound
       |> Tuple.to_list()
@@ -265,7 +267,8 @@ defmodule Mx.Hum do
     end
   end
 
-  # Each note ends where the next starts if it would run into it or leave no more than a quarter beat before it.
+  # Each note ends where the next starts if it would run into it or leave no more than a quarter
+  # beat before it.
   defp join(notes) do
     notes
     |> Enum.zip(tl(notes) ++ [nil])
