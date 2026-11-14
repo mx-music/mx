@@ -4,3 +4,4 @@
 Bach's music is in the public domain, and the encoding is under the Creative Commons Attribution 4.0 International License: https://creativecommons.org/licenses/by/4.0/.
 `aria.exs` is what `mix mx.import` writes from it, unchanged otherwise, so it is under the same license.
 `dub.exs` arranges the aria as a dub, taking its harmony, its bass and the violin's and alto's melodies from the encoding, and is under the same license.
+`piano.exs` arranges the aria for the piano alone, taking its notes from the encoding, and is under the same license.
