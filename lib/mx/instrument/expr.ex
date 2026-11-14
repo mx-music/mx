@@ -69,8 +69,8 @@ defmodule Mx.Instrument.Vocabulary do
   The nodes and functions a `defsynth` builds its sound from, named by what they do, with each argument named by its unit.
 
   Numbers: `hz/1`, `db/1`, `log2/1`, `exp/1`, `sin/1`, `cos/1`, `clamp/3` and `select/3`, worked out at once on numbers and when the note starts on its options.
-  Sources: `impulse/0`, `follow/1`, `time/0`, `sine/1`, `partials/2`, `bowed_string/1`, `saw/1`, `square/1`, `triangle/1`, `pulse/1` and `noise/1`.
-  Filters: `lowpass/2`, `highpass/2` and `bandpass/2`, at `hz:` with `q:` and `poles:`, `lowshelf/2`, `highshelf/2` and `peak/2`, at `hz:` with `q:` and `db:`, `mode/2`, a resonator struck by its input at `hz:`, ringing at `level:` and fading 60 dB over `fade:` seconds, `delay/2`, and `dc_block/1`.
+  Sources: `impulse/0`, `follow/1`, `time/0`, `sine/1`, `vibrato/1`, `partials/2`, `bowed_string/1`, `air_jet/1`, `saw/1`, `square/1`, `triangle/1`, `pulse/1` and `noise/1`.
+  Filters: `lowpass/2`, `highpass/2` and `bandpass/2`, at `hz:` with `q:` and `poles:`, `lowshelf/2`, `highshelf/2` and `peak/2`, at `hz:` with `q:` and `db:`, `mode/2`, a resonator struck by its input at `hz:`, ringing at `level:` and fading 60 dB over `fade:` seconds, `wind_bands/2`, `delay/2`, and `dc_block/1`.
   Shapes: `envelope/1` and `perc/1` are levels over time, and `envelope/2` and `perc/2` scale a sound by them.
   Mixing: `mix/1` adds a list of sounds, and `gain/2` scales one.
   A synth ends with `note_envelope/2`, shaping its sound by the note's envelope, or `rings/2`, ending it after `seconds:`.
@@ -125,6 +125,24 @@ defmodule Mx.Instrument.Vocabulary do
 
   @doc "A bowed string at the MIDI `note:`, bowed at `speed:` and `force:`, reached over `takes:` seconds, at `position:` along it from the bridge, its speed swayed by `rosin:` times pink noise."
   def bowed_string(opts), do: Expr.call(:bowed_string, [], opts)
+
+  @doc "A vibrato's swing `depth:` deep at `hz:`, growing in from a quarter second after the note starts over 1.2 more, its depth drifting by about a third and its rate wandering about 6 percent, as a player's do."
+  def vibrato(opts), do: Expr.call(:vibrato, [], opts)
+
+  @doc """
+  A flute's air jet at the pitch `hz:`, blown at the pressure `breath:`, its sound taking `even:` of its square for the even harmonics.
+  `wander:` drifts the breath as a note holds, `catch:` lets it fall at a slur, `corner:` is the bore's corner in Hz, `tuned:` the breath at which the jet is in tune, and `lift:` makes high notes louder; each is 0 unless given.
+  `sound:` and `side:` are functions of the jet's sound and of the side of the edge it flows to, from 0 to 1, and the jet plays what they give added together.
+  """
+  def air_jet(opts) do
+    Expr.call(:air_jet, [], Enum.map(opts, &through/1))
+  end
+
+  defp through({key, fun}) when is_function(fun, 1), do: {key, fun.(Expr.call(:input, []))}
+  defp through(option), do: option
+
+  @doc "A wind's sound through peaks at mx's eight bands up to 3162 Hz, `gains:` eight in dB at each of pp, mf and ff, and `levels:` in dB at each, following `vel:`."
+  def wind_bands(sound, opts), do: Expr.call(:wind_bands, [sound], opts)
 
   @doc "Noise, `:white` or `:pink`."
   def noise(colour), do: Expr.call(:noise, [colour])
