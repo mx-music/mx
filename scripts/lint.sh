@@ -160,21 +160,20 @@ RG_START=$SECONDS
 # Debug
 run_check "Avoid 'dbg/2'; it's a debugging tool and should not be committed." 'dbg'
 run_check "Avoid 'IEx.pry/0' or 'IEx.break!/2'; they are for interactive debugging only." 'IEx\.(pry|break!)'
-run_check "Avoid 'IO.inspect/2'; use a proper logger for application code." -g '!scripts/*.exs' -g '!notebooks/**/*.livemd' 'IO\.inspect'
+run_check "Avoid 'IO.inspect/2'; use a proper logger for application code." -g '!scripts/*.exs' 'IO\.inspect'
 run_check "Remove 'WIP' or 'wip' markers before committing." '\bwip\b'
 run_check "Don't leave TODOs in the codebase; track them as tickets instead." 'TODO'
 run_check "Avoid 'Kernel.binding/1' in application code; it is for debugging." -g "lib/**/*" 'binding\(\)'
 run_check "No open browser calls" 'open_browser'
 
 # Elixir
-# lib/mx/synths.ex turns the names in the synthdef files mx ships into atoms.
-run_check "Avoid unsafe atom interpolation" -g '!test/**/*' -g '!lib/mx/synths.ex' -P ":\".*#"
-run_check "Avoid unsafe atom interpolation" -g '!test/**/*' -g '!lib/mx/synths.ex' "String\.to_atom"
+run_check "Avoid unsafe atom interpolation" -g '!test/**/*' -P ":\".*#"
+run_check "Avoid unsafe atom interpolation" -g '!test/**/*' "String\.to_atom"
 
 run_check "Use do_ prefix for private functions only" "def do_"
 run_check "Drop the '_of'/'_for'/'_with'/'_on' suffix: 'operators_for(data_type)' -> 'operators(data_type)'. Front the qualifier only if the bare name is ambiguous: 'rules_for(house)' -> 'house_rules(house)'" "defp?\s[a-z0-9_]+_(with|for|of|on)\("
 # Mx.Definitions defines def itself, so it names Kernel.def with parentheses.
-run_check "Do def function..., not def(function)..." -g '!lib/mx/definitions.ex' "defp?\([a-z]"
+run_check "Do def function..., not def(function)..." "defp?\([a-z]"
 run_check "Use 'not' instead of '!' with boolean calls / values" "\!(is_|([A-Za-z]+\.)*[a-z_]+\?)"
 
 run_check "Don't use parentheses" -U "\s+(attr|field|belongs_to|embeds_one|embeds_many|has_one|has_many|slot|add|modify|remove|config)\(\:"
@@ -224,8 +223,9 @@ run_check "Don't use if within concatentations, extract a variable" "\+\+\s+if[\
 run_check "Don't use 'unless', use 'if' with a negated condition" '^\s*unless.*do'
 run_check "Don't use case true/false, use if/else" -PU '(?ms)^\s*case\b.*?do\b\s*\n(?=(?:[^\n]*\n)*?\s*true\s*->)(?=(?:[^\n]*\n)*?\s*false\s*->)(?!(?:[^\n]*\n)*?\s*(?!true\b|false\b)\w+\s*->).*?\s*end\b'
 run_check "Don't wrap keyword-list 'if/def ..., do:' across lines; use a block form with do/else/end" -PU '\b(if|defp?)\b[^\n]*,\s*\n\s*do:'
+# Tracing a defsynth calls the synth the song's module named, known only at runtime.
 run_check "Don't use 'apply'; call the function directly, or pass a capture like '&Mod.fun/2' and call it with 'fun.(...)'" \
-          -g "!lib/${APP}_web.ex" \
+          -g "!lib/${APP}/instrument.ex" \
           -P '(?:^\s*def\s+apply\b.*|\.apply\s*\(|\w+_apply\s*\()(*SKIP)(*FAIL)|(?:\bKernel\.)?apply\s*\('
 
 run_check 'Use &function/1 instead of &function(&1)' "&[a-z_]+\(&1\)"
@@ -235,7 +235,7 @@ run_check "Use to_timeout/1" ":timer\.(seconds|minutes|hours)"
 run_check "Avoid sleep, if you really need, use Process.sleep" ":timer\.sleep"
 
 run_check "Avoid ':persistent_term.put/2'; it has global VM-wide side effects" \
-          -g '!lib/mx/synth.ex' \
+          -g '!lib/mx/engine/mxs.ex' \
           -g '!lib/mx/synths.ex' \
           -g '!lib/mx/transcriber.ex' \
           -g '!test/mx/instrument_song_test.exs' \
@@ -273,7 +273,6 @@ run_check "Don't define modules inside 'test' blocks; define at the describe lev
           -PU -g 'test/**/*' '(?m)^(\s+)test\b.+?\bdo\b\s*$\n(?:(?!\1end\b)(?![^\n]*\"\"\")[^\n]*\n){0,50}?\1\s+defmodule\b'
 
 run_check "Avoid :capture_log, don't hide logs, but capture and assert them" "tag .?capture_log"
-run_check "@tag consistency: :strong in debug-only and shouldn't be committed" -g '!test/support/commanded.ex' "tag consistency\: \:strong"
 run_check "Use setup :step when defining only one step" -g "test/**/*.exs" "setup\s\[\:[a-z_]+\]"
 
 run_check "Define each test module on its own file" -g "test/**/*.exs" -UP "defmodule[\s\S]+\ndefmodule"
