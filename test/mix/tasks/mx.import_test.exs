@@ -135,12 +135,12 @@ defmodule Mix.Tasks.Mx.ImportTest do
     transpose = "<transpose><diatonic>-1</diatonic><chromatic>-2</chromatic></transpose>"
 
     path =
-      score!(dir, "clarinet.musicxml", [
+      score!(dir, "transposed.musicxml", [
         {"Clarinet in Bb", [attributes(1, transpose) <> note("D", 5, 4)]}
       ])
 
     output = import!([path, "--tempo", "60"])
-    song = Path.join(dir, "clarinet.exs")
+    song = Path.join(dir, "transposed.exs")
 
     assert File.read!(song) =~ "\n  defp bar(:clarinet_in_bb, 1), do: seq(c5: 4)\n"
     assert output =~ "Clarinet in Bb on tri: 1 notes from :c5 to :c5\n"
@@ -288,10 +288,10 @@ defmodule Mix.Tasks.Mx.ImportTest do
                  fn -> import!([ctx.score, "--tempo", "100", "--part", "Violin=oboe"]) end
   end
 
-  test "the README describes importing a score with the chorale" do
-    readme = File.read!("README.md")
+  test "the scores guide describes importing a score with the chorale" do
+    guide = File.read!("documentation/scores.md")
 
-    assert readme =~ "mix mx.import examples/wachet_auf/bwv140.7.mxl --tempo 72"
+    assert guide =~ "mix mx.import examples/wachet_auf/bwv140.7.mxl --tempo 72"
   end
 
   defp import!(args), do: capture_io(fn -> Import.run(args) end)

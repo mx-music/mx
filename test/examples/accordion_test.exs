@@ -39,10 +39,12 @@ defmodule Mx.Examples.AccordionTest do
     assert chords =~ ~r/^beat 60 +play 65 /m
   end
 
-  test "the README points to the solo and lists the accordion, and the synth designs license names its recordings" do
-    readme = File.read!("README.md")
-    assert readme =~ "examples/solo/accordion.exs"
-    assert readme =~ "- `accordion` is an accordion's right hand"
+  test "the examples guide points to the solo and lists the accordion, and the synth designs license names its recordings" do
+    assert File.read!("documentation/examples.md") =~ "examples/solo/accordion.exs"
+
+    assert File.read!("documentation/instruments.md") =~
+             "- `accordion` is an accordion's right hand"
+
     notes = File.read!("LICENSE-designs.md")
     assert notes =~ ~s(The accordion is measured from "Accordeon master" by hammondman)
     assert notes =~ ~s("Accordion wav samples" by hammondman)

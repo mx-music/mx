@@ -6,15 +6,16 @@ defmodule Mx.Examples.ErbarmeDichTest do
   @song "examples/erbarme_dich/aria.exs"
 
   @tag :tmp_dir
-  test "the aria is the song mix mx.import writes from the score, as the README gives it", %{
-    tmp_dir: dir
-  } do
+  test "the aria is the song mix mx.import writes from the score, as the scores guide gives it",
+       %{
+         tmp_dir: dir
+       } do
     out = Path.join(dir, "aria.exs")
 
     [command] =
       Regex.run(
         ~r/^mix mx\.import examples\/erbarme_dich\/bwv244\.39\.mxl .*$/m,
-        File.read!("README.md")
+        File.read!("documentation/scores.md")
       )
 
     args =

@@ -4,7 +4,7 @@ defmodule Mx.Examples.CaxixiTest do
 
   import ExUnit.CaptureIO
 
-  @song "examples/caxixi/solo.exs"
+  @song "examples/solo/caxixi.exs"
 
   test "the solo plays only the caxixi, leaning on angola's open note" do
     output = print()
@@ -24,10 +24,9 @@ defmodule Mx.Examples.CaxixiTest do
     assert output =~ ~r/^beat 35.5 +play vel: 0.8$/m
   end
 
-  test "the README points to the solo and lists the caxixi, and the synth designs license names its recording" do
-    readme = File.read!("README.md")
-    assert readme =~ "examples/caxixi/solo.exs"
-    assert readme =~ "- `caxixi` is the woven basket shaker"
+  test "the examples guide points to the solo and lists the caxixi, and the synth designs license names its recording" do
+    assert File.read!("documentation/examples.md") =~ "examples/solo/caxixi.exs"
+    assert File.read!("documentation/instruments.md") =~ "- `caxixi` is the woven basket shaker"
     notes = File.read!("LICENSE-designs.md")
     assert notes =~ "by Freddythehat, who released it into the public domain"
   end

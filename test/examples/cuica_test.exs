@@ -37,10 +37,9 @@ defmodule Mx.Examples.CuicaTest do
     assert output =~ ~r/^beat 27.25 +play note: 75.7, vel: 0.85, scoop: -1.1, sustain: 0.46$/m
   end
 
-  test "the README points to the solo and lists the cuíca, and the synth designs license names its recordings" do
-    readme = File.read!("README.md")
-    assert readme =~ "examples/cuica/solo.exs"
-    assert readme =~ "- `cuica` is the friction drum of samba"
+  test "the examples guide points to the solo and lists the cuíca, and the synth designs license names its recordings" do
+    assert File.read!("documentation/examples.md") =~ "examples/cuica/solo.exs"
+    assert File.read!("documentation/instruments.md") =~ "- `cuica` is the friction drum of samba"
     notes = File.read!("LICENSE-designs.md")
     assert notes =~ "reinsamba's pack \"Cuica\" on Freesound"
     refute notes =~ "Cuica01.ogg"

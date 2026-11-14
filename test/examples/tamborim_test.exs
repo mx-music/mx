@@ -23,10 +23,12 @@ defmodule Mx.Examples.TamborimTest do
     assert output =~ ~r/^beat 47.875 +play note: 72.03, vel: 0.75$/m
   end
 
-  test "the README points to the solo and lists the tamborim, and the synth designs license names its recording" do
-    readme = File.read!("README.md")
-    assert readme =~ "examples/tamborim/solo.exs"
-    assert readme =~ "- `tamborim` is the small high drum of samba"
+  test "the examples guide points to the solo and lists the tamborim, and the synth designs license names its recording" do
+    assert File.read!("documentation/examples.md") =~ "examples/tamborim/solo.exs"
+
+    assert File.read!("documentation/instruments.md") =~
+             "- `tamborim` is the small high drum of samba"
+
     notes = File.read!("LICENSE-designs.md")
     assert notes =~ "uploaded to Wikimedia Commons by Samba-x in 2014 under CC BY-SA 3.0"
   end

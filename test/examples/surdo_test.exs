@@ -4,7 +4,7 @@ defmodule Mx.Examples.SurdoTest do
 
   import ExUnit.CaptureIO
 
-  @song "examples/surdo/solo.exs"
+  @song "examples/solo/surdo.exs"
 
   test "the solo plays only surdos: the primeira, then the segunda, then the terceira" do
     output = print()
@@ -33,10 +33,9 @@ defmodule Mx.Examples.SurdoTest do
     assert part(output, "terceira") =~ ~r/^beat 51.25 +play note: 45, muted: 1, vel: 0.35$/m
   end
 
-  test "the README points to the solo and lists the surdo, and the synth designs license names its recordings" do
-    readme = File.read!("README.md")
-    assert readme =~ "examples/surdo/solo.exs"
-    assert readme =~ "- `surdo` is the large drum"
+  test "the examples guide points to the solo and lists the surdo, and the synth designs license names its recordings" do
+    assert File.read!("documentation/examples.md") =~ "examples/solo/surdo.exs"
+    assert File.read!("documentation/instruments.md") =~ "- `surdo` is the large drum"
     notes = File.read!("LICENSE-designs.md")
     assert notes =~ "The surdo is measured from three loops by plotzki"
     assert notes =~ ~s("AKG 414 Surdo Processed.wav" by igorfiche01)
