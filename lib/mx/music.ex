@@ -647,21 +647,7 @@ defmodule Mx.Music do
 
   @doc "The song, refusing a note outside any part, a part of one name played with other options, and repeat with no count anywhere but around the whole music."
   def song(opts) when is_list(opts) do
-    case Enum.find(Keyword.keys(opts), &(&1 not in @song_options)) do
-      nil -> :ok
-      option -> raise ArgumentError, "song has no option #{option}"
-    end
-
-    if not Keyword.has_key?(opts, :music) do
-      raise ArgumentError, "song takes its music with music: ..."
-    end
-
-    case opts[:osc_to] do
-      nil -> :ok
-      {host, port} when is_binary(host) and is_integer(port) -> :ok
-      other -> raise ArgumentError, "song takes osc_to: as {host, port}, not #{inspect(other)}"
-    end
-
+    check_options(opts)
     music = item(opts[:music])
     {sections, forever} = sections(music)
     lengths = Enum.map(sections, &beats/1)
@@ -716,6 +702,23 @@ defmodule Mx.Music do
 
     song = %Song{music: music, sections: length(played), parts: parts, forever: forever}
     %{struct(song, opts) | tempos: tempos}
+  end
+
+  defp check_options(opts) do
+    case Enum.find(Keyword.keys(opts), &(&1 not in @song_options)) do
+      nil -> :ok
+      option -> raise ArgumentError, "song has no option #{option}"
+    end
+
+    if not Keyword.has_key?(opts, :music) do
+      raise ArgumentError, "song takes its music with music: ..."
+    end
+
+    case opts[:osc_to] do
+      nil -> :ok
+      {host, port} when is_binary(host) and is_integer(port) -> :ok
+      other -> raise ArgumentError, "song takes osc_to: as {host, port}, not #{inspect(other)}"
+    end
   end
 
   defp unzip3(triples) do

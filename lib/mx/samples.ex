@@ -104,6 +104,13 @@ defmodule Mx.Samples do
         beats = opts[:beats]
         {:error, "a sample's beats takes a number above 0, not #{beats}"}
 
+      true ->
+        check_slices(ref, path, opts, given)
+    end
+  end
+
+  defp check_slices(ref, path, opts, given) do
+    cond do
       given.(:slices) != given.(:slice) ->
         {:error, "a sample takes slices and slice together"}
 

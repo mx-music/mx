@@ -288,24 +288,7 @@ defmodule Mix.Tasks.Mx.Import do
               acc =
                 group.notes
                 |> Enum.with_index()
-                |> Enum.reduce(acc, fn {head, h}, {open, sustains, continued} ->
-                  id = {key, voice, index, h}
-                  tie = {voice, head.name}
-
-                  {owner, sustains, continued} =
-                    case open do
-                      %{^tie => {owner, owner_start}} ->
-                        {{owner, owner_start},
-                         Map.put(sustains, owner, beat + group.length - owner_start),
-                         MapSet.put(continued, id)}
-
-                      _none ->
-                        {{id, beat}, Map.put(sustains, id, group.length), continued}
-                    end
-
-                  open = if head.tie, do: Map.put(open, tie, owner), else: Map.delete(open, tie)
-                  {open, sustains, continued}
-                end)
+                |> Enum.reduce(acc, &tie(&1, &2, {key, voice, index}, group, beat))
 
               {beat + group.length, acc}
             end)
@@ -315,6 +298,24 @@ defmodule Mix.Tasks.Mx.Import do
       end)
 
     {sustains, continued}
+  end
+
+  defp tie({head, head_index}, {open, sustains, continued}, {key, voice, index}, group, beat) do
+    id = {key, voice, index, head_index}
+    tie = {voice, head.name}
+
+    {owner, sustains, continued} =
+      case open do
+        %{^tie => {owner, owner_start}} ->
+          {{owner, owner_start}, Map.put(sustains, owner, beat + group.length - owner_start),
+           MapSet.put(continued, id)}
+
+        _none ->
+          {{id, beat}, Map.put(sustains, id, group.length), continued}
+      end
+
+    open = if head.tie, do: Map.put(open, tie, owner), else: Map.delete(open, tie)
+    {open, sustains, continued}
   end
 
   defp vel(mark) when mark in ["pppp", "ppp", "pp"], do: 0.3

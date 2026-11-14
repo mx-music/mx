@@ -101,7 +101,7 @@ defmodule Mx.Sampled do
   end
 
   defp local({:github, _, _, _} = file) do
-    with {:error, message} <- Mx.Samples.path(file), do: {:error, message}
+    Mx.Samples.path(file)
   end
 
   defp local(path) do
