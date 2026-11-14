@@ -16,7 +16,7 @@ jobs:
           version-file: .tool-versions
           version-type: strict
 
-      - run: sudo apt-get update && sudo apt-get install -y ripgrep
+      - run: sudo apt-get update && sudo apt-get install -y ripgrep libasound2-dev
 
       - uses: actions/cache@v4
         with:
