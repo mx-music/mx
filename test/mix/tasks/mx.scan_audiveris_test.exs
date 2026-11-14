@@ -9,7 +9,7 @@ defmodule Mix.Tasks.Mx.ScanAudiverisTest do
   # "Bin ich gleich von dir gewichen", the recitative after it, and the page of text twice more,
   # from the public-domain scan at https://archive.org/details/bach-gesellschaft-ausgabe.
   @pdf "test/support/scans/bga4.pdf"
-  @reference "examples/bin_ich_gleich/bwv244.40.mxl"
+  @reference "test/support/scans/bwv244.40.mxl"
 
   @moduletag :audiveris
   @moduletag timeout: 600_000

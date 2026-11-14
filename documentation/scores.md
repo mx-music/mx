@@ -63,12 +63,8 @@ mx examples/erbarme_dich/dub.exs
 
 `mix mx.scan` reads the music on a scanned score into MusicXML, ready for `mix mx.import`.
 It runs Audiveris, an open source optical music recognition program, which is installed apart from mx as [audiveris.md](audiveris.md) describes, along with poppler for PDFs.
-`examples/bin_ich_gleich/page.pdf` is a page of the Bach-Gesellschaft's edition of the St Matthew Passion, scanned from print, holding the chorale "Bin ich gleich von dir gewichen":
-
 ```sh
-mix mx.scan examples/bin_ich_gleich/page.pdf --out examples/bin_ich_gleich/chorale.mxl
-mix mx.import examples/bin_ich_gleich/chorale.mxl --tempo 72 --part "Flauto trawrso 1.11=flute" --part "Voice=violin" --part "Tenore=viola" --part "Basso=bassoon" --part "Orgnno e Continue=cello"
-mx examples/bin_ich_gleich/chorale.exs
+mix mx.scan score.pdf
 ```
 
 It reads a PDF, or a single page as a PNG, JPEG or TIFF image, and writes the MusicXML beside it, or to `--out`; a file that exists is refused unless you add `--force`.
@@ -82,13 +78,13 @@ Before recognition it prepares each page the way Audiveris asks:
 - On paper still gray after that, as where ink shows through from the other side, it fades what is paler than the ink, keeping the thin sharp strokes such as faint staff lines.
 - It turns a tilted page until its staff lines are level.
 
-The prepared pages go in a folder beside the MusicXML, here `examples/bin_ich_gleich/chorale-pages`, with Audiveris's book of each page and its logs, so you can see what recognition was given, and open a book in Audiveris to correct it.
+The prepared pages go in a folder beside the MusicXML, here `score-pages`, with Audiveris's book of each page and its logs, so you can see what recognition was given, and open a book in Audiveris to correct it.
 `--raw` gives Audiveris the pages as they are, to compare.
 mx prints each page's staff line spacing before and after, how many degrees it was turned, and how many bars Audiveris read on it, names a page it read no music on, and prints the `mix mx.import` command with a `--part` for each part found.
 The parts of every page are joined in page order, a page's parts matched to the first page's in order.
 
 Recognition is not exact, so listen to the song against the page.
-On the chorale, Audiveris finds the bass and tenor's notes nine times in ten and eight in ten, but misses the key signature after the soprano clef, so the flute plays naturals where the score has sharps; the part names are as it read them, misspellings included.
+On the chorale "Bin ich gleich von dir gewichen" of the Bach-Gesellschaft's St Matthew Passion, Audiveris finds the bass and tenor's notes nine times in ten and eight in ten, but misses the key signature after the soprano clef, so the top part reads naturals where the score has sharps; the part names are as it read them, misspellings included.
 It reads no handwritten scores, such as Bach's autographs.
 
 `--model` reads the music with a transcription model instead of Audiveris, which suits printed piano music, and photographs and photocopies of it, far better:
