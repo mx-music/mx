@@ -138,9 +138,8 @@ defmodule Mx.Music do
       option -> raise ArgumentError, "samples have no option #{option}"
     end
 
-    with :ok <- check_ref(ref, opts) do
-      %Sample{ref: ref, beats: beats, opts: opts}
-    else
+    case check_ref(ref, opts) do
+      :ok -> %Sample{ref: ref, beats: beats, opts: opts}
       {:error, message} -> raise ArgumentError, message
     end
   end

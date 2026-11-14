@@ -44,8 +44,8 @@ defmodule Mix.Tasks.Mx.Measure do
   use Mix.Task
 
   alias Mx.{Audio, Measure, Notes, Signal, Synths}
-  alias Mx.Measure.{Held, Hits, Strokes}
   alias Mx.Engine.Mxs
+  alias Mx.Measure.{Held, Hits, Strokes}
 
   @example "Guitar.mf.sulA.A2B2.aif:A2"
   @moments "levels in dB at 0, 50, 100 and 200 ms after the loudest moment, against the loudest band then"

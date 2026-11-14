@@ -6,6 +6,8 @@ defmodule Mx.Samples do
   Each file is written under a temporary name and renamed once complete, so an interrupted download never leaves a sample that looks downloaded.
   """
 
+  alias Mx.Engine.Mxs.Native
+
   @release "v5.0.0"
   @base_url "https://raw.githubusercontent.com/sonic-pi-net/sonic-pi/#{@release}/etc/samples"
   @licence "README.md"
@@ -69,7 +71,7 @@ defmodule Mx.Samples do
     path = Path.expand(file)
 
     if File.exists?(path) do
-      case Mx.Engine.Mxs.Native.check_sample(path) do
+      case Native.check_sample(path) do
         {:ok, _seconds} -> {:ok, path}
         {:error, reason} -> {:error, "sample file #{file} cannot play: #{reason}"}
       end
@@ -167,7 +169,7 @@ defmodule Mx.Samples do
 
   @doc "The loudest moment of a sample file mx can play, as a level from 0, read from the whole file."
   def peak(path) when is_binary(path) do
-    {:ok, peak} = Mx.Engine.Mxs.Native.sample_peak(path)
+    {:ok, peak} = Native.sample_peak(path)
     peak
   end
 
@@ -190,7 +192,7 @@ defmodule Mx.Samples do
 
   @doc "The length in seconds of a sample file mx can play."
   def seconds(path) when is_binary(path) do
-    {:ok, seconds} = Mx.Engine.Mxs.Native.check_sample(path)
+    {:ok, seconds} = Native.check_sample(path)
     seconds
   end
 

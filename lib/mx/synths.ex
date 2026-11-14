@@ -13,6 +13,8 @@ defmodule Mx.Synths do
   `tail_seconds/1` is how long an effect chain keeps sounding after its last note ends, as Sonic Pi works it out for each effect.
   """
 
+  alias Mx.Engine.Mxs
+
   @rate_options ~w(tremolo motor)
   @effect_buses [:in_bus, :out_bus]
   @not_playable [:live_audio_mono, :live_audio_stereo, :mono_player, :stereo_player, :recorder]
@@ -173,8 +175,8 @@ defmodule Mx.Synths do
     :persistent_term.erase({__MODULE__, :beats})
   end
 
-  defp limits, do: cached(:limits, &Mx.Engine.Mxs.limits/0)
-  defp beats, do: cached(:beats, &Mx.Engine.Mxs.beats/0)
+  defp limits, do: cached(:limits, &Mxs.limits/0)
+  defp beats, do: cached(:beats, &Mxs.beats/0)
 
   defp cached(key, read) do
     case :persistent_term.get({__MODULE__, key}, nil) do
@@ -191,7 +193,7 @@ defmodule Mx.Synths do
   defp catalog do
     case :persistent_term.get(__MODULE__, nil) do
       nil ->
-        catalog = Mx.Engine.Mxs.catalog()
+        catalog = Mxs.catalog()
         :persistent_term.put(__MODULE__, catalog)
         catalog
 

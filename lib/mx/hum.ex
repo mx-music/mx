@@ -16,8 +16,8 @@ defmodule Mx.Hum do
   The melody plays again from there, so the last note lasts until the end of the bar too when a quarter beat or less is left.
   """
 
-  alias Mx.{Measure, Signal}
   alias Mx.Engine.Mxs.Native
+  alias Mx.{Measure, Signal}
 
   @rate 16_000
   @hop 160

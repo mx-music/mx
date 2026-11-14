@@ -9,9 +9,9 @@ defmodule Mx.Fit do
   The search tries each control a step up and a step down, keeps whichever lowers the score, and goes through the controls three times.
   """
 
+  alias Mx.Engine.Mxs
   alias Mx.Measure.Held
   alias Mx.{Signal, Synths}
-  alias Mx.Engine.Mxs
 
   @quiet 25
   @top 4000
