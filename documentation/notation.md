@@ -453,34 +453,84 @@ mx downloads a recording into your cache when the song loads, and plays it from 
 
 ### Samples
 
-`sample({:sonic_pi, :bd_haus}, 1)` plays the sample, then a beat passes.
+`sample` plays one recording at its beat.
 
 ```elixir
-sample({:sonic_pi, :loop_amen}, 4, beats: 4)
-sample({:sonic_pi, :loop_amen}, 1, from: 0.5, to: 1.0)
-sample({:sonic_pi, :loop_amen}, 0.5, slices: 8, slice: 3)
-sample({:sonic_pi, :ambi_choir}, 4, rate: 0.5, amp: 0.6)
+sample({:sonic_pi, :bd_haus}, 1)
 ```
 
-- `rate: 0.5` plays at half speed an octave lower, and a negative rate plays backwards.
-- `beats: 4` plays the sample faster or slower so it lasts 4 beats at the tempo, in place of `rate`.
-- `from` and `to` cut the sample at seconds into its file, and `start` and `finish` cut it at positions from 0 to 1.
-- `slices: 8, slice: 3` plays the fourth of eight equal pieces, counted from 0.
-- `normalize: true` scales the sample so its loudest moment reaches full scale before `amp`, for files recorded at very different levels.
-- A sample also takes `amp`, `pan` and the envelope options `attack`, `decay`, `sustain` and `release`.
+- The length, 1 here, is how long the music waits before what comes next.
+- The recording itself plays to its end, as a cymbal rings on after it is struck.
+- A part that plays only samples needs no `synth:`.
+
+Options cut a recording up and fit it to the beat.
+This song plays a drum break whole for a bar, then eight pieces of it in a new order:
+
+```elixir
+import Mx
+
+amen = {:sonic_pi, :loop_amen}
+piece = fn number -> sample(amen, 0.5, slices: 8, slice: number, beats: 0.5) end
+
+whole = sample(amen, 4, beats: 4)
+chopped = seq(Enum.map([0, 1, 2, 3, 0, 0, 6, 7], piece))
+
+song(tempo: 136, music: repeat(part(:drums, seq([whole, chopped]))))
+```
+
+```
+the recording, slices: 8    0   1   2   3   4   5   6   7
+the second bar plays        0   1   2   3   0   0   6   7
+```
+
+| Option | What it does |
+|---|---|
+| `rate: 0.5` | plays at half speed, an octave lower. A negative rate plays backwards. |
+| `beats: 4` | plays faster or slower so the sample lasts 4 beats at the tempo, in place of `rate` |
+| `from: 0.5, to: 1.0` | plays only from 0.5 to 1 second into the file |
+| `start: 0.25, finish: 0.5` | the same kind of cut, as positions from 0 to 1 |
+| `slices: 8, slice: 3` | plays the fourth of eight equal pieces, counted from 0 |
+| `normalize: true` | scales the sample so its loudest moment reaches full scale before `amp`, for files recorded at very different levels |
+| `amp`, `pan` | how loud, and where from left to right |
+| `attack`, `decay`, `sustain`, `release` | the envelope, in beats |
+
+A cut outside the file is refused when the song loads, with its line.
 
 ### Sampled instruments
 
+Some instruments are recorded one key at a time, often at several strengths and in several takes.
 `sampled(folder)` makes an instrument from a folder of recordings, one file for each key, and a part plays it with `note` and `hit` as it plays a synth:
 
 ```elixir
-mbira = sampled({:vcsl, "Idiophones/Plucked Idiophones/Mbira dzaVadzimu Nyamaropa, Zimbabwe, Low B"})
-part(:mbira, seq([note(:e4, 1), note(:fs4, 1), note(chord(:e3, :major), 2, strum: 0.05)]), synth: mbira)
+import Mx
+
+mbira =
+  sampled({:vcsl, "Idiophones/Plucked Idiophones/Mbira dzaVadzimu Nyamaropa, Zimbabwe, Low B"})
+
+tune = seq([note(:e4, 1), note(:fs4, 1, vel: 0.4), note(chord(:e3, :major), 2, strum: 0.05)])
+
+song(tempo: 100, music: repeat(part(:mbira, tune, synth: mbira)))
 ```
 
-- mx reads each file's note, strength and take from its name, as the VCSL library names them: `MBira4_pluck_Main_E4_19_50_100_rr2.wav` is the mbira's E4, take 2.
+For each note, mx chooses one file and tunes it:
+
+```mermaid
+graph LR
+  note["a note<br>pitch and vel"] --> key["the nearest<br>recorded key"] --> strength["a strength<br>picked by vel"] --> take["a take<br>the next in turn"] --> plays(["plays, tuned<br>to the pitch"])
+```
+
 - A note plays the recorded key nearest to it, sped up or slowed down to its pitch.
-- `vel` from 0 to 1 picks among the recorded strengths, and repeated notes play the takes in turn.
+- `vel` from 0 to 1 picks among the recorded strengths, the softest at 0 and the hardest at 1.
+- Repeated notes play the takes in turn, so two notes in a row are not the same recording.
+- A note also takes `amp`, `pan` and the envelope options.
+
+mx reads what each file is from its name, as the VCSL library names its files:
+
+| In the name | Read as | Example |
+|---|---|---|
+| `E4`, `C#3`, `Bb2` | the note | `MBira4_pluck_Main_E4_19_50_100_rr2.wav` is E4 |
+| `v5` or `vl3` | the strength | `BDrumNew_hit_v5_rr1_Sum.wav` is strength 5 |
+| `rr2` | the take | both files above name their take |
 
 For files named another way, list them with what each one is:
 
@@ -489,56 +539,77 @@ sampled([{"low.wav", note: :c2}, {"high.wav", note: :c3, strength: 2, take: 1}])
 sampled([{{:salamander, "Samples/C4v8.flac"}, note: :c4}])
 ```
 
+A drum has strengths and takes but no notes, and plays with `hit` or a pattern:
+
+```elixir
+kick = sampled([{"kick_soft.wav", strength: 1}, {"kick_hard.wav", strength: 2}])
+part(:kick, steps("x.x.", 1), synth: kick)
+```
+
+Listing is also the fix for a folder whose names give the wrong note.
+`examples/sample_packs/vcsl_lamellophones.exs` lists its files an octave above their names, which is where those recordings sound.
+
 ### Collections
 
-A collection is a set of recordings mx knows by name.
+A collection is a set of recordings mx knows by name, so a song names a recording without saying where it is kept.
 
-`:sonic_pi` is Sonic Pi's sample pack, 206 samples under Creative Commons 0.
-Its samples are named by atoms, the names of the files in [Sonic Pi's samples folder](https://github.com/sonic-pi-net/sonic-pi/tree/v5.0.0/etc/samples) without the extension: `{:sonic_pi, :loop_amen}`.
-It is downloaded whole, once, before a song can play it:
+```elixir
+sample({:sonic_pi, :loop_amen}, 4)
+sample({:vcsl, "Idiophones/Struck Idiophones/Agogo Bells/Agogo_High_v1_rr1_Mid.wav"}, 1)
+sampled({:vcsl, "Idiophones/Plucked Idiophones/Kalimba, Kenya"})
+```
+
+**Sonic Pi's pack** is `:sonic_pi`, 206 samples under Creative Commons 0.
+
+- Its samples are named by atoms: `{:sonic_pi, :loop_amen}`.
+- The names are the names of the files in [Sonic Pi's samples folder](https://github.com/sonic-pi-net/sonic-pi/tree/v5.0.0/etc/samples), without the extension.
+- It is downloaded whole, once, before a song can play it:
 
 ```sh
 mix mx.samples.download sonic_pi
 ```
 
-Every other collection is a public GitHub repository, pinned to one commit so a song sounds the same each time.
-Its files and folders are named by their path in the repository.
-Each repository states its own license.
+**Every other collection** is a public GitHub repository.
 
-| Collection | Repository |
-|---|---|
-| `:freepats_button_accordion` | [freepats/button-accordion-HN](https://github.com/freepats/button-accordion-HN) |
-| `:freepats_electric_guitar` | [freepats/electric-guitar-FSBS-clean](https://github.com/freepats/electric-guitar-FSBS-clean) |
-| `:freepats_fm_piano` | [freepats/fm-piano1](https://github.com/freepats/fm-piano1) |
-| `:freepats_lately_bass` | [freepats/lately-bass](https://github.com/freepats/lately-bass) |
-| `:freepats_spanish_guitar` | [freepats/spanish-classical-guitar](https://github.com/freepats/spanish-classical-guitar) |
-| `:freepats_synth_brass` | [freepats/synth-brass-1](https://github.com/freepats/synth-brass-1) |
-| `:freepats_synth_choir` | [freepats/synth-pad-choir](https://github.com/freepats/synth-pad-choir) |
-| `:freepats_synth_percussion` | [freepats/synthesizer-percussion](https://github.com/freepats/synthesizer-percussion) |
-| `:freepats_synth_square` | [freepats/synth-square](https://github.com/freepats/synth-square) |
-| `:freepats_synth_strings` | [freepats/synth-strings-1](https://github.com/freepats/synth-strings-1) |
-| `:freepats_upright_piano` | [freepats/upright-piano-KW](https://github.com/freepats/upright-piano-KW) |
-| `:karoryfer_big_rusty_drums` | [sfzinstruments/karoryfer.big-rusty-drums](https://github.com/sfzinstruments/karoryfer.big-rusty-drums) |
-| `:karoryfer_bigcat_cello` | [sfzinstruments/karoryfer-bigcat.cello](https://github.com/sfzinstruments/karoryfer-bigcat.cello) |
-| `:karoryfer_black_and_green_guitars` | [sfzinstruments/karoryfer.black-and-green-guitars](https://github.com/sfzinstruments/karoryfer.black-and-green-guitars) |
-| `:karoryfer_caveman_cosmonaut` | [sfzinstruments/karoryfer.caveman-cosmonaut](https://github.com/sfzinstruments/karoryfer.caveman-cosmonaut) |
-| `:karoryfer_gogodze_phu` | [sfzinstruments/karoryfer.gogodze-phu-vol-i](https://github.com/sfzinstruments/karoryfer.gogodze-phu-vol-i) |
-| `:karoryfer_growly_bass` | [sfzinstruments/karoryfer.growlybass](https://github.com/sfzinstruments/karoryfer.growlybass) |
-| `:karoryfer_horse_pulse` | [sfzinstruments/Karoryfer.HorsePulse](https://github.com/sfzinstruments/Karoryfer.HorsePulse) |
-| `:karoryfer_merry_orks` | [sfzinstruments/karoryfer.272-merry-orks](https://github.com/sfzinstruments/karoryfer.272-merry-orks) |
-| `:karoryfer_shiny_guitar` | [sfzinstruments/karoryfer.shinyguitar](https://github.com/sfzinstruments/karoryfer.shinyguitar) |
-| `:karoryfer_sneaky_bass` | [sfzinstruments/karoryfer.sneakybass](https://github.com/sfzinstruments/karoryfer.sneakybass) |
-| `:karoryfer_squid_pipes` | [sfzinstruments/karoryfer.squidpipes](https://github.com/sfzinstruments/karoryfer.squidpipes) |
-| `:karoryfer_swag_bass` | [sfzinstruments/karoryfer.swagbass](https://github.com/sfzinstruments/karoryfer.swagbass) |
-| `:karoryfer_swirly_drums` | [sfzinstruments/karoryfer.swirly-drums](https://github.com/sfzinstruments/karoryfer.swirly-drums) |
-| `:karoryfer_unruly_drums` | [sfzinstruments/karoryfer.unruly-drums](https://github.com/sfzinstruments/karoryfer.unruly-drums) |
-| `:karoryfer_war_tuba` | [sfzinstruments/karoryfer.war-tuba](https://github.com/sfzinstruments/karoryfer.war-tuba) |
-| `:karoryfer_weresax` | [sfzinstruments/karoryfer.weresax](https://github.com/sfzinstruments/karoryfer.weresax) |
-| `:mridangam` | [yaxu/mrid](https://github.com/yaxu/mrid) |
-| `:salamander` | [sfzinstruments/SalamanderGrandPiano](https://github.com/sfzinstruments/SalamanderGrandPiano) |
-| `:vcsl` | [sgossner/VCSL](https://github.com/sgossner/VCSL) |
-| `:virtuosity_drums` | [sfzinstruments/virtuosity_drums](https://github.com/sfzinstruments/virtuosity_drums) |
-| `:vsco` | [sgossner/VSCO-2-CE](https://github.com/sgossner/VSCO-2-CE) |
+- Its files and folders are named by their path in the repository: `{:vcsl, "Idiophones/..."}`.
+- It is pinned to one commit, so a song sounds the same each time.
+- Each repository states its own license.
+- The third column names a song that plays it.
+
+| Collection | Repository | Played in |
+|---|---|---|
+| `:freepats_button_accordion` | [freepats/button-accordion-HN](https://github.com/freepats/button-accordion-HN) | `examples/sample_packs/freepats_acoustic.exs` |
+| `:freepats_electric_guitar` | [freepats/electric-guitar-FSBS-clean](https://github.com/freepats/electric-guitar-FSBS-clean) | `examples/sample_packs/freepats_electric.exs` |
+| `:freepats_fm_piano` | [freepats/fm-piano1](https://github.com/freepats/fm-piano1) | `examples/sample_packs/freepats_electric.exs` |
+| `:freepats_lately_bass` | [freepats/lately-bass](https://github.com/freepats/lately-bass) | `examples/sample_packs/freepats_electric.exs` |
+| `:freepats_spanish_guitar` | [freepats/spanish-classical-guitar](https://github.com/freepats/spanish-classical-guitar) | `examples/sample_packs/freepats_acoustic.exs` |
+| `:freepats_synth_brass` | [freepats/synth-brass-1](https://github.com/freepats/synth-brass-1) | `examples/sample_packs/freepats_electric.exs` |
+| `:freepats_synth_choir` | [freepats/synth-pad-choir](https://github.com/freepats/synth-pad-choir) | `examples/sample_packs/freepats_electric.exs` |
+| `:freepats_synth_percussion` | [freepats/synthesizer-percussion](https://github.com/freepats/synthesizer-percussion) | `examples/sample_packs/freepats_electric.exs` |
+| `:freepats_synth_square` | [freepats/synth-square](https://github.com/freepats/synth-square) | `examples/sample_packs/freepats_electric.exs` |
+| `:freepats_synth_strings` | [freepats/synth-strings-1](https://github.com/freepats/synth-strings-1) | `examples/sample_packs/freepats_electric.exs` |
+| `:freepats_upright_piano` | [freepats/upright-piano-KW](https://github.com/freepats/upright-piano-KW) | `examples/sample_packs/freepats_acoustic.exs` |
+| `:karoryfer_big_rusty_drums` | [sfzinstruments/karoryfer.big-rusty-drums](https://github.com/sfzinstruments/karoryfer.big-rusty-drums) | `examples/sample_packs/karoryfer_surf.exs` |
+| `:karoryfer_bigcat_cello` | [sfzinstruments/karoryfer-bigcat.cello](https://github.com/sfzinstruments/karoryfer-bigcat.cello) | `examples/sample_packs/karoryfer_ballad.exs` |
+| `:karoryfer_black_and_green_guitars` | [sfzinstruments/karoryfer.black-and-green-guitars](https://github.com/sfzinstruments/karoryfer.black-and-green-guitars) | `examples/sample_packs/karoryfer_surf.exs` |
+| `:karoryfer_caveman_cosmonaut` | [sfzinstruments/karoryfer.caveman-cosmonaut](https://github.com/sfzinstruments/karoryfer.caveman-cosmonaut) | `examples/sample_packs/karoryfer_cumbia.exs` |
+| `:karoryfer_gogodze_phu` | [sfzinstruments/karoryfer.gogodze-phu-vol-i](https://github.com/sfzinstruments/karoryfer.gogodze-phu-vol-i) | `examples/sample_packs/karoryfer_polka.exs` |
+| `:karoryfer_growly_bass` | [sfzinstruments/karoryfer.growlybass](https://github.com/sfzinstruments/karoryfer.growlybass) | `examples/sample_packs/karoryfer_surf.exs` |
+| `:karoryfer_horse_pulse` | [sfzinstruments/Karoryfer.HorsePulse](https://github.com/sfzinstruments/Karoryfer.HorsePulse) | `examples/sample_packs/karoryfer_polka.exs` |
+| `:karoryfer_merry_orks` | [sfzinstruments/karoryfer.272-merry-orks](https://github.com/sfzinstruments/karoryfer.272-merry-orks) | `examples/sample_packs/karoryfer_polka.exs` |
+| `:karoryfer_shiny_guitar` | [sfzinstruments/karoryfer.shinyguitar](https://github.com/sfzinstruments/karoryfer.shinyguitar) | `examples/sample_packs/karoryfer_ballad.exs` |
+| `:karoryfer_sneaky_bass` | [sfzinstruments/karoryfer.sneakybass](https://github.com/sfzinstruments/karoryfer.sneakybass) | `examples/sample_packs/karoryfer_ballad.exs` |
+| `:karoryfer_squid_pipes` | [sfzinstruments/karoryfer.squidpipes](https://github.com/sfzinstruments/karoryfer.squidpipes) | `examples/sample_packs/karoryfer_polka.exs` |
+| `:karoryfer_swag_bass` | [sfzinstruments/karoryfer.swagbass](https://github.com/sfzinstruments/karoryfer.swagbass) | `examples/sample_packs/karoryfer_cumbia.exs` |
+| `:karoryfer_swirly_drums` | [sfzinstruments/karoryfer.swirly-drums](https://github.com/sfzinstruments/karoryfer.swirly-drums) | `examples/sample_packs/karoryfer_cumbia.exs` |
+| `:karoryfer_unruly_drums` | [sfzinstruments/karoryfer.unruly-drums](https://github.com/sfzinstruments/karoryfer.unruly-drums) | `examples/sample_packs/karoryfer_polka.exs` |
+| `:karoryfer_war_tuba` | [sfzinstruments/karoryfer.war-tuba](https://github.com/sfzinstruments/karoryfer.war-tuba) | `examples/sample_packs/karoryfer_polka.exs` |
+| `:karoryfer_weresax` | [sfzinstruments/karoryfer.weresax](https://github.com/sfzinstruments/karoryfer.weresax) | `examples/sample_packs/karoryfer_ballad.exs` |
+| `:mridangam` | [yaxu/mrid](https://github.com/yaxu/mrid) | `examples/sample_packs/mridangam.exs` |
+| `:salamander` | [sfzinstruments/SalamanderGrandPiano](https://github.com/sfzinstruments/SalamanderGrandPiano) | `examples/sample_packs/salamander.exs` |
+| `:vcsl` | [sgossner/VCSL](https://github.com/sgossner/VCSL) | `examples/sample_packs/vcsl.exs` |
+| `:virtuosity_drums` | [sfzinstruments/virtuosity_drums](https://github.com/sfzinstruments/virtuosity_drums) | `examples/sample_packs/virtuosity.exs` |
+| `:vsco` | [sgossner/VSCO-2-CE](https://github.com/sgossner/VSCO-2-CE) | `examples/vassourinhas_samples.exs` |
 
 A song downloads the files it names as it loads.
 `mix mx.samples.download` fetches a whole collection, or one folder of it, ahead of time:
@@ -553,31 +624,110 @@ Running it again finishes an interrupted download.
 
 ## MIDI and OSC
 
-A song sends MIDI and OSC as it plays notes, placed in the music the same way:
+MIDI and OSC are two ways for music programs and devices to send each other messages.
+MIDI carries notes and controller changes, to and from keyboards and synths.
+OSC, Open Sound Control, carries any message to a network address, to and from other programs.
 
-```elixir
-part(:synth, seq([midi(60, 1, velocity: 90), midi_cc(74, 64), midi(64, 1)]), midi: "IAC Driver Bus 1")
-part(:lights, seq([osc("/flash", [1]), rest(4)]))
+A song works with both in two directions.
+
+```mermaid
+graph LR
+  keyboard["a MIDI keyboard<br>or controller"] --> inputs["a loop's inputs<br>and triggers"]
+  program["another program<br>sending OSC"] --> inputs
+  inputs --> song["the song"]
+  song --> synths(["mx's own synths"])
+  song --> port(["a MIDI port<br>a hardware or software synth"])
+  song --> address(["an OSC address<br>lights or visuals"])
 ```
 
-- `midi(60, 1)` sends a note on and, a beat later, its note off. `velocity` is 100 and `channel` is 1 unless given.
-- `midi_cc(74, 64)` sends a controller change, and takes no time.
-- `osc("/hello", [1, "a"])` sends an OSC message with numbers and strings as its arguments, and takes no time.
+What comes in reaches a loop, as [Inputs](#inputs) and [Playing live](#playing-live) describe.
+What goes out is written in the music, like notes:
+
+```elixir
+import Mx
+
+keys =
+  loop(fn trigger, _ -> note(trigger.note, 1, vel: trigger.velocity / 127) end, on: :midi_note)
+
+bass_line = repeat(seq([midi(:c3, 1), midi(:g3, 1, velocity: 70)]), 16)
+flashes = repeat(seq([osc("/flash", [1]), rest(4)]), 8)
+
+song(
+  tempo: 120,
+  osc_to: {"127.0.0.1", 9000},
+  osc_from: 9001,
+  music:
+    together([
+      part(:keys, keys, synth: :piano),
+      part(:synth, bass_line, midi: "IAC Driver Bus 1"),
+      part(:lights, flashes)
+    ])
+)
+```
+
+The keyboard plays mx's piano, a synth outside mx plays the bass line, and another program gets a message every four beats.
+
+| Function | Sends | Takes |
+|---|---|---|
+| `midi(:c3, 1)` | a note on and, a beat later, its note off | `velocity`, 100 unless given, and `channel`, 1 unless given |
+| `midi_cc(74, 64)` | a controller change, taking no time | `channel` |
+| `osc("/flash", [1, "a"])` | a message with numbers and strings as its arguments, taking no time | |
+
 - A part's `midi:` names the output port its MIDI goes to. Without it, MIDI goes to every connected port.
-- The song's `osc_to: {"127.0.0.1", 9000}` names where OSC goes, and `osc_from: 9001` the port a loop's `inputs.osc` arrive on.
+- The song's `osc_to:` names the host and port OSC goes to.
+- The song's `osc_from:` names the port mx listens on, for a loop's `inputs.osc` and `on: {:osc, address}`.
+- A render sends no MIDI or OSC and has no input, so it leaves those parts out and names them.
 
-## Shared values and changes
+## Shared values
 
-`set(:root, 40)` shares a value that every loop reads as `inputs.values[:root]`, from its next pass on.
-
-`change` changes the sounds of a part that are still playing, or one of its effects:
+`set` shares a value with every loop, so one part can lead the others.
+Here a conductor names a new root every 8 beats, and the bass follows it:
 
 ```elixir
-change(:lead, cutoff: 80, cutoff_slide: 2)
-change({:lead, :reverb}, mix: 0)
+import Mx
+
+roots = [:c2, :f2, :g2, :c2]
+conductor = loop(8, fn pass, _ -> seq([set(:root, ring(roots, pass)), rest(8)]) end)
+
+bass =
+  loop(2, fn _, inputs ->
+    root = pitch(inputs.values[:root] || :c2)
+    seq([note(root, 1), note(root + 7, 1)])
+  end)
+
+song(tempo: 100, music: together([part(:conductor, conductor), part(:bass, bass, synth: :saw)]))
 ```
 
-An option's `_slide` partner makes the change glide over that many beats instead of jumping.
+- `set(:root, :f2)` takes no time, and a loop reads the value as `inputs.values[:root]`.
+- A value is nil until it is set, so the bass starts from `:c2`.
+- A loop sees a new value from its next pass on. The conductor sets F at beat 8, and the bass, already playing its pass, moves to F at beat 10.
+
+## Changing a sound while it plays
+
+A note's options are fixed when it starts.
+`change` reaches the sounds of a part that are still playing, or one of the part's effects.
+
+This chord starts dark and opens over 8 beats:
+
+```elixir
+import Mx
+
+pad = note(chord(:a3, :minor7), 16, cutoff: 60)
+sweep = seq([rest(4), change(:pad, cutoff: 110, cutoff_slide: 8), rest(12)])
+
+song(tempo: 90, music: together([part(:pad, pad, synth: :saw), part(:sweep, sweep)]))
+```
+
+```
+beat     0           4                       12          16
+pad      chord held, cutoff 60
+sweep                change: cutoff glides to 110        stays at 110
+```
+
+- `change(:pad, opts)` changes every sound of the part `:pad` still playing, and takes no time.
+- `change({:pad, :reverb}, mix: 0)` changes one of the part's effects.
+- An option's `_slide` partner makes the change glide over that many beats instead of jumping.
+- `change` takes the options the synth or effect takes. Envelope options such as `release` are refused.
 
 A note can also carry its own later changes, so a held note glides to the next pitch without a new attack:
 
@@ -585,38 +735,103 @@ A note can also carry its own later changes, so a held note glides to the next p
 part(:lead, note(:a4, 4, changes: [{1, note: :c5, note_slide: 0.1}]), synth: :flute)
 ```
 
+Each entry is a beat into the note and the options that change there.
+
 ## Live audio
 
-`live_audio: [mic: []]` in `song` plays the sound card's first input through the speakers while the song plays.
+A song can play what a microphone or an instrument sends to the sound card, through mx's effects, while its parts play.
 
-- It takes `input: 2` for another input, `stereo: true`, `amp`, `pan` and `fx:`.
+```elixir
+import Mx
+
+song(
+  tempo: 90,
+  live_audio: [mic: [amp: 0.8, fx: [reverb: [mix: 0.3]]]],
+  music: repeat(part(:pad, note(chord(:d3, :minor7), 8, amp: 0.3), synth: :saw))
+)
+```
+
+`live_audio` names each input, here `mic`, with its options:
+
+| Option | What it does |
+|---|---|
+| `input: 2` | reads the sound card's second input. The first is read unless given. |
+| `stereo: true` | plays the input in stereo |
+| `amp`, `pan` | how loud, and where from left to right |
+| `fx:` | the effects it goes through, as a part's `fx:` |
+
 - mx must start with a song that has `live_audio` to read the input.
+- Use headphones with a microphone, or the speakers feed back into it.
+- A song with `live_audio` cannot be rendered.
 
 ## Helpers
 
-### Pitches and chords
+Small functions for working out pitches and making choices.
+Pitches are note numbers, so they are plain arithmetic: `pitch(:c4) + 7` is G4.
 
-- `pitch(:e5)` is 76, the number of a note name.
-- `chord(:a3, :minor7)` and `scale(:e3, :minor_pentatonic, octaves: 2)` are lists of note numbers.
+### Pitches, chords and scales
+
+| Call | Is | Which is |
+|---|---|---|
+| `pitch(:e5)` | 76 | the number of a note name |
+| `chord(:a3, :minor7)` | `[57, 60, 64, 67]` | the chord's notes from its root |
+| `scale(:e3, :minor_pentatonic)` | `[52, 55, 57, 59, 62, 64]` | the scale's notes, up to the octave |
+| `scale(:e3, :minor_pentatonic, octaves: 2)` | eleven notes, from 52 to 76 | the scale over two octaves |
+
 - Chords: aug, dim, dim7, dom7, dom7_flat9, dom9, half_dim7, major, major6, major7, minor, minor6, minor7, sus2, sus4.
 - Scales: blues, chromatic, dorian, harmonic_minor, major, major_pentatonic, minor, minor_pentatonic, mixolydian.
-- `intervals([60, 64, 67])` is the step from each note to the next, `[4, 3]`.
-- `melody(60, [4, 3, -2])` is the notes reached by taking those steps, `[60, 64, 67, 65]`, so `melody(:d4, intervals(motif))` plays a motif again from D4.
-- `nearest(65, chord(:c4, :major))` is 64, the note of the chord in any octave closest to 65.
-- `below(76, chord(:a4, :minor7))` is 72, the note of the chord closest below 76.
-- `voice(chord(:g2, :major6), from: 62, to: 73)` places each note of the chord once in that range, `[62, 64, 67, 71]`.
-- `fit(scale(:a4, :minor), chord(:e4, :dom7))` moves the scale's notes a semitone to hold the chord's notes, so G becomes G sharp.
-- `cents(386)` is an interval in cents as semitones, 3.86, and `ratio(5 / 4)` is the interval of a frequency ratio, also 3.86.
+
+### Moving a tune
+
+| Call | Is | Which is |
+|---|---|---|
+| `intervals([60, 64, 67])` | `[4, 3]` | the step from each note to the next |
+| `melody(60, [4, 3, -2])` | `[60, 64, 67, 65]` | the notes reached by taking those steps |
+
+Together they play a motif again from another note:
+
+```elixir
+motif = [60, 64, 67, 65]
+melody(:d4, intervals(motif))
+```
+
+### Fitting notes to a chord
+
+| Call | Is | Which is |
+|---|---|---|
+| `nearest(65, chord(:c4, :major))` | 64 | the chord's note, in any octave, closest to 65 |
+| `below(76, chord(:a4, :minor7))` | 72 | the chord's note closest below 76 |
+| `voice(chord(:g2, :major6), from: 62, to: 73)` | `[62, 64, 67, 71]` | each note of the chord placed once in that range |
+| `fit(scale(:a4, :minor), chord(:e4, :dom7))` | `[69, 71, 72, 74, 76, 77, 80, 81]` | the scale with notes moved a semitone to hold the chord's notes, so G becomes G sharp |
+
+### Tuning
+
+| Call | Is | Which is |
+|---|---|---|
+| `cents(386)` | 3.86 | an interval in cents, as semitones |
+| `ratio(5 / 4)` | 3.86 | the interval of a frequency ratio, as semitones |
+
+Add either to a pitch, or give it to `transpose`, to play between the keys of a piano.
 
 ### Lists and numbers
 
-- `ring([60, 64, 67], 4)` is 64, the item at an index, wrapping round.
-- `clamp(12, 2, 11)` keeps a number from 2 up to 11, so it is 11.
+| Call | Is | Which is |
+|---|---|---|
+| `ring([60, 64, 67], 4)` | 64 | the item at an index, wrapping round |
+| `clamp(12, 2, 11)` | 11 | the number kept from 2 up to 11 |
 
 ### Chance
 
-- `pick([60, 63, 67])` is one item of a list or a range.
-- `chance(0.45)` is true about 45 times in 100.
-- `between(0.6, 0.95)` is a number from 0.6 up to 0.95.
+| Call | Is |
+|---|---|
+| `pick([60, 63, 67])` | one item of a list or a range |
+| `chance(0.45)` | true about 45 times in 100 |
+| `between(0.6, 0.95)` | a number from 0.6 up to 0.95 |
 
 Random numbers are seeded from the song file, and in a loop from the part's name and the pass number, so a song plays the same notes each time it loads.
+
+## Where next
+
+- [Instruments](instruments.md) lists the synths and effects, with the options each takes.
+- [Playing, recording and rendering](playing.md) covers `mix mx.play`, `--record`, `--render` and `mix mx.print`.
+- [Examples](examples.md) describes the songs in `examples`, which are the best place to see the notation at work.
