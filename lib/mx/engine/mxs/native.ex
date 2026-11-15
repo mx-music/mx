@@ -46,6 +46,11 @@ defmodule Mx.Engine.Mxs.Native do
     :erlang.nif_error(:nif_not_loaded)
   end
 
+  @doc "The spectrogram of a stretch of a recording's data as 480 rows of RGB pixels from the top: the data's `{kind, bits, channels}`, the stretch as `{from, count}` in frames, the columns as `{width, hop, size}` in samples, and the columns a second takes, for a line at each second, or nil for none."
+  def spectrogram(_data, _format, _rate, _stretch, _columns, _per_second) do
+    :erlang.nif_error(:nif_not_loaded)
+  end
+
   @doc "Starts an effect chain of effects, each a name and its options, in order, and returns the chain notes name to play into."
   def start_effects(_engine, _effects), do: :erlang.nif_error(:nif_not_loaded)
 

@@ -9,9 +9,16 @@ defmodule Mx.Audio do
 
   @doc "Reads a recording, and returns `{:ok, %{rate: rate, samples: samples}}` or `{:error, \"cannot read PATH\"}`."
   def read(path) when is_binary(path) do
+    with {:ok, format, data} <- raw(path) do
+      {:ok, %{rate: format.rate, samples: samples(data, format)}}
+    end
+  end
+
+  @doc "Reads a recording without decoding its samples, and returns `{:ok, format, data}`, the format as its `rate`, `channels`, `bits` and `kind` of sample, or `{:error, \"cannot read PATH\"}`."
+  def raw(path) when is_binary(path) do
     with {:ok, binary} <- File.read(path),
          {:ok, format, data} <- parse(binary) do
-      {:ok, %{rate: format.rate, samples: samples(data, format)}}
+      {:ok, format, data}
     else
       _ -> {:error, "cannot read #{path}"}
     end

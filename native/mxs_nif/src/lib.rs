@@ -1,5 +1,7 @@
 //! mx's NIF onto mxs: it turns Elixir terms into the engine's types and calls its public API.
 
+mod spectrogram;
+
 use mxs::graph::{Clause, Graph};
 use mxs::{Effect, Engine, Event, Kind, Source, Spec, Synth, Target, Value, effects, synths};
 use rustler::types::tuple::get_tuple;
@@ -298,6 +300,18 @@ fn pitches(samples: Vec<f64>, rate: u32, lowest: f64, highest: f64, frame: usize
     let mut executor = pyin::PYINExecutor::new(lowest, highest, rate, frame, None, Some(hop), None);
     let (_, hz, voiced, _) = executor.pyin(&samples, f64::NAN, pyin::Framing::Center(pyin::PadMode::Constant(0.0)));
     hz.into_iter().zip(voiced).map(|(hz, voiced)| voiced.then_some(hz)).collect()
+}
+
+/// The spectrogram of a stretch of a recording's data as 480 rows of RGB pixels from the top: the data's `{kind, bits, channels}` as `Mx.Audio` names them, the stretch as `{from, count}` in frames, and the columns as `{width, hop, size}`, each starting `hop` samples after the last and holding `size` samples.
+/// `per_second` is the columns a second takes, for a line at each second, or nil for none.
+#[rustler::nif(schedule = "DirtyCpu")]
+fn spectrogram<'a>(env: Env<'a>, data: Binary, format: (String, usize, usize), rate: f64, stretch: (usize, usize), columns: (usize, f64, usize), per_second: Option<f64>) -> NifResult<Binary<'a>> {
+    let (kind, bits, channels) = format;
+    let sound = spectrogram::samples(data.as_slice(), &kind, bits, channels, stretch.0, stretch.1).ok_or(rustler::Error::BadArg)?;
+    let pixels = spectrogram::draw(&sound, rate, columns.0, columns.1, columns.2, per_second);
+    let mut owned = OwnedBinary::new(pixels.len()).expect("memory for the picture");
+    owned.as_mut_slice().copy_from_slice(&pixels);
+    Ok(owned.release(env))
 }
 
 #[rustler::nif]

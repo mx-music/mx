@@ -14,33 +14,36 @@ defmodule Mix.Tasks.Mx.Spectrogram do
   Several recordings are drawn into one image, one above another from the first, beside which the image is written, each against its own loudest point, so a synth's render can be compared with a recording moment by moment.
   `--from` and `--seconds` draw only a stretch of each recording, from a second and for so many seconds.
   `--per-second` is the pixels a second takes across, 100 unless given.
+  `--width` gives the image's width in pixels in place of `--per-second`, and the stretch drawn fills it.
+  `--no-seconds` leaves out the line at each second and keeps the line at each octave, for a long recording drawn at a few pixels a second.
   `--window` is the milliseconds of sound in each column, 4096 samples unless given: a long window tells the harmonics apart, and a short one, such as 4, shows how the level moves within a note and where notes join.
   """
 
   use Mix.Task
 
-  alias Mx.{Audio, Spectrogram}
+  alias Mx.Spectrogram
 
   @impl true
   def run(args) when is_list(args) do
-    strict = [out: :string, from: :float, seconds: :float, per_second: :integer, window: :float]
+    strict = [
+      out: :string,
+      from: :float,
+      seconds: :float,
+      per_second: :integer,
+      width: :integer,
+      window: :float,
+      no_seconds: :boolean
+    ]
+
     {opts, [path | _] = paths} = OptionParser.parse!(args, strict: strict)
     out = Keyword.get_lazy(opts, :out, fn -> Path.rootname(path) <> ".png" end)
     window = if opts[:window], do: [window: opts[:window] / 1000], else: []
-    sounds = Enum.map(paths, &stretch(&1, opts))
-    Spectrogram.stack(sounds, out, Keyword.take(opts, [:per_second]) ++ window)
-    IO.puts("Wrote #{out}")
-  end
+    lines = [second_lines: !opts[:no_seconds]]
+    drawn = Keyword.take(opts, [:from, :seconds, :per_second, :width]) ++ window ++ lines
 
-  defp stretch(path, opts) do
-    case Audio.read(path) do
-      {:ok, %{rate: rate, samples: samples}} ->
-        from = Enum.drop(samples, round(Keyword.get(opts, :from, 0.0) * rate))
-        seconds = opts[:seconds]
-        {if(seconds, do: Enum.take(from, round(seconds * rate)), else: from), rate}
-
-      {:error, message} ->
-        Mix.raise(message)
+    case Spectrogram.stack(paths, out, drawn) do
+      :ok -> IO.puts("Wrote #{out}")
+      {:error, message} -> Mix.raise(message)
     end
   end
 end

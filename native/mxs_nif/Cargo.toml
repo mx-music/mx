@@ -9,4 +9,5 @@ crate-type = ["cdylib"]
 [dependencies]
 mxs = "0.1"
 pyin = { version = "1.2.0", default-features = false }
+rustfft = "6.4"
 rustler = "0.38.0"

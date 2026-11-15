@@ -518,6 +518,13 @@ Several files are drawn into one image, one above another, so a render can be co
 mix mx.spectrogram "cuica (2).wav" solo.wav --from 1 --seconds 2.4 --per-second 400 --window 4
 ```
 
+`--width` gives the image's width in pixels in place of `--per-second`, and `--no-seconds` leaves out the line at each second, which suits a whole song in one image.
+A column that covers more sound than its window shows the loudest level each frequency reaches in the sound it covers, so a narrow image skips no note.
+
+```sh
+mix mx.spectrogram song.wav --width 1500 --no-seconds
+```
+
 ### Strokes that run together
 
 An instrument played in strokes that run into one another, such as the cuíca, takes `--strokes`, and a file needs no note after its name.
