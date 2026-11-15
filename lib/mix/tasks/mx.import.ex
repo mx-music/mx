@@ -145,7 +145,7 @@ defmodule Mix.Tasks.Mx.Import do
         end)
       end)
 
-    order = if same?, do: order(score.runs), else: inspect(times(score.order))
+    order = if same?, do: order(score.runs), else: inspect(times(score.order), limit: :infinity)
 
     declarations =
       Enum.map_join(Enum.zip(parts, names), "\n", fn {{_part, synth}, name} ->
@@ -270,52 +270,69 @@ defmodule Mix.Tasks.Mx.Import do
     end
   end
 
-  # Follows each tie into the next note of its name in its voice, in the order the bars play, and
-  # gives the note that starts it the length of the whole tie.
+  # Follows each tie into the note of its name, marked as tied into, that starts where the tie
+  # ends, in its own voice if one does and in another otherwise, and gives the note that starts it
+  # the length of the whole tie. A bar's notes are taken in the order they start, across voices,
+  # so a tie into a voice written before its own is found.
   defp ties(bars, keys) do
     {_start, _open, sustains, continued} =
-      Enum.reduce(keys, {0, %{}, %{}, MapSet.new()}, fn {number, _time} = key,
-                                                        {start, open, sustains, continued} ->
-        {ends, {open, sustains, continued}} =
-          bars
-          |> Map.fetch!(number)
-          |> Map.fetch!(:voices)
-          |> Enum.with_index()
-          |> Enum.map_reduce({open, sustains, continued}, fn {groups, voice}, acc ->
-            groups
-            |> Enum.with_index()
-            |> Enum.reduce({start, acc}, fn {group, index}, {beat, acc} ->
-              acc =
-                group.notes
-                |> Enum.with_index()
-                |> Enum.reduce(acc, &tie(&1, &2, {key, voice, index}, group, beat))
+      Enum.reduce(keys, {0, [], %{}, MapSet.new()}, fn {number, _time} = key,
+                                                       {start, open, sustains, continued} ->
+        voices = bars |> Map.fetch!(number) |> Map.fetch!(:voices)
 
-              {beat + group.length, acc}
-            end)
-          end)
+        heads =
+          for {groups, voice} <- Enum.with_index(voices),
+              {group, index, beat} <- onsets(groups, start),
+              {head, head_index} <- Enum.with_index(group.notes),
+              do: {beat, voice, {key, voice, index, head_index}, group.length, head}
 
+        {open, sustains, continued} =
+          heads
+          |> Enum.sort_by(fn {beat, voice, _, _, _} -> {beat, voice} end)
+          |> Enum.reduce({open, sustains, continued}, &tie/2)
+
+        ends = for groups <- voices, do: start + (groups |> Enum.map(& &1.length) |> Enum.sum())
         {Enum.max([start | ends]), open, sustains, continued}
       end)
 
     {sustains, continued}
   end
 
-  defp tie({head, head_index}, {open, sustains, continued}, {key, voice, index}, group, beat) do
-    id = {key, voice, index, head_index}
-    tie = {voice, head.name}
+  defp onsets(groups, start) do
+    {onsets, _end} =
+      groups
+      |> Enum.with_index()
+      |> Enum.map_reduce(start, fn {group, index}, beat ->
+        {{group, index, beat}, beat + group.length}
+      end)
 
-    {owner, sustains, continued} =
-      case open do
-        %{^tie => {owner, owner_start}} ->
-          {{owner, owner_start}, Map.put(sustains, owner, beat + group.length - owner_start),
-           MapSet.put(continued, id)}
+    onsets
+  end
 
-        _none ->
-          {{id, beat}, Map.put(sustains, id, group.length), continued}
-      end
+  # An open tie is {owner, owner_start, end, voice, name}, owner being the note that sounds for it.
+  defp tie({beat, voice, id, length, head}, {open, sustains, continued}) do
+    case head.continues && joined(open, head.name, voice, beat) do
+      {owner, owner_start, _end, _voice, name} = tie ->
+        open = List.delete(open, tie)
 
-    open = if head.tie, do: Map.put(open, tie, owner), else: Map.delete(open, tie)
-    {open, sustains, continued}
+        open =
+          if head.tie, do: [{owner, owner_start, beat + length, voice, name} | open], else: open
+
+        sustains = Map.put(sustains, owner, beat + length - owner_start)
+        {open, sustains, MapSet.put(continued, id)}
+
+      _none ->
+        open = if head.tie, do: [{id, beat, beat + length, voice, head.name} | open], else: open
+        {open, Map.put(sustains, id, length), continued}
+    end
+  end
+
+  # The open tie of this name that ends at `beat`, its own voice's first.
+  defp joined(open, name, voice, beat) do
+    ending =
+      Enum.filter(open, fn {_, _, at, _, held} -> held == name and abs(at - beat) < 1.0e-6 end)
+
+    Enum.find(ending, &(elem(&1, 3) == voice)) || List.first(ending)
   end
 
   defp vel(mark) when mark in ["pppp", "ppp", "pp"], do: 0.3
@@ -414,7 +431,10 @@ defmodule Mix.Tasks.Mx.Import do
       Enum.map_join(runs, ", ", fn run ->
         first = hd(run)
         last = List.last(run)
-        if run == Enum.to_list(first..last//1), do: "#{first}..#{last}", else: inspect(run)
+
+        if run == Enum.to_list(first..last//1),
+          do: "#{first}..#{last}",
+          else: inspect(run, limit: :infinity)
       end)
 
     "Enum.concat([#{runs}])"

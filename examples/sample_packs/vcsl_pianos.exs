@@ -73,7 +73,7 @@ defmodule MapleLeafRag do
       strain(:knight, [0..0, 1..15, 16..16, 1..15, 17..17]),
       strain(:yamaha, [18..32, 33..33, 18..32, 34..34]),
       strain(:knight, [35..50]),
-      strain(:kawai, [51..65, 66..66, 51..65, 67..67]),
+      strain(:kawai, [51..65, 66..66, 51..64, [{65, 2}], 67..67]),
       strain(:steinway, [68..82, 83..83, 68..82, 84..84])
     ])
   end
@@ -1253,6 +1253,29 @@ defmodule MapleLeafRag do
     ])
   end
 
+  # Bar 65 ties into the first ending only, so before the second it is written again without
+  # the tie.
+  defp bar({65, 2}) do
+    together([
+      seq([
+        note([:g4, :f5], 0.25),
+        note(:db5, 0.25),
+        note(:eb5, 0.25),
+        note([:gb4, :f5], 0.25, sustain: [0.5, 0.5]),
+        rest(0.25),
+        note(:c5, 0.25),
+        note([:gb4, :eb5], 0.25),
+        note([:f4, :db5], 0.25)
+      ]),
+      seq([
+        note([:eb3, :bb3, :db4], 0.5),
+        note([:eb3, :bb3, :db4], 0.5),
+        note([:ab3, :c4], 0.5),
+        note([:ab3, :c4], 0.5)
+      ])
+    ])
+  end
+
   defp bar(66) do
     together([
       seq([
@@ -1276,7 +1299,7 @@ defmodule MapleLeafRag do
   defp bar(67) do
     together([
       seq([
-        rest(0.25),
+        note([:f4, :db5], 0.25),
         note(:db5, 0.25),
         note(:f5, 0.25),
         note(:ab5, 0.25),

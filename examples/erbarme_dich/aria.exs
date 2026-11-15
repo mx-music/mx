@@ -2130,7 +2130,7 @@ defmodule Aria do
         note(:e5, 3, sustain: 3.5),
         rest(0.5),
         note(:as4, 0.5),
-        note(:b4, 0.5, sustain: 5.75),
+        note(:b4, 0.5, sustain: 1.5),
         note(:cs5, 0.25),
         note(:d5, 0.25),
         note(:e5, 0.5),
@@ -2159,7 +2159,7 @@ defmodule Aria do
         fs3: 0.5,
         e4: 0.5,
         d4: 0.5,
-        b4: 1,
+        r: 1,
         r: 0.5
       ),
       seq(e3: 1, r: 1, r: 1, fs2: 0.5, fs2: 0.5, fs2: 0.5, fs2: 0.5, fs2: 0.5, fs2: 0.5)
@@ -2168,7 +2168,15 @@ defmodule Aria do
 
   defp bar(:organo_a_canne, 29) do
     together([
-      seq(r: 3, r: 0.75, a4: 0.25, gs4: 0.5, b4: 0.75, a4: 0.25, gs4: 0.5),
+      seq([
+        note(:b4, 3, sustain: 3.75),
+        rest(0.75),
+        note(:a4, 0.25),
+        note(:gs4, 0.5),
+        note(:b4, 0.75),
+        note(:a4, 0.25),
+        note(:gs4, 0.5)
+      ]),
       seq(
         fs4: 0.5,
         as4: 0.5,

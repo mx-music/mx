@@ -94,6 +94,86 @@ defmodule Mix.Tasks.Mx.ImportTest do
     refute bass =~ ~r/^beat 2 /m
   end
 
+  test "a tie from one voice into another plays as one note, and a later note of its name plays",
+       %{tmp_dir: dir} do
+    bar =
+      attributes(1) <>
+        note("B", 4, 1, ~s(<tie type="start"/><voice>1</voice>)) <>
+        "<note><rest/><duration>1</duration><voice>1</voice></note>" <>
+        note("B", 4, 2, "<voice>1</voice>") <>
+        "<backup><duration>4</duration></backup>" <>
+        "<note><rest/><duration>1</duration><voice>2</voice></note>" <>
+        note("B", 4, 1, ~s(<tie type="stop"/><voice>2</voice>)) <>
+        "<note><rest/><duration>2</duration><voice>2</voice></note>"
+
+    path = score!(dir, "across.musicxml", [{"Organ", [bar]}])
+    import!([path, "--tempo", "60"])
+    organ = print(Path.join(dir, "across.exs"), "organ")
+
+    assert organ =~ ~r/^beat 0 +play 71 sustain: 2$/m
+    refute organ =~ ~r/^beat 1 /m
+    assert organ =~ ~r/^beat 2 +play 71 sustain: 2$/m
+  end
+
+  test "a tie within one voice joins its own voice's note, beside the same note in another voice",
+       %{tmp_dir: dir} do
+    bar =
+      attributes(1) <>
+        note("C", 5, 2, ~s(<tie type="start"/><voice>1</voice>)) <>
+        note("C", 5, 2, ~s(<tie type="stop"/><voice>1</voice>)) <>
+        "<backup><duration>4</duration></backup>" <>
+        "<note><rest/><duration>2</duration><voice>2</voice></note>" <>
+        note("C", 5, 2, "<voice>2</voice>")
+
+    path = score!(dir, "within.musicxml", [{"Organ", [bar]}])
+    import!([path, "--tempo", "60"])
+    organ = print(Path.join(dir, "within.exs"), "organ")
+
+    assert organ =~ ~r/^beat 0 +play 72 sustain: 4$/m
+    assert length(Regex.scan(~r/^beat 2 +play 72 sustain: 2$/m, organ)) == 1
+  end
+
+  test "the aria's notes play as the score writes them, its tie between voices too", %{
+    tmp_dir: dir
+  } do
+    score = Path.join(dir, "bwv244.39.mxl")
+    File.cp!("examples/erbarme_dich/bwv244.39.mxl", score)
+    import!([score])
+    song = Path.join(dir, "bwv244.39.exs")
+
+    organ = print(song, "organo_a_canne")
+    assert organ =~ ~r/^beat 166\.5 +play 71 sustain: 1\.5$/m
+    refute organ =~ ~r/^beat 167 +play 71 /m
+    assert organ =~ ~r/^beat 168\.5 +play 71 sustain: 3\.75$/m
+
+    {:ok, original} = Mx.Score.read(score)
+    assert Mx.ScoreNotes.played(song) == Mx.ScoreNotes.written(original)
+  end
+
+  test "the chorale's notes play as the score writes them", ctx do
+    import!([ctx.score, "--tempo", "100"])
+
+    {:ok, original} = Mx.Score.read(ctx.score)
+    assert Mx.ScoreNotes.played(ctx.song) == Mx.ScoreNotes.written(original)
+  end
+
+  test "writes a long order of bars in full", %{tmp_dir: dir} do
+    first =
+      attributes(1) <>
+        repeat("left", "forward") <> note("C", 4, 4, ~s(<tie type="stop"/>))
+
+    middle = for _ <- 2..33, do: note("D", 4, 4)
+    last = note("C", 4, 4, ~s(<tie type="start"/>)) <> repeat("right", "backward")
+
+    path = score!(dir, "long.musicxml", [{"Flute", [first | middle] ++ [last]}])
+    import!([path, "--tempo", "60"])
+    song = Path.join(dir, "long.exs")
+
+    refute File.read!(song) =~ "..."
+    assert {:ok, %{loops: [%{passes: 1}]}} = Mx.Song.load(song)
+    assert print(song, "flute") =~ "flute, 272 beats at 60 bpm\n"
+  end
+
   test "writes one line per bar, each with its number", ctx do
     import!([ctx.score, "--tempo", "100"])
 
