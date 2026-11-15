@@ -1253,6 +1253,96 @@ defmodule Mx.DesignsTest do
     assert last_sound(damped) < 0.4
   end
 
+  # Measured from the bass_electronic_018 instrument of the test set of Google's NSynth dataset,
+  # its notes from E1 up at velocities 25, 75 and 127 against vel 0.2, 0.59 and 1, each cut at 2.9
+  # seconds, before its key is let go, since a fade read across the release at 3 seconds comes out
+  # short: the notes of each velocity, and as medians over them by the harmonic's frequency the
+  # seconds a harmonic takes to fade 60 dB and its level against the fundamental of the lowest.
+  # The bands above 630 Hz are left out: the recordings' harmonics there stand 50 to 78 dB under
+  # the fundamental and hold for seconds, which the design does not follow.
+  @electric_bass %{
+    0.2 =>
+      {[29, 31, 32, 37, 50, 56, 59, 62],
+       %{
+         {80, 160} => {3.44, -1.7},
+         {160, 250} => {3.10, -1.6},
+         {250, 400} => {2.08, -30.0},
+         {400, 630} => {2.07, -46.5}
+       }},
+    0.59 =>
+      {[29, 33, 35, 43, 44, 45, 48, 49, 50, 52, 53, 60, 61, 62, 63],
+       %{
+         {80, 160} => {5.16, -4.7},
+         {160, 250} => {5.44, -0.4},
+         {250, 400} => {2.74, -7.8},
+         {400, 630} => {2.19, -22.8}
+       }},
+    1 =>
+      {[32, 35],
+       %{
+         {80, 160} => {5.43, 0.1},
+         {160, 250} => {4.33, -2.4},
+         {250, 400} => {2.46, -18.2},
+         {400, 630} => {2.05, -36.1}
+       }}
+  }
+
+  test "electric_bass's harmonics fade and stand as the recorded bass's do at each velocity",
+       ctx do
+    for {vel, {notes, bands}} <- @electric_bass do
+      measured = Map.new(Measure.bands(electric_bass_notes(ctx, notes, vel)), &{&1.band, &1})
+
+      for {band, {fade, level}} <- bands do
+        %{fade: synth_fade, level: synth_level} = measured[band]
+        assert_in_delta synth_level, level, 6, "vel #{vel} #{inspect(band)} at #{synth_level} dB"
+
+        assert_in_delta synth_fade / fade,
+                        1,
+                        0.3,
+                        "vel #{vel} #{inspect(band)} fades in #{synth_fade} s"
+      end
+    end
+  end
+
+  # The recordings are each brought to the same peak, so they do not say how much louder a harder
+  # note is; their harmonics from the sixth up are 3 to 8 dB stronger at velocity 127 than at 25.
+  test "electric_bass at vel 1 is louder than at vel 0.3, by under 6 dB, and brighter", ctx do
+    for note <- [28, 33, 40, 45] do
+      soft = render(ctx, :electric_bass, [note: note, vel: 0.3], 0.6)
+      hard = render(ctx, :electric_bass, [note: note, vel: 1], 0.6)
+
+      assert highs(hard, 2000, 0, 0.5) / rms(hard, 0, 0.5) >
+               highs(soft, 2000, 0, 0.5) / rms(soft, 0, 0.5)
+
+      louder = 20 * :math.log10(rms(hard, 0, 0.5) / rms(soft, 0, 0.5))
+      assert louder > 3 and louder < 6, "note #{note} is #{louder} dB louder"
+    end
+  end
+
+  test "electric_bass plays MIDI 22 and 63, the lowest and highest notes of the recordings, at their pitch",
+       ctx do
+    for note <- [22, 63] do
+      expected = 440 * :math.pow(2, (note - 69) / 12)
+      sound = render(ctx, :electric_bass, [note: note], 1.2)
+      hz = pitch(window(sound, 0.1, 1.1), expected)
+      cents = 1200 * :math.log2(hz / expected)
+      assert abs(cents) < 5, "note #{note} is #{cents} cents off"
+    end
+  end
+
+  # The recorded A1 at velocity 75 is 5.2 dB under its level at a tenth of a second after one
+  # second, and 13.5 dB under it after 2.9.
+  test "electric_bass's A1 fades as the recorded one does, and sustain and release damp it",
+       ctx do
+    sound = render(ctx, :electric_bass, [note: 33, vel: 0.59], 3.2)
+    under = fn at -> 20 * :math.log10(rms(sound, at, at + 0.1) / rms(sound, 0.1, 0.2)) end
+    assert_in_delta under.(1.0), -5.2, 3
+    assert_in_delta under.(2.9), -13.5, 3
+
+    damped = render(ctx, :electric_bass, [note: 33, sustain: 0.2, release: 0.1], 2)
+    assert last_sound(damped) < 0.4
+  end
+
   # Measured from the University of Iowa's violin, bowed without vibrato on every string from G3
   # to B7, at pp, mf and ff against vel 0.3, 0.6 and 1, as medians over its notes:
   # the seconds a note takes to swell in, and each band's level while it holds, against G3's
@@ -5863,6 +5953,18 @@ defmodule Mx.DesignsTest do
     36..92//2
     |> Task.async_stream(
       fn note -> Measure.note(render(ctx, :harp, [note: note, vel: vel], 4.5), @rate, note) end,
+      timeout: :infinity
+    )
+    |> Enum.map(fn {:ok, note} -> note end)
+  end
+
+  defp electric_bass_notes(ctx, notes, vel) do
+    notes
+    |> Task.async_stream(
+      fn note ->
+        sound = render(ctx, :electric_bass, [note: note, vel: vel], 4.5)
+        Measure.note(sound, @rate, note)
+      end,
       timeout: :infinity
     )
     |> Enum.map(fn {:ok, note} -> note end)
