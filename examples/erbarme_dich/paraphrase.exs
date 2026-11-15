@@ -71,12 +71,7 @@ defmodule ErbarmeDich.Paraphrase do
 
   # Every stroke as {beat, note, velocity, sustain, pedal}, from the first note.
   defp strokes do
-    {notes, _} =
-      Enum.flat_map_reduce(sections(), 0, fn section, start ->
-        notes = for note <- section.notes, do: Map.merge(note, place(section, note, start))
-        {notes, start + section.length}
-      end)
-
+    notes = placed()
     clock = clock(notes)
     lines = Enum.group_by(notes, &{&1.section, &1.kind})
     keys = Enum.group_by(notes, & &1.note)
@@ -84,6 +79,24 @@ defmodule ErbarmeDich.Paraphrase do
     notes
     |> Enum.map(&stroke(&1, lines, keys, clock))
     |> Enum.sort()
+  end
+
+  # The beat each section starts on as it plays, and the beat the last one ends.
+  def bars do
+    clock = clock(placed())
+    {starts, ending} = Enum.map_reduce(sections(), 0, &{&2, &2 + &1.length})
+    for eighth <- starts ++ [ending], do: Float.round(time(clock, eighth), 3)
+  end
+
+  # Every note of every section, placed after the sections before it.
+  defp placed do
+    {notes, _} =
+      Enum.flat_map_reduce(sections(), 0, fn section, start ->
+        notes = for note <- section.notes, do: Map.merge(note, place(section, note, start))
+        {notes, start + section.length}
+      end)
+
+    notes
   end
 
   defp place(section, note, start) do

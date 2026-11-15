@@ -31,6 +31,12 @@ defmodule ErbarmeDich.Piano do
     for {beat, note, vel, sustain} <- strokes(), do: {beat, note(note, sustain, vel: vel)}
   end
 
+  # The beat each bar starts on as it plays, the pickup first, and the beat the last one ends.
+  def bars do
+    clock = clock(notes())
+    for index <- 0..(last() + 1), do: Float.round(time(clock, start(index)), 3)
+  end
+
   # Every stroke of the performance as {beat, note, velocity, sustain}, from its first note.
   defp strokes do
     notes = notes()
