@@ -111,6 +111,9 @@ defmodule Mx.MixProject do
           Mx.Signal,
           Mx.FFT,
           Mx.Spectrogram,
+          Mx.Waveform,
+          Mx.Video,
+          Mx.PNG,
           Mx.Audio,
           Mx.Recording
         ],

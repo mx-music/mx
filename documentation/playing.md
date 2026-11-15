@@ -1,6 +1,7 @@
 # Playing, recording and rendering
 
 `mix mx.play` plays a song file, and can record what it plays or render the song to a file without playing it.
+`mix mx.video` turns a render into a video.
 
 ## Play a song
 
@@ -40,6 +41,30 @@ Rendering a song twice writes the same file.
 mx prints the same report as for a recording, and refuses a file that exists unless you add `--force`.
 A render sends no MIDI or OSC and has no input, so mx names each part that sends MIDI or OSC, or waits for input, and leaves it out.
 `--render` cannot go with `--record`, nor with a song that has `live_audio`.
+
+## Make a video of a render
+
+GitHub plays no sound in a README, only video, so a song is heard there as a video of its render.
+`mix mx.video` makes an MP4 that plays a WAV or AIFF recording over its waveform, with a playhead that crosses the picture once as the recording plays:
+
+```sh
+mix mx.play song.exs --render song.wav
+mix mx.video song.wav
+```
+
+The waveform is a row of bars, each as tall as its slice of the recording is loud, in amber once the playhead has passed and in grey before.
+`--picture spectrogram` plays the recording over its spectrogram instead, with a thin white line as the playhead.
+The video is written beside the recording with the extension .mp4 unless `--out` names it, and mx refuses a file that exists unless you add `--force`.
+Its sound is the recording at one gain, which brings its loudest sample to 1.5 dB below full scale, so the recording's dynamics are kept.
+mx prints the video's length and size, and warns when it is over the 10 MB GitHub allows for a video on its free plan; `--bitrate`, the sound's kbit/s, 256 unless given, makes it smaller.
+The task needs [ffmpeg](https://ffmpeg.org) installed.
+To put the video in a README, drop the file into a comment box on GitHub and paste the link it gives on a line of its own.
+
+`mix mx.waveform` draws the waveform alone into a PNG image, 1500 pixels wide and 150 high unless `--width` and `--height` give another size, and `mix mx.spectrogram` draws the spectrogram, as [the guide to instruments](instruments.md#spectrograms) describes.
+
+```sh
+mix mx.waveform song.wav --out bars.png
+```
 
 ## Print a song
 

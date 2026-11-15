@@ -51,6 +51,9 @@ defmodule Mx.Engine.Mxs.Native do
     :erlang.nif_error(:nif_not_loaded)
   end
 
+  @doc "The loudest sample of a recording's data in any channel, as a level from 0, and the RMS level of each of `count` equal slices of its channels' average; the data's format is `{kind, bits, channels}`."
+  def levels(_data, _format, _count), do: :erlang.nif_error(:nif_not_loaded)
+
   @doc "Starts an effect chain of effects, each a name and its options, in order, and returns the chain notes name to play into."
   def start_effects(_engine, _effects), do: :erlang.nif_error(:nif_not_loaded)
 

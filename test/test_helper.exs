@@ -6,6 +6,7 @@ ExUnit.start(
     :vsco,
     :vcsl,
     :audiveris,
+    :ffmpeg,
     :transcriber,
     :bench,
     :philharmonia,

@@ -15,6 +15,7 @@ They also fit mx's clarinet to the Iowa Bb clarinet, from https://theremin.music
 The tests tagged `vsco` measure the cowbell hits of the VSCO 2 Community Edition percussion, from https://github.com/sgossner/VSCO-2-CE; run them with `MX_VSCO_PERCUSSION=folder mix test --only vsco`.
 The tests tagged `vcsl` measure the Versilian Community Sample Library, from https://github.com/sgossner/VCSL; run them with `MX_VCSL=folder mix test --only vcsl`, where the folder is the library's root, and they render mx's synths.
 The tests tagged `audiveris` scan pages of the Bach-Gesellschaft's St Matthew Passion with Audiveris and take two to three minutes; set it up as [Setting up Audiveris](audiveris.md) describes and run them with `mix test --only audiveris`.
+The tests tagged `ffmpeg` make videos with `mix mx.video` and read them back, so they need ffmpeg installed; run them with `mix test --only ffmpeg`.
 
 ## Lint
 

@@ -9,7 +9,7 @@ defmodule Mx.Spectrogram do
   The columns are worked out by `Mx.Engine.Mxs.Native`, from the recording's data as it is in the file.
   """
 
-  alias Mx.Audio
+  alias Mx.{Audio, PNG}
   alias Mx.Engine.Mxs.Native
 
   @fft 4096
@@ -41,9 +41,9 @@ defmodule Mx.Spectrogram do
       rows =
         for {own, pixels} <- images,
             <<row::binary-size(^own * 3) <- pixels>>,
-            do: [<<0>>, row, :binary.copy(<<0, 0, 0>>, width - own)]
+            do: [row, :binary.copy(<<0, 0, 0>>, width - own)]
 
-      File.write!(path, png(width, length(rows), IO.iodata_to_binary(rows)))
+      File.write!(path, PNG.encode(width, length(rows), rows))
     end
   end
 
@@ -91,15 +91,4 @@ defmodule Mx.Spectrogram do
 
   defp columns(nil, count, hop), do: {max(ceil(count / hop), 1), hop}
   defp columns(width, count, _hop), do: {width, max(count, 1) / width}
-
-  defp png(width, height, rows) do
-    header = <<width::32, height::32, 8, 2, 0, 0, 0>>
-
-    <<137, "PNG", 13, 10, 26, 10>> <>
-      chunk("IHDR", header) <> chunk("IDAT", :zlib.compress(rows)) <> chunk("IEND", <<>>)
-  end
-
-  defp chunk(type, body) do
-    <<byte_size(body)::32>> <> type <> body <> <<:erlang.crc32(type <> body)::32>>
-  end
 end

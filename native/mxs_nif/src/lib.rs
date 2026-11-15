@@ -314,6 +314,21 @@ fn spectrogram<'a>(env: Env<'a>, data: Binary, format: (String, usize, usize), r
     Ok(owned.release(env))
 }
 
+/// The loudest sample of a recording's data in any channel, as a level from 0, and the RMS level of each of `count` equal slices of its channels' average; the data's `{kind, bits, channels}` are as `Mx.Audio` names them.
+#[rustler::nif(schedule = "DirtyCpu")]
+fn levels(data: Binary, format: (String, usize, usize), count: usize) -> NifResult<(f64, Vec<f64>)> {
+    let (kind, bits, channels) = format;
+    let values = spectrogram::samples(data.as_slice(), &kind, bits, 1, 0, usize::MAX).ok_or(rustler::Error::BadArg)?;
+    let peak = values.iter().fold(0.0f64, |peak, value| peak.max(value.abs()));
+    let sound: Vec<f64> = values.chunks_exact(channels.max(1)).map(|frame| frame.iter().sum::<f64>() / channels as f64).collect();
+    let step = sound.len() as f64 / count.max(1) as f64;
+    let slices = (0..count).map(|index| {
+        let slice = &sound[(index as f64 * step) as usize..((index + 1) as f64 * step) as usize];
+        (slice.iter().map(|x| x * x).sum::<f64>() / slice.len().max(1) as f64).sqrt()
+    });
+    Ok((peak, slices.collect()))
+}
+
 #[rustler::nif]
 fn start_effects(resource: ResourceArc<EngineResource>, effects: Vec<(String, Term)>) -> NifResult<Result<u64, String>> {
     let effects = effects.into_iter().map(|(name, opts)| Ok((name, options(opts)?))).collect::<NifResult<Vec<_>>>()?;
