@@ -103,15 +103,16 @@ mix mx.samples.download sonic_pi
 ## Scores and hums
 
 mx can start a song from music that already exists.
-`mix mx.import` turns a MusicXML score into a song, `mix mx.scan` reads a scanned score into MusicXML, and `mix mx.hum` turns a recording of a melody you hum, sing or whistle into a song:
+`mix mx.import` turns a MusicXML score into a song, `mix mx.export` writes a song as one, `mix mx.scan` reads a scanned score into MusicXML, and `mix mx.hum` turns a recording of a melody you hum, sing or whistle into a song:
 
 ```sh
 mix mx.import score.mxl --tempo 72 --part "Soprano=oboe"
+mix mx.export song.exs --time 6/8 --key d
 mix mx.scan page.pdf
 mix mx.hum hum.wav --tempo 90
 ```
 
-[Scores and hums](documentation/scores.md) describes the three commands.
+[Scores and hums](documentation/scores.md) describes the four commands.
 
 ## Live input and output
 

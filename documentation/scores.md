@@ -1,7 +1,7 @@
 # Scores and hums
 
 A song need not be typed in by hand.
-mx writes one from a MusicXML score, from a scanned page of a printed score, or from a recording of a melody you hum.
+mx writes one from a MusicXML score, from a scanned page of a printed score, or from a recording of a melody you hum, and writes a song back out as a MusicXML score.
 
 ```mermaid
 graph LR
@@ -12,6 +12,7 @@ graph LR
 
   page -->|mix mx.scan| score
   score -->|mix mx.import| song
+  song -->|mix mx.export| score
   hum -->|mix mx.hum| song
 ```
 
@@ -58,6 +59,28 @@ Its D.S. al Fine is not taken, so the aria ends at bar 46 without going back to 
 ```sh
 mix mx.play examples/erbarme_dich/dub.exs
 ```
+
+## Export a score
+
+`mix mx.export` writes a song as a MusicXML score, which MuseScore, Sibelius and Finale open and print as sheet music:
+
+```sh
+mix mx.export examples/erbarme_dich/aria.exs --time 12/8 --key bm
+```
+
+It writes the score beside the song with the extension `.musicxml`, or to `--out`, compressed when that ends in `.mxl`; a file that exists is refused unless you add `--force`.
+The score holds the whole of the song's music once, as `mix mx.print` prints it.
+Each part that plays notes becomes a part of the score, and a part that plays no notes with a pitch, such as drums and samples, or that waits for input, is left out; mx names each one it leaves out.
+mx prints how many notes each part has, and its lowest and highest note.
+`--time` sets the time signature, 4/4 without it, and `--key` the key its notes are spelled in, such as `d`, `bm` or `fsm`, C major without it.
+`--title` sets the title, which is otherwise the song file's name.
+
+A note is written as long as its sustain when it is given one, and as long as its beats otherwise, a beat being a quarter note.
+Starts and lengths snap to a 24th of a beat, which holds 32nd notes and triplets, and a note between semitones is written at the nearest one.
+Notes of a part that start together and last as long are written as a chord, and notes that overlap otherwise go to as few voices as they need.
+A note that crosses a bar line, or whose length no single note value writes, is written as tied notes.
+The score's tempo is the song's starting tempo, as a metronome mark at the first bar.
+Tempo changes after the first, dynamics, articulations and percussion staves are left out.
 
 ## Scan a score
 

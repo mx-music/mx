@@ -29,6 +29,7 @@ defmodule Mx.Pass do
     Process.put(@key, %{
       beat: 0,
       events: [],
+      notes: [],
       count: 0,
       synth: loop.synth,
       defaults: loop.defaults,
@@ -40,10 +41,12 @@ defmodule Mx.Pass do
 
     try do
       Mx.Music.replay(loop.music, pass)
-      %{beat: beats, events: events} = Process.get(@key)
+      %{beat: beats, events: events, notes: notes} = Process.get(@key)
 
       if beats > 0 do
-        {:ok, %{events: events |> Enum.reverse() |> take_turns(pass), beats: beats}}
+        events = events |> Enum.reverse() |> take_turns(pass)
+        notes = notes |> Enum.reverse() |> Enum.sort_by(&elem(&1, 0))
+        {:ok, %{events: events, beats: beats, notes: notes}}
       else
         {:error, "loop #{loop.name} never waits, so its pass has no length"}
       end
@@ -76,7 +79,15 @@ defmodule Mx.Pass do
   @doc "Whether notes with these options would play on a synth with these defaults, as `:ok` or `{:error, message}`, checked as a play step checks them."
   def check_play(synth, defaults, notes, opts) when is_list(opts) do
     previous = Process.get(@key)
-    Process.put(@key, %{beat: 0, events: [], count: 0, synth: synth, defaults: defaults})
+
+    Process.put(@key, %{
+      beat: 0,
+      events: [],
+      notes: [],
+      count: 0,
+      synth: synth,
+      defaults: defaults
+    })
 
     try do
       record_play(notes, opts)
@@ -88,10 +99,16 @@ defmodule Mx.Pass do
     end
   end
 
-  @doc "Records the notes of a play step at the current beat, and returns a handle to them."
-  def record_play([{key, _} | _] = opts, []) when is_atom(key), do: record_play(:own_note, opts)
+  @doc """
+  Records the notes of a play step at the current beat, and returns a handle to them.
+  Given the beats the notes are written to last, it also records each note as written, as `{beat, note, beats}`, which `events/3` returns as `notes`.
+  """
+  def record_play(notes, opts, written \\ nil)
 
-  def record_play(notes, opts)
+  def record_play([{key, _} | _] = opts, [], written) when is_atom(key),
+    do: record_play(:own_note, opts, written)
+
+  def record_play(notes, opts, written)
       when (is_number(notes) or is_atom(notes) or is_list(notes)) and is_list(opts) do
     %{synth: synth, defaults: defaults} = Process.get(@key)
     chord? = is_list(notes)
@@ -113,7 +130,9 @@ defmodule Mx.Pass do
       |> Enum.zip(note_opts(opts, length(notes), chord?))
       |> strum_order(strum)
       |> Enum.with_index(fn {note, opts}, i ->
-        record(step(synth, note, opts), i * abs(strum))
+        offset = i * abs(strum)
+        if written && note != :own_note, do: record_written(note, offset, written)
+        record(step(synth, note, opts), offset)
       end)
 
     %Handle{target: {:sounds, indexes}, synth: player(synth)}
@@ -382,6 +401,10 @@ defmodule Mx.Pass do
     %{count: index} = Process.get(@key)
     update(&%{&1 | events: [{&1.beat + offset, step, opts} | &1.events], count: index + 1})
     index
+  end
+
+  defp record_written(note, offset, beats) do
+    update(&%{&1 | notes: [{&1.beat + offset, note, beats} | &1.notes]})
   end
 
   defp update(fun), do: Process.put(@key, fun.(Process.get(@key)))

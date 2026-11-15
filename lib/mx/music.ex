@@ -1088,7 +1088,7 @@ defmodule Mx.Music do
 
   defp record_step(music, %Note{} = note) do
     {changes, opts} = Keyword.pop(held_opts(music.held, note), :changes, [])
-    handle = Pass.record_play(note.pitch, opts)
+    handle = Pass.record_play(note.pitch, opts, Keyword.get(note.opts, :sustain, note.beats))
     Pass.record_at(changes, fn {_beat, opts} -> Pass.record_control(handle, opts) end)
   end
 
