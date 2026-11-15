@@ -1256,34 +1256,36 @@ defmodule Mx.DesignsTest do
   # Measured from the bass_electronic_018 instrument of the test set of Google's NSynth dataset,
   # its notes from E1 up at velocities 25, 75 and 127 against vel 0.2, 0.59 and 1, each cut at 2.9
   # seconds, before its key is let go, since a fade read across the release at 3 seconds comes out
-  # short: the notes of each velocity, and as medians over them by the harmonic's frequency the
-  # seconds a harmonic takes to fade 60 dB and its level against the fundamental of the lowest.
-  # The bands above 630 Hz are left out: the recordings' harmonics there stand 50 to 78 dB under
-  # the fundamental and hold for seconds, which the design does not follow.
+  # short, and brought from 16 kHz to 48 kHz, the rate the synth is measured at, since a harmonic
+  # that fades within a second reads up to 20 dB low at 16 kHz: the notes of each velocity, and as
+  # medians over them by the harmonic's frequency the seconds a harmonic takes to fade 60 dB and
+  # its level against the fundamental of the lowest.
+  # The bands above 630 Hz are left out: few of the recordings' harmonics there last long enough
+  # to give a fade.
   @electric_bass %{
     0.2 =>
       {[29, 31, 32, 37, 50, 56, 59, 62],
        %{
-         {80, 160} => {3.44, -1.7},
-         {160, 250} => {3.10, -1.6},
-         {250, 400} => {2.08, -30.0},
-         {400, 630} => {2.07, -46.5}
+         {80, 160} => {4.34, 6.2},
+         {160, 250} => {3.61, 4.5},
+         {250, 400} => {2.20, -19.3},
+         {400, 630} => {1.23, -24.1}
        }},
     0.59 =>
       {[29, 33, 35, 43, 44, 45, 48, 49, 50, 52, 53, 60, 61, 62, 63],
        %{
-         {80, 160} => {5.16, -4.7},
-         {160, 250} => {5.44, -0.4},
-         {250, 400} => {2.74, -7.8},
-         {400, 630} => {2.19, -22.8}
+         {80, 160} => {5.25, 0.2},
+         {160, 250} => {5.49, 2.1},
+         {250, 400} => {2.62, 0.3},
+         {400, 630} => {1.73, -9.0}
        }},
     1 =>
       {[32, 35],
        %{
-         {80, 160} => {5.43, 0.1},
-         {160, 250} => {4.33, -2.4},
-         {250, 400} => {2.46, -18.2},
-         {400, 630} => {2.05, -36.1}
+         {80, 160} => {5.37, 1.9},
+         {160, 250} => {4.54, 0.6},
+         {250, 400} => {2.35, -10.6},
+         {400, 630} => {1.03, -23.2}
        }}
   }
 
@@ -1336,8 +1338,10 @@ defmodule Mx.DesignsTest do
        ctx do
     sound = render(ctx, :electric_bass, [note: 33, vel: 0.59], 3.2)
     under = fn at -> 20 * :math.log10(rms(sound, at, at + 0.1) / rms(sound, 0.1, 0.2)) end
-    assert_in_delta under.(1.0), -5.2, 3
-    assert_in_delta under.(2.9), -13.5, 3
+    # The recorded A1's second to fourth harmonics ring two to three times as long as those of the
+    # notes around it, and the design holds the medians over the notes.
+    assert_in_delta under.(1.0), -5.2, 5
+    assert_in_delta under.(2.9), -13.5, 5
 
     damped = render(ctx, :electric_bass, [note: 33, sustain: 0.2, release: 0.1], 2)
     assert last_sound(damped) < 0.4
