@@ -60,7 +60,7 @@ Its files are fetched as the song loads.
 
 `examples/solo/harp.exs` is the harp on its own: a joropo in A minor, the bass in 3/4 under arpeggios in 6/8, then chords left to ring, and a last arpeggio.
 
-`examples/solo/electric_bass.exs` is the electric bass on its own: a funk line in E in sixteenths, short notes around the low E with its octave, then a walking line in quarters through D minor, G, C and A, a ballad's long notes left to ring, and a last funk bar that ends on the low E.
+`examples/solo/electric_bass.exs` is the electric bass on its own: a funk line in E in sixteenths around the low E with its octave, each note held until the next, then a walking line in quarters through D minor, G, C and A, a ballad's long notes left to ring, and a last funk bar that ends on the low E.
 
 `examples/guitar/` shows the guitar on its own: `fingerpicking.exs` lets each string ring until it is plucked again, `bass_line.exs` walks the low strings of a 7-string guitar, and `soft_and_hard.exs` plays one phrase softly, normally and hard.
 

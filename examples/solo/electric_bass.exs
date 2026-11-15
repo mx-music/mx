@@ -1,8 +1,8 @@
 defmodule ElectricBass do
   @moduledoc """
-  A solo for the electric bass written for mx: a funk line in E in sixteenths, short notes around
-  the low E with its octave, then a walking line in quarters through D minor, G, C and A, then a
-  ballad's long notes left to ring, and a last funk bar that ends on the low E.
+  A solo for the electric bass written for mx: a funk line in E in sixteenths around the low E
+  with its octave, each note held until the next, then a walking line in quarters through D minor,
+  G, C and A, then a ballad's long notes left to ring, and a last funk bar that ends on the low E.
   """
 
   use Mx.Song, tempo: 96
@@ -73,30 +73,30 @@ defmodule ElectricBass do
 
   defp funk_bar(0) do
     [
-      {0, 28, 0.95, 0.4},
-      {0.75, 28, 0.5, 0.1},
-      {1.5, 40, 0.8, 0.15},
-      {1.75, 38, 0.6, 0.15},
-      {2, 28, 0.85, 0.3},
-      {2.5, 31, 0.6, 0.15},
-      {2.75, 33, 0.65, 0.15},
-      {3.25, 35, 0.7, 0.15},
-      {3.5, 38, 0.75, 0.3}
+      {0, 28, 0.95, 0.75},
+      {0.75, 28, 0.5, 0.75},
+      {1.5, 40, 0.8, 0.25},
+      {1.75, 38, 0.6, 0.25},
+      {2, 28, 0.85, 0.5},
+      {2.5, 31, 0.6, 0.25},
+      {2.75, 33, 0.65, 0.5},
+      {3.25, 35, 0.7, 0.25},
+      {3.5, 38, 0.75, 0.5}
     ]
   end
 
   defp funk_bar(1) do
     [
-      {0, 28, 0.95, 0.4},
-      {0.75, 28, 0.5, 0.1},
-      {1.5, 40, 0.8, 0.15},
-      {1.75, 38, 0.6, 0.15},
-      {2, 28, 0.85, 0.3},
-      {2.75, 33, 0.65, 0.15},
-      {3, 34, 0.65, 0.15},
-      {3.25, 35, 0.7, 0.15},
-      {3.5, 38, 0.75, 0.15},
-      {3.75, 39, 0.8, 0.15}
+      {0, 28, 0.95, 0.75},
+      {0.75, 28, 0.5, 0.75},
+      {1.5, 40, 0.8, 0.25},
+      {1.75, 38, 0.6, 0.25},
+      {2, 28, 0.85, 0.75},
+      {2.75, 33, 0.65, 0.25},
+      {3, 34, 0.65, 0.25},
+      {3.25, 35, 0.7, 0.25},
+      {3.5, 38, 0.75, 0.25},
+      {3.75, 39, 0.8, 0.25}
     ]
   end
 

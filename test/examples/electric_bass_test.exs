@@ -16,9 +16,9 @@ defmodule Mx.Examples.ElectricBassTest do
   end
 
   test "the funk line lands hard on the low E and answers with its octave off the beat" do
-    assert print(0) =~ ~r/\nbeat 0 +play 28 vel: 0.95, sustain: 0.4\n/
-    assert print(0) =~ ~r/\nbeat 1.5 +play 40 vel: 0.8, sustain: 0.15\n/
-    assert print(1) =~ ~r/\nbeat 7.75 +play 39 vel: 0.8, sustain: 0.15\n/
+    assert print(0) =~ ~r/\nbeat 0 +play 28 vel: 0.95, sustain: 0.75\n/
+    assert print(0) =~ ~r/\nbeat 1.5 +play 40 vel: 0.8, sustain: 0.25\n/
+    assert print(1) =~ ~r/\nbeat 7.75 +play 39 vel: 0.8, sustain: 0.25\n/
   end
 
   test "the walking line plays quarters, harder on the one, up and then down" do
