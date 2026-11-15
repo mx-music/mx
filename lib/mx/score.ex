@@ -2,7 +2,8 @@ defmodule Mx.Score do
   @moduledoc """
   A MusicXML score read into parts of bars, each bar a list of voices and each voice a list of notes and rests in order.
 
-  Lengths are in quarter notes, pitches are as they sound, and `order` lists the bars by number in the order the score plays them, its repeats and endings taken.
+  Lengths are in quarter notes, pitches are as they sound, and a note led into by grace notes keeps them in order as `graces`, each with its `midi`, its `name` and whether it is `slash`ed, taking no time of its own.
+  `order` lists the bars by number in the order the score plays them, its repeats and endings taken.
   `runs` is the same order cut wherever the score jumps or crosses a repeat or an ending, so it can be written as ranges.
   """
 
@@ -148,6 +149,7 @@ defmodule Mx.Score do
       length: 0,
       last_onset: 0,
       notes: [],
+      graces: %{},
       dynamics: [],
       forward: false,
       backward: nil,
@@ -238,7 +240,7 @@ defmodule Mx.Score do
   defp read_note(note, acc) do
     cond do
       child(note, "grace") ->
-        acc
+        add_grace(note, acc)
 
       child(note, "cue") ->
         move(acc, number(note, "duration") || 0)
@@ -248,15 +250,30 @@ defmodule Mx.Score do
     end
   end
 
+  defp add_grace(note, acc) do
+    case pitch(note, acc.state) do
+      nil ->
+        acc
+
+      {midi, name} ->
+        voice = text(note, "voice") || "1"
+        grace = %{midi: midi, name: name, slash: attr(child(note, "grace"), "slash") == "yes"}
+        %{acc | graces: Map.update(acc.graces, voice, [grace], &(&1 ++ [grace]))}
+    end
+  end
+
   defp add_note(note, acc) do
     divisions = acc.state.divisions
     duration = number(note, "duration") || 0
     chord = child(note, "chord") != nil
     onset = if chord, do: acc.last_onset, else: acc.cursor
     ties = for tie <- children(note, "tie"), do: attr(tie, "type")
+    voice = text(note, "voice") || "1"
+    {graces, pending} = if chord, do: {[], acc.graces}, else: Map.pop(acc.graces, voice, [])
 
     entry = %{
-      voice: text(note, "voice") || "1",
+      voice: voice,
+      graces: graces,
       onset: onset / divisions,
       length: duration / divisions,
       chord: chord,
@@ -265,7 +282,7 @@ defmodule Mx.Score do
       continues: "stop" in ties
     }
 
-    acc = %{acc | notes: [entry | acc.notes], last_onset: onset}
+    acc = %{acc | notes: [entry | acc.notes], last_onset: onset, graces: pending}
     if chord, do: acc, else: move(acc, duration)
   end
 
@@ -479,7 +496,13 @@ defmodule Mx.Score do
   end
 
   defp group(note) do
-    %{onset: note.onset, length: note.length, notes: heads(note), mark: note.mark}
+    %{
+      onset: note.onset,
+      length: note.length,
+      notes: heads(note),
+      mark: note.mark,
+      graces: note.graces
+    }
   end
 
   defp heads(%{pitch: nil}), do: []
@@ -509,20 +532,22 @@ defmodule Mx.Score do
   end
 
   defp rest(cursor, gap, mark) when gap > 1.0e-6 do
-    [%{onset: cursor, length: gap, notes: [], mark: mark}]
+    [%{onset: cursor, length: gap, notes: [], mark: mark, graces: []}]
   end
 
   defp rest(_cursor, _gap, _mark), do: []
 
   # The first voice rests to the end of the bar, so the bar lasts its length in every part.
-  defp pad([], length) when length > 0, do: [[%{onset: 0, length: length, notes: [], mark: nil}]]
+  defp pad([], length) when length > 0,
+    do: [[%{onset: 0, length: length, notes: [], mark: nil, graces: []}]]
+
   defp pad([], _length), do: []
 
   defp pad([first | rest], length) do
     last = lane_end(first)
 
     if length - last > 1.0e-6 do
-      [first ++ [%{onset: last, length: length - last, notes: [], mark: nil}] | rest]
+      [first ++ [%{onset: last, length: length - last, notes: [], mark: nil, graces: []}] | rest]
     else
       [first | rest]
     end

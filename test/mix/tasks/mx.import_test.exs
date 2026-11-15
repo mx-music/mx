@@ -253,6 +253,34 @@ defmodule Mix.Tasks.Mx.ImportTest do
     end
   end
 
+  test "a grace note is kept with the note it leads into, and takes no time", %{tmp_dir: dir} do
+    grace = fn step, slash ->
+      ~s(<note><grace#{slash}/><pitch><step>#{step}</step><octave>5</octave></pitch><voice>1</voice></note>)
+    end
+
+    bar =
+      attributes(1) <>
+        grace.("D", ~s( slash="yes")) <>
+        note("C", 5, 2, "<voice>1</voice>") <>
+        grace.("F", "") <>
+        grace.("G", "") <>
+        note("E", 5, 2, "<voice>1</voice>")
+
+    path = score!(dir, "graces.musicxml", [{"Piano", [bar]}])
+    {:ok, score} = Mx.Score.read(path)
+    [%{bars: [%{voices: [voice]}]}] = score.parts
+
+    assert [
+             %{onset: +0.0, length: 2.0, notes: [%{midi: 72}], graces: [%{midi: 74, slash: true}]},
+             %{
+               onset: 2.0,
+               length: 2.0,
+               notes: [%{midi: 76}],
+               graces: [%{midi: 77, slash: false}, %{midi: 79, slash: false}]
+             }
+           ] = voice
+  end
+
   test "dynamic marks set the vel of the notes after them", %{tmp_dir: dir} do
     bars = [
       attributes(1) <> dynamic("p") <> note("C", 4, 2) <> note("D", 4, 2),
