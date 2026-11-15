@@ -101,7 +101,7 @@ defmodule Mx.Pass do
 
   @doc """
   Records the notes of a play step at the current beat, and returns a handle to them.
-  Given the beats the notes are written to last, it also records each note as written, as `{beat, note, beats}`, which `events/3` returns as `notes`.
+  Given the beats the notes are written to last, one for all or a list of one per note, it also records each note as written, as `{beat, note, beats}`, which `events/3` returns as `notes`.
   """
   def record_play(notes, opts, written \\ nil)
 
@@ -125,11 +125,13 @@ defmodule Mx.Pass do
         :ok
     end
 
+    written = if is_list(written), do: written, else: List.duplicate(written, length(notes))
+
     indexes =
-      notes
-      |> Enum.zip(note_opts(opts, length(notes), chord?))
+      [notes, note_opts(opts, length(notes), chord?), written]
+      |> Enum.zip()
       |> strum_order(strum)
-      |> Enum.with_index(fn {note, opts}, i ->
+      |> Enum.with_index(fn {note, opts, written}, i ->
         offset = i * abs(strum)
         if written && note != :own_note, do: record_written(note, offset, written)
         record(step(synth, note, opts), offset)

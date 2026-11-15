@@ -27,6 +27,16 @@ defmodule Mx.PassTest do
            """) == [{0, 48, 0.5}, {0.5, 50, 1.5}]
   end
 
+  test "gives each note of a chord the sustain it is given in a list", %{tmp_dir: dir} do
+    assert notes(dir, """
+           song(music: part(:keys, note([:c4, :e4], 1, sustain: [2, 0.5]), synth: :tri))
+           """) == [{0, 60, 2}, {0, 64, 0.5}]
+
+    assert notes(dir, """
+           song(music: part(:keys, note([:e4, :c4], 1, sustain: [0.5, 2], strum: 0.25), synth: :tri))
+           """) == [{0, 60, 2}, {0.25, 64, 0.5}]
+  end
+
   test "gives a strummed chord's notes at the beats they sound", %{tmp_dir: dir} do
     assert notes(dir, """
            song(music: part(:guitar, note([:c4, :e4], 2, strum: 0.25), synth: :tri))
