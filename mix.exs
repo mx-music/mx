@@ -72,6 +72,7 @@ defmodule Mx.MixProject do
       main: "readme",
       extras: [
         "README.md",
+        "CHANGELOG.md",
         "documentation/playing.md",
         "documentation/notation.md",
         "documentation/instruments.md",
