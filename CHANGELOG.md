@@ -1,6 +1,6 @@
 # Changelog for mx v0.2
 
-## v0.2.0-dev
+## v0.2.0 (2026-11-16)
 
 ### 1. Enhancements
 
