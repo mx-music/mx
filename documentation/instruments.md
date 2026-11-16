@@ -496,6 +496,14 @@ With `--synth`, the synth's partials print the same way under its name, after th
 mix mx.measure --hits Agogo_Low_v1_rr1_Mid.wav --partials 12 --synth low_agogo
 ```
 
+`mix mx.parts` prints the same figures for a note of mx's piano without playing it: the harmonics the piano works out from its options, before any sound exists, and builds the note from.
+Each harmonic prints as a partial does under `--partials`, with its level against the loudest harmonic and the seconds it takes to fade 60 dB, followed by the partners that ring beside the harmonics, each the slow stage of a harmonic's fade or a twin that beats against it, then the hammer's thump and its knock through the soundboard.
+`--note`, `--vel` and `--pedal` give the note, and the piano's other options are given the same way.
+
+```sh
+mix mx.parts piano --note 60 --vel 0.6
+```
+
 ### The first moments of a hit
 
 `--hits` then prints each band's level at 0, 50, 100 and 200 ms after the hit's loudest moment, against the loudest band then, as medians over the hits, with the synth's beside them when one is given.

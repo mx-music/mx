@@ -329,6 +329,30 @@ fn levels(data: Binary, format: (String, usize, usize), count: usize) -> NifResu
     Ok((peak, slices.collect()))
 }
 
+type PianoParts = (Vec<(u32, f64, f64, f64)>, Vec<(u32, String, f64, f64, f64)>, (f64, f64, f64), Option<(f64, Vec<f64>)>, Vec<String>);
+
+/// What a piano note played with `options` is made of, without playing it, as `{harmonics, partners, thump, knock, warnings}`: each harmonic as `{number, hz, level, fade}`, each partner as `{harmonic, kind, hz, level, fade}`, the thump as `{level, below_hz, seconds}`, the knock as `{level, resonances}` or nil, and a warning for each option held to its range.
+#[rustler::nif]
+fn piano_parts(options: Vec<(String, f64)>) -> Result<PianoParts, String> {
+    let options: Vec<(&str, f64)> = options.iter().map(|(name, x)| (name.as_str(), *x)).collect();
+    let (parts, warnings) = mxs::synths::piano_parts(&options).map_err(|e| e.to_string())?;
+    let harmonics = parts.harmonics.iter().map(|h| (h.number, h.hz, h.level, h.fade)).collect();
+    let partners = parts
+        .partners
+        .iter()
+        .map(|p| {
+            let kind = match p.kind {
+                mxs::synths::PartnerKind::Slow => "slow",
+                mxs::synths::PartnerKind::Twin => "twin",
+            };
+            (p.harmonic, kind.to_string(), p.hz, p.level, p.fade)
+        })
+        .collect();
+    let thump = (parts.thump.level, parts.thump.below_hz, parts.thump.seconds);
+    let knock = parts.knock.map(|k| (k.level, k.resonances));
+    Ok((harmonics, partners, thump, knock, warnings))
+}
+
 #[rustler::nif]
 fn start_effects(resource: ResourceArc<EngineResource>, effects: Vec<(String, Term)>) -> NifResult<Result<u64, String>> {
     let effects = effects.into_iter().map(|(name, opts)| Ok((name, options(opts)?))).collect::<NifResult<Vec<_>>>()?;
