@@ -2,7 +2,8 @@ defmodule Mx.Score do
   @moduledoc """
   A MusicXML score read into parts of bars, each bar a list of voices and each voice a list of notes and rests in order.
 
-  Lengths are in quarter notes, pitches are as they sound, and a note led into by grace notes keeps them in order as `graces`, each with its `midi`, its `name` and whether it is `slash`ed, taking no time of its own.
+  Lengths are in quarter notes, pitches are as they sound, and each note carries the `staff` it is written on, 1 for the uppermost, and a tied note that of the note its tie starts on.
+  A note led into by grace notes keeps them in order as `graces`, each with its `midi`, its `name` and whether it is `slash`ed, taking no time of its own.
   `order` lists the bars by number in the order the score plays them, its repeats and endings taken.
   `runs` is the same order cut wherever the score jumps or crosses a repeat or an ending, so it can be written as ranges.
   """
@@ -132,7 +133,7 @@ defmodule Mx.Score do
   end
 
   defp read_part(part, name) do
-    initial = %{divisions: 1, transpose: 0, fifths: nil, tempo: nil, meter: nil}
+    initial = %{divisions: 1, transpose: 0, fifths: nil, tempo: nil, meter: nil, ties: %{}}
 
     {measures, state} =
       part
@@ -270,6 +271,8 @@ defmodule Mx.Score do
     ties = for tie <- children(note, "tie"), do: attr(tie, "type")
     voice = text(note, "voice") || "1"
     {graces, pending} = if chord, do: {[], acc.graces}, else: Map.pop(acc.graces, voice, [])
+    pitch = pitch(note, acc.state)
+    {staff, ties_open} = staff(note, pitch, ties, acc.state.ties)
 
     entry = %{
       voice: voice,
@@ -277,13 +280,34 @@ defmodule Mx.Score do
       onset: onset / divisions,
       length: duration / divisions,
       chord: chord,
-      pitch: pitch(note, acc.state),
+      pitch: pitch,
+      staff: staff,
       tie: "start" in ties,
       continues: "stop" in ties
     }
 
-    acc = %{acc | notes: [entry | acc.notes], last_onset: onset, graces: pending}
+    state = %{acc.state | ties: ties_open}
+    acc = %{acc | notes: [entry | acc.notes], last_onset: onset, graces: pending, state: state}
     if chord, do: acc, else: move(acc, duration)
+  end
+
+  # A tied note keeps the staff its tie starts on, held open by its pitch until the tie ends.
+  defp staff(note, pitch, ties, open) do
+    written =
+      case number(note, "staff") do
+        nil -> 1
+        staff -> trunc(staff)
+      end
+
+    case pitch do
+      nil ->
+        {written, open}
+
+      {midi, _name} ->
+        staff = if "stop" in ties, do: Map.get(open, midi, written), else: written
+        open = if "start" in ties, do: Map.put(open, midi, staff), else: Map.delete(open, midi)
+        {staff, open}
+    end
   end
 
   # A rest has no pitch, and an unpitched note sounds at the pitch it is written at.
@@ -508,7 +532,7 @@ defmodule Mx.Score do
   defp heads(%{pitch: nil}), do: []
 
   defp heads(%{pitch: {midi, name}} = note) do
-    [%{midi: midi, name: name, tie: note.tie, continues: note.continues}]
+    [%{midi: midi, name: name, staff: note.staff, tie: note.tie, continues: note.continues}]
   end
 
   defp fill(groups) do
