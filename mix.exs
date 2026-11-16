@@ -58,8 +58,6 @@ defmodule Mx.MixProject do
   defp deps do
     [
       {:midiex, "~> 0.6.4"},
-      {:vix, "~> 0.43", optional: true},
-      {:pythonx, "~> 0.4.11", optional: true},
       {:rustler, "~> 0.38.0", optional: not @checkout, runtime: false},
       {:rustler_precompiled, "~> 0.10.1"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
@@ -84,7 +82,6 @@ defmodule Mx.MixProject do
         "documentation/instruments.md",
         "documentation/scores.md",
         "documentation/examples.md",
-        "documentation/audiveris.md",
         "documentation/architecture.md",
         "documentation/development.md"
       ],
@@ -92,7 +89,6 @@ defmodule Mx.MixProject do
         Guides:
           ~w(playing notation instruments scores examples)
           |> Enum.map(&"documentation/#{&1}.md"),
-        Setup: ["documentation/audiveris.md"],
         Internals: ["documentation/architecture.md", "documentation/development.md"]
       ],
       assets: %{"documentation/assets" => "assets"},
@@ -126,12 +122,8 @@ defmodule Mx.MixProject do
           Mx.Recording
         ],
         Scores: [
-          Mx.ABC,
           Mx.Score,
           Mx.Notation,
-          Mx.Scan,
-          Mx.Audiveris,
-          Mx.Transcriber,
           ~r/^Mx\.Hum/
         ],
         "Test support": [

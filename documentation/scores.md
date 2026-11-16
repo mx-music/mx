@@ -1,16 +1,14 @@
 # Scores and hums
 
 A song need not be typed in by hand.
-mx writes one from a MusicXML score, from a scanned page of a printed score, or from a recording of a melody you hum, and writes a song back out as a MusicXML score.
+mx writes one from a MusicXML score or from a recording of a melody you hum, and writes a song back out as a MusicXML score.
 
 ```mermaid
 graph LR
-  page["Scanned page"]
   score["MusicXML score"]
   hum["Recording of a hum"]
   song["Song file"]
 
-  page -->|mix mx.scan| score
   score -->|mix mx.import| song
   song -->|mix mx.export| score
   hum -->|mix mx.hum| song
@@ -81,51 +79,6 @@ Notes of a part that start together and last as long are written as a chord, and
 A note that crosses a bar line, or whose length no single note value writes, is written as tied notes.
 The score's tempo is the song's starting tempo, as a metronome mark at the first bar.
 Tempo changes after the first, dynamics, articulations and percussion staves are left out.
-
-## Scan a score
-
-`mix mx.scan` reads the music on a scanned score into MusicXML, ready for `mix mx.import`.
-It runs Audiveris, an open source optical music recognition program, which is installed apart from mx as [audiveris.md](audiveris.md) describes, along with poppler for PDFs.
-It also needs vix, and `--model` needs pythonx; both are optional dependencies of mx, so add `{:vix, "~> 0.43"}` and `{:pythonx, "~> 0.4.11"}` to your deps to scan.
-
-```sh
-mix mx.scan score.pdf
-```
-
-It reads a PDF, or a single page as a PNG, JPEG or TIFF image, and writes the MusicXML beside it, or to `--out`; a file that exists is refused unless you add `--force`.
-`--pages 3-4` reads only those pages of a PDF, numbered as the PDF numbers them, and `--pages 5` reads one.
-
-Before recognition it prepares each page the way Audiveris asks:
-
-- It renders a PDF page at the resolution that puts its staff lines 20 pixels apart, measured on the page, and scales an image to the same.
-- It turns the page to grayscale and leaves black and white to Audiveris.
-- It crops the scanner bed and a neighbouring page off, and evens yellowed or unevenly lit paper to white.
-- On paper still gray after that, as where ink shows through from the other side, it fades what is paler than the ink, keeping the thin sharp strokes such as faint staff lines.
-- It turns a tilted page until its staff lines are level.
-
-The prepared pages go in a folder beside the MusicXML, here `score-pages`, with Audiveris's book of each page and its logs, so you can see what recognition was given, and open a book in Audiveris to correct it.
-`--raw` gives Audiveris the pages as they are, to compare.
-mx prints each page's staff line spacing before and after, how many degrees it was turned, and how many bars Audiveris read on it, names a page it read no music on, and prints the `mix mx.import` command with a `--part` for each part found.
-The parts of every page are joined in page order, a page's parts matched to the first page's in order.
-
-Recognition is not exact, so listen to the song against the page.
-On the chorale "Bin ich gleich von dir gewichen" of the Bach-Gesellschaft's St Matthew Passion, Audiveris finds the bass and tenor's notes nine times in ten and eight in ten, but misses the key signature after the soprano clef, so the top part reads naturals where the score has sharps; the part names are as it read them, misspellings included.
-It reads no handwritten scores, such as Bach's autographs.
-
-`--model` reads the music with a transcription model instead of Audiveris, which suits printed piano music, and photographs and photocopies of it, far better:
-
-```sh
-mix mx.scan rag.pdf --model
-```
-
-It cuts each prepared page into its systems, the staves a bar line joins, writes each 1400 pixels wide to the pages folder, transcribes them one by one into ABC notation, kept beside each system, and joins them into one score.
-mx prints how many systems it found on each page, in place of the bars.
-The model is rokot-omr-2b, free for non-commercial use under CC BY-NC 4.0, and reads a system of one part, of up to two staves, so it does not suit choral or orchestral scores such as the chorale.
-It runs in Python inside mx through Pythonx: the first run installs Python and its packages with uv and downloads the model's 4.3 GB from Hugging Face, and needs no Audiveris.
-`MX_TRANSCRIBER_MODEL` names another Hugging Face model or a local folder to use instead.
-It takes about 7 seconds a system on an Apple silicon GPU.
-On three pages of the Maple Leaf Rag it finds 94 notes in 100 both on the clean engraving and on a photograph of it, where Audiveris finds 97 and 23, and on a bad photocopy it finds 43.
-`--raw` does not go with `--model`, which cuts the systems out of prepared pages.
 
 ## Turn a hum into a song
 

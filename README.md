@@ -115,12 +115,11 @@ mix mx.samples.download sonic_pi
 ## Scores and hums
 
 mx can start a song from music that already exists.
-`mix mx.import` turns a MusicXML score into a song, `mix mx.export` writes a song as one, `mix mx.scan` reads a scanned score into MusicXML, and `mix mx.hum` turns a recording of a melody you hum, sing or whistle into a song:
+`mix mx.import` turns a MusicXML score into a song, `mix mx.export` writes a song as one, and `mix mx.hum` turns a recording of a melody you hum, sing or whistle into a song:
 
 ```sh
 mix mx.import score.mxl --tempo 72 --part "Soprano=oboe"
 mix mx.export song.exs --time 6/8 --key d
-mix mx.scan page.pdf
 mix mx.hum hum.wav --tempo 90
 ```
 
@@ -143,10 +142,9 @@ The folder `examples` in the repository holds more songs: pieces for a band, suc
 - [Playing, recording and rendering](documentation/playing.md): `mix mx.play` and its options.
 - [The notation](documentation/notation.md): every function a song is written with.
 - [Instruments](documentation/instruments.md): the synths and effects with their options, how to write a synth, and how to measure one against recordings.
-- [Scores and hums](documentation/scores.md): importing a MusicXML score, scanning a printed one, and turning a hummed melody into a song.
+- [Scores and hums](documentation/scores.md): importing a MusicXML score, and turning a hummed melody into a song.
 - [Examples](documentation/examples.md): the songs in `examples`.
 - [Architecture](documentation/architecture.md): how a song file becomes sound.
-- [Setting up Audiveris](documentation/audiveris.md), for `mix mx.scan`.
 - [Working on mx](documentation/development.md): the tests and the lint script.
 
 ## License

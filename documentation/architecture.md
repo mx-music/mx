@@ -101,6 +101,6 @@ macOS may ask once whether the terminal can use the microphone.
 
 Beside playing, mx turns other material into songs and measures instruments.
 
-- Scores: `mix mx.import` writes a MusicXML score as a song, and `mix mx.scan` reads printed pages through Audiveris, as [audiveris.md](audiveris.md) sets up.
+- Scores: `mix mx.import` writes a MusicXML score as a song.
 - Humming: `Mx.Hum` turns a recording of one voice into notes on beats.
 - Measuring: `Mx.Measure`, `Mx.Fit` and `Mx.Spectrogram` compare a synth's sound with recordings, as [instruments.md](instruments.md) describes.

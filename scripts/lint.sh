@@ -241,7 +241,6 @@ run_check "Avoid ':persistent_term.put/2'; it has global VM-wide side effects" \
           -g '!lib/mx/instrument.ex' \
           -g '!lib/mx/engine/mxs.ex' \
           -g '!lib/mx/synths.ex' \
-          -g '!lib/mx/transcriber.ex' \
           -g '!test/mx/instrument_song_test.exs' \
           ':persistent_term\.put'
 

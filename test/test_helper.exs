@@ -5,9 +5,7 @@ ExUnit.start(
     :iowa,
     :vsco,
     :vcsl,
-    :audiveris,
     :ffmpeg,
-    :transcriber,
     :bench,
     :philharmonia,
     :nasa
