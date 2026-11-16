@@ -190,4 +190,11 @@ defmodule Mx.Engine.MxsTest do
                {:error, "mxs could not record to #{wav}: the sound card has no input 1"}
     end
   end
+
+  test "renders at the rate an offline engine runs at" do
+    {:ok, engine} = Mxs.Native.start(false, false)
+
+    assert Mxs.render_rate() == 48_000
+    assert Mxs.Native.rate(engine) == Mxs.render_rate()
+  end
 end

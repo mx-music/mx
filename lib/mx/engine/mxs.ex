@@ -22,8 +22,6 @@ defmodule Mx.Engine.Mxs do
   alias Mx.Engine.Mxs.Native
   alias Mx.Synths
 
-  @rate 48_000
-
   @impl Mx.Engine
   def start_link(opts), do: GenServer.start_link(__MODULE__, opts, name: __MODULE__)
 
@@ -194,7 +192,7 @@ defmodule Mx.Engine.Mxs do
   def stop_input, do: GenServer.call(__MODULE__, :stop_input, 15_000)
 
   @impl Mx.Engine
-  def render_rate, do: @rate
+  def render_rate, do: Native.offline_rate()
 
   @impl Mx.Engine
   def render_note(synth, params, seconds, _dir, changes) do

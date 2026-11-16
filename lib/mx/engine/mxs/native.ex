@@ -44,6 +44,9 @@ defmodule Mx.Engine.Mxs.Native do
   @doc "The rate the engine plays and renders at, in Hz."
   def rate(_engine), do: :erlang.nif_error(:nif_not_loaded)
 
+  @doc "The rate an offline engine renders at, in Hz."
+  def offline_rate, do: :erlang.nif_error(:nif_not_loaded)
+
   @doc "How many channels of the sound card's input the engine reads."
   def inputs(_engine), do: :erlang.nif_error(:nif_not_loaded)
 

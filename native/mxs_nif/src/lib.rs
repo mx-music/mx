@@ -129,6 +129,12 @@ fn rate(resource: ResourceArc<EngineResource>) -> f64 {
     lock(&resource).rate()
 }
 
+/// The rate an offline engine renders at, in Hz.
+#[rustler::nif]
+fn offline_rate() -> u32 {
+    mxs::RATE as u32
+}
+
 /// How many channels of the sound card's input the engine reads.
 #[rustler::nif]
 fn inputs(resource: ResourceArc<EngineResource>) -> usize {
