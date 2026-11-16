@@ -5,10 +5,14 @@
 ### 1. Enhancements
 
   * [Mx.Collections] Add the collections of recordings mx knows by name, such as `:sonic_pi`, `:vcsl` and each of Karoryfer's and FreePats' instruments
+  * [Mx.Levels] Add a recording's levels over time, by octave and brightness, and its strokes
   * [Mx.Pass] Accept one written length per note of a chord in `record_play/3`
+  * [Mx.Piano] Add what a note of the piano is made of, worked out without playing it
   * [Mx.Score] Keep the grace notes that lead into a note as its `graces`
   * [Mx.Score] Keep the `staff` each note is written on
   * [mix mx.export] Add a task that writes a song as a MusicXML score
+  * [mix mx.levels] Add a task that prints a recording's levels over time, or its strokes, as comma-separated values
+  * [mix mx.parts] Add a task that prints what a note of the piano is made of
   * [mix mx.samples.download] Accept a collection mx knows by name as the source, as in `vcsl:Idiophones/Struck Idiophones/Agogo Bells`
   * [mix mx.spectrogram] Add `--width` and `--no-seconds`, and work out the columns in native code
   * [mix mx.video] Add a task that makes a video of a recording over its waveform or spectrogram
