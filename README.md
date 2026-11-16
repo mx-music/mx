@@ -86,12 +86,7 @@ mx song.exs
 
 Mix installs it in `~/.mix/escripts`, which needs to be on your `PATH`.
 
-A checkout of mx always compiles mxs with Rust.
-Its `bin/mx` plays a song with mx from Hex, or with the checkout `MX_PATH` names:
-
-```sh
-MX_PATH=path/to/mx bin/mx song.exs
-```
+A checkout of mx always compiles mxs with Rust, and `mix mx.play path/to/song.exs` run in it plays a song with the checkout's code.
 
 ## Instruments
 

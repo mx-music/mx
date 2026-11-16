@@ -1,6 +1,0 @@
-#!/usr/bin/env elixir
-# Plays a song file with nothing but Elixir installed: mx song.exs
-# MX_PATH points it at a local checkout of mx instead of Hex.
-dep = if path = System.get_env("MX_PATH"), do: {:mx, path: path}, else: {:mx, "~> 0.2.1"}
-Mix.install([dep])
-Mx.CLI.run(System.argv())

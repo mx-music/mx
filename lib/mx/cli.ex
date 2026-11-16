@@ -1,7 +1,7 @@
 defmodule Mx.CLI do
   @moduledoc """
   The mx command: plays, records or renders a song file, or downloads a sample source.
-  As an escript it keeps its apps in one archive, where no NIF can be loaded, so it first unpacks the archive into a cache folder named by its contents and runs its apps from there; `bin/mx` runs the same command with mx installed by Mix.
+  An escript keeps its apps in one archive, where no NIF can be loaded, so it first unpacks the archive into a cache folder named by its contents and runs its apps from there.
   """
 
   @usage """
@@ -9,22 +9,21 @@ defmodule Mx.CLI do
          mx samples download SOURCE
   """
 
-  @doc "Runs the command as an escript."
+  @doc "Runs the command."
   def main(argv) do
     unpack()
     {:ok, _apps} = Application.ensure_all_started(:mx)
     run(argv)
   end
 
-  @doc "Runs the command with mx already loaded and started."
-  def run(["samples", "download", source]) do
+  defp run(["samples", "download", source]) do
     case Mx.Samples.download_source(source) do
       {:ok, message} -> IO.puts(message)
       {:error, message} -> fail(message)
     end
   end
 
-  def run(argv) do
+  defp run(argv) do
     case Mx.Player.parse(argv) do
       {opts, [path]} ->
         case Mx.Player.play(path, opts) do
