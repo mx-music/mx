@@ -36,7 +36,7 @@ defmodule Mx.Levels do
   @doc """
   The strokes of the recording at `path`, as `{:ok, strokes}` or `{:error, "cannot read PATH"}`.
 
-  A stroke is where the sound's octaves rise sharply together, at least 50 ms after the stroke before it, so a key struck again while it still rings is a stroke of its own.
+  A stroke is where the sound's spectrum rises sharply against the moment just before, at least 30 ms after the stroke before it, so a key struck again while it still rings is a stroke of its own.
   Each has the second it starts at as `at` and its level as `level`, in dB under the loudest stroke's.
   """
   def strokes(path) when is_binary(path) do
