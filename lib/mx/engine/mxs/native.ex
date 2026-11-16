@@ -1,7 +1,25 @@
 defmodule Mx.Engine.Mxs.Native do
   @moduledoc "The functions mxs, the Rust engine, provides as NIFs."
 
-  use Rustler, otp_app: :mx, crate: "mxs_nif"
+  version = Mix.Project.config()[:version]
+  checkout = File.dir?(Path.expand("../../../../.git", __DIR__))
+  configured = Application.compile_env(:rustler_precompiled, [:force_build, :mx], false)
+
+  # A checkout builds mxs, as does `config :rustler_precompiled, :force_build, mx: true`.
+  use RustlerPrecompiled,
+    otp_app: :mx,
+    crate: "mxs_nif",
+    version: version,
+    base_url: "https://github.com/mx-music/mx/releases/download/v#{version}",
+    targets: ~w(
+      aarch64-apple-darwin
+      x86_64-apple-darwin
+      aarch64-unknown-linux-gnu
+      x86_64-unknown-linux-gnu
+      x86_64-pc-windows-msvc
+    ),
+    nif_versions: ["2.15"],
+    force_build: checkout or configured
 
   @doc "Starts an engine with every synth and effect registered: playing live, with the sound card's input or without, or offline."
   def start(_live, _input), do: :erlang.nif_error(:nif_not_loaded)

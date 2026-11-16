@@ -1,4 +1,7 @@
 defmodule Mx.MixProject do
+  # A git checkout builds mxs itself, so it needs Rustler; a Hex install downloads mxs built.
+  @checkout File.dir?(Path.join(__DIR__, ".git"))
+
   use Mix.Project
 
   def project do
@@ -28,6 +31,7 @@ defmodule Mx.MixProject do
         native/mxs_nif/src
         native/mxs_nif/Cargo.toml
         native/mxs_nif/Cargo.lock
+        checksum-*.exs
         mix.exs
         .formatter.exs
         README.md
@@ -55,7 +59,8 @@ defmodule Mx.MixProject do
       {:midiex, "~> 0.6.4"},
       {:vix, "~> 0.43", optional: true},
       {:pythonx, "~> 0.4.11", optional: true},
-      {:rustler, "~> 0.38.0", runtime: false},
+      {:rustler, "~> 0.38.0", optional: not @checkout, runtime: false},
+      {:rustler_precompiled, "~> 0.10.1"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.40", only: [:dev, :test], runtime: false},
       {:ex_dna, "~> 1.4", only: [:dev, :test], runtime: false}
