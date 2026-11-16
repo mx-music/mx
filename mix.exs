@@ -31,6 +31,7 @@ defmodule Mx.MixProject do
         mix.exs
         .formatter.exs
         README.md
+        CHANGELOG.md
         LICENSE
         LICENSE-designs.md
       )
