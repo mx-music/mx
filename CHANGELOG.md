@@ -1,5 +1,12 @@
 # Changelog for mx v0.2
 
+## v0.2.1 (2026-11-16)
+
+### 1. Enhancements
+
+  * [mx] Download mxs already built for macOS, Linux and Windows, so installing mx from Hex no longer needs Rust
+  * [mx] Add the `mx` command as an escript, installed with `mix escript.install hex mx`
+
 ## v0.2.0 (2026-11-16)
 
 ### 1. Enhancements

@@ -68,12 +68,29 @@ https://github.com/user-attachments/assets/be2f2355-f117-4eef-b5e1-bc5c2be42f02
 
 ## Install
 
-mx needs Elixir 1.20 or later, and Rust, which compiles mxs the first time mx is built.
+mx needs Elixir 1.20 or later.
+It downloads mxs already built for macOS, for Linux on x86_64 or ARM64, and for Windows on x86_64; elsewhere it needs Rust, which compiles mxs the first time mx is built.
 
 Add mx to the dependencies in your Mix project's `mix.exs`:
 
 ```elixir
-{:mx, "~> 0.1.0"}
+{:mx, "~> 0.2.1"}
+```
+
+Or install the `mx` command, which plays a song file without a Mix project and takes the same options as `mix mx.play`:
+
+```sh
+mix escript.install hex mx
+mx song.exs
+```
+
+Mix installs it in `~/.mix/escripts`, which needs to be on your `PATH`.
+
+A checkout of mx always compiles mxs with Rust.
+Its `bin/mx` plays a song with mx from Hex, or with the checkout `MX_PATH` names:
+
+```sh
+MX_PATH=path/to/mx bin/mx song.exs
 ```
 
 ## Instruments

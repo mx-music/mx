@@ -1,31 +1,6 @@
 #!/usr/bin/env elixir
 # Plays a song file with nothing but Elixir installed: mx song.exs
 # MX_PATH points it at a local checkout of mx instead of Hex.
-dep = if path = System.get_env("MX_PATH"), do: {:mx, path: path}, else: {:mx, "~> 0.1.0"}
+dep = if path = System.get_env("MX_PATH"), do: {:mx, path: path}, else: {:mx, "~> 0.2.1"}
 Mix.install([dep])
-
-usage = """
-usage: mx song.exs [--record session.wav | --render song.wav [--seconds 60]] [--force]
-       mx samples download SOURCE
-"""
-
-case System.argv() do
-  ["samples", "download", source] ->
-    case Mx.Samples.download_source(source) do
-      {:ok, message} -> IO.puts(message)
-      {:error, message} -> IO.puts(:stderr, message) && System.halt(1)
-    end
-
-  argv ->
-    case Mx.Player.parse(argv) do
-      {opts, [path]} ->
-        case Mx.Player.play(path, opts) do
-          :ok -> :ok
-          {:error, message} -> IO.puts(:stderr, message) && System.halt(1)
-        end
-
-      _ ->
-        IO.write(:stderr, usage)
-        System.halt(1)
-    end
-end
+Mx.CLI.run(System.argv())

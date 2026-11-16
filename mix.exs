@@ -8,7 +8,7 @@ defmodule Mx.MixProject do
     [
       app: :mx,
       source_url: "https://github.com/mx-music/mx",
-      version: "0.2.0",
+      version: "0.2.1",
       elixir: "~> 1.20",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
@@ -16,6 +16,7 @@ defmodule Mx.MixProject do
       description: "Write music in Elixir, played by mxs, its own sound engine in Rust",
       package: package(),
       docs: docs(),
+      escript: [main_module: Mx.CLI, name: "mx", app: nil, include_priv_for: [:mx, :midiex]],
       test_ignore_filters: [~r"^test/support/"]
     ]
   end
