@@ -74,7 +74,7 @@ It downloads mxs already built for macOS, for Linux on x86_64 or ARM64, and for 
 Add mx to the dependencies in your Mix project's `mix.exs`:
 
 ```elixir
-{:mx, "~> 0.2.1"}
+{:mx, "~> 0.2.2"}
 ```
 
 Or install the `mx` command, which plays a song file without a Mix project and takes the same options as `mix mx.play`:
