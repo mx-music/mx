@@ -1,5 +1,6 @@
 //! mx's NIF onto mxs: it turns Elixir terms into the engine's types and calls its public API.
 
+mod levels;
 mod spectrogram;
 
 use mxs::graph::{Clause, Graph};
@@ -351,6 +352,22 @@ fn piano_parts(options: Vec<(String, f64)>) -> Result<PianoParts, String> {
     let thump = (parts.thump.level, parts.thump.below_hz, parts.thump.seconds);
     let knock = parts.knock.map(|k| (k.level, k.resonances));
     Ok((harmonics, partners, thump, knock, warnings))
+}
+
+/// A recording's levels over time, `per_second` rows a second, each as `{second, level, bands, brightness}`: the level of the whole sound and of each octave from 20 Hz in dB under the loudest row, and the frequency half its energy lies under; the data's `{kind, bits, channels}` are as `Mx.Audio` names them.
+#[rustler::nif(schedule = "DirtyCpu")]
+fn level_rows(data: Binary, format: (String, usize, usize), rate: f64, per_second: f64) -> NifResult<Vec<levels::Row>> {
+    let (kind, bits, channels) = format;
+    let sound = spectrogram::samples(data.as_slice(), &kind, bits, channels, 0, usize::MAX).ok_or(rustler::Error::BadArg)?;
+    Ok(levels::rows(&sound, rate, per_second))
+}
+
+/// The second each sound in a recording starts and its level in dB under the loudest stroke's, as `{second, level}`; the data's `{kind, bits, channels}` are as `Mx.Audio` names them.
+#[rustler::nif(schedule = "DirtyCpu")]
+fn strokes(data: Binary, format: (String, usize, usize), rate: f64) -> NifResult<Vec<(f64, f64)>> {
+    let (kind, bits, channels) = format;
+    let sound = spectrogram::samples(data.as_slice(), &kind, bits, channels, 0, usize::MAX).ok_or(rustler::Error::BadArg)?;
+    Ok(levels::strokes(&sound, rate))
 }
 
 #[rustler::nif]

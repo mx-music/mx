@@ -534,6 +534,18 @@ A column that covers more sound than its window shows the loudest level each fre
 mix mx.spectrogram song.wav --width 1500 --no-seconds
 ```
 
+### Levels over time
+
+`mix mx.levels FILE` gives the same picture as numbers, for a video or a light that reacts to what was played: comma-separated values with a first line naming the columns, then a row for each moment, 30 a second unless `--per-second` gives another count.
+Each row has its second, the level of the whole sound and of each octave of the spectrogram's side, from 20 Hz to 20,480 Hz, all in dB under the recording's loudest row, and the brightness, the frequency half the sound's energy lies under.
+A row covers all the sound from its second to the next, so no stroke falls between two rows.
+`--strokes` prints instead the second each sound starts, where the spectrum rises sharply, and its level under the loudest stroke's, so a key struck again while it still rings is a stroke of its own.
+
+```sh
+mix mx.levels performance.wav --per-second 60 > levels.csv
+mix mx.levels performance.wav --strokes
+```
+
 ### Strokes that run together
 
 An instrument played in strokes that run into one another, such as the cuíca, takes `--strokes`, and a file needs no note after its name.

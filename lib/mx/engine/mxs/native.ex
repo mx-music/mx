@@ -54,6 +54,12 @@ defmodule Mx.Engine.Mxs.Native do
   @doc "The loudest sample of a recording's data in any channel, as a level from 0, and the RMS level of each of `count` equal slices of its channels' average; the data's format is `{kind, bits, channels}`."
   def levels(_data, _format, _count), do: :erlang.nif_error(:nif_not_loaded)
 
+  @doc "A recording's levels over time, `per_second` rows a second, each as `{second, level, bands, brightness}`, from its data as `Mx.Audio.raw/1` gives it."
+  def level_rows(_data, _format, _rate, _per_second), do: :erlang.nif_error(:nif_not_loaded)
+
+  @doc "The second each sound in a recording starts and its level in dB under the loudest stroke's, as `{second, level}`, from its data as `Mx.Audio.raw/1` gives it."
+  def strokes(_data, _format, _rate), do: :erlang.nif_error(:nif_not_loaded)
+
   @doc "What a piano note played with the options given as `{name, value}` pairs is made of, without playing it, as `{:ok, {harmonics, partners, thump, knock, warnings}}` or `{:error, message}`."
   def piano_parts(_options), do: :erlang.nif_error(:nif_not_loaded)
 
