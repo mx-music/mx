@@ -9,7 +9,7 @@ defmodule Mx.MusicXML do
   A note that crosses a bar line, or whose length no single note value writes, is written as tied notes.
   """
 
-  alias Mx.{Pass, Song}
+  alias Mx.{Page, Pass, Song}
 
   @divisions 24
 
@@ -44,7 +44,7 @@ defmodule Mx.MusicXML do
   def write(path, out, opts \\ []) when is_binary(path) and is_binary(out) and is_list(opts) do
     with {:ok, time} <- time(Keyword.get(opts, :time, "4/4")),
          {:ok, key} <- key(Keyword.get(opts, :key, "c")),
-         :ok <- check(out, Keyword.get(opts, :force, false)),
+         :ok <- Page.check(out, Keyword.get(opts, :force, false)),
          {:ok, song} <- Song.load(path),
          {:ok, played} <- played(song),
          {:ok, parts, left_out} <- pitched(played, path) do
@@ -86,9 +86,11 @@ defmodule Mx.MusicXML do
     name = String.downcase(text)
 
     {tonic, mode, keys} =
-      if String.ends_with?(name, "m"),
-        do: {String.trim_trailing(name, "m"), "minor", @minor},
-        else: {name, "major", @major}
+      if String.ends_with?(name, "m") do
+        {String.trim_trailing(name, "m"), "minor", @minor}
+      else
+        {name, "major", @major}
+      end
 
     case Enum.find_index(keys, &(&1 == tonic)) do
       nil -> {:error, "--key takes a key such as d, bm or fsm, not #{text}"}
@@ -273,32 +275,38 @@ defmodule Mx.MusicXML do
     dots = String.duplicate("<dot/>", dots)
 
     modification =
-      if triplet,
-        do:
-          "<time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>",
-        else: ""
+      if triplet do
+        "<time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>"
+      else
+        ""
+      end
 
     {"<duration>#{ticks}</duration>",
      "<voice>#{voice}</voice><type>#{type}</type>#{dots}#{modification}"}
   end
 
-  # A length as note values, from the plain ones when it is a whole number of 32nd notes and from the
-  # triplets otherwise.
+  # A length as note values, from the plain ones when it is a whole number of 32nd notes and from
+  # the triplets otherwise.
   # A rest that starts off the beat first fills to the beat.
   defp rest_values(start, length) do
     to_beat = Integer.mod(-start, @divisions)
 
-    if to_beat > 0 and to_beat < length,
-      do: values(to_beat) ++ values(length - to_beat),
-      else: values(length)
+    if to_beat > 0 and to_beat < length do
+      values(to_beat) ++ values(length - to_beat)
+    else
+      values(length)
+    end
   end
 
   defp values(length) when rem(length, 3) == 0 do
-    greedy(length, for({ticks, type, dots} <- @plain, do: {ticks, type, dots, false}))
+    plain = for {ticks, type, dots} <- @plain, do: {ticks, type, dots, false}
+    greedy(length, plain)
   end
 
-  defp values(length),
-    do: greedy(length, for({ticks, type} <- @triplets, do: {ticks, type, 0, true}))
+  defp values(length) do
+    triplets = for {ticks, type} <- @triplets, do: {ticks, type, 0, true}
+    greedy(length, triplets)
+  end
 
   defp greedy(0, _values), do: []
 
@@ -326,11 +334,13 @@ defmodule Mx.MusicXML do
     {step, alter, div(note - alter, 12) - 1}
   end
 
-  defp key_alter(step, fifths) when fifths > 0,
-    do: if(step in Enum.take(@sharp_order, fifths), do: 1, else: 0)
+  defp key_alter(step, fifths) when fifths > 0 do
+    if step in Enum.take(@sharp_order, fifths), do: 1, else: 0
+  end
 
-  defp key_alter(step, fifths) when fifths < 0,
-    do: if(step in Enum.take(Enum.reverse(@sharp_order), -fifths), do: -1, else: 0)
+  defp key_alter(step, fifths) when fifths < 0 do
+    if step in Enum.take(Enum.reverse(@sharp_order), -fifths), do: -1, else: 0
+  end
 
   defp key_alter(_step, 0), do: 0
 
@@ -383,18 +393,19 @@ defmodule Mx.MusicXML do
       loop ->
         passes = loop.music.sections |> tuple_size() |> Kernel.-(1)
 
-        0..passes
-        |> Enum.reduce_while({:ok, [], 0}, fn pass, {:ok, notes, start} ->
-          case Pass.events(loop, pass) do
-            {:ok, %{notes: played, beats: beats}} ->
-              played = Enum.map(played, fn {beat, note, held} -> {start + beat, note, held} end)
-              {:cont, {:ok, notes ++ played, start + beats}}
+        played =
+          Enum.reduce_while(0..passes, {:ok, [], 0}, fn pass, {:ok, notes, start} ->
+            case Pass.events(loop, pass) do
+              {:ok, %{notes: played, beats: beats}} ->
+                played = Enum.map(played, fn {beat, note, held} -> {start + beat, note, held} end)
+                {:cont, {:ok, notes ++ played, start + beats}}
 
-            {:error, message} ->
-              {:halt, {:error, message}}
-          end
-        end)
-        |> case do
+              {:error, message} ->
+                {:halt, {:error, message}}
+            end
+          end)
+
+        case played do
           {:ok, [], _} -> {:ok, {loop.name, {:left_out, "it plays no notes with a pitch"}}}
           {:ok, notes, beats} -> {:ok, {loop.name, {:notes, notes, beats}}}
           error -> error
@@ -408,8 +419,9 @@ defmodule Mx.MusicXML do
         {:error, "#{path} has no part that plays notes with a pitch"}
 
       {parts, left_out} ->
-        {:ok, for({name, {:notes, notes, beats}} <- parts, do: {to_string(name), notes, beats}),
-         for({name, {:left_out, why}} <- left_out, do: {to_string(name), why})}
+        parts = for {name, {:notes, notes, beats}} <- parts, do: {to_string(name), notes, beats}
+        left_out = for {name, {:left_out, why}} <- left_out, do: {to_string(name), why}
+        {:ok, parts, left_out}
     end
   end
 
@@ -449,19 +461,6 @@ defmodule Mx.MusicXML do
 
   defp title(path) do
     path |> Path.basename() |> Path.rootname() |> String.replace("_", " ") |> String.capitalize()
-  end
-
-  defp check(out, force) do
-    cond do
-      File.exists?(out) and not force ->
-        {:error, "#{out} already exists; give --force to write over it"}
-
-      not File.dir?(Path.dirname(out)) ->
-        {:error, "cannot write #{out}: its folder does not exist"}
-
-      true ->
-        :ok
-    end
   end
 
   defp map_ok(items, fun) do

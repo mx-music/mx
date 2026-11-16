@@ -15,8 +15,8 @@ defmodule Mx.ScoreNotes do
         Enum.flat_map_reduce(0..(tuple_size(loop.music.sections) - 1), 0, fn pass, start ->
           {:ok, %{notes: notes, beats: beats}} = Pass.events(loop, pass)
 
-          {for({beat, note, held} <- notes, do: {round6(start + beat), note, round6(held)}),
-           start + beats}
+          notes = for {beat, note, held} <- notes, do: {round6(start + beat), note, round6(held)}
+          {notes, start + beats}
         end)
 
       Enum.sort(notes)

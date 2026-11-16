@@ -130,7 +130,7 @@ defmodule Mx.MusicXMLTest do
   end
 
   test "refuses a key or a time signature it cannot write", _ctx do
-    assert {:error, "--key takes a key such as d, bm or fsm, not h"} = MusicXML.key("h")
+    assert MusicXML.key("h") == {:error, "--key takes a key such as d, bm or fsm, not h"}
 
     assert {:error, "--time takes a time signature such as 4/4 or 12/8, not 4"} =
              MusicXML.time("4")
@@ -198,10 +198,8 @@ defmodule Mx.MusicXMLTest do
     assert {:ok, score} = Score.read(out)
     [%{voices: [voice]}] = hd(score.parts).bars
 
-    assert for(group <- voice, note <- group.notes, do: {group.onset, note.midi}) == [
-             {0.0, 60},
-             {1.0, 64}
-           ]
+    played = for group <- voice, note <- group.notes, do: {group.onset, note.midi}
+    assert played == [{0.0, 60}, {1.0, 64}]
   end
 
   defp write_tmp(dir, xml) do

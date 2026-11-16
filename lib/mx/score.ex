@@ -538,8 +538,9 @@ defmodule Mx.Score do
   defp rest(_cursor, _gap, _mark), do: []
 
   # The first voice rests to the end of the bar, so the bar lasts its length in every part.
-  defp pad([], length) when length > 0,
-    do: [[%{onset: 0, length: length, notes: [], mark: nil, graces: []}]]
+  defp pad([], length) when length > 0 do
+    [[%{onset: 0, length: length, notes: [], mark: nil, graces: []}]]
+  end
 
   defp pad([], _length), do: []
 

@@ -105,8 +105,9 @@ defmodule Mx.Pass do
   """
   def record_play(notes, opts, written \\ nil)
 
-  def record_play([{key, _} | _] = opts, [], written) when is_atom(key),
-    do: record_play(:own_note, opts, written)
+  def record_play([{key, _} | _] = opts, [], written) when is_atom(key) do
+    record_play(:own_note, opts, written)
+  end
 
   def record_play(notes, opts, written)
       when (is_number(notes) or is_atom(notes) or is_list(notes)) and is_list(opts) do

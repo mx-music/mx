@@ -255,7 +255,7 @@ defmodule Mix.Tasks.Mx.ImportTest do
 
   test "a grace note is kept with the note it leads into, and takes no time", %{tmp_dir: dir} do
     grace = fn step, slash ->
-      ~s(<note><grace#{slash}/><pitch><step>#{step}</step><octave>5</octave></pitch><voice>1</voice></note>)
+      "<note><grace#{slash}/><pitch><step>#{step}</step><octave>5</octave></pitch><voice>1</voice></note>"
     end
 
     bar =
@@ -271,7 +271,12 @@ defmodule Mix.Tasks.Mx.ImportTest do
     [%{bars: [%{voices: [voice]}]}] = score.parts
 
     assert [
-             %{onset: +0.0, length: 2.0, notes: [%{midi: 72}], graces: [%{midi: 74, slash: true}]},
+             %{
+               onset: +0.0,
+               length: 2.0,
+               notes: [%{midi: 72}],
+               graces: [%{midi: 74, slash: true}]
+             },
              %{
                onset: 2.0,
                length: 2.0,

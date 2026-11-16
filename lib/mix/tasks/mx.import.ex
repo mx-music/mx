@@ -309,7 +309,8 @@ defmodule Mix.Tasks.Mx.Import do
     onsets
   end
 
-  # An open tie is {owner, owner_start, end, voice, name}, owner being the note that sounds for it.
+  # An open tie is {owner, owner_start, end, voice, name}, owner being the note that sounds for
+  # it.
   defp tie({beat, voice, id, length, head}, {open, sustains, continued}) do
     case head.continues && joined(open, head.name, voice, beat) do
       {owner, owner_start, _end, _voice, name} = tie ->
@@ -432,9 +433,11 @@ defmodule Mix.Tasks.Mx.Import do
         first = hd(run)
         last = List.last(run)
 
-        if run == Enum.to_list(first..last//1),
-          do: "#{first}..#{last}",
-          else: inspect(run, limit: :infinity)
+        if run == Enum.to_list(first..last//1) do
+          "#{first}..#{last}"
+        else
+          inspect(run, limit: :infinity)
+        end
       end)
 
     "Enum.concat([#{runs}])"

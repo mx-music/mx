@@ -205,7 +205,8 @@ defmodule Mx.Page do
     end
   end
 
-  defp check(out, force) do
+  @doc "Checks a file can be written to `out`: `:ok`, or `{:error, message}` when it exists without `force` or its folder does not."
+  def check(out, force) when is_binary(out) and is_boolean(force) do
     cond do
       File.exists?(out) and not force ->
         {:error, "#{out} already exists; give --force to write over it"}
