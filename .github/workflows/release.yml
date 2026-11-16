@@ -30,7 +30,8 @@ jobs:
 
       - name: Read the version
         shell: bash
-        run: echo "PROJECT_VERSION=$(sed -n 's/^      version: "\(.*\)",$/\1/p' mix.exs)" >> $GITHUB_ENV
+        run: |
+          echo "PROJECT_VERSION=$(sed -n 's/^      version: "\(.*\)",$/\1/p' mix.exs)" >> $GITHUB_ENV
 
       - name: Install ALSA
         if: runner.os == 'Linux'
