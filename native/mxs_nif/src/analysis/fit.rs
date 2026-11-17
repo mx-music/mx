@@ -7,10 +7,11 @@ use super::hz;
 use rustler::NifMap;
 
 /// The seconds after the strike each partial's level is given at.
-pub const TIMES: [f64; 27] = [
-    0.0, 0.0025, 0.005, 0.0075, 0.01, 0.015, 0.02, 0.03, 0.04, 0.055, 0.07, 0.09, 0.115, 0.145, 0.18, 0.225, 0.28, 0.35, 0.44, 0.55, 0.7, 0.88, 1.1, 1.4, 1.75, 2.2, 2.75,
+pub const TIMES: [f64; 37] = [
+    0.0, 0.0025, 0.005, 0.0075, 0.01, 0.015, 0.02, 0.03, 0.04, 0.055, 0.07, 0.09, 0.115, 0.145, 0.18, 0.225, 0.28, 0.35, 0.44, 0.55, 0.7, 0.88, 1.1, 1.4, 1.75, 2.2, 2.75, 3.5,
+    4.4, 5.5, 7.0, 8.8, 11.0, 14.0, 17.5, 22.0, 28.0,
 ];
-/// The seconds of each recording measured: NSynth's notes are let go at 3 seconds.
+/// The seconds of a recording `mix mx.measure --partials` measures: NSynth's notes are let go at 3 seconds.
 pub const SECONDS: f64 = 2.9;
 /// The seconds over which a sine rises at its start.
 pub const RISE: f64 = 0.001;
@@ -39,6 +40,8 @@ pub struct Figures {
     pub f0: f64,
     pub partials: Vec<Partial>,
     pub noise: Vec<Band>,
+    /// The last time the recording reaches, after which every level falls on at its last slope.
+    pub reached: f64,
 }
 
 /// The level in dB at `t` seconds after the strike: straight lines between the times given, and the last slope after them.
@@ -124,7 +127,7 @@ pub fn render(figures: &Figures, rate: f64, lead: f64, seconds: f64) -> Vec<f64>
             let t = i as f64 / rate;
             let rise = (t / RISE).min(1.0);
             let level = level_at(&partial.levels, partial.tail, t);
-            if level < -140.0 && t > TIMES[TIMES.len() - 1] {
+            if level < -140.0 && t > figures.reached {
                 break;
             }
             sound[start + i] += rise * 10f64.powf(level / 20.0) * (step * i as f64).sin();
@@ -154,7 +157,7 @@ pub fn render(figures: &Figures, rate: f64, lead: f64, seconds: f64) -> Vec<f64>
         for i in 0..count {
             let t = i as f64 / rate;
             let level = noise_level_at(&band.levels, band.tail, t);
-            if level < -140.0 && t > TIMES[TIMES.len() - 1] {
+            if level < -140.0 && t > figures.reached {
                 break;
             }
             let x = rising(t, rise) * 10f64.powf(level / 20.0) * filtered();
@@ -169,18 +172,21 @@ fn frame_at(t: f64) -> f64 {
     (t + LEAD) / HOP
 }
 
-/// Fits a recorded note's figures: each partial's levels from its measured track, then corrected against renders of them measured the same way.
-pub fn fit(sound: &[f64], rate: f64, note: f64) -> (Figures, Note) {
-    let recorded = partials::measure(sound, rate, note, SECONDS);
+/// Fits a recorded note's figures over `seconds` from its strike: each partial's levels from its measured track, then corrected against renders of them measured the same way.
+/// With `exact`, the note's own frequency is its pitch, for a drum whose partials are not harmonics.
+/// After the last time the recording reaches, each partial falls on at its last slope.
+pub fn fit(sound: &[f64], rate: f64, note: f64, seconds: f64, exact: bool) -> (Figures, Note) {
+    let recorded = partials::measure(sound, rate, note, seconds, exact);
     let bands = erb_bands();
     let noise = bands.iter().map(|(low, high)| Band { low: *low, high: *high, levels: vec![SILENT; TIMES.len()], tail: -60.0 }).collect();
-    let mut figures = Figures { f0: recorded.f0, partials: recorded.partials.iter().map(|t| first_guess(t, recorded.f0, recorded.spectra.settled().start)).collect(), noise };
+    let mut figures = Figures { f0: recorded.f0, partials: recorded.partials.iter().map(|t| first_guess(t, recorded.f0, recorded.spectra.settled().start, reached(seconds, recorded.spectra.window))).collect(), noise, reached: TIMES[reached(seconds, recorded.spectra.window)] };
+    fall_on(&mut figures, seconds, recorded.spectra.window);
     let freqs: Vec<f64> = recorded.partials.iter().chain(&recorded.left_out).map(|t| t.freq).collect();
     // The frames whose windows take in the strike read its click as much as the partials, so the partials are first fitted without them, and the noise to what they leave.
-    correct_partials(&mut figures, &recorded, &freqs, rate, note, ROUNDS, recorded.spectra.settled().start);
-    let rendered = render(&figures, rate, 0.05, SECONDS + 0.1);
+    correct_partials(&mut figures, &recorded, &freqs, rate, note, seconds, ROUNDS, recorded.spectra.settled().start);
+    let rendered = render(&figures, rate, 0.05, seconds + 0.1);
     let gaps: Vec<Vec<usize>> = bands.iter().map(|(low, high)| { let (a, b) = bins(&recorded.spectra, *low, *high); (a..b).collect() }).collect();
-    let sines = band_powers(&partials::spectra(&rendered, rate, hz(note), SECONDS), &gaps);
+    let sines = band_powers(&partials::spectra(&rendered, rate, hz(note), seconds), &gaps);
     let (targets, weights) = noise_targets(&band_powers(&recorded.spectra, &gaps), &sines, &bands, &gaps, &recorded);
     let gains = noise_gains(&recorded.spectra, &bands, &gaps, rate);
     let shares: Vec<Vec<Vec<f64>>> = bands.iter().map(|(low, high)| shares(recorded.spectra.window, targets.len(), noise_rise(*low, *high))).collect();
@@ -188,15 +194,30 @@ pub fn fit(sound: &[f64], rate: f64, note: f64) -> (Figures, Note) {
         band.levels = levels;
     }
     // The noise adds to the partials' own frequencies at the strike, so they are corrected again with it playing.
-    correct_partials(&mut figures, &recorded, &freqs, rate, note, AGAIN, 0);
+    correct_partials(&mut figures, &recorded, &freqs, rate, note, seconds, AGAIN, 0);
     (figures, recorded)
 }
 
+// The last of the times a recording measured for `seconds` reaches, where the last window ends.
+fn reached(seconds: f64, window: f64) -> usize {
+    TIMES.partition_point(|time| *time <= seconds - window / 2.0).max(1) - 1
+}
+
+// Each partial's levels after the last time the recording reaches, on its last slope from there, as a render past the recording plays them.
+fn fall_on(figures: &mut Figures, seconds: f64, window: f64) {
+    let reached = reached(seconds, window);
+    for partial in &mut figures.partials {
+        for j in reached + 1..TIMES.len() {
+            partial.levels[j] = partial.levels[reached] + partial.tail * (TIMES[j] - TIMES[reached]);
+        }
+    }
+}
+
 // Corrects each partial's levels against renders of the figures, measured as the recording was, round after round, from the frame `from`.
-fn correct_partials(figures: &mut Figures, recorded: &Note, freqs: &[f64], rate: f64, note: f64, rounds: usize, from: usize) {
+fn correct_partials(figures: &mut Figures, recorded: &Note, freqs: &[f64], rate: f64, note: f64, seconds: f64, rounds: usize, from: usize) {
     for _ in 0..rounds {
-        let rendered = render(figures, rate, 0.05, SECONDS + 0.1);
-        let measured = partials::spectra(&rendered, rate, hz(note), SECONDS);
+        let rendered = render(figures, rate, 0.05, seconds + 0.1);
+        let measured = partials::spectra(&rendered, rate, hz(note), seconds);
         let ours = partials::follow(&rendered, &measured, freqs);
         let corrections: Vec<Vec<f64>> = recorded.partials.iter().zip(&ours).map(|(track, mine)| correction(track, mine, recorded.spectra.window, from)).collect();
         for ((partial, change), track) in figures.partials.iter_mut().zip(corrections).zip(&recorded.partials) {
@@ -206,11 +227,13 @@ fn correct_partials(figures: &mut Figures, recorded: &Note, freqs: &[f64], rate:
                 *level = (*level + delta).min(ceiling);
             }
         }
+        fall_on(figures, seconds, recorded.spectra.window);
     }
 }
 
 // The track read at each time, averaged over the frames nearer it than its neighbours, before the first settled frame that frame's level, and after the last clear frame its last slope.
-fn first_guess(track: &Track, f0: f64, settled: usize) -> Partial {
+// The last time the recording reaches takes no frames after it, which belong to no time.
+fn first_guess(track: &Track, f0: f64, settled: usize, reached: usize) -> Partial {
     let fall = partials::fall(track);
     let tail = fall.as_ref().map_or(-30.0, |f| f.second.min(-0.5));
     let last_clear = track.clear().map(|(i, _)| i).last().unwrap_or(0);
@@ -228,7 +251,7 @@ fn first_guess(track: &Track, f0: f64, settled: usize) -> Partial {
                 return last_level + tail * (t - last_time);
             }
             let before = if j == 0 { t } else { (t + TIMES[j - 1]) / 2.0 };
-            let after = TIMES.get(j + 1).map_or(t, |next| (t + next) / 2.0);
+            let after = if j < reached { (t + TIMES[j + 1]) / 2.0 } else { t };
             let (from, to) = (frame_at(before).round() as usize, (frame_at(after).round() as usize).min(last_clear));
             let around: Vec<f64> = (from..=to.max(from)).filter_map(|k| track.levels.get(k).cloned()).collect();
             if around.is_empty() { last_level } else { around.iter().sum::<f64>() / around.len() as f64 }
@@ -374,7 +397,7 @@ pub struct PartialGap {
     pub mean: f64,
     /// The recording's noise floor around the partial, against the recording's loudest partial.
     pub floor: f64,
-    /// Every half second from 0.5 seconds: the time, the recording's level and the render's, against the recording's loudest partial, neither below the floor.
+    /// Every half second from 0.5 to 2.5 seconds and every second after while the note lasts: the time, the recording's level and the render's, against the recording's loudest partial, neither below the floor.
     pub levels: Vec<(f64, f64, f64)>,
 }
 
@@ -384,12 +407,14 @@ pub struct Check {
     pub partials: Vec<PartialGap>,
     pub erb: f64,
     pub bands: Vec<(f64, f64, usize)>,
+    /// The recording's partials and the render's over their first half second, in dB.
+    pub levels: (f64, f64),
 }
 
-/// Compares a render with a recording of the same note, each brought to the same total over its first half second.
-pub fn check(recording: &[f64], rate: f64, rendered: &[f64], render_rate: f64, note: f64) -> Check {
-    let theirs = partials::measure(recording, rate, note, SECONDS);
-    let ours = partials::spectra(rendered, render_rate, hz(note), SECONDS);
+/// Compares a render with a recording of the same note over `seconds` from its strike, each brought to the same total over its first half second.
+pub fn check(recording: &[f64], rate: f64, rendered: &[f64], render_rate: f64, note: f64, seconds: f64, exact: bool) -> Check {
+    let theirs = partials::measure(recording, rate, note, seconds, exact);
+    let ours = partials::spectra(rendered, render_rate, hz(note), seconds);
     let half = (0.5 / HOP) as usize;
     let power = |levels: &[f64]| levels.iter().take(half).map(|l| 10f64.powf(l / 10.0)).sum::<f64>();
     let freqs: Vec<f64> = theirs.partials.iter().chain(&theirs.left_out).map(|t| t.freq).collect();
@@ -416,6 +441,7 @@ pub fn check(recording: &[f64], rate: f64, rendered: &[f64], render_rate: f64, n
                 .collect();
             let levels = (1..=5)
                 .map(|half_seconds| 0.5 * half_seconds as f64)
+                .chain((3..=seconds as usize).map(|second| second as f64))
                 .filter_map(|at| {
                     let frame = ((at + LEAD) / HOP).round() as usize;
                     Some((at, track.levels.get(frame)?.max(floor) - loudest, mine.get(frame)?.max(floor) - loudest))
@@ -433,7 +459,7 @@ pub fn check(recording: &[f64], rate: f64, rendered: &[f64], render_rate: f64, n
         })
         .collect();
     let (erb, bands) = erb_gap(&theirs, &ours);
-    Check { partials, erb, bands }
+    Check { partials, erb, bands, levels: (10.0 * total_theirs.log10(), 10.0 * total_ours.log10()) }
 }
 
 /// The bands one ERB wide from 50 Hz to 8 kHz.
@@ -560,7 +586,7 @@ pub struct Measured {
 
 /// Measures a struck note partial by partial, over the seconds the fitting measures.
 pub fn measure(sound: &[f64], rate: f64, note: f64) -> Measured {
-    let measured = partials::measure(sound, rate, note, SECONDS);
+    let measured = partials::measure(sound, rate, note, SECONDS, false);
     let loudest = loudest(&measured);
     let line = |track: &Track| {
         let fall = partials::fall(track);
@@ -574,4 +600,56 @@ pub fn measure(sound: &[f64], rate: f64, note: f64) -> Measured {
         }
     };
     Measured { pitch: measured.f0, partials: measured.partials.iter().map(line).collect(), left_out: measured.left_out.iter().map(line).collect() }
+}
+
+/// The level in dBFS each sound of a tour is brought to over the first half second after its strike.
+const TOUR_LEVEL: f64 = -26.0;
+
+/// A tour for listening: each recording's note and then the render beside it, from 50 ms before each strike for the recording's `seconds`, each brought to the same level over its first half second, a second of silence after each, all at `rate`.
+/// The whole tour is turned down together if it would reach above -1 dBFS.
+pub fn tour(pairs: &[(Vec<f64>, f64, f64, Vec<f64>)], rate: f64) -> Vec<f64> {
+    let mut sound = vec![];
+    for (recording, recording_rate, seconds, rendered) in pairs {
+        for part in [resample(recording, *recording_rate, rate), rendered.clone()] {
+            let from = partials::strike(&part).saturating_sub((0.05 * rate) as usize);
+            let to = (from + (seconds * rate) as usize).min(part.len());
+            let half = &part[from..(from + (0.55 * rate) as usize).min(to)];
+            let level = 10.0 * (half.iter().map(|x| x * x).sum::<f64>() / half.len().max(1) as f64).max(1e-20).log10();
+            let gain = 10f64.powf((TOUR_LEVEL - level) / 20.0);
+            sound.extend(part[from..to].iter().map(|x| x * gain));
+            sound.extend(std::iter::repeat_n(0.0, rate as usize));
+        }
+    }
+    let peak = sound.iter().fold(0.0f64, |top, x| top.max(x.abs()));
+    let most = 10f64.powf(-1.0 / 20.0);
+    if peak > most {
+        sound.iter_mut().for_each(|x| *x *= most / peak);
+    }
+    sound
+}
+
+// A sound at another rate, through a windowed sinc 32 samples wide that cuts at the lower rate's half.
+fn resample(sound: &[f64], from: f64, to: f64) -> Vec<f64> {
+    if from == to {
+        return sound.to_vec();
+    }
+    let step = from / to;
+    let cutoff = (1.0 / step).min(1.0);
+    let taps = 16i64;
+    let count = (sound.len() as f64 / step) as usize;
+    (0..count)
+        .map(|n| {
+            let at = n as f64 * step;
+            let centre = at.floor() as i64;
+            (centre - taps + 1..=centre + taps)
+                .filter(|k| *k >= 0 && (*k as usize) < sound.len())
+                .map(|k| {
+                    let x = (at - k as f64) * cutoff;
+                    let sinc = if x.abs() < 1e-9 { 1.0 } else { (std::f64::consts::PI * x).sin() / (std::f64::consts::PI * x) };
+                    let window = 0.5 + 0.5 * (std::f64::consts::PI * (at - k as f64) / taps as f64).cos();
+                    sound[k as usize] * cutoff * sinc * window
+                })
+                .sum()
+        })
+        .collect()
 }

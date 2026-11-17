@@ -596,8 +596,27 @@ The recordings' figures are kept in the system's temporary folder and reused unt
 
 ### Fitting a struck instrument
 
-`mix mx.fit --struck` fits a struck or plucked instrument from a folder of single notes, one file a note and velocity, named as Google's NSynth dataset names them, ending in the MIDI note and the velocity, such as `keyboard_electronic_098-064-025.wav`.
-It measures each recording partial by partial, as `mix mx.measure --partials` does, then corrects each partial's level at 27 times over the note until a render of the partials measures as the recording does, and fits the strike's noise in bands one ERB wide, bands as wide as the ear's own, from 50 Hz to 8 kHz.
+`mix mx.fit --struck` fits a struck or plucked instrument from recordings of its notes, given as a folder or as a list.
+A folder holds single notes, one file a note and velocity, named as Google's NSynth dataset names them, ending in the MIDI note and the velocity, such as `keyboard_electronic_098-064-025.wav`.
+A list is a text file with a line for each recording: its notes, its velocity from 1 to 127, `kept` when the recordings keep their levels from one velocity to the next, and the file.
+
+```text
+# Iowa's marimba, each file a run of notes a semitone apart
+C4:B4 40 kept Marimba.yarn.pp.C4B4.aif
+C4:B4 127 kept Marimba.yarn.ff.C4B4.aif
+# the folk harp names its strings an octave below what they sound
+C4 127 kept EWHarp_Normal_C3_v3_RR1.wav
+# a drum with no pitch, given its lowest partial
+125.6Hz 127 kept Timpani3_Hit_v4_rr1_Sum.wav
+```
+
+The notes are one note, a run from the first to the last a semitone apart, or the notes a run holds, such as `C4,D4,E4`.
+A run is split at each strike, and each piece is matched to the note it sounds; the task prints the notes it found in each file, the notes it did not find, and each piece it left out and why, such as a note that sounds an octave or more than 50 cents from its name, or one struck again louder.
+A drum given in Hz is measured with that frequency as its pitch, and its figures go under the nearest MIDI note.
+`--struck` can be given more than once, to fit the recordings of several folders or lists into one synth.
+
+The fit measures each recording partial by partial, as `mix mx.measure --partials` does, then corrects each partial's level at 37 times over the note, up to 28 seconds, until a render of the partials measures as the recording does, and fits the strike's noise in bands one ERB wide, bands as wide as the ear's own, from 50 Hz to 8 kHz.
+A note is followed for as long as it rings in its recording, up to 30 seconds, or 2.9 seconds in an NSynth folder, whose notes are let go at 3 seconds; after that each partial falls on at its last slope.
 `--out` writes the figures, every partial of every recording, to a file for mxs to play; a note or velocity that was not recorded takes its figures from the recordings nearest it, across velocity first and then along the keyboard.
 `--notes` with two notes, such as `E1:E6`, keeps the recordings from the first to the second.
 
@@ -608,5 +627,17 @@ mix mx.fit electric_piano --struck keyboard_electronic_098 --notes E1:E6 --check
 
 `--check` renders the synth at each recording's note and velocity and compares it with that recording, each brought to the same total over its first half second.
 Partial by partial, it takes the gap over the first 20 ms and the mean gap over the note while either stands 10 dB above the recording's floor; in ERB bands, it takes the mean gap over the note.
-It prints the share of the partials within 30 dB of each note's loudest that are within 2 dB at the strike and on average, the share of those 30 to 60 dB down within 4 dB on average, and the ERB gap at the median note and the worst, then the ten partials and the ten notes furthest off, so a single note's miss shows rather than hiding in a median.
+It prints the share of the partials within 30 dB of each note's loudest that are within 2 dB at the strike and on average, the share of those 30 to 60 dB down within 4 dB on average, and the ERB gap at the median note and the worst.
+For the recordings marked `kept`, it prints how far each velocity is under the loudest at its note over the first half second, in the recordings and in the synth.
+Then it prints the ten partials and the ten notes furthest off, so a single note's miss shows rather than hiding in a median.
 A recording against itself delayed by 1 ms measures 0.1 dB at the median note in ERB bands, and the same pitch recorded at a neighbouring velocity 4.7 dB, which sounds like a different note.
+
+`--tour` writes a WAV file to listen to: twelve recordings spread across the notes and velocities, or as many as `--count` gives, each followed by the synth at the same note and velocity.
+Each part starts 50 ms before its strike, lasts as long as the recording measured, and is brought to the same level over its first half second, with a second of silence after it.
+
+```sh
+mix mx.fit electric_piano --struck electric_piano.txt --tour electric_piano_tour.wav --count 8
+```
+
+To compare two versions of a synth, write a tour and a check from the same list on each, the released mxs and the refit, and listen to the tours one after the other.
+The recordings in both tours are the same, so the synth's parts are what differ.

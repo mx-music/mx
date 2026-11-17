@@ -194,18 +194,131 @@ defmodule Mix.Tasks.Mx.FitTest do
 
       assert output =~ "wrote the figures of 2 recordings to #{out}"
       assert <<"MXF1", times::little-16, _rest::binary>> = File.read!(out)
-      assert times == 27
+      assert times == 37
     end
 
-    test "refuses a folder with no recordings named by note and velocity, and asks for --out or --check",
+    test "refuses a folder with no recordings named by note and velocity, and asks for --out, --check or --tour",
          ctx do
       assert_raise Mix.Error, ~r/found no recordings named like name-064-025.wav in/, fn ->
         Mix.Tasks.Mx.Fit.run(["electric_piano", "--struck", ctx.tmp_dir, "--check"])
       end
 
-      assert_raise Mix.Error, "give --out with a file to write the figures to, or --check", fn ->
-        Mix.Tasks.Mx.Fit.run(["electric_piano", "--struck", ctx.tmp_dir])
+      assert_raise Mix.Error,
+                   "give --out with a file to write the figures to, --check, or --tour with a file to write a tour to",
+                   fn -> Mix.Tasks.Mx.Fit.run(["electric_piano", "--struck", ctx.tmp_dir]) end
+    end
+
+    test "a list splits a run into its notes, names those it did not find, and fits the rest",
+         ctx do
+      write_wav(ctx.tmp_dir, "run.wav", run([60, 62, 64]))
+      list = write_list(ctx, ["C4:E4 64 run.wav"])
+      out = Path.join(ctx.tmp_dir, "run.mxf")
+
+      output =
+        capture_io(fn ->
+          Mix.Tasks.Mx.Fit.run(["electric_piano", "--struck", list, "--out", out])
+        end)
+
+      assert output =~ "run.wav: c4 d4 e4\n  not found: cs4 ds4\n"
+      assert output =~ "wrote the figures of 3 recordings"
+      assert {_times, [%{note: 60}, %{note: 62}, %{note: 64}]} = figures(File.read!(out))
+    end
+
+    test "a list leaves out a note that sounds an octave from its name, and fits a drum given in Hz at the nearest note",
+         ctx do
+      write_wav(ctx.tmp_dir, "octave.wav", struck_note(60, 2, harmonics: [2, 4, 6]))
+      write_wav(ctx.tmp_dir, "drum.wav", struck_note(125.6, 2, ratios: [1, 1.5, 1.99, 2.44]))
+      list = write_list(ctx, ["C3 127 octave.wav", "125.6Hz 127 drum.wav"])
+      out = Path.join(ctx.tmp_dir, "drum.mxf")
+
+      output =
+        capture_io(fn ->
+          Mix.Tasks.Mx.Fit.run(["timpani", "--struck", list, "--out", out])
+        end)
+
+      assert output =~ "octave.wav: \n  left out c3 at 0.0 s: sounds an octave above it\n"
+      assert output =~ "drum.wav: b2\n"
+      assert {_times, [%{note: 47, partials: partials}]} = figures(File.read!(out))
+      ratios = partials |> Enum.map(& &1.ratio) |> Enum.sort() |> Enum.take(4)
+      expected = Enum.map([1, 1.5, 1.99, 2.44], &(&1 * 125.6 / Mx.Signal.hz(47)))
+      for {ratio, want} <- Enum.zip(ratios, expected), do: assert_in_delta(ratio, want, 0.002)
+    end
+
+    test "a note is fitted over its whole ring, and falls on at its last slope after it", ctx do
+      write_wav(ctx.tmp_dir, "long.wav", struck_note(60, 12, harmonics: [1], fade: 6))
+      list = write_list(ctx, ["C4 100 long.wav"])
+      out = Path.join(ctx.tmp_dir, "long.mxf")
+      capture_io(fn -> Mix.Tasks.Mx.Fit.run(["piano", "--struck", list, "--out", out]) end)
+
+      {times, [%{partials: partials}]} = figures(File.read!(out))
+      %{levels: levels, tail: tail} = Enum.find(partials, &(&1.harmonic == 1))
+      at = Map.new(Enum.zip(times, levels))
+      assert_in_delta at[8.8] - at[1.1], -6 * 7.7, 1.5
+      assert_in_delta tail, -6, 0.5
+      assert_in_delta at[28.0] - at[11.0], tail * 17, 0.5
+    end
+
+    test "--check prints how far each velocity is under the loudest at its note, for recordings that keep their levels",
+         ctx do
+      write_wav(ctx.tmp_dir, "loud.wav", struck_note(60, 2))
+      write_wav(ctx.tmp_dir, "soft.wav", struck_note(60, 2, gain: 0.02))
+      write_wav(ctx.tmp_dir, "loud_d4.wav", struck_note(62, 2))
+      write_wav(ctx.tmp_dir, "soft_d4.wav", struck_note(62, 2, gain: 0.02))
+
+      list =
+        write_list(ctx, [
+          "C4 127 kept loud.wav",
+          "C4 40 kept soft.wav",
+          "D4 127 loud_d4.wav",
+          "D4 40 soft_d4.wav"
+        ])
+
+      output =
+        capture_io(fn -> Mix.Tasks.Mx.Fit.run(["piano", "--struck", list, "--check"]) end)
+
+      [recordings] = captures(~r/c4 vel 40: recordings (-[\d.]+) dB, synth -[\d.]+ dB/, output)
+      assert_in_delta recordings, -20, 0.2
+      refute output =~ "d4 vel 40: recordings"
+    end
+
+    test "refuses a list line it cannot read", ctx do
+      list = write_list(ctx, ["# the loud C4", "C4 loud.wav"])
+
+      assert_raise Mix.Error, "cannot read line 2: C4 loud.wav", fn ->
+        Mix.Tasks.Mx.Fit.run(["piano", "--struck", list, "--check"])
       end
+    end
+
+    test "--tour writes each recording followed by the synth, each brought to the same level",
+         ctx do
+      dir = struck_recordings(ctx, [{60, 25}, {62, 75}, {64, 127}])
+      tour = Path.join(ctx.tmp_dir, "tour.wav")
+
+      output =
+        capture_io(fn ->
+          Mix.Tasks.Mx.Fit.run([
+            "electric_piano",
+            "--struck",
+            dir,
+            "--tour",
+            tour,
+            "--count",
+            "2"
+          ])
+        end)
+
+      assert output =~ "wrote a tour of 2 recordings, each followed by electric_piano, to #{tour}"
+      {:ok, %{rate: rate, samples: samples}} = Mx.Audio.read(tour)
+      assert_in_delta length(samples) / rate, 2 * 2 * (2.9 + 1), 0.05
+
+      [recording, synth] =
+        for part <- [0, 1] do
+          start = round(part * 3.9 * rate)
+          half = Enum.slice(samples, start, round(0.55 * rate))
+          10 * :math.log10(Enum.sum(Enum.map(half, &(&1 * &1))) / length(half))
+        end
+
+      assert_in_delta recording, synth, 0.5
     end
   end
 
@@ -258,8 +371,9 @@ defmodule Mix.Tasks.Mx.FitTest do
 
     test "C#5 at velocity 127 loses its 7th harmonic by 0.5 seconds and holds its fundamental at 2 seconds",
          %{dir: dir} do
-      path = Path.join(dir, "keyboard_electronic_098-073-127.wav")
-      [%{partials: partials}] = Mx.Fit.Struck.check(:electric_piano, [{path, 73, 127}])
+      {:ok, recordings} = Mx.Fit.Struck.recordings(dir, [73])
+      recording = Enum.find(recordings, &(&1.velocity == 127))
+      [%{partials: partials}] = Mx.Fit.Struck.check(:electric_piano, [recording])
 
       %{floor: floor, levels: levels} = Enum.find(partials, &(&1.harmonic == 7))
       {0.5, _recorded, rendered} = List.keyfind(levels, 0.5, 0)
@@ -268,6 +382,193 @@ defmodule Mix.Tasks.Mx.FitTest do
       %{levels: levels} = Enum.find(partials, &(&1.harmonic == 1))
       {2.0, recorded, rendered} = List.keyfind(levels, 2.0, 0)
       assert_in_delta rendered, recorded, 3
+    end
+
+    @tag timeout: 600_000
+    test "fits the recordings of two folders into one synth, bass_electronic_025's and bass_electronic_027's",
+         %{nsynth: nsynth} = ctx do
+      out = Path.join(ctx.tmp_dir, "deep_bass.mxf")
+
+      output =
+        capture_io(fn ->
+          Mix.Tasks.Mx.Fit.run([
+            "deep_bass",
+            "--struck",
+            Path.join(nsynth, "bass_electronic_025"),
+            "--struck",
+            Path.join(nsynth, "bass_electronic_027"),
+            "--out",
+            out
+          ])
+        end)
+
+      assert output =~ "wrote the figures of 110 recordings"
+    end
+
+    test "--tour writes eight recordings of keyboard_electronic_098, each followed by electric_piano",
+         %{dir: dir} = ctx do
+      tour = Path.join(ctx.tmp_dir, "tour.wav")
+
+      output =
+        capture_io(fn ->
+          Mix.Tasks.Mx.Fit.run([
+            "electric_piano",
+            "--struck",
+            dir,
+            "--tour",
+            tour,
+            "--count",
+            "8"
+          ])
+        end)
+
+      assert output =~ "wrote a tour of 8 recordings, each followed by electric_piano"
+      {:ok, %{rate: rate, samples: samples}} = Mx.Audio.read(tour)
+      assert_in_delta length(samples) / rate, 8 * 2 * (2.9 + 1), 0.05
+    end
+  end
+
+  # The University of Iowa Electronic Music Studios' marimba, xylophone and vibraphone recordings,
+  # from https://theremin.music.uiowa.edu/MISmarimba.html and the pages beside it, in the folders
+  # MX_IOWA_MARIMBA, MX_IOWA_XYLOPHONE and MX_IOWA_VIBRAPHONE name.
+  describe "the Iowa mallet recordings" do
+    @describetag :iowa
+
+    setup do
+      folder = fn name ->
+        System.get_env(name) || flunk("set #{name} to the folder of its Iowa recordings")
+      end
+
+      %{
+        marimba: folder.("MX_IOWA_MARIMBA"),
+        xylophone: folder.("MX_IOWA_XYLOPHONE"),
+        vibraphone: folder.("MX_IOWA_VIBRAPHONE")
+      }
+    end
+
+    @tag timeout: 600_000
+    test "fits the 36 notes of the marimba from C4 to B4 at pp, mf and ff, quieter at pp by as much as the recordings",
+         %{marimba: marimba} = ctx do
+      list =
+        write_list(ctx, [
+          "C4:B4 40 kept #{marimba}/Marimba.yarn.pp.C4B4.aif",
+          "C4:B4 80 kept #{marimba}/Marimba.yarn.mf.C4B4.aif",
+          "C4:B4 127 kept #{marimba}/Marimba.yarn.ff.C4B4.aif"
+        ])
+
+      out = Path.join(ctx.tmp_dir, "marimba.mxf")
+
+      output =
+        capture_io(fn ->
+          Mix.Tasks.Mx.Fit.run(["marimba", "--struck", list, "--out", out, "--check"])
+        end)
+
+      assert output =~ "wrote the figures of 36 recordings"
+      assert output =~ "marimba against 36 recordings"
+      [recordings] = captures(~r/c4 vel 40: recordings (-[\d.]+) dB/, output)
+      {times, fitted} = figures(File.read!(out))
+      at = fn velocity -> Enum.find(fitted, &(&1.note == 60 and &1.velocity == velocity)) end
+      assert_in_delta loudness(times, at.(40)) - loudness(times, at.(127)), recordings, 1.5
+    end
+
+    test "splits the xylophone's mf run from C6 to B6 into its twelve notes, and names the vibraphone's pp C#6 as not found",
+         %{xylophone: xylophone, vibraphone: vibraphone} = ctx do
+      list =
+        write_list(ctx, [
+          "C6:B6 80 #{xylophone}/xylophone.rosewood.mf.C6B6.aif",
+          "C6:F6 40 #{vibraphone}/Vibraphone.sustain.pp.C6F6.aif"
+        ])
+
+      output =
+        capture_io(fn ->
+          Mix.Tasks.Mx.Fit.run(["xylophone", "--struck", list, "--check"])
+        end)
+
+      assert output =~
+               "xylophone.rosewood.mf.C6B6.aif: c6 cs6 d6 ds6 e6 f6 fs6 g6 gs6 a6 as6 b6\n"
+
+      assert output =~ "Vibraphone.sustain.pp.C6F6.aif: c6 d6 ds6 e6 f6\n  not found: cs6\n"
+      assert output =~ "xylophone against 17 recordings"
+    end
+  end
+
+  # The folk harp and the Steinway B of the Versilian Community Sample Library, in the folder MX_VCSL
+  # names.
+  describe "the VCSL harp and piano recordings" do
+    @describetag :vcsl
+
+    setup do
+      dir = System.get_env("MX_VCSL") || flunk("set MX_VCSL to the folder of the VCSL")
+      %{dir: Path.join(dir, "Chordophones")}
+    end
+
+    test "leaves out the folk harp's file named C3 as an octave above it, and fits it as C4",
+         %{dir: dir} = ctx do
+      path = Path.join(dir, "Composite Chordophones/Folk Harp/EWHarp_Normal_C3_v3_RR1.wav")
+      list = write_list(ctx, ["C3 127 #{path}", "C4 127 #{path}"])
+      out = Path.join(ctx.tmp_dir, "harp.mxf")
+
+      output =
+        capture_io(fn -> Mix.Tasks.Mx.Fit.run(["harp", "--struck", list, "--out", out]) end)
+
+      assert output =~
+               "EWHarp_Normal_C3_v3_RR1.wav: \n  left out c3 at 0.0 s: sounds an octave above it\n"
+
+      assert output =~ "EWHarp_Normal_C3_v3_RR1.wav: c4\n"
+      assert {_times, [%{note: 60}]} = figures(File.read!(out))
+    end
+
+    @tag timeout: 600_000
+    test "follows the Steinway's C4 past 10 seconds, and checks the whole note",
+         %{dir: dir} = ctx do
+      path =
+        Path.join(dir, "Zithers/Grand Piano, Steinway B/NoSus/JHPiano_NoSus_Close_C4_vl3_rr1.wav")
+
+      list = write_list(ctx, ["C4 90 #{path}"])
+      out = Path.join(ctx.tmp_dir, "piano.mxf")
+      capture_io(fn -> Mix.Tasks.Mx.Fit.run(["piano", "--struck", list, "--out", out]) end)
+
+      {:ok, [recording], _lines} = Mx.Fit.Struck.listed(list)
+      [%{partials: partials}] = Mx.Fit.Struck.check(:piano, [recording])
+      %{levels: checked} = Enum.find(partials, &(&1.harmonic == 1))
+      assert {17.0, _recorded, _rendered} = List.keyfind(checked, 17.0, 0)
+
+      {times, [%{partials: fitted}]} = figures(File.read!(out))
+      %{levels: levels} = Enum.find(fitted, &(&1.harmonic == 1))
+
+      for second <- [11.0, 14.0] do
+        {^second, recorded, _rendered} = List.keyfind(checked, second, 0)
+        {3.0, from, _rendered} = List.keyfind(checked, 3.0, 0)
+        fell = level_at(times, levels, second) - level_at(times, levels, 3.0)
+        assert_in_delta fell, recorded - from, 1.5
+      end
+    end
+  end
+
+  # The timpani of VSCO 2 Community Edition, from https://github.com/sgossner/VSCO-2-CE, in the
+  # folder Timpani of the folder MX_VSCO_PERCUSSION names.
+  describe "the VSCO 2 timpani recordings" do
+    @describetag :vsco
+
+    setup do
+      dir =
+        System.get_env("MX_VSCO_PERCUSSION") ||
+          flunk("set MX_VSCO_PERCUSSION to the folder of the VSCO 2 percussion")
+
+      %{dir: Path.join(dir, "Timpani")}
+    end
+
+    test "fits drum 3's hit at its lowest partial, 125.6 Hz, under B2", %{dir: dir} = ctx do
+      list = write_list(ctx, ["125.6Hz 127 kept #{dir}/Timpani3_Hit_v4_rr1_Sum.wav"])
+      out = Path.join(ctx.tmp_dir, "timpani.mxf")
+
+      output =
+        capture_io(fn -> Mix.Tasks.Mx.Fit.run(["timpani", "--struck", list, "--out", out]) end)
+
+      assert output =~ "Timpani3_Hit_v4_rr1_Sum.wav: b2\n"
+      assert {_times, [%{note: 47, partials: partials}]} = figures(File.read!(out))
+      lowest = partials |> Enum.map(& &1.ratio) |> Enum.min()
+      assert_in_delta lowest * Mx.Signal.hz(47), 125.6, 1
     end
   end
 
@@ -406,6 +707,85 @@ defmodule Mix.Tasks.Mx.FitTest do
 
     assert length(Regex.scan(~r/^  [a-g]s?\d vel \d+: [\d.]+ dB, \d+ of its partials/m, notes)) ==
              10
+  end
+
+  # A struck note at a MIDI note or a frequency in Hz: its partials at whole multiples or at
+  # `ratios`, each 1/n of the first, fading `fade` dB a second, after 0.2 seconds of silence.
+  defp struck_note(note, seconds, opts \\ []) do
+    rate = Mxs.render_rate()
+    hz = if is_integer(note), do: Mx.Signal.hz(note), else: note
+    ratios = opts[:ratios] || opts[:harmonics] || [1, 2, 3, 4]
+    gain = Keyword.get(opts, :gain, 0.2)
+    fade = Keyword.get(opts, :fade, 30)
+
+    List.duplicate(0.0, round(0.2 * rate)) ++
+      for index <- 0..round(seconds * rate - 1) do
+        time = index / rate
+
+        wave =
+          ratios
+          |> Enum.with_index(1)
+          |> Enum.map(fn {ratio, n} -> :math.sin(2 * :math.pi() * hz * ratio * time) / n end)
+          |> Enum.sum()
+
+        gain * wave * 10 ** (-fade * time / 20) * min(time / 0.002, 1)
+      end
+  end
+
+  # Notes one after another, each ringing 1.5 seconds.
+  defp run(notes), do: Enum.flat_map(notes, &struck_note(&1, 1.5))
+
+  defp write_list(ctx, lines) do
+    path = Path.join(ctx.tmp_dir, "list.txt")
+    File.write!(path, Enum.join(lines, "\n") <> "\n")
+    path
+  end
+
+  # The times of figures as mxs reads them, and each recording's note, velocity and partials,
+  # each partial with its ratio, harmonic, last slope and levels in dB.
+  defp figures(<<"MXF1", count::little-16, rest::binary>>) do
+    {time_bytes, level_bytes} = {count * 4, count * 2}
+    <<times::binary-size(^time_bytes), bands::little-16, rest::binary>> = rest
+    times = for <<time::float-little-32 <- times>>, do: Float.round(time, 4)
+    {edge_bytes, noise_bytes} = {bands * 8, bands * (count + 1) * 2}
+    <<_edges::binary-size(^edge_bytes), recordings::little-16, rest::binary>> = rest
+
+    {recordings, <<>>} =
+      Enum.map_reduce(1..recordings//1, rest, fn _, rest ->
+        <<note, velocity, partials::little-16, rest::binary>> = rest
+
+        {partials, rest} =
+          Enum.map_reduce(1..partials//1, rest, fn _, rest ->
+            <<ratio::float-little-32, harmonic::little-16, tail::little-signed-16,
+              levels::binary-size(^level_bytes), rest::binary>> = rest
+
+            levels = for <<level::little-signed-16 <- levels>>, do: level / 10
+            {%{ratio: ratio, harmonic: harmonic, tail: tail / 10, levels: levels}, rest}
+          end)
+
+        <<_noise::binary-size(^noise_bytes), rest::binary>> = rest
+        {%{note: note, velocity: velocity, partials: partials}, rest}
+      end)
+
+    {times, recordings}
+  end
+
+  # A level of figures between their times, in straight lines.
+  defp level_at(times, levels, time) do
+    {earlier, later} = times |> Enum.zip(levels) |> Enum.split_while(fn {t, _} -> t <= time end)
+    {t0, l0} = List.last(earlier)
+    {t1, l1} = List.first(later)
+    l0 + (time - t0) / (t1 - t0) * (l1 - l0)
+  end
+
+  # The power of a recording's partials over its first half second, in dB, as the check sums it.
+  defp loudness(times, %{partials: partials}) do
+    total =
+      for %{levels: levels} <- partials, step <- 0..199, reduce: 0 do
+        sum -> sum + 10 ** (level_at(times, levels, step * 0.0025) / 10)
+      end
+
+    10 * :math.log10(total)
   end
 
   defp captures(pattern, output) do

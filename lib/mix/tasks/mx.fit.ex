@@ -15,12 +15,15 @@ defmodule Mix.Tasks.Mx.Fit do
   The recordings' figures are kept in the system's temporary folder and reused until a file changes.
 
       mix mx.fit electric_piano --struck keyboard_electronic_098 --out electric_piano.mxf
-      mix mx.fit electric_piano --struck keyboard_electronic_098 --notes E1:E6 --check
+      mix mx.fit marimba --struck marimba.txt --check
+      mix mx.fit marimba --struck marimba.txt --tour marimba_tour.wav --count 8
 
-  `--struck` with a folder fits recordings of struck notes partial by partial instead, as `Mx.Fit.Struck` describes, each file named as NSynth names them, ending in its MIDI note and velocity, such as `keyboard_electronic_098-064-025.wav`.
+  `--struck` with a folder of NSynth recordings, or a list of recordings with their notes and velocities, fits recordings of struck notes partial by partial instead, as `Mx.Fit.Struck` describes; it can be given more than once.
   `--out` writes the figures to a file, for mxs to play.
   `--notes` with two notes, such as `E1:E6`, keeps the recordings from the first to the second.
-  `--check` renders the synth at each recording's note and velocity and prints how far it is from the recordings: the share of the partials within 30 dB of each note's loudest that are within 2 dB over the first 20 ms and within 2 dB on average, the share of those 30 to 60 dB down within 4 dB on average, and the mean gap in ERB bands at the median note and the worst, then the ten partials and the ten notes furthest off.
+  `--check` renders the synth at each recording's note and velocity and prints how far it is from the recordings.
+  `--tour` writes a WAV file of twelve recordings, or as many as `--count` gives, each followed by the synth.
+  The guide on instruments, under "Fitting a struck instrument", describes the list and what the check prints.
   """
 
   use Mix.Task
@@ -74,20 +77,34 @@ defmodule Mix.Tasks.Mx.Fit do
   defp struck(synth, rest) do
     {opts, extra} =
       OptionParser.parse!(rest,
-        strict: [struck: :string, out: :string, notes: :string, check: :boolean]
+        strict: [
+          struck: :keep,
+          out: :string,
+          notes: :string,
+          check: :boolean,
+          tour: :string,
+          count: :integer
+        ]
       )
 
     files = Enum.join(extra, " ")
-    if extra != [], do: Mx.Command.fail("--struck takes a folder, not files: #{files}")
 
-    if !opts[:out] and !opts[:check],
-      do: Mx.Command.fail("give --out with a file to write the figures to, or --check")
+    if extra != [],
+      do: Mx.Command.fail("--struck takes a folder or a list, not files: #{files}")
+
+    if !opts[:out] and !opts[:check] and !opts[:tour],
+      do:
+        Mx.Command.fail(
+          "give --out with a file to write the figures to, --check, or --tour with a file to write a tour to"
+        )
+
+    notes = opts[:notes] && notes!(opts[:notes])
 
     recordings =
-      case Struck.recordings(opts[:struck], opts[:notes] && notes!(opts[:notes])) do
-        {:ok, recordings} -> recordings
-        {:error, message} -> Mx.Command.fail(message)
-      end
+      opts
+      |> Keyword.get_values(:struck)
+      |> Enum.flat_map(&struck_recordings!(&1, notes))
+      |> Enum.sort_by(&{&1.note, &1.velocity})
 
     if out = opts[:out] do
       figures = Struck.figures(recordings)
@@ -98,6 +115,47 @@ defmodule Mix.Tasks.Mx.Fit do
     end
 
     if opts[:check], do: print_struck(synth, recordings)
+
+    if tour = opts[:tour] do
+      {data, rate} = Struck.tour(synth, recordings, opts[:count] || 12)
+      Mx.Audio.write_floats(tour, data, rate)
+      count = min(opts[:count] || 12, length(recordings))
+      IO.puts("wrote a tour of #{count} recordings, each followed by #{synth}, to #{tour}")
+    end
+  end
+
+  defp struck_recordings!(path, notes) do
+    found =
+      if File.dir?(path), do: Struck.recordings(path, notes), else: Struck.listed(path, notes)
+
+    case found do
+      {:ok, recordings} ->
+        recordings
+
+      {:ok, recordings, lines} ->
+        Enum.each(lines, &print_line/1)
+        recordings
+
+      {:error, message} ->
+        Mx.Command.fail(message)
+    end
+  end
+
+  defp print_line(line) do
+    name = Path.basename(line.path)
+    found = Enum.map_join(line.found, " ", &Measure.name/1)
+    IO.puts("#{name}: #{found}")
+
+    for {note, seconds, why} <- line.left_out do
+      note = Measure.name(note)
+      at = :erlang.float_to_binary(seconds, decimals: 1)
+      IO.puts("  left out #{note} at #{at} s: #{why}")
+    end
+
+    if line.missing != [] do
+      missing = Enum.map_join(line.missing, " ", &Measure.name/1)
+      IO.puts("  not found: #{missing}")
+    end
   end
 
   defp print_struck(synth, recordings) do
@@ -135,6 +193,7 @@ defmodule Mix.Tasks.Mx.Fit do
       )
     end
 
+    print_loudness(Struck.loudness(checks))
     IO.puts("\nthe ten notes furthest off in ERB bands:")
 
     for check <- Struck.furthest_notes(checks, 10) do
@@ -145,6 +204,19 @@ defmodule Mix.Tasks.Mx.Fit do
       IO.puts(
         "  #{note}: #{erb} dB, #{off} of its partials within 30 dB of the loudest more than 2 dB off"
       )
+    end
+  end
+
+  defp print_loudness([]), do: :ok
+
+  defp print_loudness(rows) do
+    IO.puts("\neach velocity under the loudest at its note, over the first half second:")
+
+    for row <- rows do
+      note = Measure.name(row.note)
+      recording = signed_decimals(row.recording)
+      render = signed_decimals(row.render)
+      IO.puts("  #{note} vel #{row.velocity}: recordings #{recording} dB, synth #{render} dB")
     end
   end
 

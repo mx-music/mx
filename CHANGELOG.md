@@ -9,6 +9,8 @@
   * [mix mx.measure] Measure in native code, with the same figures in a tenth of the processor time or less, and strokes in a twentieth of the memory; `mix mx.fit` and `mix mx.hum` measure the same way
   * [mix mx.measure] Add `--partials` for plucked and struck notes, following each partial, harmonic or not, every 2.5 ms, printing how it falls and naming the lines left out as not the instrument's
   * [mix mx.fit] Add `--struck`, which fits a folder of struck notes partial by partial into figures for mxs with `--out`, and with `--check` compares a synth with each recording partial by partial and in ERB bands
+  * [mix mx.fit] `--struck` takes a list of recordings with their notes and velocities, splits runs of notes into single notes, leaves out notes that sound away from their names, fits a drum given in Hz, follows each note for as long as it rings up to 28 seconds, and can be given more than once
+  * [mix mx.fit] Add `--tour`, which writes each of a spread of recordings followed by the synth, for listening, and `--check` prints each velocity's loudness for recordings that keep their levels
 
 ## v0.2.2 (2026-11-16)
 

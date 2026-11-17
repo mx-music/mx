@@ -27,7 +27,12 @@ defmodule Mx.Audio do
   @doc "Writes samples from -1 to 1 to a mono WAV file of 32-bit floats at a sample rate."
   def write(path, samples, rate) when is_binary(path) and is_list(samples) and is_integer(rate) do
     data = for sample <- samples, into: <<>>, do: <<sample / 1::float-little-32>>
+    write_floats(path, data, rate)
+  end
 
+  @doc "Writes samples already packed as little-endian 32-bit floats to a mono WAV file at a sample rate."
+  def write_floats(path, data, rate)
+      when is_binary(path) and is_binary(data) and is_integer(rate) do
     fmt =
       <<3::little-16, 1::little-16, rate::little-32, rate * 4::little-32, 4::little-16,
         32::little-16>>

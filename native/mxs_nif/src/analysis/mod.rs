@@ -7,6 +7,7 @@ pub mod hits;
 pub mod hum;
 pub mod partials;
 pub mod plucked;
+pub mod runs;
 pub mod strokes;
 
 use rustfft::{Fft, FftPlanner, num_complex::Complex};

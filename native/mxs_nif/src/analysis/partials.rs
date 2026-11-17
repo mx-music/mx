@@ -286,20 +286,23 @@ impl Banded {
     }
 }
 
-/// Measures a note: its pitch near `note`, its harmonics up to 8 kHz or the highest the recording holds, and the peaks that are not harmonics as the note starts.
+/// Measures a note: its pitch near `note`, or with `exact` the note's own frequency, its harmonics up to 8 kHz or the highest the recording holds, and the peaks that are not harmonics as the note starts.
 /// A partial between harmonics with no strike, standing no more than 3 dB above its level once settled as the note starts, and hardly any fall, moving less than 12 dB after, is a line that is not the instrument's, and is left out.
-pub fn measure(sound: &[f64], rate: f64, note: f64, seconds: f64) -> Note {
+pub fn measure(sound: &[f64], rate: f64, note: f64, seconds: f64, exact: bool) -> Note {
     let guess = hz(note);
     let spectra = spectra(sound, rate, guess, seconds);
-    let settled = spectra.settled();
-    let first = settled.start;
-    let rough = pitch(&spectra.frames[first], spectra.bin, guess, spectra.resolution);
-    // The grid's pitch can sit a few cents off where the bell's partials pull its score, so the first harmonics settle it.
-    let f0 = median(&(1..=4).map(|n| settle(&spectra, n as f64 * rough, (n as f64 * rough * 0.03).max(spectra.resolution)) / n as f64).collect::<Vec<_>>());
+    let f0 = if exact {
+        guess
+    } else {
+        let rough = pitch(&spectra.frames[spectra.settled().start], spectra.bin, guess, spectra.resolution);
+        // The grid's pitch can sit a few cents off where the bell's partials pull its score, so the first harmonics settle it.
+        median(&(1..=4).map(|n| settle(&spectra, n as f64 * rough, (n as f64 * rough * 0.03).max(spectra.resolution)) / n as f64).collect::<Vec<_>>())
+    };
     let top = TOP.min(0.45 * rate);
     let harmonics: Vec<f64> = (1..).map(|n| n as f64 * f0).take_while(|f| *f <= top).collect();
     let first_floor = Floor::new(&spectra, &harmonics);
-    let others = others(&spectra, f0, top, &first_floor);
+    // A drum's partials are not harmonics, so with its pitch given they are looked for from just above it; a string's from halfway to its second harmonic, clear of the fundamental's skirt.
+    let others = others(&spectra, f0, top, &first_floor, if exact { 1.06 } else { 1.5 });
     let mut every = harmonics.clone();
     every.extend(others.iter().cloned());
     let floor = Floor::new(&spectra, &every);
@@ -307,7 +310,8 @@ pub fn measure(sound: &[f64], rate: f64, note: f64, seconds: f64) -> Note {
     let width = |target: f64| (target * 0.01).min(0.25 * f0).max(spectra.resolution);
     let mut freqs: Vec<(f64, u32)> = vec![];
     for (n, target) in harmonics.iter().enumerate() {
-        let freq = settle(&spectra, *target, width(*target));
+        // A pitch given exactly is the first partial's own, which a louder partial nearby could pull off it.
+        let freq = if exact && n == 0 { *target } else { settle(&spectra, *target, width(*target)) };
         // A harmonic settling outside its window has followed another partial's skirt, and high up neighbouring harmonics may settle on the same peak, which is kept once.
         if (freq - target).abs() <= width(*target) && freqs.iter().all(|(f, _)| (f - freq).abs() > spectra.resolution) {
             freqs.push((freq, n as u32 + 1));
@@ -352,8 +356,8 @@ fn pitch(frame: &[f64], bin: f64, guess: f64, _resolution: f64) -> f64 {
     super::first_max(candidates, |f0| (1..=6).map(|n| super::magnitude_at(frame, f0 * n as f64 / bin)).sum()).unwrap()
 }
 
-// Peaks over the first 20 ms of settled frames that stand clear of the harmonics and of the floor, strongest first, so a sidelobe gives way to the peak it leans on.
-fn others(spectra: &Spectra, f0: f64, top: f64, floor: &Floor) -> Vec<f64> {
+// Peaks over the first 20 ms of settled frames above `above` times the pitch that stand clear of the harmonics and of the floor, strongest first, so a sidelobe gives way to the peak it leans on.
+fn others(spectra: &Spectra, f0: f64, top: f64, floor: &Floor, above: f64) -> Vec<f64> {
     let mut peaks: Vec<(f64, f64)> = vec![];
     let last = ((top / spectra.bin) as usize).min(spectra.frames[0].len() - 3);
     let near = (0.06 * f0).max(2.0 * spectra.resolution);
@@ -363,7 +367,7 @@ fn others(spectra: &Spectra, f0: f64, top: f64, floor: &Floor) -> Vec<f64> {
             let freq = i as f64 * spectra.bin;
             let local = frame[i] > frame[i - 1] && frame[i] >= frame[i + 1] && frame[i] > frame[i - 2] && frame[i] >= frame[i + 2];
             let off = ((freq / f0) - (freq / f0).round()).abs() * f0;
-            if local && off > near && freq > 1.5 * f0 && db(frame[i]) > floor.at(freq) + CLEAR {
+            if local && off > near && freq > above * f0 && db(frame[i]) > floor.at(freq) + CLEAR {
                 peaks.push(peak_near(frame, spectra.bin, freq, spectra.bin));
             }
         }

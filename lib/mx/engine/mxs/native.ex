@@ -95,11 +95,17 @@ defmodule Mx.Engine.Mxs.Native do
   @doc "The note a recording's data starts with, struck, measured partial by partial as `Mx.Measure.partials/2` gives it."
   def measure_struck(_data, _format, _rate, _note), do: :erlang.nif_error(:nif_not_loaded)
 
-  @doc "The figures of struck notes fitted partial by partial, as mxs reads them, from recordings each as `{data, format, rate, note, velocity}`."
+  @doc "The notes of a recording's data that holds one of `notes`, MIDI note numbers, or a run of them, as `Mx.Fit.Struck` splits them."
+  def split_struck(_data, _format, _rate, _notes), do: :erlang.nif_error(:nif_not_loaded)
+
+  @doc "The figures of struck notes fitted partial by partial, as mxs reads them, from recordings each as `{{data, format, rate}, {from, to}, {note, velocity, seconds, exact}}`, the samples it spans and its note, a MIDI number or between them for a pitch given exactly."
   def fit_struck(_recordings), do: :erlang.nif_error(:nif_not_loaded)
 
-  @doc "How far a render of a struck note is from a recording of it, partial by partial and in ERB bands, each given as `{data, format, rate}`."
-  def check_struck(_recording, _rendered, _note), do: :erlang.nif_error(:nif_not_loaded)
+  @doc "How far a render of a struck note is from a recording of it, partial by partial and in ERB bands, the recording as `fit_struck/1` takes it and the render as `{data, format, rate}`."
+  def check_struck(_recording, _rendered), do: :erlang.nif_error(:nif_not_loaded)
+
+  @doc "A tour for listening of recordings of struck notes, each as `fit_struck/1` takes it, beside a render as `{data, format, rate}`, as 32-bit floats at the renders' rate."
+  def tour_struck(_pairs), do: :erlang.nif_error(:nif_not_loaded)
 
   @doc "The magnitudes of `size` samples of a recording's data from the frame `from`, through a periodic Hann window, bins 0 to `size / 2 - 1`."
   def spectrum(_data, _format, _from, _size), do: :erlang.nif_error(:nif_not_loaded)
