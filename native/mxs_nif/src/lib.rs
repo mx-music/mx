@@ -1,5 +1,6 @@
 //! mx's NIF onto mxs: it turns Elixir terms into the engine's types and calls its public API.
 
+mod analysis;
 mod levels;
 mod spectrogram;
 
@@ -374,6 +375,66 @@ fn strokes(data: Binary, format: (String, usize, usize), rate: f64) -> NifResult
     let (kind, bits, channels) = format;
     let sound = spectrogram::samples(data.as_slice(), &kind, bits, channels, 0, usize::MAX).ok_or(rustler::Error::BadArg)?;
     Ok(levels::strokes(&sound, rate))
+}
+
+fn sound(data: &Binary, format: &(String, usize, usize)) -> NifResult<Vec<f64>> {
+    let (kind, bits, channels) = format;
+    spectrogram::samples(data.as_slice(), kind, *bits, *channels, 0, usize::MAX).ok_or(rustler::Error::BadArg)
+}
+
+/// The notes plucked or struck in a recording's data whose first note is `note`, or with `whole`, the data as one note from its first sample, as `Mx.Measure` gives them.
+#[rustler::nif(schedule = "DirtyCpu")]
+fn measure_plucked(data: Binary, format: (String, usize, usize), rate: f64, note: i64, whole: bool) -> NifResult<Vec<analysis::plucked::Note>> {
+    let sound = sound(&data, &format)?;
+    Ok(if whole { analysis::plucked::note(&sound, rate, note).into_iter().collect() } else { analysis::plucked::notes(&sound, rate, note) })
+}
+
+/// The hits in a recording's data, or with `whole`, the data as one hit from its first sample, as `Mx.Measure.Hits` gives them.
+#[rustler::nif(schedule = "DirtyCpu")]
+fn measure_hits(data: Binary, format: (String, usize, usize), rate: f64, note: Option<i64>, partials: Option<usize>, whole: bool) -> NifResult<Vec<analysis::hits::Hit>> {
+    let sound = sound(&data, &format)?;
+    Ok(if whole { analysis::hits::hit(&sound, rate, note, partials).into_iter().collect() } else { analysis::hits::hits(&sound, rate, note, partials) })
+}
+
+/// The held notes in a recording's data whose first note is `note`, or with `whole`, the data as one held note from its first sample, as `Mx.Measure.Held` gives them.
+#[rustler::nif(schedule = "DirtyCpu")]
+fn measure_held(data: Binary, format: (String, usize, usize), rate: f64, note: i64, whole: bool) -> NifResult<Vec<analysis::held::Note>> {
+    let sound = sound(&data, &format)?;
+    Ok(if whole { analysis::held::note(&sound, rate, note).into_iter().collect() } else { analysis::held::notes(&sound, rate, note) })
+}
+
+struct StrokesResource {
+    recording: analysis::strokes::Recording,
+}
+
+#[rustler::resource_impl]
+impl rustler::Resource for StrokesResource {}
+
+/// The strokes of a recording's data, and the recording kept for their tracks, as `Mx.Measure.Strokes` gives them.
+#[rustler::nif(schedule = "DirtyCpu")]
+fn measure_strokes(data: Binary, format: (String, usize, usize), rate: f64) -> NifResult<(ResourceArc<StrokesResource>, Vec<analysis::strokes::Stroke>)> {
+    let recording = analysis::strokes::strokes(sound(&data, &format)?, rate);
+    let strokes = recording.strokes.clone();
+    Ok((ResourceArc::new(StrokesResource { recording }), strokes))
+}
+
+/// The tracks of a recording's stroke at `index`, or nil when it has no pitch.
+#[rustler::nif(schedule = "DirtyCpu")]
+fn stroke_tracks(resource: ResourceArc<StrokesResource>, index: usize, alone: bool, ignore: Option<(f64, f64)>) -> Option<analysis::strokes::Tracks> {
+    resource.recording.tracks(index, alone, ignore)
+}
+
+/// The pitch of each 10 ms frame of a hummed recording's data as a fractional MIDI note, or nil where it has none, as `Mx.Hum` follows it.
+#[rustler::nif(schedule = "DirtyCpu")]
+fn hum_pitches(data: Binary, format: (String, usize, usize), rate: f64) -> NifResult<Vec<Option<f64>>> {
+    Ok(analysis::hum::pitches(&sound(&data, &format)?, rate))
+}
+
+/// The magnitudes of `size` samples of a recording's data from the frame `from`, through a periodic Hann window, bins 0 to `size / 2 - 1`.
+#[rustler::nif(schedule = "DirtyCpu")]
+fn spectrum(data: Binary, format: (String, usize, usize), from: usize, size: usize) -> NifResult<Vec<f64>> {
+    let sound = sound(&data, &format)?;
+    Ok(analysis::Spectra::default().take(&sound, from, size))
 }
 
 #[rustler::nif]

@@ -77,6 +77,20 @@ defmodule Mx.MeasureTest do
     end
   end
 
+  test "WAVs of 16, 24 and 32-bit integers measure as one of floats does", ctx do
+    note = tone(196, 48_000, 4)
+    {:ok, [float]} = Measure.file(write_wav(ctx, "float.wav", 48_000, note), 55)
+
+    for bits <- [16, 24, 32] do
+      {:ok, [integer]} = Measure.file(write_pcm(ctx, "#{bits}.wav", 48_000, bits, note), 55)
+      assert_in_delta integer.pitch, float.pitch, 0.01
+
+      for {one, other} <- Enum.zip(integer.harmonics, float.harmonics) do
+        assert_in_delta one.level, other.level, 0.1
+      end
+    end
+  end
+
   test "refuses a file it cannot read, and a file with no notes, naming the path", ctx do
     missing = Path.join(ctx.tmp_dir, "missing.wav")
     assert Measure.file(missing, 45) == {:error, "cannot read #{missing}"}
@@ -119,6 +133,27 @@ defmodule Mx.MeasureTest do
     fmt =
       <<3::little-16, 1::little-16, rate::little-32, rate * 4::little-32, 4::little-16,
         32::little-16>>
+
+    body =
+      "WAVE" <>
+        "fmt " <> <<16::little-32>> <> fmt <> "data" <> <<byte_size(data)::little-32>> <> data
+
+    File.write!(path, "RIFF" <> <<byte_size(body)::little-32>> <> body)
+    path
+  end
+
+  defp write_pcm(ctx, name, rate, bits, samples) do
+    path = Path.join(ctx.tmp_dir, name)
+    top = 2 ** (bits - 1) - 1
+
+    data =
+      for sample <- samples, into: <<>>, do: <<round(sample * top)::signed-little-size(bits)>>
+
+    bytes = div(bits, 8)
+
+    fmt =
+      <<1::little-16, 1::little-16, rate::little-32, rate * bytes::little-32, bytes::little-16,
+        bits::little-16>>
 
     body =
       "WAVE" <>

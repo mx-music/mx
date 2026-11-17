@@ -22,13 +22,6 @@ defmodule Mx.Hum do
   @rate 16_000
   @hop 160
   @window 480
-  @lowest_hz 60
-  @search_hz 50
-  @highest_hz 2500
-  @frame 1024
-  @floor_db -35
-  @dip_db -20
-  @around 20
 
   @spread 0.35
   @cap 4.0
@@ -53,31 +46,8 @@ defmodule Mx.Hum do
 
   @doc "The pitch of each 10 ms frame as a fractional MIDI note, or nil where it has none."
   def pitches(samples, rate) when is_list(samples) and is_integer(rate) do
-    sound = samples |> resample(rate) |> List.to_tuple()
-    longest = div(@rate, @lowest_hz)
-    starts = 0..(tuple_size(sound) - @window - longest - 1)//@hop
-
-    levels = Enum.map(starts, &level(sound, &1 + div(@window - @hop, 2)))
-    loudest = Enum.max(levels, fn -> 0.0 end)
-    floor = loudest * 10 ** (@floor_db / 20)
-    around = levels |> List.to_tuple() |> nearby_peaks()
-
-    # pYIN centres frame i on sample i * hop, so dropping half a window centres it on frame i's
-    # level.
-    # A frame with no clear period lands on pYIN's longest period, so it searches below the lowest
-    # pitch kept.
-    voiced =
-      sound
-      |> Tuple.to_list()
-      |> Enum.drop(div(@window, 2))
-      |> Native.pitches(@rate, @search_hz * 1.0, @highest_hz * 1.0, @frame, @hop)
-
-    [levels, around, voiced]
-    |> Enum.zip_with(fn [level, peak, hz] ->
-      if hz != nil and hz >= @lowest_hz and level > 0 and level >= floor and
-           level >= peak * 10 ** (@dip_db / 20),
-         do: 69 + 12 * :math.log2(hz / 440)
-    end)
+    {data, format} = Signal.packed(samples)
+    Native.hum_pitches(data, format, rate / 1)
   end
 
   @doc "The notes a pitch curve holds, as `{first_frame, frames, note}`."
@@ -150,34 +120,6 @@ defmodule Mx.Hum do
     seq = Enum.join(items, ", ")
     text = "import Mx\n\nsong(tempo: #{tempo}, music: repeat(part(:hum, seq(#{seq}))))\n"
     IO.iodata_to_binary([Code.format_string!(text), "\n"])
-  end
-
-  defp resample(samples, rate) do
-    filtered = Signal.low_pass(samples, rate, 7000) |> List.to_tuple()
-    count = floor((tuple_size(filtered) - 1) * @rate / rate)
-
-    for index <- 0..count//1 do
-      at = index * rate / @rate
-      before = trunc(at)
-      after_ = min(before + 1, tuple_size(filtered) - 1)
-      share = at - before
-      elem(filtered, before) * (1 - share) + elem(filtered, after_) * share
-    end
-  end
-
-  defp level(sound, start) do
-    sum = Enum.reduce(start..(start + @hop - 1), 0.0, &(elem(sound, &1) ** 2 + &2))
-    :math.sqrt(sum / @hop)
-  end
-
-  defp nearby_peaks(levels) do
-    last = tuple_size(levels) - 1
-
-    for index <- 0..last//1 do
-      Enum.max(
-        for near <- max(index - @around, 0)..min(index + @around, last), do: elem(levels, near)
-      )
-    end
   end
 
   # Viterbi through the states, keeping for each frame the cheapest way to reach each state.

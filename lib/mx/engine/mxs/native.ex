@@ -81,6 +81,29 @@ defmodule Mx.Engine.Mxs.Native do
   @doc "The second each sound in a recording starts and its level in dB under the loudest stroke's, as `{second, level}`, from its data as `Mx.Audio.raw/1` gives it."
   def strokes(_data, _format, _rate), do: :erlang.nif_error(:nif_not_loaded)
 
+  @doc "The notes plucked or struck in a recording's data whose first is `note`, or with `whole`, the data as one note from its first sample, as `Mx.Measure` gives them."
+  def measure_plucked(_data, _format, _rate, _note, _whole),
+    do: :erlang.nif_error(:nif_not_loaded)
+
+  @doc "The hits in a recording's data, with their note or nil and how many partials to list or nil, or with `whole`, the data as one hit from its first sample, as `Mx.Measure.Hits` gives them."
+  def measure_hits(_data, _format, _rate, _note, _partials, _whole),
+    do: :erlang.nif_error(:nif_not_loaded)
+
+  @doc "The held notes in a recording's data whose first is `note`, or with `whole`, the data as one held note from its first sample, as `Mx.Measure.Held` gives them."
+  def measure_held(_data, _format, _rate, _note, _whole), do: :erlang.nif_error(:nif_not_loaded)
+
+  @doc "The magnitudes of `size` samples of a recording's data from the frame `from`, through a periodic Hann window, bins 0 to `size / 2 - 1`."
+  def spectrum(_data, _format, _from, _size), do: :erlang.nif_error(:nif_not_loaded)
+
+  @doc "The pitch of each 10 ms frame of a hummed recording's data as a fractional MIDI note, or nil where it has none, as `Mx.Hum` follows it."
+  def hum_pitches(_data, _format, _rate), do: :erlang.nif_error(:nif_not_loaded)
+
+  @doc "The strokes of a recording's data, and the recording kept for `stroke_tracks/4`, as `{recording, strokes}`, as `Mx.Measure.Strokes` gives them."
+  def measure_strokes(_data, _format, _rate), do: :erlang.nif_error(:nif_not_loaded)
+
+  @doc "The tracks of a recording's stroke at `index`, carrying on into its ring when `alone`, without the harmonics between `{low, high}` Hz or nil, or nil when the stroke has no pitch."
+  def stroke_tracks(_recording, _index, _alone, _ignore), do: :erlang.nif_error(:nif_not_loaded)
+
   @doc "What a piano note played with the options given as `{name, value}` pairs is made of, without playing it, as `{:ok, {harmonics, partners, thump, knock, warnings}}` or `{:error, message}`."
   def piano_parts(_options), do: :erlang.nif_error(:nif_not_loaded)
 

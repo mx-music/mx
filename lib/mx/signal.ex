@@ -1,11 +1,12 @@
 defmodule Mx.Signal do
   @moduledoc """
-  The pieces the measuring of plucked notes, held notes and hits share: filtering, spectra, finding where sounds start, and fitting a fade.
+  The pieces the measuring of plucked notes, held notes and hits share in Elixir: reading a recording for the native measuring, spectra, the bands and a high-pass.
 
   Levels are in dB, and a spectrum is a tuple of the magnitudes of its frequency bins.
   """
 
-  alias Mx.{Audio, FFT}
+  alias Mx.Audio
+  alias Mx.Engine.Mxs.Native
 
   @bands [
     {80, 160},
@@ -21,22 +22,28 @@ defmodule Mx.Signal do
     {10_000, 16_000}
   ]
 
-  @onset_hop 0.005
-  @onset_window 40
-
   @doc "The frequency bands measurements are given in, each a third of an octave or wider, as `{low, high}` in Hz."
   def bands, do: @bands
 
-  @doc "Reads a recording and measures its samples and rate with `measure`, and returns `{:ok, found}`, or `{:error, message}` naming the file when it is refused or `measure` finds nothing."
-  def measure_file(path, what, measure)
-      when is_binary(path) and is_binary(what) and is_function(measure, 2) do
-    with {:ok, %{rate: rate, samples: samples}} <- Audio.read(path) do
-      case measure.(samples, rate) do
+  @doc "Reads a recording without decoding it and measures it with `measure`, given its data, its `{kind, bits, channels}` and its rate, and returns `{:ok, found}`, or `{:error, message}` naming the file when it is refused or `measure` finds nothing."
+  def measure_data(path, what, measure)
+      when is_binary(path) and is_binary(what) and is_function(measure, 3) do
+    with {:ok, %{rate: rate} = format, data} <- Audio.raw(path) do
+      case measure.(data, native(format), rate / 1) do
         [] -> {:error, "found no #{what} in #{path}"}
         found -> {:ok, found}
       end
     end
   end
+
+  @doc "Samples from -1 to 1 as data the native measuring reads, with its `{kind, bits, channels}`."
+  def packed(samples) when is_list(samples) do
+    {for(sample <- samples, into: <<>>, do: <<sample / 1::float-little-64>>),
+     {"float_little", 64, 1}}
+  end
+
+  defp native(%{kind: kind, bits: bits, channels: channels}),
+    do: {Atom.to_string(kind), bits, channels}
 
   @doc "The frequency of a note number."
   def hz(note) when is_number(note), do: 440 * 2 ** ((note - 69) / 12)
@@ -60,20 +67,8 @@ defmodule Mx.Signal do
   @doc "The spectrum of `size` samples of a sound, given as a tuple, from the sample `from`."
   def spectrum(sound, from, size)
       when is_tuple(sound) and is_integer(from) and is_integer(size) do
-    frame = for at <- from..(from + size - 1), do: elem(sound, at)
-    frame |> FFT.magnitudes() |> List.to_tuple()
-  end
-
-  @doc "The magnitude of a spectrum at a position between bins, by a straight line between the two bins around it."
-  def magnitude_at(spectrum, position) when is_tuple(spectrum) and is_number(position) do
-    below = floor(position)
-
-    if below + 1 < tuple_size(spectrum) do
-      low = elem(spectrum, below)
-      low + (position - below) * (elem(spectrum, below + 1) - low)
-    else
-      0.0
-    end
+    {data, format} = packed(for at <- from..(from + size - 1), do: elem(sound, at))
+    data |> Native.spectrum(format, 0, size) |> List.to_tuple()
   end
 
   @doc "A peak's position between bins and its level in dB, from a parabola through the log magnitudes around it."
@@ -89,79 +84,9 @@ defmodule Mx.Signal do
     end
   end
 
-  @doc "The seconds a level takes to fade 60 dB, from a straight line through the levels above `above`, or nil when it does not fade."
-  def fade(times, track, above) when is_list(times) and is_list(track) and is_number(above) do
-    points = for {time, level} <- Enum.zip(times, track), level > above, do: {time, level}
-
-    if length(points) > 3 do
-      slope = slope(points)
-      if slope < 0, do: -60 / slope
-    end
-  end
-
-  @doc "The slope of the straight line that best fits a list of `{x, y}` points."
-  def slope(points) when is_list(points) do
-    count = length(points)
-    mean_x = Enum.sum(Enum.map(points, &elem(&1, 0))) / count
-    mean_y = Enum.sum(Enum.map(points, &elem(&1, 1))) / count
-
-    covariance =
-      Enum.sum(for {x_value, y_value} <- points, do: (x_value - mean_x) * (y_value - mean_y))
-
-    variance = Enum.sum(for {x_value, _} <- points, do: (x_value - mean_x) ** 2)
-    covariance / variance
-  end
-
-  @doc """
-  The sample each sound starts at: a 5 ms level within 30 dB of the loudest, and 20 dB above the quietest of the 40 before it, at least `gap` seconds after the start before it.
-  """
-  def onsets(samples, rate, gap) when is_list(samples) and is_integer(rate) and is_number(gap) do
-    hop = round(rate * @onset_hop)
-
-    levels =
-      for chunk <- Enum.chunk_every(samples, hop),
-          do: :math.sqrt(Enum.sum(Enum.map(chunk, &(&1 * &1))) / hop)
-
-    loudest = Enum.max(levels, fn -> 0.0 end)
-
-    if loudest < 1.0e-5 do
-      []
-    else
-      dbs =
-        List.to_tuple(
-          List.duplicate(-120.0, @onset_window) ++ Enum.map(levels, &db(&1 / loudest))
-        )
-
-      frames = gap / @onset_hop
-
-      @onset_window..(tuple_size(dbs) - 1)//1
-      |> Enum.reduce([], fn frame, found ->
-        if onset?(dbs, frame, found, frames), do: [frame | found], else: found
-      end)
-      |> Enum.reverse()
-      |> Enum.map(&((&1 - @onset_window) * hop))
-    end
-  end
-
-  defp onset?(dbs, frame, found, frames) do
-    level = elem(dbs, frame)
-    quietest = Enum.min(for before <- (frame - @onset_window)..(frame - 1), do: elem(dbs, before))
-    rises? = level > -30 and level - quietest > 20
-    rises? and (found == [] or frame - hd(found) > frames)
-  end
-
   @doc "A fourth-order Butterworth high-pass at `hz`, run forward and then backward so it shifts nothing in time."
   def high_pass(samples, rate, hz) when is_list(samples) and is_integer(rate) and is_number(hz) do
     pass = fn samples -> samples |> biquad(rate, hz, 0.5412) |> biquad(rate, hz, 1.3066) end
-    samples |> pass.() |> Enum.reverse() |> pass.() |> Enum.reverse()
-  end
-
-  @doc "A fourth-order Butterworth low-pass at `hz`, run forward and then backward so it shifts nothing in time."
-  def low_pass(samples, rate, hz) when is_list(samples) and is_integer(rate) and is_number(hz) do
-    pass = fn samples ->
-      samples |> biquad(rate, hz, 0.5412, :low) |> biquad(rate, hz, 1.3066, :low)
-    end
-
     samples |> pass.() |> Enum.reverse() |> pass.() |> Enum.reverse()
   end
 
@@ -170,19 +95,16 @@ defmodule Mx.Signal do
     20 * :math.log10(1 + (cutoff / freq) ** 8)
   end
 
-  # Robert Bristow-Johnson's high-pass and low-pass biquads: the input and output of the two
-  # samples before weigh into each output.
-  defp biquad(samples, rate, hz, quality, kind \\ :high) do
+  # Robert Bristow-Johnson's high-pass biquad: the input and output of the two samples before
+  # weigh into each output.
+  defp biquad(samples, rate, hz, quality) do
     angle = 2 * :math.pi() * hz / rate
     alpha = :math.sin(angle) / (2 * quality)
     cos = :math.cos(angle)
     scale = 1 + alpha
 
-    {outer, middle} =
-      case kind do
-        :high -> {(1 + cos) / 2 / scale, -(1 + cos) / scale}
-        :low -> {(1 - cos) / 2 / scale, (1 - cos) / scale}
-      end
+    outer = (1 + cos) / 2 / scale
+    middle = -(1 + cos) / scale
 
     back1 = -2 * cos / scale
     back2 = (1 - alpha) / scale
