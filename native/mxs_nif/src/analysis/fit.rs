@@ -471,6 +471,94 @@ pub fn own(sound: &[f64], rate: f64, note: f64, seconds: f64, exact: bool) -> Ch
     check(sound, rate, &rendered, rate, note, seconds, exact)
 }
 
+/// One partial's or one ERB band's levels at the times asked for, in dB against the recording's loudest partial: the recording, the synth when given, the fit's own render, and that render's sines and noise apart.
+#[derive(NifMap)]
+pub struct Rows {
+    /// The partial's ratio to the pitch and its harmonic, 0 between harmonics, or the band's edges in Hz.
+    pub at: (f64, f64),
+    pub floor: f64,
+    pub rows: Vec<(String, Vec<f64>)>,
+}
+
+/// One recording beside the synth and the fit's own render, frame by frame.
+#[derive(NifMap)]
+pub struct Frames {
+    /// The fundamental's frequency as measured.
+    pub pitch: f64,
+    /// The seconds into the sound given that the strike was found at.
+    pub strike: f64,
+    pub partials: Vec<Rows>,
+    pub bands: Vec<Rows>,
+}
+
+/// Fits a recording, renders the figures with their sines and noise together and apart, and gives each partial within 60 dB of the loudest, lowest first, and each ERB band at `times` seconds after the strike.
+/// Each sound is brought to the recording's total over its first half second as `check` brings it, the sines and noise by the fit's own render's shift.
+pub fn frames(sound: &[f64], rate: f64, note: f64, seconds: f64, exact: bool, synth: Option<(&[f64], f64)>, times: &[f64]) -> Frames {
+    let (figures, theirs) = fit(sound, rate, note, seconds, exact);
+    let own = render(&figures, rate, 0.05, seconds + 0.3);
+    let mut sines = figures.clone();
+    for band in &mut sines.noise {
+        band.levels.fill(SILENT);
+    }
+    let mut noise = figures.clone();
+    for partial in &mut noise.partials {
+        partial.levels.fill(SILENT);
+    }
+    let own_spectra = partials::spectra(&own, rate, hz(note), seconds);
+    let struck = own_spectra.struck() as usize;
+    let apart = |figures: &Figures| partials::spectra_from(&render(figures, rate, 0.05, seconds + 0.3), rate, hz(note), seconds, struck);
+    let freqs: Vec<f64> = theirs.partials.iter().chain(&theirs.left_out).map(|t| t.freq).collect();
+    let bands = erb_bands();
+    let half = (0.5 / HOP) as usize;
+    let power = |levels: &[f64]| levels.iter().take(half).map(|l| 10f64.powf(l / 10.0)).sum::<f64>();
+    let tracks_total = |tracks: &[Vec<f64>]| 10.0 * tracks.iter().take(theirs.partials.len()).map(|l| power(l)).sum::<f64>().log10();
+    let bands_total = |levels: &[Vec<f64>]| 10.0 * levels.iter().take(half).flatten().map(|d| 10f64.powf(d / 10.0)).sum::<f64>().log10();
+    let recorded: Vec<Vec<f64>> = theirs.partials.iter().map(|t| t.levels.clone()).collect();
+    let recorded_bands = erb_levels(&theirs.spectra, &bands);
+    let (track_target, band_target) = (tracks_total(&recorded), bands_total(&recorded_bands));
+    // Each sound's tracks and bands, and the shifts that bring its own render's totals to the recording's.
+    let measured = |sound: &[f64], spectra: &partials::Spectra| (partials::follow(sound, spectra, &freqs), erb_levels(spectra, &bands));
+    let (own_tracks, own_bands) = measured(&own, &own_spectra);
+    let shifts = (track_target - tracks_total(&own_tracks), band_target - bands_total(&own_bands));
+    let mut sounds: Vec<(String, Vec<Vec<f64>>, Vec<Vec<f64>>, (f64, f64))> = vec![("recording".to_string(), recorded, recorded_bands, (0.0, 0.0))];
+    if let Some((synth, synth_rate)) = synth {
+        let spectra = partials::spectra(synth, synth_rate, hz(note), seconds);
+        let (tracks, levels) = measured(synth, &spectra);
+        let shift = (track_target - tracks_total(&tracks), band_target - bands_total(&levels));
+        sounds.push(("synth".to_string(), tracks, levels, shift));
+    }
+    sounds.push(("fit".to_string(), own_tracks, own_bands, shifts));
+    for (name, figures) in [("sines", &sines), ("noise", &noise)] {
+        let rendered = render(figures, rate, 0.05, seconds + 0.3);
+        let spectra = apart(figures);
+        let (tracks, levels) = measured(&rendered, &spectra);
+        sounds.push((name.to_string(), tracks, levels, shifts));
+    }
+    let loudest = loudest(&theirs);
+    let frames: Vec<usize> = times.iter().map(|t| ((t + LEAD) / HOP).round().max(0.0) as usize).collect();
+    let at = |levels: &[f64], shift: f64| frames.iter().map(|k| levels.get(*k).map_or(SILENT, |l| l + shift - loudest)).collect::<Vec<f64>>();
+    let mut order: Vec<usize> = (0..theirs.partials.len()).filter(|i| loudest - theirs.partials[*i].strike(0.02) <= 60.0).collect();
+    order.sort_by(|a, b| theirs.partials[*a].freq.total_cmp(&theirs.partials[*b].freq));
+    let fundamental = theirs.partials.iter().find(|t| t.harmonic == 1).map_or(theirs.f0, |t| t.freq);
+    let partial_rows = order
+        .iter()
+        .map(|i| {
+            let track = &theirs.partials[*i];
+            Rows { at: (track.freq / fundamental, track.harmonic as f64), floor: track.floor - loudest, rows: sounds.iter().map(|(name, tracks, _, (shift, _))| (name.clone(), at(&tracks[*i], *shift))).collect() }
+        })
+        .collect();
+    let band_rows = bands
+        .iter()
+        .enumerate()
+        .map(|(k, (low, high))| {
+            let floor = theirs.floor.at((low * high).sqrt()) + 10.0 * ((high - low) / theirs.spectra.bin).max(1.0).log10();
+            let rows = sounds.iter().map(|(name, _, levels, (_, shift))| (name.clone(), at(&levels.iter().map(|frame| frame[k]).collect::<Vec<f64>>(), *shift))).collect();
+            Rows { at: (*low, *high), floor: floor - loudest, rows }
+        })
+        .collect();
+    Frames { pitch: fundamental, strike: theirs.spectra.struck() / rate, partials: partial_rows, bands: band_rows }
+}
+
 /// The bands one ERB wide from 50 Hz to 8 kHz.
 pub fn erb_bands() -> Vec<(f64, f64)> {
     let erb = |hz: f64| 21.4 * (1.0 + 0.00437 * hz).log10();

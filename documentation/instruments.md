@@ -640,6 +640,29 @@ The fit's figure is the most a synth playing those figures can reach, so a refit
 mx fit marimba --struck marimba.txt --check --own
 ```
 
+`--note` and `--vel` with `--check` print one recording beside the synth and the fit's own render, frame by frame, to see where a note goes wrong.
+It prints the note's measured pitch, its cents from the note's name and the second of the file its strike was found at.
+Then for each partial within 60 dB of the loudest and each ERB band, it prints rows of levels every 5 ms from 5 ms before the strike to 100 ms after: the recording, the synth, the fit's own render, and that render's sines and noise apart, so a level the fit gets from its noise rather than its sine shows.
+At one partial's frequency the sine and the noise add with their phases, so the two rows sum to the fit's own only where one is 20 dB under the other; across a band they add nearly as powers.
+`--until` with seconds carries the rows on to that time in 24 steps, `--own` leaves out the synth, and `--csv` with a file name also writes the figures as a table, one line for each partial or band, row and time.
+
+```sh
+mx fit marimba --struck marimba.txt --check --note C2 --vel 80
+```
+
+```text
+c2 vel 80: 65.18 Hz, -6.1 cents from c2, struck at 0.399 s in Marimba.yarn.mf.C2B2.aif
+levels in dB against the loudest partial over the first 20 ms, - at or under the recording's floor
+
+ms               -5      0      5     10     15     20     25     30     35     40
+1.000 harmonic 1
+  recording   -11.9   -9.7   -7.8   -6.1   -4.5   -3.1   -1.9   -0.8    0.2    1.1
+  synth        -9.3   -7.6   -6.1   -4.7   -3.5   -2.4   -1.4   -0.6    0.2    1.0
+  the fit      -9.8   -8.0   -6.4   -5.0   -3.8   -2.7   -1.7   -0.8    0.0    0.8
+    sines      -9.8   -8.0   -6.4   -5.1   -3.8   -2.7   -1.7   -0.8    0.0    0.8
+    noise         -      -      -      -      -      -      -      -      -      -
+```
+
 `--tour` writes a WAV file to listen to: twelve recordings spread across the notes and velocities, or as many as `--count` gives, each followed by the synth at the same note and velocity.
 Each part starts 50 ms before its strike, lasts as long as the recording measured, and is brought to the same level over its first half second, with a second of silence after it.
 

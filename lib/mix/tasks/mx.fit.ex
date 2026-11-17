@@ -23,13 +23,15 @@ defmodule Mix.Tasks.Mx.Fit do
   `--notes` with two notes, such as `E1:E6`, keeps the recordings from the first to the second.
   `--check` renders the synth at each recording's note and velocity and prints how far it is from the recordings, each figure followed by the same figure for the fit's own render, the figures played with no synth, which is the closest the synth can come.
   `--own` with `--check` prints the fit's figures alone and renders no synth, so it runs before the synth plays the figures.
+  `--note` and `--vel` with `--check`, such as `--note C2 --vel 80`, print that one recording beside the synth and the fit's own render instead, frame by frame: each partial within 60 dB of the loudest and each ERB band, every 5 ms from 5 ms before the strike to 100 ms after, with the fit's sines and noise apart.
+  `--until` with seconds carries the rows on to that time in 24 steps, and `--csv` with a file name also writes the figures as a table.
   `--tour` writes a WAV file of twelve recordings, or as many as `--count` gives, each followed by the synth.
   The guide on instruments, under "Fitting a struck instrument", describes the list and what the check prints.
   """
 
   use Mix.Task
 
-  alias Mx.{Fit, Measure, Notes, Synths}
+  alias Mx.{Fit, Measure, Notes, Signal, Synths}
   alias Mx.Fit.Struck
 
   @example "BbClar.pp.D3B3.aiff:D3"
@@ -84,6 +86,10 @@ defmodule Mix.Tasks.Mx.Fit do
           notes: :string,
           check: :boolean,
           own: :boolean,
+          note: :string,
+          vel: :integer,
+          until: :float,
+          csv: :string,
           tour: :string,
           count: :integer
         ]
@@ -102,6 +108,12 @@ defmodule Mix.Tasks.Mx.Fit do
 
     if opts[:own] && !opts[:check], do: Mx.Command.fail("--own needs --check")
 
+    if (opts[:note] || opts[:vel]) && !(opts[:check] && opts[:note] && opts[:vel]),
+      do: Mx.Command.fail("--note and --vel go together, with --check")
+
+    if (opts[:until] || opts[:csv]) && !opts[:note],
+      do: Mx.Command.fail("--until and --csv need --note and --vel")
+
     notes = opts[:notes] && notes!(opts[:notes])
 
     recordings =
@@ -119,6 +131,9 @@ defmodule Mix.Tasks.Mx.Fit do
     end
 
     cond do
+      opts[:note] ->
+        print_frames(!opts[:own] && synth, recordings, opts)
+
       opts[:own] ->
         print_struck(Struck.own(recordings), "the fit's own render", "the fit")
 
@@ -234,6 +249,109 @@ defmodule Mix.Tasks.Mx.Fit do
       off = off <> the_fit(own && Integer.to_string(off(own)))
       IO.puts("  #{note}: #{erb}; #{off}")
     end
+  end
+
+  defp print_frames(synth, recordings, opts) do
+    note = note!(opts[:note])
+    recording = recording!(recordings, note, opts[:vel])
+    times = times(opts[:until])
+    frames = Struck.frames(synth || nil, recording, times)
+
+    cents =
+      :erlang.float_to_binary(1200 * :math.log2(frames.pitch / Signal.hz(note)), decimals: 1)
+
+    pitch = :erlang.float_to_binary(frames.pitch, decimals: 2)
+    strike = :erlang.float_to_binary(frames.strike, decimals: 3)
+    label = Struck.label(recording)
+    name = Measure.name(note)
+    file = Path.basename(recording.path)
+
+    IO.puts(
+      "#{label}: #{pitch} Hz, #{cents} cents from #{name}, struck at #{strike} s in #{file}"
+    )
+
+    IO.puts(
+      "levels in dB against the loudest partial over the first 20 ms, - at or under the recording's floor\n"
+    )
+
+    milliseconds = Enum.map(times, &round(&1 * 1000))
+    IO.puts(row_line("ms", Enum.map(milliseconds, &Integer.to_string/1)))
+
+    for rows <- frames.partials, do: print_rows(partial_name(rows.at), rows)
+    IO.puts("\nERB bands")
+    for rows <- frames.bands, do: print_rows(band_name(rows.at), rows)
+
+    if csv = opts[:csv] do
+      File.write!(csv, csv(frames, milliseconds))
+      IO.puts("\nwrote the figures to #{csv}")
+    end
+  end
+
+  defp recording!(recordings, note, velocity) do
+    case Enum.find(recordings, &(&1.note == note and &1.velocity == velocity)) do
+      nil ->
+        nearest = Enum.min_by(recordings, &{abs(&1.note - note), abs(&1.velocity - velocity)})
+        wanted = Struck.label(%{note: note, velocity: velocity})
+        nearest = Struck.label(nearest)
+        Mx.Command.fail("no recording of #{wanted}; the nearest is #{nearest}")
+
+      recording ->
+        recording
+    end
+  end
+
+  # Every 5 ms from 5 ms before the strike to 100 ms after, or 24 steps to `until`, each at a frame of the measuring, 2.5 ms apart.
+  defp times(nil), do: for(step <- 0..21, do: (5 * step - 5) / 1000)
+
+  defp times(until) do
+    for step <- 0..23 do
+      at = -0.005 + step * (until + 0.005) / 23
+      Float.round(round((at + 0.005) / 0.0025) * 0.0025 - 0.005, 4)
+    end
+  end
+
+  defp partial_name({ratio, harmonic}) do
+    ratio = :erlang.float_to_binary(ratio, decimals: 3)
+    kind = if harmonic > 0, do: "harmonic #{round(harmonic)}", else: "between"
+    "#{ratio} #{kind}"
+  end
+
+  defp band_name({low, high}), do: "#{round(low)}-#{round(high)} Hz"
+
+  defp print_rows(name, %{rows: rows, floor: floor}) do
+    IO.puts(name)
+
+    for {row, levels} <- rows do
+      IO.puts(row_line(row_name(row), Enum.map(levels, &level(&1, floor))))
+    end
+  end
+
+  defp row_name("fit"), do: "  the fit"
+  defp row_name(row) when row in ["sines", "noise"], do: "    #{row}"
+  defp row_name(row), do: "  #{row}"
+
+  defp row_line(name, figures),
+    do: String.pad_trailing(name, 12) <> Enum.map_join(figures, &String.pad_leading(&1, 7))
+
+  defp level(level, floor) when level <= floor, do: "-"
+  defp level(level, _floor), do: :erlang.float_to_binary(level, decimals: 1)
+
+  defp csv(frames, milliseconds) do
+    lines =
+      for {kind, all, name} <- [
+            {"partial", frames.partials, &partial_name/1},
+            {"band", frames.bands, &band_name/1}
+          ],
+          rows <- all,
+          {row, levels} <- rows.rows,
+          {ms, level} <- Enum.zip(milliseconds, levels) do
+        figure = level(level, rows.floor)
+        figure = if figure == "-", do: "", else: figure
+        at = name.(rows.at)
+        "#{kind},#{at},#{row},#{ms},#{figure}"
+      end
+
+    Enum.join(["kind,at,row,ms,db" | lines], "\n") <> "\n"
   end
 
   defp off(check), do: Enum.count(check.partials, &(&1.below <= 30 and &1.mean > 2))

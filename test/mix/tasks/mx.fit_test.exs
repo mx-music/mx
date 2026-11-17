@@ -330,6 +330,94 @@ defmodule Mix.Tasks.Mx.FitTest do
       assert second < first / 2
     end
 
+    test "--check --note prints one recording frame by frame every 5 ms, and --csv writes the same figures",
+         ctx do
+      write_wav(ctx.tmp_dir, "c4.wav", struck_note(60, 2))
+      write_wav(ctx.tmp_dir, "d4.wav", struck_note(62, 2))
+      list = write_list(ctx, ["C4 127 kept c4.wav", "D4 127 kept d4.wav"])
+      csv = Path.join(ctx.tmp_dir, "c4.csv")
+
+      output =
+        capture_io(fn ->
+          Mix.Tasks.Mx.Fit.run(
+            ~w(piano --struck #{list} --check --note C4 --vel 127 --csv #{csv})
+          )
+        end)
+
+      assert output =~
+               ~r/^c4 vel 127: 261\.\d\d Hz, -?\d+\.\d cents from c4, struck at 0\.2\d\d s in c4.wav$/m
+
+      assert output =~ ~r/^ms +-5 +0 +5 .* 95 +100$/m
+      refute output =~ "partials within 30 dB"
+      [_, partial] = Regex.run(~r/^1\.000 harmonic 1\n((?:  .*\n){5})/m, output)
+
+      names =
+        Regex.scan(~r/^ +(recording|synth|the fit|sines|noise) /m, partial,
+          capture: :all_but_first
+        )
+
+      assert names == [["recording"], ["synth"], ["the fit"], ["sines"], ["noise"]]
+      assert length(String.split(hd(String.split(partial, "\n")))) == 23
+      assert output =~ ~r/^ERB bands\n50-\d+ Hz\n  recording /m
+
+      printed =
+        for line <- String.split(output, "\n"),
+            [_, row, figures] <- [
+              Regex.run(~r/^ +(recording|synth|the fit|sines|noise) +(.*)$/, line)
+            ],
+            figure <- String.split(figures),
+            do: {String.replace(row, "the ", ""), if(figure == "-", do: "", else: figure)}
+
+      [header | lines] = csv |> File.read!() |> String.split("\n", trim: true)
+      assert header == "kind,at,row,ms,db"
+
+      assert Enum.map(
+               lines,
+               &(&1
+                 |> String.split(",")
+                 |> Enum.slice(2, 3)
+                 |> then(fn [row, _ms, db] -> {row, db} end))
+             ) == printed
+
+      assert lines
+             |> Enum.map(&(&1 |> String.split(",") |> Enum.at(3)))
+             |> Enum.uniq()
+             |> length() == 22
+    end
+
+    test "--check --note --until 1 --own prints 24 times to a second, no synth, the same whichever synth is named",
+         ctx do
+      write_wav(ctx.tmp_dir, "c4.wav", struck_note(60, 2))
+      list = write_list(ctx, ["C4 127 kept c4.wav"])
+      args = ~w(--struck #{list} --check --note C4 --vel 127 --until 1 --own)
+      piano = capture_io(fn -> Mix.Tasks.Mx.Fit.run(["piano" | args]) end)
+
+      [_, times] = Regex.run(~r/^ms +(.*)$/m, piano)
+      times = String.split(times)
+      assert length(times) == 24 and List.first(times) == "-5" and List.last(times) == "1000"
+      refute piano =~ "synth"
+      assert capture_io(fn -> Mix.Tasks.Mx.Fit.run(["marimba" | args]) end) == piano
+    end
+
+    test "--check --note refuses a note and velocity the list does not hold, naming the nearest",
+         ctx do
+      write_wav(ctx.tmp_dir, "c4.wav", struck_note(60, 2))
+      write_wav(ctx.tmp_dir, "d4.wav", struck_note(62, 2))
+      list = write_list(ctx, ["C4 127 kept c4.wav", "D4 100 kept d4.wav"])
+
+      assert_raise Mix.Error, "no recording of c8 vel 100; the nearest is d4 vel 100", fn ->
+        Mix.Tasks.Mx.Fit.run(~w(piano --struck #{list} --check --note C8 --vel 100))
+      end
+
+      assert_raise Mix.Error, "--note and --vel go together, with --check", fn ->
+        Mix.Tasks.Mx.Fit.run(~w(piano --struck #{list} --check --note C4))
+      end
+
+      assert_raise Mix.Error, "--until and --csv need --note and --vel", fn ->
+        Mix.Tasks.Mx.Fit.run(~w(piano --struck #{list} --check --until 1))
+      end
+    end
+
     test "refuses --own without --check", ctx do
       write_wav(ctx.tmp_dir, "c4.wav", struck_note(60, 2))
       list = write_list(ctx, ["C4 127 kept c4.wav"])
@@ -527,6 +615,37 @@ defmodule Mix.Tasks.Mx.FitTest do
       {times, fitted} = figures(File.read!(out))
       at = fn velocity -> Enum.find(fitted, &(&1.note == 60 and &1.velocity == velocity)) end
       assert_in_delta loudness(times, at.(40)) - loudness(times, at.(127)), recordings, 1.5
+    end
+
+    @tag timeout: 600_000
+    test "--check --note C2 --vel 80 prints the mf C2's pitch, its fundamental and 4th partial frame by frame, with sines and noise adding up",
+         %{marimba: marimba} = ctx do
+      list = write_list(ctx, ["C2:B2 80 kept #{marimba}/Marimba.yarn.mf.C2B2.aif"])
+
+      output =
+        capture_io(fn ->
+          Mix.Tasks.Mx.Fit.run(~w(marimba --struck #{list} --check --note C2 --vel 80))
+        end)
+
+      assert output =~
+               ~r/^c2 vel 80: 65\.\d\d Hz, -\d\.\d cents from c2, struck at \d\.\d{3} s in Marimba.yarn.mf.C2B2.aif$/m
+
+      for partial <- ["1\\.000 harmonic 1", "(3\\.9|4\\.0)\\d\\d harmonic 4"] do
+        assert output =~
+                 ~r/^#{partial}\n  recording( +[-\d.]+){22}\n  synth( +[-\d.]+){22}\n  the fit( +[-\d.]+){22}\n/m
+      end
+
+      {:ok, recordings, _lines} = Mx.Fit.Struck.listed(list)
+      recording = Enum.find(recordings, &(&1.note == 36))
+      frames = Mx.Fit.Struck.frames(nil, recording, for(step <- 0..21, do: (5 * step - 5) / 1000))
+
+      for rows <- frames.partials ++ frames.bands,
+          [fit, sines, noise] =
+            Enum.map(~w(fit sines noise), &elem(List.keyfind(rows.rows, &1, 0), 1)),
+          {fit, sines, noise} <- Enum.zip([fit, sines, noise]),
+          fit > rows.floor and abs(sines - noise) > 20 do
+        assert_in_delta 10 * :math.log10(10 ** (sines / 10) + 10 ** (noise / 10)), fit, 1
+      end
     end
 
     test "splits the xylophone's mf run from C6 to B6 into its twelve notes, and names the vibraphone's pp C#6 as not found",

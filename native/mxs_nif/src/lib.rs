@@ -456,6 +456,19 @@ fn check_fit_struck(recording: Struck) -> NifResult<analysis::fit::Check> {
     Ok(analysis::fit::own(&span(&data, &format, within)?, rate, note, seconds, exact))
 }
 
+/// One recording of a struck note, given as to `fit_struck`, beside a render of the synth when given and the fit's own render, frame by frame at `times` seconds after the strike.
+#[rustler::nif(schedule = "DirtyCpu")]
+fn frames_struck(recording: Struck, rendered: Option<(Binary, (String, usize, usize), f64)>, times: Vec<f64>) -> NifResult<analysis::fit::Frames> {
+    let ((data, format, rate), within, (note, _velocity, seconds, exact)) = recording;
+    let theirs = span(&data, &format, within)?;
+    let synth = match &rendered {
+        Some((data, packing, rate)) => Some((sound(data, packing)?, *rate)),
+        None => None,
+    };
+    let synth = synth.as_ref().map(|(sound, rate)| (sound.as_slice(), *rate));
+    Ok(analysis::fit::frames(&theirs, rate, note, seconds, exact, synth, &times))
+}
+
 /// A tour for listening of recordings of struck notes, each given as to `fit_struck`, beside renders given as their data, format and rate, as 32-bit floats at the renders' rate.
 #[rustler::nif(schedule = "DirtyCpu")]
 fn tour_struck<'a>(env: Env<'a>, pairs: Vec<(Struck<'a>, (Binary<'a>, (String, usize, usize), f64))>) -> NifResult<Binary<'a>> {
