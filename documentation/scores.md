@@ -1,17 +1,20 @@
 # Scores and hums
 
 A song need not be typed in by hand.
-mx writes one from a MusicXML score or from a recording of a melody you hum, and writes a song back out as a MusicXML score.
+mx writes one from a MusicXML score, a MIDI file or a recording of a melody you hum, and writes a song back out as a MusicXML score or a MIDI file.
 With the mx command installed, each `mix mx.NAME` task here is also `mx NAME` with the same arguments, as the README's Install section says.
 
 ```mermaid
 graph LR
   score["MusicXML score"]
+  midi["MIDI file"]
   hum["Recording of a hum"]
   song["Song file"]
 
   score -->|mix mx.import| song
   song -->|mix mx.export| score
+  midi -->|mix mx.import| song
+  song -->|mix mx.export| midi
   hum -->|mix mx.hum| song
 ```
 
@@ -80,6 +83,33 @@ Notes of a part that start together and last as long are written as a chord, and
 A note that crosses a bar line, or whose length no single note value writes, is written as tied notes.
 The score's tempo is the song's starting tempo, as a metronome mark at the first bar.
 Tempo changes after the first, dynamics, articulations and percussion staves are left out.
+
+## MIDI files
+
+A Standard MIDI File is what digital audio workstations such as Logic and Ableton read and write, and what most notation programs export besides MusicXML.
+`mix mx.export` writes one when `--out` ends in `.mid` or `.midi`, so a song can be arranged or mixed in a workstation:
+
+```sh
+mix mx.export examples/erbarme_dich/aria.exs --time 12/8 --key bm --out aria.mid
+```
+
+The file holds the whole of the song's music once, one track per part that plays notes with a pitch, named after the part, with the song's tempo and the time signature and key given; parts are left out as for a score, and mx says so.
+Each note keeps its vel as its velocity, 0.6 when it has none, and the tracks name no instrument, since mx's synths have no General MIDI number.
+
+`mix mx.import` reads a file ending in `.mid` or `.midi` as it reads a score, with `--part`, `--tempo`, `--out` and `--force` working the same way:
+
+```sh
+mix mx.import piece.mid --part "Right=piano" --part "Left=piano"
+```
+
+Each track that plays notes becomes a part named after the track, or track 1, track 2 and so on where it has none, and a file whose notes all lie in one track gives a part for each channel instead.
+Each note keeps how hard it was struck as its vel, a velocity of 64 being vel 0.5, on a synth that takes vel.
+The file's first tempo is the song's, its time signatures cut the bars, 4/4 when it has none, and its key signature spells the notes.
+
+A MIDI file holds when each key goes down and up and how hard, and nothing of how the music is written.
+It names no note as C sharp or D flat, so notes are spelled from the key signature, in sharps or in flats; it marks no repeat, so the song plays the file through; and a file recorded from playing has notes off the beat.
+So starts and ends move to the nearest sixteenth note, and `--grid` names another division of a whole note, such as `--grid 1/32`, or `--grid 1/12` for eighth-note triplets.
+Notes on channel 10, which General MIDI keeps for drums, the sustain pedal, other controllers and tempo changes after the first are left out, and mx says what it left out, part by part.
 
 ## Turn a hum into a song
 

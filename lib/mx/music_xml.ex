@@ -46,13 +46,12 @@ defmodule Mx.MusicXML do
          {:ok, key} <- key(Keyword.get(opts, :key, "c")),
          :ok <- Page.check(out, Keyword.get(opts, :force, false)),
          {:ok, song} <- Song.load(path),
-         {:ok, played} <- played(song),
-         {:ok, parts, left_out} <- pitched(played, path) do
+         {:ok, parts, left_out} <- parts(song, path) do
       beats = parts |> Enum.map(&elem(&1, 2)) |> Enum.max(fn -> 0 end)
       title = Keyword.get_lazy(opts, :title, fn -> title(path) end)
 
       xml =
-        score(Enum.map(parts, fn {name, notes, _} -> {name, notes} end),
+        score(Enum.map(parts, fn {name, notes, _, _} -> {name, notes} end),
           tempo: song.tempo,
           time: time,
           key: key,
@@ -64,7 +63,7 @@ defmodule Mx.MusicXML do
 
       {:ok,
        %{
-         parts: Enum.map(parts, fn {name, notes, _} -> summary(name, notes, key) end),
+         parts: Enum.map(parts, fn {name, notes, _, _} -> summary(name, notes, key) end),
          left_out: left_out
        }}
     end
@@ -383,8 +382,15 @@ defmodule Mx.MusicXML do
     |> String.replace(">", "&gt;")
   end
 
-  # Each part as its notes through the whole of its music once and its length in beats, or why it
-  # is left out.
+  @doc false
+  # Each part that plays notes with a pitch as {name, notes, beats, vels}, and each part left out as
+  # {name, why}, as `{:ok, parts, left_out}` or `{:error, message}`.
+  def parts(song, path) do
+    with {:ok, played} <- played(song), do: pitched(played, path)
+  end
+
+  # Each part as its notes through the whole of its music once, their vels and its length in beats,
+  # or why it is left out.
   defp played(song) do
     map_ok(song.loops, fn
       %{on: on} = loop when on != nil ->
@@ -394,11 +400,11 @@ defmodule Mx.MusicXML do
         passes = loop.music.sections |> tuple_size() |> Kernel.-(1)
 
         played =
-          Enum.reduce_while(0..passes, {:ok, [], 0}, fn pass, {:ok, notes, start} ->
+          Enum.reduce_while(0..passes, {:ok, [], [], 0}, fn pass, {:ok, notes, vels, start} ->
             case Pass.events(loop, pass) do
-              {:ok, %{notes: played, beats: beats}} ->
+              {:ok, %{notes: played, vels: played_vels, beats: beats}} ->
                 played = Enum.map(played, fn {beat, note, held} -> {start + beat, note, held} end)
-                {:cont, {:ok, notes ++ played, start + beats}}
+                {:cont, {:ok, notes ++ played, vels ++ played_vels, start + beats}}
 
               {:error, message} ->
                 {:halt, {:error, message}}
@@ -406,26 +412,30 @@ defmodule Mx.MusicXML do
           end)
 
         case played do
-          {:ok, [], _} -> {:ok, {loop.name, {:left_out, "it plays no notes with a pitch"}}}
-          {:ok, notes, beats} -> {:ok, {loop.name, {:notes, notes, beats}}}
+          {:ok, [], _, _} -> {:ok, {loop.name, {:left_out, "it plays no notes with a pitch"}}}
+          {:ok, notes, vels, beats} -> {:ok, {loop.name, {:notes, notes, beats, vels}}}
           error -> error
         end
     end)
   end
 
   defp pitched(played, path) do
-    case Enum.split_with(played, &match?({_name, {:notes, _, _}}, &1)) do
+    case Enum.split_with(played, &match?({_name, {:notes, _, _, _}}, &1)) do
       {[], _left_out} ->
         {:error, "#{path} has no part that plays notes with a pitch"}
 
       {parts, left_out} ->
-        parts = for {name, {:notes, notes, beats}} <- parts, do: {to_string(name), notes, beats}
+        parts =
+          for {name, {:notes, notes, beats, vels}} <- parts,
+              do: {to_string(name), notes, beats, vels}
+
         left_out = for {name, {:left_out, why}} <- left_out, do: {to_string(name), why}
         {:ok, parts, left_out}
     end
   end
 
-  defp summary(name, notes, {fifths, _mode}) do
+  @doc false
+  def summary(name, notes, {fifths, _mode}) do
     pitches = Enum.map(notes, &round(elem(&1, 1)))
 
     %{
@@ -459,7 +469,8 @@ defmodule Mx.MusicXML do
     zip
   end
 
-  defp title(path) do
+  @doc false
+  def title(path) do
     path |> Path.basename() |> Path.rootname() |> String.replace("_", " ") |> String.capitalize()
   end
 

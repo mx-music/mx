@@ -24,7 +24,8 @@ defmodule Mx.MusicTest do
                 %{
                   events: [{0, 60, [sustain: 1]}, {1, 62, [sustain: 1]}, {2, 64, [sustain: 2]}],
                   beats: 4,
-                  notes: [{0, 60, 1}, {1, 62, 1}, {2, 64, 2}]
+                  notes: [{0, 60, 1}, {1, 62, 1}, {2, 64, 2}],
+                  vels: [nil, nil, nil]
                 }}
     end
 

@@ -1,5 +1,5 @@
 defmodule Mix.Tasks.Mx.Export do
-  @shortdoc "Writes a song as a MusicXML score"
+  @shortdoc "Writes a song as a MusicXML score or a MIDI file"
 
   @moduledoc """
   Writes a song as a MusicXML score, one part of the score for each part of the song that plays notes, through the whole of its music once.
@@ -11,6 +11,9 @@ defmodule Mix.Tasks.Mx.Export do
   `--time` gives the time signature, 4/4 unless given, and `--key` the key its notes are spelled in, such as d, bm or fsm, C major unless given.
   `--title` gives the score's title, which is otherwise the song file's name.
   A part that plays no notes with a pitch, such as drums or samples, or that waits for input, is left out, and the task says so.
+
+  When `--out` ends in .mid or .midi it writes a MIDI file instead: one track per part, named after the part, each note at its vel, with the song's tempo and the time signature and key given.
+  The tracks name no instrument, since mx's synths have no General MIDI number.
   """
 
   use Mix.Task
@@ -22,7 +25,9 @@ defmodule Mix.Tasks.Mx.Export do
     out = Keyword.get_lazy(opts, :out, fn -> Path.rootname(path) <> ".musicxml" end)
     Mx.Command.start()
 
-    case Mx.MusicXML.write(path, out, Keyword.take(opts, [:time, :key, :title, :force])) do
+    writer = if Path.extname(out) in [".mid", ".midi"], do: Mx.MIDI, else: Mx.MusicXML
+
+    case writer.write(path, out, Keyword.take(opts, [:time, :key, :title, :force])) do
       {:ok, report} ->
         Mx.Command.info("Wrote #{out}")
 

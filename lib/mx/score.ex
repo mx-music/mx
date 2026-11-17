@@ -6,6 +6,7 @@ defmodule Mx.Score do
   A note led into by grace notes keeps them in order as `graces`, each with its `midi`, its `name` and whether it is `slash`ed, taking no time of its own.
   `order` lists the bars by number in the order the score plays them, its repeats and endings taken.
   `runs` is the same order cut wherever the score jumps or crosses a repeat or an ending, so it can be written as ranges.
+  A score read from a MIDI file by `Mx.MIDI` gives each note the `vel` it was struck with, and names in `left_out` what the file held that the score does not.
   """
 
   require Record
@@ -33,10 +34,21 @@ defmodule Mx.Score do
   @flats ~w(c db d eb e f gb g ab a bb b)
   @dynamics ~w(pppp ppp pp p mp mf f ff fff ffff)
 
-  defstruct title: nil, tempo: nil, parts: [], order: [], runs: []
+  defstruct title: nil, tempo: nil, parts: [], order: [], runs: [], left_out: []
 
-  @doc "Reads a compressed .mxl or an uncompressed MusicXML file, and returns `{:ok, score}` or `{:error, message}`."
-  def read(path) when is_binary(path) do
+  @doc """
+  Reads a compressed .mxl or an uncompressed MusicXML file, or a MIDI file ending in .mid or .midi, and returns `{:ok, score}` or `{:error, message}`.
+  A MIDI file's notes move to the nearest `grid:`, a fraction of a whole note, 1/16 unless given.
+  """
+  def read(path, opts \\ []) when is_binary(path) and is_list(opts) do
+    if Path.extname(path) in [".mid", ".midi"] do
+      Mx.MIDI.score(path, Keyword.get(opts, :grid, {1, 16}))
+    else
+      read_musicxml(path)
+    end
+  end
+
+  defp read_musicxml(path) do
     with {:ok, data} <- read_file(path),
          {:ok, xml} <- unpack(data, path),
          {:ok, root} <- parse(xml, path) do
@@ -110,26 +122,25 @@ defmodule Mx.Score do
       [] ->
         {:error, "#{path} is not a MusicXML score"}
 
-      [first | _] ->
-        numbers = bar_numbers(first.measures)
-        lengths = bar_lengths(parts)
-        parts = Enum.map(parts, &finish_part(&1, numbers, lengths))
-        runs = order(first.measures, numbers)
-        tempo = Enum.find_value(parts, & &1.tempo)
-
+      parts ->
         title =
           text(root, "movement-title") ||
             Enum.find_value(path(root, ["work"]), &text(&1, "work-title"))
 
-        {:ok,
-         %__MODULE__{
-           title: title,
-           tempo: tempo,
-           parts: parts,
-           order: Enum.concat(runs),
-           runs: runs
-         }}
+        {:ok, build(parts, title)}
     end
+  end
+
+  @doc false
+  # Parts read as measures, as a MusicXML score's are, into a score.
+  def build([first | _] = parts, title) do
+    numbers = bar_numbers(first.measures)
+    lengths = bar_lengths(parts)
+    parts = Enum.map(parts, &finish_part(&1, numbers, lengths))
+    runs = order(first.measures, numbers)
+    tempo = Enum.find_value(parts, & &1.tempo)
+
+    %__MODULE__{title: title, tempo: tempo, parts: parts, order: Enum.concat(runs), runs: runs}
   end
 
   defp read_part(part, name) do
@@ -341,7 +352,8 @@ defmodule Mx.Score do
     "#{String.downcase(step)}#{accidental}#{trunc(octave)}"
   end
 
-  defp spell(midi, fifths) do
+  @doc false
+  def spell(midi, fifths) do
     names = if fifths < 0, do: @flats, else: @sharps
     name = Enum.at(names, rem(midi, 12))
     octave = div(midi, 12) - 1
@@ -532,7 +544,16 @@ defmodule Mx.Score do
   defp heads(%{pitch: nil}), do: []
 
   defp heads(%{pitch: {midi, name}} = note) do
-    [%{midi: midi, name: name, staff: note.staff, tie: note.tie, continues: note.continues}]
+    [
+      %{
+        midi: midi,
+        name: name,
+        staff: note.staff,
+        tie: note.tie,
+        continues: note.continues,
+        vel: Map.get(note, :vel)
+      }
+    ]
   end
 
   defp fill(groups) do

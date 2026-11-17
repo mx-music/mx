@@ -22,7 +22,10 @@ defmodule Mx.Pass do
 
   @key :mx_pass
 
-  @doc "Runs a pass of a loop, and returns `{:ok, %{events: events, beats: beats}}` or `{:error, message}` naming the line."
+  @doc """
+  Runs a pass of a loop, and returns `{:ok, %{events: events, beats: beats, notes: notes, vels: vels}}` or `{:error, message}` naming the line.
+  `vels` holds the vel each of `notes` is played at, in the same order, nil for a note given none.
+  """
   def events(%Mx.Song.Loop{} = loop, pass, opts \\ []) when is_integer(pass) and is_list(opts) do
     :rand.seed(:exsss, {:erlang.phash2(loop.name), pass, 1})
 
@@ -45,8 +48,10 @@ defmodule Mx.Pass do
 
       if beats > 0 do
         events = events |> Enum.reverse() |> take_turns(pass)
-        notes = notes |> Enum.reverse() |> Enum.sort_by(&elem(&1, 0))
-        {:ok, %{events: events, beats: beats, notes: notes}}
+        written = notes |> Enum.reverse() |> Enum.sort_by(&elem(&1, 0))
+        notes = Enum.map(written, fn {beat, note, held, _vel} -> {beat, note, held} end)
+        vels = Enum.map(written, &elem(&1, 3))
+        {:ok, %{events: events, beats: beats, notes: notes, vels: vels}}
       else
         {:error, "loop #{loop.name} never waits, so its pass has no length"}
       end
@@ -134,7 +139,7 @@ defmodule Mx.Pass do
       |> strum_order(strum)
       |> Enum.with_index(fn {note, opts, written}, i ->
         offset = i * abs(strum)
-        if written && note != :own_note, do: record_written(note, offset, written)
+        if written && note != :own_note, do: record_written(note, offset, written, opts[:vel])
         record(step(synth, note, opts), offset)
       end)
 
@@ -406,8 +411,8 @@ defmodule Mx.Pass do
     index
   end
 
-  defp record_written(note, offset, beats) do
-    update(&%{&1 | notes: [{&1.beat + offset, note, beats} | &1.notes]})
+  defp record_written(note, offset, beats, vel) do
+    update(&%{&1 | notes: [{&1.beat + offset, note, beats, vel} | &1.notes]})
   end
 
   defp update(fun), do: Process.put(@key, fun.(Process.get(@key)))

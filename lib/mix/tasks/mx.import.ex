@@ -1,14 +1,19 @@
 defmodule Mix.Tasks.Mx.Import do
-  @shortdoc "Writes a MusicXML score as a song"
+  @shortdoc "Writes a MusicXML score or a MIDI file as a song"
 
   @moduledoc """
   Reads a MusicXML score and writes it as a song beside it, one part per part of the score, that plays the whole score once.
 
       mix mx.import score.mxl --tempo 100 --part "Soprano=oboe" --part "Bass=cello"
+      mix mx.import piece.mid --grid 1/12 --part "Right=piano"
 
   `--part` names the synth a part plays on, and a part without one plays on tri.
   `--tempo` sets the tempo, which otherwise comes from the score's first metronome mark.
   `--out` names another path for the song, and `--force` writes over a song that exists.
+
+  A file ending in .mid or .midi is read as a MIDI file, one part per track that plays notes, or per channel when a single track holds them all, each note at the vel it was struck with.
+  Its notes move to the nearest sixteenth note, and `--grid` names another division of a whole note, such as 1/32, or 1/12 for eighth-note triplets.
+  Notes on channel 10, which General MIDI keeps for drums, the sustain pedal and other controllers are left out, and the task says so part by part.
   """
 
   use Mix.Task
@@ -19,13 +24,13 @@ defmodule Mix.Tasks.Mx.Import do
   def run(args) when is_list(args) do
     {opts, [path]} =
       OptionParser.parse!(args,
-        strict: [out: :string, part: :keep, tempo: :string, force: :boolean]
+        strict: [out: :string, part: :keep, tempo: :string, force: :boolean, grid: :string]
       )
 
     out = Keyword.get(opts, :out, Path.rootname(path) <> ".exs")
 
     score =
-      case Score.read(path) do
+      case Score.read(path, grid: grid(opts[:grid])) do
         {:ok, score} -> score
         {:error, message} -> Mx.Command.fail(message)
       end
@@ -46,6 +51,20 @@ defmodule Mix.Tasks.Mx.Import do
     for {part, synth} <- parts do
       Mx.Command.info(summary(part, synth))
     end
+
+    Enum.each(score.left_out, &Mx.Command.info/1)
+  end
+
+  defp grid(nil), do: {1, 16}
+
+  defp grid(given) do
+    with [count, division] <- String.split(given, "/"),
+         {count, ""} when count > 0 <- Integer.parse(count),
+         {division, ""} when division > 0 <- Integer.parse(division) do
+      {count, division}
+    else
+      _other -> Mx.Command.fail("--grid takes a division of a whole note, such as 1/16 or 1/12")
+    end
   end
 
   defp synths(opts, score, path) do
@@ -54,8 +73,11 @@ defmodule Mix.Tasks.Mx.Import do
     for given <- Keyword.get_values(opts, :part), into: %{} do
       {name, synth} =
         case String.split(given, "=", parts: 2) do
-          [name, synth] -> {String.trim(name), String.trim(synth)}
-          _other -> Mx.Command.fail(~s(give each part with its synth, such as --part "Soprano=oboe"))
+          [name, synth] ->
+            {String.trim(name), String.trim(synth)}
+
+          _other ->
+            Mx.Command.fail(~s(give each part with its synth, such as --part "Soprano=oboe"))
         end
 
       synth = synth(synth)
@@ -166,7 +188,7 @@ defmodule Mix.Tasks.Mx.Import do
         "#{title}, imported from #{file} by mix mx.import.",
         "Each part's bars are written one to a line where they fit, as the bar's number and its music; a bar of several voices plays them together.",
         "A note's length is in beats, a quarter note being a beat; a note tied over a bar line sounds for the whole tie, given as its sustain, and the note it ties into is a rest.",
-        "Notes play at vel 0.6, and a dynamic marked in the score gives the notes after it another vel.",
+        vels(file),
         "The whole score plays once, #{beats} beats."
       ]
       |> Enum.map_join("\n", &doc_line/1)
@@ -193,6 +215,14 @@ defmodule Mix.Tasks.Mx.Import do
     #{bars}
     end
     """
+  end
+
+  defp vels(file) do
+    if Path.extname(file) in [".mid", ".midi"] do
+      "Each note plays at the vel it was struck with in the file, and the notes of a chord at their mean."
+    else
+      "Notes play at vel 0.6, and a dynamic marked in the score gives the notes after it another vel."
+    end
   end
 
   # Each sentence a line of its own in the moduledoc, wrapped at 98 columns.
@@ -255,7 +285,7 @@ defmodule Mix.Tasks.Mx.Import do
                   {key, voice, index, head_index} not in continued,
                   do: {head.name, Map.fetch!(sustains, {key, voice, index, head_index})}
 
-            {heads, group.length, if(vel?, do: vel(group.mark), else: 0.6), sustain?}
+            {heads, group.length, if(vel?, do: group_vel(group), else: 0.6), sustain?}
           end)
           |> voice_music()
         end)
@@ -334,6 +364,15 @@ defmodule Mix.Tasks.Mx.Import do
       Enum.filter(open, fn {_, _, at, _, held} -> held == name and abs(at - beat) < 1.0e-6 end)
 
     Enum.find(ending, &(elem(&1, 3) == voice)) || List.first(ending)
+  end
+
+  # A note read from a MIDI file plays at the vel it was struck with, a chord at the mean of the
+  # notes that start in it.
+  defp group_vel(group) do
+    case for(note <- group.notes, note.vel != nil and not note.continues, do: note.vel) do
+      [] -> vel(group.mark)
+      vels -> Float.round(Enum.sum(vels) / length(vels), 2)
+    end
   end
 
   defp vel(mark) when mark in ["pppp", "ppp", "pp"], do: 0.3
