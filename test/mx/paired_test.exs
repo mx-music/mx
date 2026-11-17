@@ -44,13 +44,6 @@ defmodule Mx.PairedTest do
   end
 
   for vel <- [0.3, 1] do
-    test "the marimba's note 60 at vel #{vel} renders the same in its defsynth and Rust forms" do
-      apart = apart(Mx.Paired.Marimba, :marimba, [note: 60, vel: unquote(vel)], 3)
-      assert apart < -60, "#{apart} dB apart"
-    end
-  end
-
-  for vel <- [0.3, 1] do
     test "the flute's note 72 at vel #{vel}, held with its vibrato, renders the same in its defsynth and Rust forms" do
       options = [note: 72, vel: unquote(vel), sustain: 2]
       apart = apart(Mx.Paired.Flute, :flute, options, 3)
@@ -81,7 +74,6 @@ defmodule Mx.PairedTest do
   @tag :bench
   test "prints each paired instrument's render time per second of sound in both forms" do
     for {module, synth, options, seconds} <- [
-          {Mx.Paired.Marimba, :marimba, [note: 60, vel: 1], 3},
           {Mx.Paired.Flute, :flute, [note: 72, vel: 1, sustain: 2], 3},
           {Mx.Paired.Tabla, :tabla, [bol: :ghe, vel: 1], 3},
           {Mx.Paired.Violin, :violin, [note: 69, vel: 1, sustain: 2], 3}

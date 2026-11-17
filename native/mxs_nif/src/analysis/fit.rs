@@ -38,6 +38,8 @@ pub struct Band {
 #[derive(Clone)]
 pub struct Figures {
     pub f0: f64,
+    /// The pitch the synth plays the fundamental at: the note's own, so a recording a few cents off plays in tune, or a drum's given pitch.
+    pub pitch: f64,
     pub partials: Vec<Partial>,
     pub noise: Vec<Band>,
     /// The last time the recording reaches, after which every level falls on at its last slope.
@@ -71,7 +73,7 @@ pub fn noise_level_at(levels: &[f64], tail: f64, t: f64) -> f64 {
 pub const SILENT: f64 = -160.0;
 
 /// The seconds after the strike the noise lasts, fading out by the next time.
-pub const NOISE_UNTIL: f64 = 0.2;
+pub const NOISE_UNTIL: f64 = 0.7;
 /// The seconds over which a band's noise rises at the strike, as a raised cosine: one over the band's width, so the burst stays within the band, from 2 to 20 ms.
 pub fn noise_rise(low: f64, high: f64) -> f64 {
     (1.0 / (high - low)).clamp(0.002, 0.02)
@@ -179,7 +181,7 @@ pub fn fit(sound: &[f64], rate: f64, note: f64, seconds: f64, exact: bool) -> (F
     let recorded = partials::measure(sound, rate, note, seconds, exact);
     let bands = erb_bands();
     let noise = bands.iter().map(|(low, high)| Band { low: *low, high: *high, levels: vec![SILENT; TIMES.len()], tail: -60.0 }).collect();
-    let mut figures = Figures { f0: recorded.f0, partials: recorded.partials.iter().map(|t| first_guess(t, recorded.f0, recorded.spectra.settled().start, reached(seconds, recorded.spectra.window))).collect(), noise, reached: TIMES[reached(seconds, recorded.spectra.window)] };
+    let mut figures = Figures { f0: recorded.f0, pitch: hz(note), partials: recorded.partials.iter().map(|t| first_guess(t, recorded.f0, recorded.spectra.settled().start, reached(seconds, recorded.spectra.window))).collect(), noise, reached: TIMES[reached(seconds, recorded.spectra.window)] };
     fall_on(&mut figures, seconds, recorded.spectra.window);
     let freqs: Vec<f64> = recorded.partials.iter().chain(&recorded.left_out).map(|t| t.freq).collect();
     // The frames whose windows take in the strike read its click as much as the partials, so the partials are first fitted without them, and the noise to what they leave.
@@ -547,8 +549,9 @@ pub fn figures_bytes(recordings: &[(u8, u8, Figures)]) -> Vec<u8> {
     for (note, velocity, figures) in recordings {
         bytes.extend([*note, *velocity]);
         bytes.extend((figures.partials.len() as u16).to_le_bytes());
+        let fundamental = figures.partials.iter().find(|p| p.harmonic == 1).map_or(1.0, |p| p.ratio);
         for partial in &figures.partials {
-            bytes.extend(((partial.ratio * figures.f0 / hz(*note as f64)) as f32).to_le_bytes());
+            bytes.extend(((partial.ratio / fundamental * figures.pitch / hz(*note as f64)) as f32).to_le_bytes());
             bytes.extend((partial.harmonic as u16).to_le_bytes());
             bytes.extend(tenths(partial.tail));
             for level in &partial.levels {

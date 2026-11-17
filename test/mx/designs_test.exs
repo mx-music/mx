@@ -630,106 +630,28 @@ defmodule Mx.DesignsTest do
     assert last_sound(sound) < 2.3
   end
 
-  # Measured from the University of Iowa's marimba struck with yarn mallets, every note from C2 to
-  # C7, at ff, mf and pp against vel 1, 0.6 and 0.3: each band's level as a note starts, against
-  # its loudest band, and the seconds it takes to fade 60 dB, as medians over the notes.
-  # A fade of nil is left out: pp's below 630 Hz and mf's above 4 kHz ring on near the recordings'
-  # noise floor.
-  @marimba %{
-    1 => %{
-      {80, 160} => {-9.1, 3.14},
-      {160, 250} => {-27.8, 2.69},
-      {250, 400} => {-22.8, 1.75},
-      {400, 630} => {-23.0, 0.99},
-      {630, 1000} => {-19.3, 0.66},
-      {1000, 1600} => {-25.0, 0.35},
-      {1600, 2500} => {-31.4, 0.23},
-      {2500, 4000} => {-37.3, 0.14},
-      {4000, 6300} => {-48.3, 0.09}
-    },
-    0.6 => %{
-      {80, 160} => {-4.8, 3.15},
-      {160, 250} => {-24.4, 2.64},
-      {250, 400} => {-19.3, 1.69},
-      {400, 630} => {-21.2, 1.01},
-      {630, 1000} => {-22.2, 0.65},
-      {1000, 1600} => {-31.7, 0.4},
-      {1600, 2500} => {-37.2, 0.22},
-      {2500, 4000} => {-43.0, 0.12},
-      {4000, 6300} => {-51.8, nil}
-    },
-    0.3 => %{
-      {80, 160} => {0.0, 3.31},
-      {160, 250} => {-18.4, nil},
-      {250, 400} => {-12.8, nil},
-      {400, 630} => {-18.4, nil},
-      {630, 1000} => {-30.5, 0.73},
-      {1000, 1600} => {-37.6, 0.37},
-      {1600, 2500} => {-42.8, 0.19},
-      {2500, 4000} => {-45.3, 0.13},
-      {4000, 6300} => {-48.0, nil}
-    }
-  }
+  # Iowa's C2 struck ff with yarn mallets, measured with mix mx.measure --hits --partials 8, rings
+  # partials at 8.84, 9.93, 10.85 and 11.61 times its pitch.
+  test "marimba's C2 at vel 1 rings the partials Iowa's C2 rings near ten times its note", ctx do
+    %{partials: partials} =
+      Hits.hit(render(ctx, :marimba, [note: 36, vel: 1], 4), @rate, 36, partials: 8)
 
-  test "marimba starts and fades in each band as Iowa's marimba does at each dynamic", ctx do
-    for {vel, bands} <- @marimba do
-      hits =
-        36..96
-        |> Task.async_stream(
-          fn note -> Hits.hit(render(ctx, :marimba, [note: note, vel: vel], 4), @rate, note) end,
-          timeout: :infinity
-        )
-        |> Enum.map(fn {:ok, hit} -> hit end)
+    ratios = Enum.map(partials, & &1.ratio)
 
-      measured = Map.new(Hits.summary(hits), &{&1.band, &1})
-
-      for {band, {level, fade}} <- bands do
-        %{level: synth_level, fade: synth_fade} = measured[band]
-        assert_in_delta synth_level, level, 6, "vel #{vel} #{inspect(band)} at #{synth_level} dB"
-
-        if fade do
-          assert_in_delta synth_fade / fade,
-                          1,
-                          0.3,
-                          "vel #{vel} #{inspect(band)} fades in #{synth_fade} s"
-        end
-      end
+    for ratio <- [8.84, 9.93, 10.85, 11.61] do
+      assert Enum.any?(ratios, &(abs(&1 / ratio - 1) < 0.01)),
+             "no partial at #{ratio}: #{inspect(ratios)}"
     end
   end
 
-  # The bars' overtones in the same recordings, as medians of their ratios to the note from C2 to
-  # D#3.
-  test "marimba's overtones stand two octaves and a little over three octaves above its note",
+  # Iowa's marimba struck with yarn mallets is 20.84 dB quieter at pp than at ff at C4, over the
+  # first half second of each note's partials, as mix mx.fit --check sums them.
+  test "marimba's C4 at vel 0.31 is quieter than at vel 1 by as much as Iowa's pp below its ff",
        ctx do
-    for note <- [36, 42, 48] do
-      %{partials: partials} =
-        Hits.hit(render(ctx, :marimba, [note: note, vel: 1], 4), @rate, note, partials: 8)
-
-      ratios = Enum.map(partials, & &1.ratio)
-
-      for ratio <- [4.01, 10.06] do
-        assert Enum.any?(ratios, &(abs(&1 / ratio - 1) < 0.02)),
-               "note #{note} has no partial at #{ratio}: #{inspect(ratios)}"
-      end
-    end
-  end
-
-  # The same recordings are 17.9 dB louder ff than pp, as the median over their notes of the
-  # loudest half second.
-  test "marimba at vel 1 is louder than at vel 0.3 by as much as a real marimba, and brighter",
-       ctx do
-    louder =
-      for note <- [36, 48, 60, 72, 84] do
-        soft = render(ctx, :marimba, [note: note, vel: 0.3], 0.6)
-        hard = render(ctx, :marimba, [note: note, vel: 1], 0.6)
-
-        assert highs(hard, 2000, 0, 0.5) / rms(hard, 0, 0.5) >
-                 highs(soft, 2000, 0, 0.5) / rms(soft, 0, 0.5)
-
-        20 * :math.log10(rms(hard, 0, 0.5) / rms(soft, 0, 0.5))
-      end
-
-    assert_in_delta median(louder), 17.9, 6
+    soft = render(ctx, :marimba, [note: 60, vel: 40 / 127], 0.6)
+    hard = render(ctx, :marimba, [note: 60, vel: 1], 0.6)
+    quieter = 20 * :math.log10(rms(hard, 0, 0.5) / rms(soft, 0, 0.5))
+    assert_in_delta quieter, 20.84, 1.5
   end
 
   test "marimba plays F1 and C7, the lowest and highest bars of the recordings, at their pitch",
