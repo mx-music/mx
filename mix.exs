@@ -16,7 +16,13 @@ defmodule Mx.MixProject do
       description: "Write music in Elixir, played by mxs, its own sound engine in Rust",
       package: package(),
       docs: docs(),
-      escript: [main_module: Mx.CLI, name: "mx", app: nil, include_priv_for: [:mx, :midiex]],
+      escript: [
+        main_module: Mx.CLI,
+        name: "mx",
+        app: nil,
+        include_priv_for: [:mx, :midiex],
+        strip_beams: [keep: ["Docs"]]
+      ],
       test_ignore_filters: [~r"^test/support/"]
     ]
   end

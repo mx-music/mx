@@ -19,11 +19,11 @@ defmodule Mix.Tasks.Mx.Page do
     strict = [out: :string, title: :string, seconds: :float, force: :boolean]
     {opts, [path]} = OptionParser.parse!(args, strict: strict)
     out = Keyword.get_lazy(opts, :out, fn -> Path.rootname(path) <> ".html" end)
-    Mix.Task.run("app.start")
+    Mx.Command.start()
 
     case Mx.Page.write(path, out, Keyword.take(opts, [:title, :seconds, :force])) do
-      :ok -> Mix.shell().info("Wrote #{out}.")
-      {:error, message} -> Mix.raise(message)
+      :ok -> Mx.Command.info("Wrote #{out}.")
+      {:error, message} -> Mx.Command.fail(message)
     end
   end
 end

@@ -54,7 +54,7 @@ defmodule Mix.Tasks.Mx.Measure do
 
   @impl true
   def run(args) when is_list(args) do
-    Mix.Task.run("app.config")
+    Mx.Command.config()
 
     strict = [
       synth: :string,
@@ -81,10 +81,10 @@ defmodule Mix.Tasks.Mx.Measure do
     count = count!(opts)
 
     cond do
-      opts[:held] && opts[:hits] -> Mix.raise("give --held or --hits, not both")
+      opts[:held] && opts[:hits] -> Mx.Command.fail("give --held or --hits, not both")
       opts[:strokes] -> strokes(files, opts)
-      opts[:tracks] || opts[:alone] || opts[:ignore] -> Mix.raise("--tracks needs --strokes")
-      opts[:drone] && !opts[:held] -> Mix.raise("--drone needs --held")
+      opts[:tracks] || opts[:alone] || opts[:ignore] -> Mx.Command.fail("--tracks needs --strokes")
+      opts[:drone] && !opts[:held] -> Mx.Command.fail("--drone needs --held")
       opts[:held] -> held(files, synth, given, opts[:drone] || false)
       opts[:hits] -> hits(files, synth, given, count, compare)
       true -> plucked(files, synth, given)
@@ -174,14 +174,14 @@ defmodule Mix.Tasks.Mx.Measure do
         for index <- indices!(tracks, recording), do: print_tracks(path, recording, index, given)
 
       _other ->
-        Mix.raise("--strokes takes the recordings to measure, and only one with --tracks")
+        Mx.Command.fail("--strokes takes the recordings to measure, and only one with --tracks")
     end
   end
 
   defp recording!(path) do
     case Strokes.file(path) do
       {:ok, recording} -> recording
-      {:error, message} -> Mix.raise(message)
+      {:error, message} -> Mx.Command.fail(message)
     end
   end
 
@@ -191,7 +191,7 @@ defmodule Mix.Tasks.Mx.Measure do
     for number <- String.split(text, ",") do
       case Integer.parse(number) do
         {index, ""} when index in 0..last//1 -> index
-        _other -> Mix.raise("--tracks takes strokes from 0 to #{last}, such as --tracks 0,3")
+        _other -> Mx.Command.fail("--tracks takes strokes from 0 to #{last}, such as --tracks 0,3")
       end
     end
   end
@@ -204,7 +204,7 @@ defmodule Mix.Tasks.Mx.Measure do
          {high, ""} <- Float.parse(high) do
       {low, high}
     else
-      _other -> Mix.raise("--ignore takes two frequencies in Hz, such as --ignore 8500-9100")
+      _other -> Mx.Command.fail("--ignore takes two frequencies in Hz, such as --ignore 8500-9100")
     end
   end
 
@@ -234,7 +234,7 @@ defmodule Mix.Tasks.Mx.Measure do
 
     case Strokes.tracks(recording, index, given) do
       nil ->
-        Mix.raise("stroke #{index} of #{name} has no pitch")
+        Mx.Command.fail("stroke #{index} of #{name} has no pitch")
 
       %{note: note, scoop: scoop, body: body, cents: cents, levels: levels} ->
         note = :erlang.float_to_binary(note, decimals: 2)
@@ -379,7 +379,7 @@ defmodule Mix.Tasks.Mx.Measure do
     case {opts[:compare], opts[:hits], synth} do
       {nil, _hits, _synth} -> nil
       {compare, true, synth} when synth != nil -> compare
-      _other -> Mix.raise("--compare needs --hits and --synth")
+      _other -> Mx.Command.fail("--compare needs --hits and --synth")
     end
   end
 
@@ -387,21 +387,21 @@ defmodule Mix.Tasks.Mx.Measure do
     case {opts[:partials], opts[:hits]} do
       {nil, _hits} -> nil
       {_count, true} -> parse_count!(opts[:partials])
-      {_count, _hits} -> Mix.raise("--partials needs --hits")
+      {_count, _hits} -> Mx.Command.fail("--partials needs --hits")
     end
   end
 
   defp parse_count!(text) do
     case Integer.parse(text) do
       {count, ""} when count >= 1 -> count
-      _other -> Mix.raise("--partials takes a count from 1 up, such as --partials 12")
+      _other -> Mx.Command.fail("--partials takes a count from 1 up, such as --partials 12")
     end
   end
 
   defp parse!(arg) do
     case Regex.run(~r/^(.+):([^:]+)$/, arg) do
       [_, path, note] -> {path, note!(note)}
-      nil -> Mix.raise("give each file with the note it starts on, such as #{@example}")
+      nil -> Mx.Command.fail("give each file with the note it starts on, such as #{@example}")
     end
   end
 
@@ -415,15 +415,15 @@ defmodule Mix.Tasks.Mx.Measure do
   defp note!(text) do
     Notes.from_text(text)
   rescue
-    ArgumentError -> Mix.raise("unknown note #{text}")
+    ArgumentError -> Mx.Command.fail("unknown note #{text}")
   end
 
   defp synth!(name) do
     Enum.find(Synths.synths(), &(&1 == name)) ||
-      Mix.raise("unknown synth #{name}")
+      Mx.Command.fail("unknown synth #{name}")
   end
 
-  defp print_file(_path, {:error, message}), do: Mix.raise(message)
+  defp print_file(_path, {:error, message}), do: Mx.Command.fail(message)
 
   defp print_file(path, {:ok, notes}) do
     name = Path.basename(path)
@@ -442,7 +442,7 @@ defmodule Mix.Tasks.Mx.Measure do
     notes
   end
 
-  defp print_held_file(_path, {:error, message}), do: Mix.raise(message)
+  defp print_held_file(_path, {:error, message}), do: Mx.Command.fail(message)
 
   defp print_held_file(path, {:ok, notes}) do
     name = Path.basename(path)
@@ -462,7 +462,7 @@ defmodule Mix.Tasks.Mx.Measure do
     notes
   end
 
-  defp print_hits_file(_path, {:error, message}), do: Mix.raise(message)
+  defp print_hits_file(_path, {:error, message}), do: Mx.Command.fail(message)
 
   defp print_hits_file(path, {:ok, hits}), do: print_hits(Path.basename(path), hits)
 
@@ -621,7 +621,7 @@ defmodule Mix.Tasks.Mx.Measure do
   end
 
   defp options!(_synth, []), do: []
-  defp options!(nil, _options), do: Mix.raise("--option needs --synth")
+  defp options!(nil, _options), do: Mx.Command.fail("--option needs --synth")
 
   defp options!(synth, options) do
     for option <- options do
@@ -630,7 +630,7 @@ defmodule Mix.Tasks.Mx.Measure do
         value = if value == trunc(value), do: trunc(value), else: value
         {option!(synth, name), value}
       else
-        _other -> Mix.raise("give --option as a name and a number, such as --option up=1")
+        _other -> Mx.Command.fail("give --option as a name and a number, such as --option up=1")
       end
     end
   end
@@ -647,7 +647,7 @@ defmodule Mix.Tasks.Mx.Measure do
     if option && Synths.option?(synth, option) do
       option
     else
-      Mix.raise("#{synth} has no option #{name}")
+      Mx.Command.fail("#{synth} has no option #{name}")
     end
   end
 

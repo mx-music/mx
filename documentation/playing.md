@@ -2,6 +2,7 @@
 
 `mix mx.play` plays a song file, and can record what it plays or render the song to a file without playing it.
 `mix mx.video` turns a render into a video.
+With the mx command installed, each `mix mx.NAME` task here is also `mx NAME` with the same arguments, as the README's Install section says.
 
 ## Play a song
 

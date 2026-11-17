@@ -23,7 +23,7 @@ defmodule Mix.Tasks.Mx.Fit do
 
   @impl true
   def run(args) when is_list(args) do
-    Mix.Task.run("app.config")
+    Mx.Command.config()
     {synth, rest} = synth!(args)
     parsed = parse!(rest, %{dynamics: [], controls: [], from: 0, check: false, drone: false})
 
@@ -33,11 +33,11 @@ defmodule Mix.Tasks.Mx.Fit do
     controls = parsed.controls |> Enum.reverse() |> Enum.map(&control!(synth, &1))
 
     if dynamics == [] do
-      Mix.raise("give each dynamic as --vel and its files, such as --vel 0.3 #{@example}")
+      Mx.Command.fail("give each dynamic as --vel and its files, such as --vel 0.3 #{@example}")
     end
 
     if controls == [] and not parsed.check do
-      Mix.raise("give each control to fit, such as --control k_odd=-2:2")
+      Mx.Command.fail("give each control to fit, such as --control k_odd=-2:2")
     end
 
     recorded = recordings!(dynamics, parsed.drone)
@@ -61,7 +61,7 @@ defmodule Mix.Tasks.Mx.Fit do
   defp recordings!(dynamics, drone) do
     case Fit.recordings(dynamics, drone) do
       {:error, message} ->
-        Mix.raise(message)
+        Mx.Command.fail(message)
 
       {:ok, recorded, cached} ->
         if cached, do: IO.puts("using the recordings' figures from an earlier run")
@@ -116,14 +116,14 @@ defmodule Mix.Tasks.Mx.Fit do
 
   defp synth!([name | rest]) do
     if String.starts_with?(name, "--") do
-      Mix.raise("give the synth first, such as mix mx.fit clarinet")
+      Mx.Command.fail("give the synth first, such as mix mx.fit clarinet")
     end
 
     {Enum.find(Synths.synths(), &(&1 == name)) ||
-       Mix.raise("unknown synth #{name}"), rest}
+       Mx.Command.fail("unknown synth #{name}"), rest}
   end
 
-  defp synth!([]), do: Mix.raise("give the synth first, such as mix mx.fit clarinet")
+  defp synth!([]), do: Mx.Command.fail("give the synth first, such as mix mx.fit clarinet")
 
   defp parse!([], parsed), do: parsed
 
@@ -141,27 +141,27 @@ defmodule Mix.Tasks.Mx.Fit do
 
   defp parse!(["--check" | rest], parsed), do: parse!(rest, %{parsed | check: true})
   defp parse!(["--drone" | rest], parsed), do: parse!(rest, %{parsed | drone: true})
-  defp parse!(["--" <> _ = flag | _rest], _parsed), do: Mix.raise("unknown option #{flag}")
+  defp parse!(["--" <> _ = flag | _rest], _parsed), do: Mx.Command.fail("unknown option #{flag}")
 
   defp parse!([file | rest], %{dynamics: [{vel, files} | dynamics]} = parsed) do
     parse!(rest, %{parsed | dynamics: [{vel, [file!(file) | files]} | dynamics]})
   end
 
   defp parse!([_file | _rest], _parsed) do
-    Mix.raise("give --vel before its files, such as --vel 0.3 #{@example}")
+    Mx.Command.fail("give --vel before its files, such as --vel 0.3 #{@example}")
   end
 
   defp file!(arg) do
     case Regex.run(~r/^(.+):([^:]+)$/, arg) do
       [_, path, note] -> {path, note!(note)}
-      nil -> Mix.raise("give each file with the note it starts on, such as #{@example}")
+      nil -> Mx.Command.fail("give each file with the note it starts on, such as #{@example}")
     end
   end
 
   defp note!(text) do
     Notes.from_text(text)
   rescue
-    ArgumentError -> Mix.raise("unknown note #{text}")
+    ArgumentError -> Mx.Command.fail("unknown note #{text}")
   end
 
   defp control!(synth, text) do
@@ -172,7 +172,7 @@ defmodule Mix.Tasks.Mx.Fit do
       %{name: option!(synth, name), value: value, step: step, ratio: ratio}
     else
       _other ->
-        Mix.raise(
+        Mx.Command.fail(
           "give --control as a name, a starting value and a step, such as --control k_odd=-2:2"
         )
     end
@@ -193,14 +193,14 @@ defmodule Mix.Tasks.Mx.Fit do
     if option && Synths.option?(synth, option) do
       option
     else
-      Mix.raise("#{synth} takes no control #{name}")
+      Mx.Command.fail("#{synth} takes no control #{name}")
     end
   end
 
   defp float!(text, flag) do
     case Float.parse(text) do
       {value, ""} -> value
-      _other -> Mix.raise("#{flag} takes a number, not #{text}")
+      _other -> Mx.Command.fail("#{flag} takes a number, not #{text}")
     end
   end
 

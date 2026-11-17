@@ -23,7 +23,7 @@ defmodule Mix.Tasks.Mx.Levels do
 
     case OptionParser.parse!(args, strict: strict) do
       {opts, [path]} -> print(path, opts)
-      _other -> Mix.raise("usage: mix mx.levels RECORDING [--per-second 30] [--strokes]")
+      _other -> Mx.Command.fail("usage: mix mx.levels RECORDING [--per-second 30] [--strokes]")
     end
   end
 
@@ -43,7 +43,7 @@ defmodule Mix.Tasks.Mx.Levels do
         end
 
       {:error, message} ->
-        Mix.raise(message)
+        Mx.Command.fail(message)
     end
   end
 
@@ -54,7 +54,7 @@ defmodule Mix.Tasks.Mx.Levels do
         for stroke <- strokes, do: IO.puts("#{seconds(stroke.at)},#{decibels(stroke.level)}")
 
       {:error, message} ->
-        Mix.raise(message)
+        Mx.Command.fail(message)
     end
   end
 

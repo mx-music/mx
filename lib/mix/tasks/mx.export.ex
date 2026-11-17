@@ -20,22 +20,22 @@ defmodule Mix.Tasks.Mx.Export do
     strict = [out: :string, time: :string, key: :string, title: :string, force: :boolean]
     {opts, [path]} = OptionParser.parse!(args, strict: strict)
     out = Keyword.get_lazy(opts, :out, fn -> Path.rootname(path) <> ".musicxml" end)
-    Mix.Task.run("app.start")
+    Mx.Command.start()
 
     case Mx.MusicXML.write(path, out, Keyword.take(opts, [:time, :key, :title, :force])) do
       {:ok, report} ->
-        Mix.shell().info("Wrote #{out}")
+        Mx.Command.info("Wrote #{out}")
 
         for %{name: name, notes: notes, low: low, high: high} <- report.parts do
-          Mix.shell().info("#{name}: #{notes} notes from #{low} to #{high}")
+          Mx.Command.info("#{name}: #{notes} notes from #{low} to #{high}")
         end
 
         for {name, why} <- report.left_out do
-          Mix.shell().info("#{name} is left out: #{why}")
+          Mx.Command.info("#{name} is left out: #{why}")
         end
 
       {:error, message} ->
-        Mix.raise(message)
+        Mx.Command.fail(message)
     end
   end
 end

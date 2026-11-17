@@ -18,17 +18,17 @@ defmodule Mix.Tasks.Mx.Samples.Download do
 
   @impl true
   def run(args) when is_list(args) do
-    Mix.Task.run("app.config")
+    Mx.Command.config()
 
     case args do
       [source] ->
         case Mx.Samples.download_source(source) do
           {:ok, message} -> IO.puts(message)
-          {:error, message} -> Mix.raise(message)
+          {:error, message} -> Mx.Command.fail(message)
         end
 
       _ ->
-        Mix.raise("usage: mix mx.samples.download SOURCE")
+        Mx.Command.fail("usage: mix mx.samples.download SOURCE")
     end
   end
 end

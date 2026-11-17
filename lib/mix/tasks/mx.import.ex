@@ -27,24 +27,24 @@ defmodule Mix.Tasks.Mx.Import do
     score =
       case Score.read(path) do
         {:ok, score} -> score
-        {:error, message} -> Mix.raise(message)
+        {:error, message} -> Mx.Command.fail(message)
       end
 
     synths = synths(opts, score, path)
     tempo = tempo(opts[:tempo], score.tempo)
 
     if File.exists?(out) and not Keyword.get(opts, :force, false) do
-      Mix.raise("#{out} already exists; give --force to write over it")
+      Mx.Command.fail("#{out} already exists; give --force to write over it")
     end
 
     parts = Enum.map(score.parts, &{&1, Map.get(synths, &1.name, :tri)})
     song = song(score, parts, tempo, Path.basename(path), out)
     File.write!(out, [Code.format_string!(song, locals_without_parens: [part: 2]), "\n"])
 
-    Mix.shell().info("Wrote #{out}")
+    Mx.Command.info("Wrote #{out}")
 
     for {part, synth} <- parts do
-      Mix.shell().info(summary(part, synth))
+      Mx.Command.info(summary(part, synth))
     end
   end
 
@@ -55,7 +55,7 @@ defmodule Mix.Tasks.Mx.Import do
       {name, synth} =
         case String.split(given, "=", parts: 2) do
           [name, synth] -> {String.trim(name), String.trim(synth)}
-          _other -> Mix.raise(~s(give each part with its synth, such as --part "Soprano=oboe"))
+          _other -> Mx.Command.fail(~s(give each part with its synth, such as --part "Soprano=oboe"))
         end
 
       synth = synth(synth)
@@ -64,7 +64,7 @@ defmodule Mix.Tasks.Mx.Import do
       if part == nil do
         file = Path.basename(path)
         parts = sentence(names)
-        Mix.raise("no part named #{name} in #{file}; its parts are #{parts}")
+        Mx.Command.fail("no part named #{name} in #{file}; its parts are #{parts}")
       end
 
       {part, synth}
@@ -73,18 +73,18 @@ defmodule Mix.Tasks.Mx.Import do
 
   defp synth(name) do
     case Enum.find(Mx.Synths.synths(), &(&1 == name)) do
-      nil -> Mix.raise("unknown synth #{name}")
+      nil -> Mx.Command.fail("unknown synth #{name}")
       synth -> synth
     end
   end
 
-  defp tempo(nil, nil), do: Mix.raise("give the score's tempo with --tempo")
+  defp tempo(nil, nil), do: Mx.Command.fail("give the score's tempo with --tempo")
   defp tempo(nil, tempo), do: tempo
 
   defp tempo(given, _tempo) do
     case Float.parse(given) do
       {tempo, ""} when tempo > 0 -> if tempo == trunc(tempo), do: trunc(tempo), else: tempo
-      _other -> Mix.raise("--tempo takes beats per minute, such as --tempo 100")
+      _other -> Mx.Command.fail("--tempo takes beats per minute, such as --tempo 100")
     end
   end
 

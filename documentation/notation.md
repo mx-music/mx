@@ -21,6 +21,7 @@ song(
 
 `mix mx.play song.exs` plays the file.
 `mix mx.print song.exs` prints each part's notes with their beats instead of playing them.
+With the mx command installed, each `mix mx.NAME` task here is also `mx NAME` with the same arguments, as the README's Install section says.
 
 This page goes from one note to a whole song, in the order you would learn it.
 

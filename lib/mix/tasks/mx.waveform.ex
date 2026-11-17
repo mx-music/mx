@@ -23,7 +23,7 @@ defmodule Mix.Tasks.Mx.Waveform do
 
     case Waveform.write(path, out, Keyword.take(opts, [:width, :height])) do
       :ok -> IO.puts("Wrote #{out}")
-      {:error, message} -> Mix.raise(message)
+      {:error, message} -> Mx.Command.fail(message)
     end
   end
 end

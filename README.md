@@ -77,14 +77,18 @@ Add mx to the dependencies in your Mix project's `mix.exs`:
 {:mx, "~> 0.2.2"}
 ```
 
-Or install the `mx` command, which plays a song file without a Mix project and takes the same options as `mix mx.play`:
+Or install the `mx` command, which runs mx without a Mix project:
 
 ```sh
 mix escript.install hex mx
 mx song.exs
+mx export song.exs
+mx help export
 ```
 
 Mix installs it in `~/.mix/escripts`, which needs to be on your `PATH`.
+Each `mix mx.NAME` task in this README and the guides is also `mx NAME`, with a space for each dot, such as `mx samples download` for `mix mx.samples.download`, and takes the same arguments.
+`mx song.exs` is short for `mx play song.exs`, and `mx` alone lists the commands.
 
 A checkout of mx always compiles mxs with Rust, and `mix mx.play path/to/song.exs` run in it plays a song with the checkout's code.
 

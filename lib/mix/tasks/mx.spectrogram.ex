@@ -43,7 +43,7 @@ defmodule Mix.Tasks.Mx.Spectrogram do
 
     case Spectrogram.stack(paths, out, drawn) do
       :ok -> IO.puts("Wrote #{out}")
-      {:error, message} -> Mix.raise(message)
+      {:error, message} -> Mx.Command.fail(message)
     end
   end
 end

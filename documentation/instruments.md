@@ -263,6 +263,8 @@ Work on one goes through these steps.
 5. Pin the figures in `test/mx/designs_test.exs`, whose tests render the synth and measure it the same way, against the recordings' medians written in the test. They are tagged `engine`.
 6. Write a solo for it, in `examples/solo` or a folder of its own under `examples`, from real playing practice, and listen. A synth that passes every figure can still sound wrong, and the ear decides.
 
+With the mx command installed, each `mix mx.NAME` task here is also `mx NAME` with the same arguments, as the README's Install section says.
+
 [Measuring an instrument](#measuring-an-instrument) describes each command's options and what it prints.
 
 ## mx's synths

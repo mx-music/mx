@@ -19,7 +19,7 @@ defmodule Mix.Tasks.Mx.Parts do
 
   @impl true
   def run(args) when is_list(args) do
-    Mix.Task.run("app.config")
+    Mx.Command.config()
 
     strict = [
       note: :string,
@@ -33,8 +33,8 @@ defmodule Mix.Tasks.Mx.Parts do
 
     case OptionParser.parse!(args, strict: strict) do
       {opts, ["piano"]} -> print(opts)
-      {_opts, [other]} -> Mix.raise("only the piano's parts are known, not #{other}'s")
-      {_opts, _other} -> Mix.raise("usage: mix mx.parts piano --note 60 --vel 0.6")
+      {_opts, [other]} -> Mx.Command.fail("only the piano's parts are known, not #{other}'s")
+      {_opts, _other} -> Mx.Command.fail("usage: mix mx.parts piano --note 60 --vel 0.6")
     end
   end
 
@@ -43,7 +43,7 @@ defmodule Mix.Tasks.Mx.Parts do
 
     case Piano.parts(options) do
       {:ok, parts} ->
-        Enum.each(parts.warnings, &Mix.shell().info("warning: #{&1}"))
+        Enum.each(parts.warnings, &Mx.Command.info("warning: #{&1}"))
         given = Enum.map_join(options, ", ", fn {name, value} -> "#{name} #{value}" end)
         count = length(parts.harmonics)
         IO.puts("piano, #{given}: #{count} harmonics")
@@ -55,14 +55,14 @@ defmodule Mix.Tasks.Mx.Parts do
         IO.puts("  knock #{knock(parts.knock)}")
 
       {:error, message} ->
-        Mix.raise(message)
+        Mx.Command.fail(message)
     end
   end
 
   defp note!(text) do
     Notes.from_text(text)
   rescue
-    ArgumentError -> Mix.raise("unknown note #{text}")
+    ArgumentError -> Mx.Command.fail("unknown note #{text}")
   end
 
   defp harmonic(%{hz: hz, level: level, fade: fade}, first) do

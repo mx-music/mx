@@ -22,11 +22,11 @@ defmodule Mix.Tasks.Mx.Play do
   @impl true
   def run(args) when is_list(args) do
     {opts, [path]} = Mx.Player.parse(args)
-    Mix.Task.run("app.start")
+    Mx.Command.start()
 
     case Mx.Player.play(path, opts) do
       :ok -> :ok
-      {:error, message} -> Mix.raise(message)
+      {:error, message} -> Mx.Command.fail(message)
     end
   end
 end

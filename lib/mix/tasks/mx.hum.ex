@@ -32,22 +32,22 @@ defmodule Mix.Tasks.Mx.Hum do
   @impl true
   def run(args) when is_list(args) do
     {opts, files} = OptionParser.parse!(args, strict: @switches)
-    tempo = opts[:tempo] || Mix.raise("give the hum's tempo with --tempo")
+    tempo = opts[:tempo] || Mx.Command.fail("give the hum's tempo with --tempo")
 
     case {opts[:record], files} do
       {nil, [path]} -> transcribe(path, tempo, opts)
       {wav, []} when wav != nil -> record(wav, tempo, opts)
-      _ -> Mix.raise("give one recording, such as mix mx.hum hum.wav --tempo 90")
+      _ -> Mx.Command.fail("give one recording, such as mix mx.hum hum.wav --tempo 90")
     end
   end
 
   defp record(wav, tempo, opts) do
-    Mix.Task.run("app.start")
+    Mx.Command.start()
     recorder_opts = [tempo: tempo] ++ Keyword.take(opts, [:out, :force, :input])
 
     case Hum.Recorder.record(wav, recorder_opts) do
       :ok -> :ok
-      {:error, message} -> Mix.raise(message)
+      {:error, message} -> Mx.Command.fail(message)
     end
   end
 
@@ -57,11 +57,11 @@ defmodule Mix.Tasks.Mx.Hum do
     with :ok <- Hum.check(out, opts[:force] || false),
          {:ok, %{samples: samples, rate: rate}} <- Audio.read(path) do
       case Hum.transcribe(samples, rate, tempo) do
-        %{notes: []} -> Mix.raise("found no notes in #{path}")
-        %{notes: notes, beats: beats} -> Mix.shell().info(Hum.write(out, notes, beats, tempo))
+        %{notes: []} -> Mx.Command.fail("found no notes in #{path}")
+        %{notes: notes, beats: beats} -> Mx.Command.info(Hum.write(out, notes, beats, tempo))
       end
     else
-      {:error, message} -> Mix.raise(message)
+      {:error, message} -> Mx.Command.fail(message)
     end
   end
 end

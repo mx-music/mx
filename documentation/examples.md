@@ -1,6 +1,7 @@
 # Examples
 
 The songs in `examples` play from a clone of mx, each with `mix mx.play` and its path, such as `mix mx.play examples/salsa.exs`.
+With the mx command installed, each `mix mx.NAME` task here is also `mx NAME` with the same arguments, as the README's Install section says.
 
 ## Pieces
 

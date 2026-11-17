@@ -2,6 +2,7 @@
 
 A song need not be typed in by hand.
 mx writes one from a MusicXML score or from a recording of a melody you hum, and writes a song back out as a MusicXML score.
+With the mx command installed, each `mix mx.NAME` task here is also `mx NAME` with the same arguments, as the README's Install section says.
 
 ```mermaid
 graph LR

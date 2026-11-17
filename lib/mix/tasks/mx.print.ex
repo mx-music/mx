@@ -30,7 +30,7 @@ defmodule Mix.Tasks.Mx.Print do
     song =
       case Song.load(path) do
         {:ok, song} -> song
-        {:error, message} -> Mix.raise(message)
+        {:error, message} -> Mx.Command.fail(message)
       end
 
     inputs = inputs(opts)
@@ -55,7 +55,7 @@ defmodule Mix.Tasks.Mx.Print do
              start + beats}
 
           {:error, message} ->
-            Mix.raise(message)
+            Mx.Command.fail(message)
         end
       end)
 
@@ -86,7 +86,7 @@ defmodule Mix.Tasks.Mx.Print do
         "#{name}, pass #{pass}, #{length} #{unit} at #{tempo}#{fx}\n" <> format_events(events)
 
       {:error, message} ->
-        Mix.raise(message)
+        Mx.Command.fail(message)
     end
   end
 

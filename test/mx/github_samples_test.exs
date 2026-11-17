@@ -344,7 +344,8 @@ defmodule Mx.GitHubSamplesTest do
   end
 
   test "mx with no arguments shows how to download samples" do
-    assert File.read!("lib/mx/cli.ex") =~ "mx samples download SOURCE"
+    {1, listing} = ExUnit.CaptureIO.with_io(:stderr, fn -> Mx.CLI.run([]) end)
+    assert listing =~ "mx samples download"
   end
 
   test "the README shows downloading Sonic Pi's pack, and the notation guide a GitHub sample, a VCSL sample and a VCSL folder ahead of time" do

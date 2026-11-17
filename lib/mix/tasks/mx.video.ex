@@ -29,15 +29,15 @@ defmodule Mix.Tasks.Mx.Video do
     case written do
       {:ok, seconds, bytes} ->
         {line, warning} = Video.report(out, seconds, bytes)
-        Mix.shell().info(line)
-        if warning, do: Mix.shell().error(warning)
+        Mx.Command.info(line)
+        if warning, do: Mx.Command.error(warning)
 
       {:error, message} ->
-        Mix.raise(message)
+        Mx.Command.fail(message)
     end
   end
 
   defp picture("waveform"), do: :waveform
   defp picture("spectrogram"), do: :spectrogram
-  defp picture(other), do: Mix.raise("--picture is waveform or spectrogram, not #{other}")
+  defp picture(other), do: Mx.Command.fail("--picture is waveform or spectrogram, not #{other}")
 end
