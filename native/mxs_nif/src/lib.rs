@@ -409,6 +409,19 @@ fn measure_struck(data: Binary, format: (String, usize, usize), rate: f64, note:
     Ok(analysis::fit::measure(&sound(&data, &format)?, rate, note))
 }
 
+/// The spike of mx-00181: mx-00177's notes with known partials measured as damped modes.
+#[rustler::nif(schedule = "DirtyCpu")]
+fn spike_known_modes(rising: bool) -> Vec<analysis::modes::KnownModes> {
+    analysis::modes::known(rising)
+}
+
+/// The spike of mx-00181: a recording of a struck note, given as to `fit_struck`, its first `seconds_of_modes` as damped modes beside today's fit.
+#[rustler::nif(schedule = "DirtyCpu")]
+fn spike_strike_modes(recording: Struck, seconds_of_modes: f64, rising: bool) -> NifResult<analysis::modes::Strike> {
+    let ((data, format, rate), within, (note, _velocity, seconds, exact)) = recording;
+    Ok(analysis::modes::strike(&span(&data, &format, within)?, rate, note, seconds, exact, seconds_of_modes, rising))
+}
+
 /// Notes with known partials of every kind at C2, C4 and C7, each measured as a struck recording is and compared with its truth.
 #[rustler::nif(schedule = "DirtyCpu")]
 fn measure_known() -> Vec<analysis::known::Known> {

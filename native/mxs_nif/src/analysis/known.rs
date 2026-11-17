@@ -6,13 +6,13 @@ use rustler::NifMap;
 use std::f64::consts::PI;
 
 /// The rate the notes are made at.
-const RATE: f64 = 44100.0;
+pub(crate) const RATE: f64 = 44100.0;
 /// The seconds of quiet before each note.
-const BEFORE: f64 = 0.2;
+pub(crate) const BEFORE: f64 = 0.2;
 /// The seconds measured, as for NSynth's notes.
 const SECONDS: f64 = 2.9;
 /// The level of the quiet the notes sit in, in dB of a sine's amplitude.
-const QUIET: f64 = -100.0;
+pub(crate) const QUIET: f64 = -100.0;
 /// The gap in dB beyond which the refit tickets count a partial as off, over the first 20 ms or on average.
 pub const LIMIT: f64 = 2.0;
 /// The pitches each kind of note is made at: C2, C4 and C7.
@@ -22,14 +22,14 @@ pub const NOTES: [f64; 3] = [36.0, 60.0, 96.0];
 pub const KINDS: [&str; 6] = ["slow", "short", "beating", "building", "noisy", "early"];
 
 /// A partial as it is made: its frequency, and its level in dB at a time after the note starts.
-struct Made {
-    freq: f64,
-    level: Box<dyn Fn(f64) -> f64 + Sync>,
+pub(crate) struct Made {
+    pub(crate) freq: f64,
+    pub(crate) level: Box<dyn Fn(f64) -> f64 + Sync>,
 }
 
 /// A note as it is made: its partials, and a burst of white noise as a power in dB over the seconds it lasts.
-struct Note {
-    partials: Vec<Made>,
+pub(crate) struct Note {
+    pub(crate) partials: Vec<Made>,
     noise: Option<(f64, f64)>,
 }
 
@@ -64,7 +64,7 @@ fn falling(start: f64, per_second: f64) -> Box<dyn Fn(f64) -> f64 + Sync> {
 }
 
 // A note of a kind at a pitch: a fundamental falling 20 dB a second unless the kind is about the fundamental, and the partial the kind is about.
-fn made(kind: &str, note: f64) -> Note {
+pub(crate) fn made(kind: &str, note: f64) -> Note {
     let f0 = hz(note);
     let fundamental = || Made { freq: f0, level: falling(-6.0, -20.0) };
     match kind {
@@ -100,7 +100,7 @@ fn made(kind: &str, note: f64) -> Note {
 }
 
 // The note's samples after BEFORE seconds of quiet, each partial rising over 1 ms.
-fn sound(note: &Note) -> Vec<f64> {
+pub(crate) fn sound(note: &Note) -> Vec<f64> {
     let count = ((BEFORE + SECONDS + 0.3) * RATE) as usize;
     let mut seed: u64 = 0x2545_f491_4f6c_dd1d;
     let mut white = move || {

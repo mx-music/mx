@@ -99,6 +99,12 @@ defmodule Mx.Engine.Mxs.Native do
   def measure_known, do: :erlang.nif_error(:nif_not_loaded)
   def split_struck(_data, _format, _rate, _notes), do: :erlang.nif_error(:nif_not_loaded)
 
+  @doc "mx-00181's spike: mx-00177's known notes as damped modes, each with a rising term when `rising`."
+  def spike_known_modes(_rising), do: :erlang.nif_error(:nif_not_loaded)
+
+  @doc "mx-00181's spike: a recorded struck note's first `seconds` as damped modes, beside today's fit."
+  def spike_strike_modes(_recording, _seconds, _rising), do: :erlang.nif_error(:nif_not_loaded)
+
   @doc "The figures of struck notes fitted partial by partial, as mxs reads them, from recordings each as `{{data, format, rate}, {from, to}, {note, velocity, seconds, exact}}`, the samples it spans and its note, a MIDI number or between them for a pitch given exactly."
   def fit_struck(_recordings), do: :erlang.nif_error(:nif_not_loaded)
 
