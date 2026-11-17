@@ -9,6 +9,7 @@ defmodule Mix.Tasks.Mx.Export do
 
   The score is written beside the song with the extension .musicxml unless `--out` names it, compressed when that ends in .mxl, and `--force` writes over a file that exists.
   `--time` gives the time signature, 4/4 unless given, and `--key` the key its notes are spelled in, such as d, bm or fsm, C major unless given.
+  `--pickup` gives the length in beats of a pickup bar, written as bar 0 before the first full bar, such as 0.5 for an eighth note; it must be shorter than a bar.
   `--title` gives the score's title, which is otherwise the song file's name.
   A part that plays no notes with a pitch, such as drums or samples, or that waits for input, is left out, and the task says so.
 
@@ -23,7 +24,15 @@ defmodule Mix.Tasks.Mx.Export do
 
   @impl true
   def run(args) when is_list(args) do
-    strict = [out: :string, time: :string, key: :string, title: :string, force: :boolean]
+    strict = [
+      out: :string,
+      time: :string,
+      key: :string,
+      pickup: :string,
+      title: :string,
+      force: :boolean
+    ]
+
     {opts, [path]} = OptionParser.parse!(args, strict: strict)
     out = Keyword.get_lazy(opts, :out, fn -> Path.rootname(path) <> ".musicxml" end)
     Mx.Command.start()
@@ -35,7 +44,7 @@ defmodule Mix.Tasks.Mx.Export do
         _other -> Mx.MusicXML
       end
 
-    case writer.write(path, out, Keyword.take(opts, [:time, :key, :title, :force])) do
+    case writer.write(path, out, Keyword.take(opts, [:time, :key, :pickup, :title, :force])) do
       {:ok, report} ->
         Mx.Command.info("Wrote #{out}")
 

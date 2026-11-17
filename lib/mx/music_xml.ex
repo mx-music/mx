@@ -38,12 +38,13 @@ defmodule Mx.MusicXML do
   @minor ~w(ab eb bb f c g d a e b fs cs gs ds as)
 
   @doc """
-  Writes the song at `path` as a score to `out`, compressed when `out` ends in .mxl, with `time:`, `key:`, `title:` and `force:`.
+  Writes the song at `path` as a score to `out`, compressed when `out` ends in .mxl, with `time:`, `key:`, `pickup:`, `title:` and `force:`.
   Returns `{:ok, %{parts: parts, left_out: left_out}}`, each part as its name, how many notes it holds and its lowest and highest note, and each part left out as its name and why; or `{:error, message}`.
   """
   def write(path, out, opts \\ []) when is_binary(path) and is_binary(out) and is_list(opts) do
     with {:ok, time} <- time(Keyword.get(opts, :time, "4/4")),
          {:ok, key} <- key(Keyword.get(opts, :key, "c")),
+         {:ok, pickup} <- pickup(Keyword.get(opts, :pickup), time),
          :ok <- Page.check(out, Keyword.get(opts, :force, false)),
          {:ok, song} <- Song.load(path),
          {:ok, parts, left_out} <- parts(song, path) do
@@ -56,7 +57,8 @@ defmodule Mx.MusicXML do
           time: time,
           key: key,
           title: title,
-          beats: beats
+          beats: beats,
+          pickup: pickup
         )
 
       File.write!(out, if(Path.extname(out) == ".mxl", do: compress(xml), else: xml))
@@ -80,6 +82,24 @@ defmodule Mx.MusicXML do
     end
   end
 
+  @doc "A pickup's length in beats, such as `0.5`, as `{:ok, beats}` when it is shorter than a bar of `time`, `{:ok, 0}` when there is none, or `{:error, message}`."
+  def pickup(nil, _time), do: {:ok, 0}
+
+  def pickup(text, {beats, type}) when is_binary(text) do
+    bar = beats * 4 / type
+
+    case Float.parse(text) do
+      {pickup, ""} when pickup > 0 and pickup < bar ->
+        {:ok, pickup}
+
+      _other ->
+        bar = if bar == trunc(bar), do: trunc(bar), else: bar
+
+        {:error,
+         "--pickup takes a number of beats shorter than a bar of #{bar} beats, such as 0.5, not #{text}"}
+    end
+  end
+
   @doc "A key such as `d`, `bm` or `fsm` as `{:ok, {fifths, mode}}`, sharps counting up and flats down, or `{:error, message}`."
   def key(text) when is_binary(text) do
     name = String.downcase(text)
@@ -98,7 +118,7 @@ defmodule Mx.MusicXML do
   end
 
   @doc """
-  The MusicXML text of parts given as `{name, notes}`, each note `{beat, note, beats}`, with `tempo:`, `time:`, `key:`, `title:` and `beats:`, the song's length.
+  The MusicXML text of parts given as `{name, notes}`, each note `{beat, note, beats}`, with `tempo:`, `time:`, `key:`, `title:`, `beats:`, the song's length, and `pickup:`, the beats of a pickup bar, none unless given.
   """
   def score(parts, opts) when is_list(parts) and is_list(opts) do
     {beats, type} = Keyword.fetch!(opts, :time)
@@ -117,7 +137,8 @@ defmodule Mx.MusicXML do
           do: start + length
 
     length = Enum.max([round(Keyword.fetch!(opts, :beats) * @divisions) | ends], fn -> 0 end)
-    bars = max(1, ceil(length / bar))
+    pickup = round(Keyword.get(opts, :pickup, 0) * @divisions)
+    bars = bars(length, bar, pickup)
 
     list = Enum.with_index(parts, 1)
 
@@ -140,13 +161,14 @@ defmodule Mx.MusicXML do
 
         [
           ~s(  <part id="P#{index}">\n),
-          for number <- 1..bars do
-            first = if number == 1, do: [attributes, tempo], else: []
+          for {number, from, ticks} <- bars do
+            first = if from == 0, do: [attributes, tempo], else: []
+            implicit = if number == 0, do: ~s( implicit="yes"), else: ""
 
             [
-              ~s(    <measure number="#{number}">\n),
+              ~s(    <measure number="#{number}"#{implicit}>\n),
               first,
-              measure(voices, number, bar, fifths),
+              measure(voices, {from, ticks}, pickup, fifths),
               "    </measure>\n"
             ]
           end,
@@ -162,9 +184,10 @@ defmodule Mx.MusicXML do
   # Each part laid out in bars as `score/2` lays it out, for another writer: `{bar, bars, parts}`,
   # `bar` the ticks in a bar at 24 a beat, and each part `{name, voices}`, each voice its bars, and
   # each bar its pieces as `{start, notes, values, {tied_in, tied_out}}`, `notes` nil for a rest
-  # and `values` the note values that write its length.
-  def layout(parts, {beats, type}, length) do
+  # and `values` the note values that write its length; a pickup of `pickup` beats is the first bar.
+  def layout(parts, {beats, type}, length, pickup \\ 0) do
     bar = div(beats * @divisions * 4, type)
+    pickup = round(pickup * @divisions)
 
     parts =
       Enum.map(parts, fn {name, notes} ->
@@ -172,15 +195,15 @@ defmodule Mx.MusicXML do
       end)
 
     ends = for {_, voices} <- parts, voice <- voices, {start, held, _} <- voice, do: start + held
-    bars = max(1, ceil(Enum.max([round(length * @divisions) | ends]) / bar))
+    bars = bars(Enum.max([round(length * @divisions) | ends]), bar, pickup)
 
     parts =
       for {name, voices} <- parts do
         voices =
           for voice <- voices do
-            for number <- 1..bars do
-              for {start, held, notes, ties} <- pieces(voice, (number - 1) * bar, bar) do
-                values = if notes, do: values(held), else: rest_values(start, held)
+            for {_number, from, ticks} <- bars do
+              for {start, held, notes, ties} <- pieces(voice, from, ticks) do
+                values = if notes, do: values(held), else: rest_values(start - pickup, held)
                 {start, notes, Enum.map(values, &elem(&1, 0)), ties}
               end
             end
@@ -189,7 +212,23 @@ defmodule Mx.MusicXML do
         {name, voices}
       end
 
-    {bar, bars, parts}
+    {bar, length(bars), parts}
+  end
+
+  # The bars that hold `length` ticks as `{number, from, ticks}`: a pickup of `pickup` ticks as bar
+  # 0 when there is one, then full bars from 1.
+  defp bars(length, bar, 0) do
+    for number <- 1..max(1, ceil(length / bar)), do: {number, (number - 1) * bar, bar}
+  end
+
+  defp bars(length, bar, pickup) do
+    [
+      {0, 0, pickup}
+      | for(
+          number <- 1..max(1, ceil((length - pickup) / bar)),
+          do: {number, pickup + (number - 1) * bar, bar}
+        )
+    ]
   end
 
   defp quantize({beat, note, beats}) do
@@ -227,16 +266,14 @@ defmodule Mx.MusicXML do
     |> Enum.map(&Enum.reverse/1)
   end
 
-  defp measure(voices, number, bar, fifths) do
-    from = (number - 1) * bar
-
+  defp measure(voices, {from, bar}, pickup, fifths) do
     voices
     |> Enum.with_index(1)
     |> Enum.map(fn {voice, index} -> {index, pieces(voice, from, bar)} end)
     |> Enum.filter(fn {index, pieces} ->
       index == 1 or Enum.any?(pieces, &(elem(&1, 2) != nil))
     end)
-    |> Enum.map(fn {index, pieces} -> write_voice(pieces, index, bar, fifths) end)
+    |> Enum.map(fn {index, pieces} -> write_voice(pieces, index, bar, {pickup, fifths}) end)
     |> Enum.intersperse("      <backup><duration>#{bar}</duration></backup>\n")
   end
 
@@ -258,13 +295,14 @@ defmodule Mx.MusicXML do
     if cursor < to, do: pieces ++ [{cursor, to - cursor, nil, {false, false}}], else: pieces
   end
 
-  defp write_voice([{_, bar, nil, _}], voice, bar, _fifths) do
+  defp write_voice([{_, bar, nil, _}], voice, bar, _context) do
     ~s(      <note><rest measure="yes"/><duration>#{bar}</duration><voice>#{voice}</voice></note>\n)
   end
 
-  defp write_voice(pieces, voice, _bar, fifths) do
+  # Rests fill to the beat from the first full bar's downbeat, after any pickup.
+  defp write_voice(pieces, voice, _bar, {pickup, fifths}) do
     for {start, length, notes, {tied_in, tied_out}} <- pieces do
-      values = if notes, do: values(length), else: rest_values(start, length)
+      values = if notes, do: values(length), else: rest_values(start - pickup, length)
       count = length(values)
 
       values

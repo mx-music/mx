@@ -227,6 +227,20 @@ defmodule Mx.ABCTest do
     assert File.read!(out) =~ "V:1\nc4- c d |]"
   end
 
+  test "--pickup 1 writes the first beat as a bar of its own", %{tmp_dir: dir} do
+    song = Path.join(dir, "upbeat.exs")
+
+    File.write!(
+      song,
+      "import Mx\nsong(music: part(:melody, seq(g4: 1, c5: 1, d5: 1, e5: 1, f5: 1, g5: 4), synth: :tri))\n"
+    )
+
+    out = Path.join(dir, "upbeat.abc")
+    capture_io(fn -> Export.run([song, "--pickup", "1", "--out", out]) end)
+
+    assert File.read!(out) =~ "V:1\nG | c d e f | g4 |]"
+  end
+
   test "an export says once what ABC leaves out, and writes no voice for drums", %{tmp_dir: dir} do
     song = Path.join(dir, "band.exs")
 

@@ -80,6 +80,16 @@ mx prints how many notes each part has, and its lowest and highest note.
 `--time` sets the time signature, 4/4 without it, and `--key` the key its notes are spelled in, such as `d`, `bm` or `fsm`, C major without it.
 `--title` sets the title, which is otherwise the song file's name.
 
+A piece that opens with a pickup, a short bar before the first full one, needs `--pickup` and the pickup's length in beats, since a song does not record where its bar lines fall:
+
+```sh
+mix mx.export examples/erbarme_dich/aria.exs --time 12/8 --key bm --pickup 0.5
+```
+
+The song's first half beat is then written as bar 0, which notation programs show as a pickup, and every later bar is a full bar of the time signature.
+Without `--pickup` the first bar is a full bar starting on the song's first beat.
+`--pickup` must be shorter than a bar, and an ABC tune takes it as well; a MIDI file has no bar lines, so it leaves `--pickup` out.
+
 A note is written as long as its sustain when it is given one, and as long as its beats otherwise, a beat being a quarter note.
 Starts and lengths snap to a 24th of a beat, which holds 32nd notes and triplets, and a note between semitones is written at the nearest one.
 Notes of a part that start together and last as long are written as a chord, and notes that overlap otherwise go to as few voices as they need.

@@ -774,7 +774,7 @@ defmodule Mx.ABC do
   end
 
   @doc """
-  Writes the song at `path` as an ABC tune to `out`, with `time:`, `key:`, `title:` and `force:` as `Mx.MusicXML.write/3` takes them.
+  Writes the song at `path` as an ABC tune to `out`, with `time:`, `key:`, `pickup:`, `title:` and `force:` as `Mx.MusicXML.write/3` takes them.
   Returns `{:ok, %{parts: parts, left_out: left_out, notes: notes}}`, as `Mx.MusicXML.write/3` returns and with `notes` saying what ABC leaves out, or `{:error, message}`.
   """
   def write(path, out, opts \\ []) when is_binary(path) and is_binary(out) and is_list(opts) do
@@ -782,6 +782,7 @@ defmodule Mx.ABC do
 
     with {:ok, {beats, type} = time} <- MusicXML.time(Keyword.get(opts, :time, "4/4")),
          {:ok, {fifths, _mode} = key} <- MusicXML.key(key_text),
+         {:ok, pickup} <- MusicXML.pickup(Keyword.get(opts, :pickup), time),
          :ok <- Page.check(out, Keyword.get(opts, :force, false)),
          {:ok, song} <- Song.load(path),
          {:ok, parts, left_out} <- MusicXML.parts(song, path) do
@@ -792,7 +793,8 @@ defmodule Mx.ABC do
         MusicXML.layout(
           Enum.map(parts, fn {name, notes, _, _} -> {name, notes} end),
           time,
-          length
+          length,
+          pickup
         )
 
       voices =

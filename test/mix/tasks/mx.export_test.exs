@@ -52,4 +52,93 @@ defmodule Mix.Tasks.Mx.ExportTest do
     assert output =~ "bass: 1 notes from c2 to c2\n"
     assert output =~ "kick is left out: it plays no notes with a pitch\n"
   end
+
+  # Each note that starts in a bar, by part, as its bar's number, where in the bar it starts, and
+  # its pitch.
+  defp places(path) do
+    {:ok, score} = Score.read(path)
+
+    for part <- score.parts do
+      places =
+        for bar <- part.bars,
+            voice <- bar.voices,
+            {piece, at} <- starts(voice),
+            note <- piece.notes || [],
+            not note.continues,
+            do: {bar.number, Float.round(at * 1.0, 3), note.midi}
+
+      Enum.sort(places)
+    end
+  end
+
+  defp starts(voice) do
+    {starts, _end} =
+      Enum.map_reduce(voice, 0, fn piece, at -> {{piece, at}, at + piece.length} end)
+
+    starts
+  end
+
+  defp bars(path) do
+    {:ok, score} = Score.read(path)
+
+    for bar <- hd(score.parts).bars,
+        do: {bar.number, bar.voices |> hd() |> Enum.map(& &1.length) |> Enum.sum()}
+  end
+
+  test "--pickup 0.5 writes the aria's first eighth as bar 0, and every note in the bar and place the score has it",
+       %{tmp_dir: dir} do
+    score = Path.join(dir, "pickup_aria.mxl")
+    File.cp!(@aria, score)
+    song = Path.join(dir, "pickup_aria.exs")
+    out = Path.join(dir, "pickup_aria.musicxml")
+    capture_io(fn -> Import.run([score]) end)
+
+    capture_io(fn ->
+      Export.run([song, "--time", "12/8", "--key", "bm", "--pickup", "0.5", "--out", out])
+    end)
+
+    assert File.read!(out) =~ ~s(<measure number="0" implicit="yes">)
+    assert [{0, 0.5}, {1, 6.0} | _] = bars(out)
+
+    [violin | _] = places(out)
+    assert [{0, +0.0, _}] = Enum.filter(violin, &(elem(&1, 0) == 0))
+    assert {1, +0.0, 74} = Enum.find(violin, &(elem(&1, 0) == 1))
+
+    assert places(out) == places(score)
+  end
+
+  defp quarters(dir) do
+    song = Path.join(dir, "quarters.exs")
+    notes = Enum.map_join(1..9, ", ", fn _ -> "c4: 1" end)
+    File.write!(song, "import Mx\nsong(music: part(:melody, seq(#{notes}), synth: :piano))\n")
+    song
+  end
+
+  test "nine quarter notes in 4/4 with --pickup 1 make a bar 0 of one quarter and two full bars, and without it three bars",
+       %{tmp_dir: dir} do
+    song = quarters(dir)
+    out = Path.join(dir, "pickup.musicxml")
+    capture_io(fn -> Export.run([song, "--pickup", "1", "--out", out]) end)
+
+    assert bars(out) == [{0, 1.0}, {1, 4.0}, {2, 4.0}]
+
+    out = Path.join(dir, "no_pickup.musicxml")
+    capture_io(fn -> Export.run([song, "--out", out]) end)
+
+    assert bars(out) == [{1, 4.0}, {2, 4.0}, {3, 4.0}]
+    assert [{3, +0.0, 60}] = out |> places() |> hd() |> Enum.filter(&(elem(&1, 0) == 3))
+  end
+
+  test "--pickup 0, 4 and -1 in 4/4 are refused, naming a bar of 4 beats", %{tmp_dir: dir} do
+    song = quarters(dir)
+
+    for pickup <- ["0", "4", "-1"] do
+      message =
+        "--pickup takes a number of beats shorter than a bar of 4 beats, such as 0.5, not #{pickup}"
+
+      assert_raise Mix.Error, message, fn ->
+        Export.run([song, "--pickup", pickup, "--out", Path.join(dir, "refused.musicxml")])
+      end
+    end
+  end
 end
