@@ -209,6 +209,68 @@ defmodule Mix.Tasks.Mx.FitTest do
     end
   end
 
+  # The keyboard_electronic_098 and guitar_electronic_028 instruments of the test set of Google's
+  # NSynth dataset, from https://magenta.tensorflow.org/datasets/nsynth, in the folder MX_NSYNTH
+  # names, which holds one folder an instrument.
+  describe "the NSynth recordings" do
+    @describetag :nsynth
+
+    setup do
+      dir =
+        System.get_env("MX_NSYNTH") ||
+          flunk("set MX_NSYNTH to the folder of the NSynth recordings")
+
+      %{dir: Path.join(dir, "keyboard_electronic_098"), nsynth: dir}
+    end
+
+    @tag timeout: 600_000
+    test "--check finds electric_piano within 2 dB partial by partial and 1.5 dB in ERB bands from E1 to E6",
+         %{dir: dir} do
+      output =
+        capture_io(fn ->
+          Mix.Tasks.Mx.Fit.run(["electric_piano", "--struck", dir, "--notes", "E1:E6", "--check"])
+        end)
+
+      assert output =~ "electric_piano against 75 recordings"
+      assert_close(output)
+    end
+
+    @tag timeout: 600_000
+    test "--check finds electric_guitar within 2 dB partial by partial and 1.5 dB in ERB bands from E2 to D6",
+         %{nsynth: nsynth} do
+      dir = Path.join(nsynth, "guitar_electronic_028")
+
+      output =
+        capture_io(fn ->
+          Mix.Tasks.Mx.Fit.run([
+            "electric_guitar",
+            "--struck",
+            dir,
+            "--notes",
+            "E2:D6",
+            "--check"
+          ])
+        end)
+
+      assert output =~ "electric_guitar against 46 recordings"
+      assert_close(output)
+    end
+
+    test "C#5 at velocity 127 loses its 7th harmonic by 0.5 seconds and holds its fundamental at 2 seconds",
+         %{dir: dir} do
+      path = Path.join(dir, "keyboard_electronic_098-073-127.wav")
+      [%{partials: partials}] = Mx.Fit.Struck.check(:electric_piano, [{path, 73, 127}])
+
+      %{floor: floor, levels: levels} = Enum.find(partials, &(&1.harmonic == 7))
+      {0.5, _recorded, rendered} = List.keyfind(levels, 0.5, 0)
+      assert rendered < floor + 10
+
+      %{levels: levels} = Enum.find(partials, &(&1.harmonic == 1))
+      {2.0, recorded, rendered} = List.keyfind(levels, 2.0, 0)
+      assert_in_delta rendered, recorded, 3
+    end
+  end
+
   # The University of Iowa Electronic Music Studios' Bb clarinet recordings, from
   # https://theremin.music.uiowa.edu/MISBbclarinet.html, in the folder MX_IOWA_CLARINET names.
   describe "the Iowa clarinet recordings" do
@@ -312,6 +374,38 @@ defmodule Mix.Tasks.Mx.FitTest do
     end
 
     dir
+  end
+
+  # The shares --check prints are within the criteria of mx-00162, and it names the ten partials
+  # and the ten notes furthest off.
+  defp assert_close(output) do
+    [strike, mean] =
+      captures(
+        ~r/partials within 30 dB of the loudest: (\d+)% within 2 dB over the first 20 ms, (\d+)% within 2 dB on average/,
+        output
+      )
+
+    assert strike >= 90 and mean >= 90
+    [weaker] = captures(~r/partials 30 to 60 dB down: (\d+)% within 4 dB on average/, output)
+    assert weaker >= 80
+
+    [median, worst] =
+      captures(~r/ERB bands: ([\d.]+) dB at the median note, ([\d.]+) dB at the worst/, output)
+
+    assert median <= 1.5 and worst <= 3
+
+    [_, partials] = String.split(output, "the ten partials furthest off on average:\n")
+    [partials, notes] = String.split(partials, "the ten notes furthest off in ERB bands:\n")
+
+    assert length(
+             Regex.scan(
+               ~r/^  [a-g]s?\d vel \d+, [\d.]+ (harmonic \d+|between), [\d.]+ dB down: first 20 ms [-+][\d.]+ dB, mean [\d.]+ dB$/m,
+               partials
+             )
+           ) == 10
+
+    assert length(Regex.scan(~r/^  [a-g]s?\d vel \d+: [\d.]+ dB, \d+ of its partials/m, notes)) ==
+             10
   end
 
   defp captures(pattern, output) do
