@@ -5,8 +5,8 @@ defmodule Mix.Tasks.Mx.Print do
   Prints each part's notes with their beats from the start of the song, through the whole of its music once, and makes no sound.
   Given `--pass`, it prints that pass of each part, a pass being a section, or the length of the longest loop in music that plays until mx stops.
 
-      mix mx.print song.exs
-      mix mx.print song.exs --pass 4
+      mx print song.exs
+      mx print song.exs --pass 4
 
   `--cc 74=64`, `--note 60=100`, `--osc /trigger=1,a` and `--get root=40` print the pass as if those inputs had arrived or that value had been set, and each can be given more than once.
   A loop started by input prints only what starts it.

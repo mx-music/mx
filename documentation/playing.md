@@ -1,13 +1,12 @@
 # Playing, recording and rendering
 
-`mix mx.play` plays a song file, and can record what it plays or render the song to a file without playing it.
-`mix mx.video` turns a render into a video.
-With the mx command installed, each `mix mx.NAME` task here is also `mx NAME` with the same arguments, as the README's Install section says.
+`mx play` plays a song file, and can record what it plays or render the song to a file without playing it.
+`mx video` turns a render into a video.
 
 ## Play a song
 
 ```sh
-mix mx.play song.exs
+mx play song.exs
 ```
 
 mx plays the song until it ends or you press Enter.
@@ -20,7 +19,7 @@ A version that does not load prints its error with the line, and the previous ve
 To keep what you play, record it to a stereo WAV file:
 
 ```sh
-mix mx.play song.exs --record session.wav
+mx play song.exs --record session.wav
 ```
 
 Recording starts before the first note, carries on without a gap when you save the song, and ends when you press Enter, once the notes still sounding have faded or after four seconds at most.
@@ -33,7 +32,7 @@ A file that already exists is refused unless you add `--force`, and so is a path
 To hear what a song does without playing it aloud, render it to a stereo WAV file instead:
 
 ```sh
-mix mx.play song.exs --render song.wav
+mx play song.exs --render song.wav
 ```
 
 The render holds what `--record` would, as fast as the machine renders it and with no sound: it starts at the song's first beat and ends once the music has ended and the notes still sounding have faded, or after four seconds at most.
@@ -46,11 +45,11 @@ A render sends no MIDI or OSC and has no input, so mx names each part that sends
 ## Make a video of a render
 
 GitHub plays no sound in a README, only video, so a song is heard there as a video of its render.
-`mix mx.video` makes an MP4 that plays a WAV or AIFF recording over its waveform, with a playhead that crosses the picture once as the recording plays:
+`mx video` makes an MP4 that plays a WAV or AIFF recording over its waveform, with a playhead that crosses the picture once as the recording plays:
 
 ```sh
-mix mx.play song.exs --render song.wav
-mix mx.video song.wav
+mx play song.exs --render song.wav
+mx video song.wav
 ```
 
 The waveform is a row of bars, each as tall as its slice of the recording is loud, in amber once the playhead has passed and in grey before.
@@ -61,10 +60,10 @@ mx prints the video's length and size, and warns when it is over the 10 MB GitHu
 The task needs [ffmpeg](https://ffmpeg.org) installed.
 To put the video in a README, drop the file into a comment box on GitHub and paste the link it gives on a line of its own.
 
-`mix mx.waveform` draws the waveform alone into a PNG image, 1500 pixels wide and 150 high unless `--width` and `--height` give another size, and `mix mx.spectrogram` draws the spectrogram, as [the guide to instruments](instruments.md#spectrograms) describes.
+`mx waveform` draws the waveform alone into a PNG image, 1500 pixels wide and 150 high unless `--width` and `--height` give another size, and `mx spectrogram` draws the spectrogram, as [the guide to instruments](instruments.md#spectrograms) describes.
 
 ```sh
-mix mx.waveform song.wav --out bars.png
+mx waveform song.wav --out bars.png
 ```
 
 ## Print a song
@@ -72,5 +71,5 @@ mix mx.waveform song.wav --out bars.png
 To see what each part plays without hearing it, from a clone of mx:
 
 ```sh
-mix mx.print song.exs
+mx print song.exs
 ```

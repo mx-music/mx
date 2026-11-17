@@ -14,7 +14,7 @@ defmodule Mx.Examples.ErbarmeDichTest do
 
     [command] =
       Regex.run(
-        ~r/^mix mx\.import examples\/erbarme_dich\/bwv244\.39\.mxl .*$/m,
+        ~r/^mx import examples\/erbarme_dich\/bwv244\.39\.mxl .*$/m,
         File.read!("documentation/scores.md")
       )
 

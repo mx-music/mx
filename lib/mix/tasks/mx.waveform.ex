@@ -4,8 +4,8 @@ defmodule Mix.Tasks.Mx.Waveform do
   @moduledoc """
   Draws the waveform of a WAV or AIFF recording into a PNG image: a row of bars, each as tall as its slice of the recording is loud.
 
-      mix mx.waveform song.wav
-      mix mx.waveform song.wav --out bars.png --width 900 --height 120
+      mx waveform song.wav
+      mx waveform song.wav --out bars.png --width 900 --height 120
 
   The image is written beside the recording with the extension .png unless `--out` names it.
   It is 1500 pixels wide and 150 high unless `--width` and `--height` give another size.

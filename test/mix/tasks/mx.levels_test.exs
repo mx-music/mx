@@ -47,6 +47,6 @@ defmodule Mix.Tasks.Mx.LevelsTest do
   end
 
   test "the guide to instruments describes mix mx.levels" do
-    assert File.read!("documentation/instruments.md") =~ "mix mx.levels"
+    assert File.read!("documentation/instruments.md") =~ "mx levels"
   end
 end

@@ -4,12 +4,12 @@ defmodule Mix.Tasks.Mx.Spectrogram do
   @moduledoc """
   Draws a spectrogram of a WAV or AIFF recording into a PNG image, with seconds across and octaves up the side.
 
-      mix mx.spectrogram Guitar.mf.sulA.A2B2.aif
-      mix mx.spectrogram Guitar.mf.sulA.A2B2.aif --out a-string.png
+      mx spectrogram Guitar.mf.sulA.A2B2.aif
+      mx spectrogram Guitar.mf.sulA.A2B2.aif --out a-string.png
 
   The image is written beside the recording with the extension .png unless `--out` names it.
 
-      mix mx.spectrogram "cuica (2).wav" solo.wav --from 1 --seconds 2.4 --per-second 400 --window 4
+      mx spectrogram "cuica (2).wav" solo.wav --from 1 --seconds 2.4 --per-second 400 --window 4
 
   Several recordings are drawn into one image, one above another from the first, beside which the image is written, each against its own loudest point, so a synth's render can be compared with a recording moment by moment.
   `--from` and `--seconds` draw only a stretch of each recording, from a second and for so many seconds.

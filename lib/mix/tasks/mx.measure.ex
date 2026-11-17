@@ -4,8 +4,8 @@ defmodule Mix.Tasks.Mx.Measure do
   @moduledoc """
   Measures recordings of single notes, plucked or struck, and prints the median fade time and level of their harmonics in each frequency band.
 
-      mix mx.measure Guitar.mf.sulA.A2B2.aif:A2 Guitar.mf.sulE.E2B2.aif:E2
-      mix mx.measure Guitar.mf.sulA.A2B2.aif:A2 --synth guitar --vel 0.6
+      mx measure Guitar.mf.sulA.A2B2.aif:A2 Guitar.mf.sulE.E2B2.aif:E2
+      mx measure Guitar.mf.sulA.A2B2.aif:A2 --synth guitar --vel 0.6
 
   Each file is followed by a colon and the note it starts on, as a name such as A2 or Bb3, or a MIDI number.
   A file holds one note or several, one after another a semitone apart, each starting from silence, in WAV or AIFF, mono or stereo, at any sample rate.
@@ -13,8 +13,8 @@ defmodule Mix.Tasks.Mx.Measure do
   `--synth` renders one of mx's synths offline at each note found, at `--vel` (0.6 unless given), and prints its figures beside the recordings', with the difference.
   `--option` gives the synth another option as a name and a number, such as `--option up=1`, and may be given more than once.
 
-      mix mx.measure --held Flute.vib.mf.B3B4.aiff:B3 --synth flute
-      mix mx.measure --hits Cowbell1_Hit_v1_rr1_Sum.wav Marimba.C4.wav:C4
+      mx measure --held Flute.vib.mf.B3B4.aiff:B3 --synth flute
+      mx measure --hits Cowbell1_Hit_v1_rr1_Sum.wav Marimba.C4.wav:C4
 
   `--held` measures held notes, bowed, blown or played on an organ, as `Mx.Measure.Held` describes.
   `--drone` with `--held` measures each file as one note held from its first sample to its last, for a drone plucked again and again, which would otherwise read as a note at each pluck.
@@ -24,18 +24,18 @@ defmodule Mix.Tasks.Mx.Measure do
   `--partials` with a count, such as `--partials 12`, also prints under each hit up to that many of its strongest partials, lowest first: the frequency in Hz, the ratio to the lowest, the level against the loudest, and the seconds it takes to fade 60 dB.
   Without `--hits`, it prints under each file up to that many of the strongest partials of the note it starts with, as `Mx.Measure.partials/2` measures them, lowest first: the frequency in Hz, the ratio to the pitch, the harmonic or between, the level against the loudest as the note starts, and how it falls, or rises, in dB a second, with the second slope and where it starts when it slows; then each line left out as not the instrument's.
 
-      mix mx.measure keyboard_electronic_098-064-025.wav:E4 --partials 20
+      mx measure keyboard_electronic_098-064-025.wav:E4 --partials 20
 
-      mix mx.measure --hits Agogo_Low_v1_rr1_Mid.wav --partials 12 --synth low_agogo
+      mx measure --hits Agogo_Low_v1_rr1_Mid.wav --partials 12 --synth low_agogo
 
   `--hits` then prints each band's level at 0, 50, 100 and 200 ms after the hit's loudest moment, against the loudest band then, as medians over the hits; a moment past a hit's end prints as -, and a level more than 40 dB down as -40.
-  `--compare` with a file name, with `--hits` and `--synth`, writes a WAV file of up to three recorded hits whose bands are nearest the median, then the synth's hit three times, each 0.6 seconds at the same peak, for listening or for `mix mx.spectrogram`.
+  `--compare` with a file name, with `--hits` and `--synth`, writes a WAV file of up to three recorded hits whose bands are nearest the median, then the synth's hit three times, each 0.6 seconds at the same peak, for listening or for `mx spectrogram`.
 
-      mix mx.measure --hits "pandeiro A.wav" --synth pandeiro_thumb --compare thumb.wav
+      mx measure --hits "pandeiro A.wav" --synth pandeiro_thumb --compare thumb.wav
   With `--synth`, a held note renders for as long as the recordings hold it, and a hit renders once at each note given, with only the options the synth takes.
 
-      mix mx.measure --strokes "cuica (2).wav"
-      mix mx.measure --strokes "cuica (2).wav" --tracks 17,19 --ignore 8500-9100
+      mx measure --strokes "cuica (2).wav"
+      mx measure --strokes "cuica (2).wav" --tracks 17,19 --ignore 8500-9100
 
   `--strokes` measures an instrument played in strokes that run into one another, as `Mx.Measure.Strokes` describes, and a file needs no note after its name.
   It prints each stroke with its number, the second it starts at, its length in ms, the note it settles at, the cents it starts from that note, and its level in dB under the loudest.

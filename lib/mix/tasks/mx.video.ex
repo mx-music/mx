@@ -4,8 +4,8 @@ defmodule Mix.Tasks.Mx.Video do
   @moduledoc """
   Makes an MP4 video of a WAV or AIFF recording that plays its sound over its waveform, with a playhead that crosses the picture once as the recording plays.
 
-      mix mx.video song.wav
-      mix mx.video song.wav --picture spectrogram --out song.mp4 --force
+      mx video song.wav
+      mx video song.wav --picture spectrogram --out song.mp4 --force
 
   The video is written beside the recording with the extension .mp4 unless `--out` names it, and `--force` writes over a file that exists.
   `--picture spectrogram` plays the recording over its spectrogram instead, drawn with no line at each second.

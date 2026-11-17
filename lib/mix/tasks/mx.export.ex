@@ -4,8 +4,8 @@ defmodule Mix.Tasks.Mx.Export do
   @moduledoc """
   Writes a song as a MusicXML score, one part of the score for each part of the song that plays notes, through the whole of its music once.
 
-      mix mx.export song.exs
-      mix mx.export song.exs --time 12/8 --key bm --out song.mxl
+      mx export song.exs
+      mx export song.exs --time 12/8 --key bm --out song.mxl
 
   The score is written beside the song with the extension .musicxml unless `--out` names it, compressed when that ends in .mxl, and `--force` writes over a file that exists.
   `--time` gives the time signature, 4/4 unless given, and `--key` the key its notes are spelled in, such as d, bm or fsm, C major unless given.

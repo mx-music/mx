@@ -19,9 +19,8 @@ song(
 )
 ```
 
-`mix mx.play song.exs` plays the file.
-`mix mx.print song.exs` prints each part's notes with their beats instead of playing them.
-With the mx command installed, each `mix mx.NAME` task here is also `mx NAME` with the same arguments, as the README's Install section says.
+`mx play song.exs` plays the file.
+`mx print song.exs` prints each part's notes with their beats instead of playing them.
 
 This page goes from one note to a whole song, in the order you would learn it.
 
@@ -389,7 +388,7 @@ song(tempo: 96, music: together([
 - Beside other music a loop plays until the longest of the rest ends. Alone, or beside only loops, it plays until mx stops, unless `times: 4` gives its number of passes.
 - Music shorter than the loop is followed by silence until the next pass, and music longer than the loop is refused.
 - A pass that raises prints its error, and the loop plays its next pass.
-- `mix mx.print song.exs --pass 4` prints the fifth pass.
+- `mx print song.exs --pass 4` prints the fifth pass.
 
 ### Inputs
 
@@ -567,7 +566,7 @@ sampled({:vcsl, "Idiophones/Plucked Idiophones/Kalimba, Kenya"})
 - It is downloaded whole, once, before a song can play it:
 
 ```sh
-mix mx.samples.download sonic_pi
+mx samples download sonic_pi
 ```
 
 **Every other collection** is a public GitHub repository.
@@ -613,12 +612,12 @@ mix mx.samples.download sonic_pi
 | `:vsco` | [sgossner/VSCO-2-CE](https://github.com/sgossner/VSCO-2-CE) | `examples/vassourinhas_samples.exs` |
 
 A song downloads the files it names as it loads.
-`mix mx.samples.download` fetches a whole collection, or one folder of it, ahead of time:
+`mx samples download` fetches a whole collection, or one folder of it, ahead of time:
 
 ```sh
-mix mx.samples.download vcsl
-mix mx.samples.download "vcsl:Idiophones/Struck Idiophones/Agogo Bells"
-mix mx.samples.download "owner/repo@main:drums"
+mx samples download vcsl
+mx samples download "vcsl:Idiophones/Struck Idiophones/Agogo Bells"
+mx samples download "owner/repo@main:drums"
 ```
 
 Running it again finishes an interrupted download.
@@ -834,5 +833,5 @@ Random numbers are seeded from the song file, and in a loop from the part's name
 ## Where next
 
 - [Instruments](instruments.md) lists the synths and effects, with the options each takes.
-- [Playing, recording and rendering](playing.md) covers `mix mx.play`, `--record`, `--render` and `mix mx.print`.
+- [Playing, recording and rendering](playing.md) covers `mx play`, `--record`, `--render` and `mx print`.
 - [Examples](examples.md) describes the songs in `examples`, which are the best place to see the notation at work.

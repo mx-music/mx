@@ -406,7 +406,7 @@ defmodule Mix.Tasks.Mx.ImportTest do
   test "the scores guide describes importing a score with the chorale" do
     guide = File.read!("documentation/scores.md")
 
-    assert guide =~ "mix mx.import examples/wachet_auf/bwv140.7.mxl --tempo 72"
+    assert guide =~ "mx import examples/wachet_auf/bwv140.7.mxl --tempo 72"
   end
 
   defp import!(args), do: capture_io(fn -> Import.run(args) end)

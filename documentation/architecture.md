@@ -6,7 +6,7 @@ The two meet at one boundary, `Mx.Engine`, where Elixir hands mxs events stamped
 
 ## From a song file to sound
 
-`mix mx.play` and the `mx` command start an `Mx.Session` for one song file.
+`mx play` starts an `Mx.Session` for one song file.
 The session is a supervisor of five processes, started in this order:
 
 | Process | What it does |
@@ -101,6 +101,6 @@ macOS may ask once whether the terminal can use the microphone.
 
 Beside playing, mx turns other material into songs and measures instruments.
 
-- Scores: `mix mx.import` writes a MusicXML score as a song.
+- Scores: `mx import` writes a MusicXML score as a song.
 - Humming: `Mx.Hum` turns a recording of one voice into notes on beats.
 - Measuring: `Mx.Measure`, `Mx.Fit` and `Mx.Spectrogram` compare a synth's sound with recordings, as [instruments.md](instruments.md) describes.

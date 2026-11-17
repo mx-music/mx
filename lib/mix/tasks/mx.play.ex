@@ -4,9 +4,9 @@ defmodule Mix.Tasks.Mx.Play do
   @moduledoc """
   Plays the loops a song file describes until Enter is pressed, or until the song's music ends.
 
-      mix mx.play song.exs
-      mix mx.play song.exs --record session.wav
-      mix mx.play song.exs --render song.wav --seconds 60
+      mx play song.exs
+      mx play song.exs --record session.wav
+      mx play song.exs --render song.wav --seconds 60
 
   Saving the file makes each changed loop take over at the end of its current
   pass. A version that does not load prints its error, and the previous

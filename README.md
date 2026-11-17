@@ -40,10 +40,10 @@ In each bar of the left hand, `delay` starts the chord a beat after the bass not
 `part` gives music to a synth, through effects, and `repeat` plays the whole again until mx stops.
 [The notation](documentation/notation.md) describes every function a song is written with.
 
-Play the file with `mix mx.play`:
+Play the file with the `mx` command, which [Install](#install) sets up:
 
 ```sh
-mix mx.play song.exs
+mx song.exs
 ```
 
 mx plays the song until it ends or you press Enter.
@@ -68,29 +68,23 @@ https://github.com/user-attachments/assets/be2f2355-f117-4eef-b5e1-bc5c2be42f02
 
 ## Install
 
-mx needs Elixir 1.20 or later.
-It downloads mxs already built for macOS, for Linux on x86_64 or ARM64, and for Windows on x86_64; elsewhere it needs Rust, which compiles mxs the first time mx is built.
-
-Add mx to the dependencies in your Mix project's `mix.exs`:
-
-```elixir
-{:mx, "~> 0.2.2"}
-```
-
-Or install the `mx` command, which runs mx without a Mix project:
+mx needs Elixir 1.20 or later, installed as https://elixir-lang.org/install.html describes.
+Then install the `mx` command:
 
 ```sh
 mix escript.install hex mx
+```
+
+Mix installs it in `~/.mix/escripts`, which needs to be on your `PATH`.
+It downloads mxs already built for macOS, for Linux on x86_64 or ARM64, and for Windows on x86_64; elsewhere it needs Rust, which compiles mxs the first time mx is built.
+
+```sh
 mx song.exs
 mx export song.exs
 mx help export
 ```
 
-Mix installs it in `~/.mix/escripts`, which needs to be on your `PATH`.
-Each `mix mx.NAME` task in this README and the guides is also `mx NAME`, with a space for each dot, such as `mx samples download` for `mix mx.samples.download`, and takes the same arguments.
-`mx song.exs` is short for `mx play song.exs`, and `mx` alone lists the commands.
-
-A checkout of mx always compiles mxs with Rust, and `mix mx.play path/to/song.exs` run in it plays a song with the checkout's code.
+`mx song.exs` is short for `mx play song.exs`, `mx` alone lists the commands, and `mx help NAME` prints a command's documentation.
 
 ## Instruments
 
@@ -113,18 +107,18 @@ Any other public GitHub repository of recordings plays the same way, named by it
 Sonic Pi's pack, of 35 MB, is downloaded once before a song plays it:
 
 ```sh
-mix mx.samples.download sonic_pi
+mx samples download sonic_pi
 ```
 
 ## Scores and hums
 
 mx can start a song from music that already exists.
-`mix mx.import` turns a MusicXML score into a song, `mix mx.export` writes a song as one, and `mix mx.hum` turns a recording of a melody you hum, sing or whistle into a song:
+`mx import` turns a MusicXML score into a song, `mx export` writes a song as one, and `mx hum` turns a recording of a melody you hum, sing or whistle into a song:
 
 ```sh
-mix mx.import score.mxl --tempo 72 --part "Soprano=oboe"
-mix mx.export song.exs --time 6/8 --key d
-mix mx.hum hum.wav --tempo 90
+mx import score.mxl --tempo 72 --part "Soprano=oboe"
+mx export song.exs --time 6/8 --key d
+mx hum hum.wav --tempo 90
 ```
 
 [Scores and hums](documentation/scores.md) describes the four commands.
@@ -141,9 +135,21 @@ The folder `examples` in the repository holds more songs: pieces for a band, suc
 `examples/ambient.exs` is a demo to start from.
 [Examples](documentation/examples.md) describes each one.
 
+## In a Mix project
+
+To use mx from Elixir code, add it to the dependencies in your Mix project's `mix.exs`:
+
+```elixir
+{:mx, "~> 0.2.2"}
+```
+
+Each `mx NAME` command is then also the Mix task `mix mx.NAME`, with a dot for each space, such as `mix mx.samples.download` for `mx samples download`, and takes the same arguments: `mix mx.export song.exs` writes what `mx export song.exs` writes.
+
+A checkout of mx always compiles mxs with Rust, and `mix mx.play path/to/song.exs` run in it plays a song with the checkout's code.
+
 ## Guides
 
-- [Playing, recording and rendering](documentation/playing.md): `mix mx.play` and its options.
+- [Playing, recording and rendering](documentation/playing.md): `mx play` and its options.
 - [The notation](documentation/notation.md): every function a song is written with.
 - [Instruments](documentation/instruments.md): the synths and effects with their options, how to write a synth, and how to measure one against recordings.
 - [Scores and hums](documentation/scores.md): importing a MusicXML score, and turning a hummed melody into a song.

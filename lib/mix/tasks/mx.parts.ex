@@ -4,12 +4,12 @@ defmodule Mix.Tasks.Mx.Parts do
   @moduledoc """
   Prints what a note of mx's piano is made of, worked out from its options without playing it, as `Mx.Piano` describes.
 
-      mix mx.parts piano --note 60 --vel 0.6
-      mix mx.parts piano --note C2 --vel 1 --pedal 1
+      mx parts piano --note 60 --vel 0.6
+      mx parts piano --note C2 --vel 1 --pedal 1
 
   `--note` is a name such as C4 or Bb3, or a MIDI number, from A0 to C8, and 52 unless given.
   `--vel`, `--pedal`, `--aftersound`, `--uneven`, `--instrument` and `--knock` give the piano's other options, each at its default unless given.
-  It prints one line for each harmonic, lowest first, as `mix mx.measure --partials` prints a recorded hit's partials: the frequency in Hz, the ratio to the first harmonic, the level in dB against the loudest harmonic, and the seconds it takes to fade 60 dB.
+  It prints one line for each harmonic, lowest first, as `mx measure --partials` prints a recorded hit's partials: the frequency in Hz, the ratio to the first harmonic, the level in dB against the loudest harmonic, and the seconds it takes to fade 60 dB.
   Then come the partners that ring beside the harmonics, each with the harmonic it belongs to and whether it is that harmonic's slow stage or a twin that beats against it, then the thump and the knock.
   """
 

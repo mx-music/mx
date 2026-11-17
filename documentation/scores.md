@@ -2,7 +2,6 @@
 
 A song need not be typed in by hand.
 mx writes one from a MusicXML score, a MIDI file, a tune in ABC notation or a recording of a melody you hum, and writes a song back out as a MusicXML score, a MIDI file or an ABC tune.
-With the mx command installed, each `mix mx.NAME` task here is also `mx NAME` with the same arguments, as the README's Install section says.
 
 ```mermaid
 graph LR
@@ -12,24 +11,24 @@ graph LR
   hum["Recording of a hum"]
   song["Song file"]
 
-  score -->|mix mx.import| song
-  song -->|mix mx.export| score
-  midi -->|mix mx.import| song
-  abc -->|mix mx.import| song
-  song -->|mix mx.export| abc
-  song -->|mix mx.export| midi
-  hum -->|mix mx.hum| song
+  score -->|mx import| song
+  song -->|mx export| score
+  midi -->|mx import| song
+  abc -->|mx import| song
+  song -->|mx export| abc
+  song -->|mx export| midi
+  hum -->|mx hum| song
 ```
 
 ## Import a score
 
-`mix mx.import` turns a MusicXML score into a song, so a piece need not be typed in by hand.
+`mx import` turns a MusicXML score into a song, so a piece need not be typed in by hand.
 MusicXML is the file format notation programs such as MuseScore, Sibelius and Finale export, and collections such as music21's corpus ship.
 `examples/wachet_auf/bwv140.7.mxl` is Bach's chorale "Wachet auf, ruft uns die Stimme", BWV 140/7, from music21's corpus:
 
 ```sh
-mix mx.import examples/wachet_auf/bwv140.7.mxl --tempo 72 --part "Soprano=oboe" --part "Alto=clarinet" --part "Tenor=viola" --part "Bass=bassoon" --out examples/wachet_auf/chorale.exs
-mix mx.play examples/wachet_auf/chorale.exs
+mx import examples/wachet_auf/bwv140.7.mxl --tempo 72 --part "Soprano=oboe" --part "Alto=clarinet" --part "Tenor=viola" --part "Bass=bassoon" --out examples/wachet_auf/chorale.exs
+mx play examples/wachet_auf/chorale.exs
 ```
 
 It reads compressed `.mxl` files and uncompressed `.musicxml` and `.xml` files, and writes the song beside the score, or to `--out`; a song that exists is refused unless you add `--force`.
@@ -53,8 +52,8 @@ The song is ordinary mx code, so it is a place to start: give the bass a second 
 `examples/erbarme_dich/bwv244.39.mxl` is Bach's aria "Erbarme dich, mein Gott", BWV 244/39, from MuseScore, and takes its tempo from the score:
 
 ```sh
-mix mx.import examples/erbarme_dich/bwv244.39.mxl --part "Violin=violin" --part "Alto=oboe" --part "Organo a canne=organ" --out examples/erbarme_dich/aria.exs
-mix mx.play examples/erbarme_dich/aria.exs
+mx import examples/erbarme_dich/bwv244.39.mxl --part "Violin=violin" --part "Alto=oboe" --part "Organo a canne=organ" --out examples/erbarme_dich/aria.exs
+mx play examples/erbarme_dich/aria.exs
 ```
 
 Its D.S. al Fine is not taken, so the aria ends at bar 46 without going back to the opening ritornello.
@@ -62,19 +61,19 @@ Its D.S. al Fine is not taken, so the aria ends at bar 46 without going back to 
 `examples/erbarme_dich/dub.exs` turns the aria into a roots dub: a dub siren and the hand drums open it and the horns state its opening sigh, then the ritornello is the riddim, the drum kit leading with the one drop, ghost strokes and rolls over the congas playing Nyabinghi drums, the shaker and the güiro, the harp's skank and the organ's bubble over the continuo's bass; a trombone leads with the ritornello, slurring its runs, the harmonium and the horns sing the alto's phrase, and in the dubs the parts drop out into echo and filter sweeps, the tabla's bayan and the tanpura's drone:
 
 ```sh
-mix mx.play examples/erbarme_dich/dub.exs
+mx play examples/erbarme_dich/dub.exs
 ```
 
 ## Export a score
 
-`mix mx.export` writes a song as a MusicXML score, which MuseScore, Sibelius and Finale open and print as sheet music:
+`mx export` writes a song as a MusicXML score, which MuseScore, Sibelius and Finale open and print as sheet music:
 
 ```sh
-mix mx.export examples/erbarme_dich/aria.exs --time 12/8 --key bm
+mx export examples/erbarme_dich/aria.exs --time 12/8 --key bm
 ```
 
 It writes the score beside the song with the extension `.musicxml`, or to `--out`, compressed when that ends in `.mxl`; a file that exists is refused unless you add `--force`.
-The score holds the whole of the song's music once, as `mix mx.print` prints it.
+The score holds the whole of the song's music once, as `mx print` prints it.
 Each part that plays notes becomes a part of the score, and a part that plays no notes with a pitch, such as drums and samples, or that waits for input, is left out; mx names each one it leaves out.
 mx prints how many notes each part has, and its lowest and highest note.
 `--time` sets the time signature, 4/4 without it, and `--key` the key its notes are spelled in, such as `d`, `bm` or `fsm`, C major without it.
@@ -83,7 +82,7 @@ mx prints how many notes each part has, and its lowest and highest note.
 A piece that opens with a pickup, a short bar before the first full one, needs `--pickup` and the pickup's length in beats, since a song does not record where its bar lines fall:
 
 ```sh
-mix mx.export examples/erbarme_dich/aria.exs --time 12/8 --key bm --pickup 0.5
+mx export examples/erbarme_dich/aria.exs --time 12/8 --key bm --pickup 0.5
 ```
 
 The song's first half beat is then written as bar 0, which notation programs show as a pickup, and every later bar is a full bar of the time signature.
@@ -102,19 +101,19 @@ Tempo changes after the first, dynamics, articulations and percussion staves are
 ## MIDI files
 
 A Standard MIDI File is what digital audio workstations such as Logic and Ableton read and write, and what most notation programs export besides MusicXML.
-`mix mx.export` writes one when `--out` ends in `.mid` or `.midi`, so a song can be arranged or mixed in a workstation:
+`mx export` writes one when `--out` ends in `.mid` or `.midi`, so a song can be arranged or mixed in a workstation:
 
 ```sh
-mix mx.export examples/erbarme_dich/aria.exs --time 12/8 --key bm --out aria.mid
+mx export examples/erbarme_dich/aria.exs --time 12/8 --key bm --out aria.mid
 ```
 
 The file holds the whole of the song's music once, one track per part that plays notes with a pitch, named after the part, with the song's tempo and the time signature and key given; parts are left out as for a score, and mx says so.
 Each note keeps its vel as its velocity, 0.6 when it has none, and the tracks name no instrument, since mx's synths have no General MIDI number.
 
-`mix mx.import` reads a file ending in `.mid` or `.midi` as it reads a score, with `--part`, `--tempo`, `--out` and `--force` working the same way:
+`mx import` reads a file ending in `.mid` or `.midi` as it reads a score, with `--part`, `--tempo`, `--out` and `--force` working the same way:
 
 ```sh
-mix mx.import piece.mid --part "Right=piano" --part "Left=piano"
+mx import piece.mid --part "Right=piano" --part "Left=piano"
 ```
 
 Each track that plays notes becomes a part named after the track, or track 1, track 2 and so on where it has none, and a file whose notes all lie in one track gives a part for each channel instead.
@@ -129,10 +128,10 @@ Notes on channel 10, which General MIDI keeps for drums, the sustain pedal, othe
 ## Import a tune from ABC
 
 ABC is the plain-text notation folk and traditional tunes are shared in, a few lines per tune and often many tunes to a file.
-`mix mx.import` reads a file ending in `.abc`, with `--part`, `--tempo`, `--out` and `--force` working as they do for a score:
+`mx import` reads a file ending in `.abc`, with `--part`, `--tempo`, `--out` and `--force` working as they do for a score:
 
 ```sh
-mix mx.import tunes.abc --tune 2 --part "The Test Reel=flute"
+mx import tunes.abc --tune 2 --part "The Test Reel=flute"
 ```
 
 `--tune` picks a tune by its `X:` number, and without it mx imports the first; when the file holds more than one, mx lists them with their numbers and titles.
@@ -144,10 +143,10 @@ Grace notes are kept with the note they lead into, and left out of the song as a
 Chord symbols in quotes, decorations such as `~` and `!trill!`, lyrics and other text are left out, and mx says how many of each.
 A line mx cannot read, such as one with a voice overlay `&`, stops the import with its line number and what it could not read.
 
-`mix mx.export` writes a song as an ABC tune when `--out` ends in `.abc`, so a melody can be pasted into a forum or a tune site:
+`mx export` writes a song as an ABC tune when `--out` ends in `.abc`, so a melody can be pasted into a forum or a tune site:
 
 ```sh
-mix mx.export song.exs --time 6/8 --key g --out song.abc
+mx export song.exs --time 6/8 --key g --out song.abc
 ```
 
 The tune is X:1, titled from `--title` or the song file's name, with `M:` from `--time`, `K:` from `--key`, `Q:` from the song's tempo, and a unit note length that suits most of its notes.
@@ -157,11 +156,11 @@ ABC has no place for velocity, the pedal, synths or effects, so they are left ou
 
 ## Turn a hum into a song
 
-`mix mx.hum` turns a recording of a melody you hum, sing or whistle into a song, so a tune you can't name the notes of can still get into mx:
+`mx hum` turns a recording of a melody you hum, sing or whistle into a song, so a tune you can't name the notes of can still get into mx:
 
 ```sh
-mix mx.hum hum.wav --tempo 90
-mix mx.play hum.exs
+mx hum hum.wav --tempo 90
+mx play hum.exs
 ```
 
 It reads WAV and AIFF files, mono or stereo, at any sample rate, and writes the song beside the recording, or to `--out`; a song that exists is refused unless you add `--force`.
@@ -176,10 +175,10 @@ A sound shorter than an eighth of a beat is left out, a silence of a quarter bea
 The melody lasts until the end of the bar of 4 beats its last note ends in.
 It follows pitch from 60 Hz to 2500 Hz, from a low hum to a high whistle, and one voice at a time; words, chords and the key are left out.
 
-`mix mx.hum --record hum.wav --tempo 90` records the hum for you, against a click:
+`mx hum --record hum.wav --tempo 90` records the hum for you, against a click:
 
 ```sh
-mix mx.hum --record hum.wav --tempo 90
+mx hum --record hum.wav --tempo 90
 ```
 
 It plays a click at the tempo, a bar of 4 beats to count you in and then every beat, louder on the first beat of each bar, and records the sound card's first input until you press Enter; `--input 2` records another input.
@@ -188,5 +187,5 @@ A note you hum during the count-in is left out, and mx says how many were.
 Use headphones, so the click stays out of the microphone; the click has no pitch, so a click the microphone picks up from speakers is not a note, but it can hide a quiet one.
 A recording or song that exists is refused before the first click unless you add `--force`, and so is a folder that does not exist, and an input that runs at another sample rate than the output, such as Bluetooth headphones' microphone, naming both devices and their rates.
 
-The song is text, so it is a way to hand a tune to an agent: hum the idea, run `mix mx.hum`, and ask an agent to build on `hum.exs`, harmonizing the melody, giving it a bass line and drums, or setting it on another synth.
-The agent reads and writes the notes as mx code, and `mix mx.print hum.exs` shows them with their beats.
+The song is text, so it is a way to hand a tune to an agent: hum the idea, run `mx hum`, and ask an agent to build on `hum.exs`, harmonizing the melody, giving it a bass line and drums, or setting it on another synth.
+The agent reads and writes the notes as mx code, and `mx print hum.exs` shows them with their beats.

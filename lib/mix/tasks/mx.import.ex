@@ -4,8 +4,8 @@ defmodule Mix.Tasks.Mx.Import do
   @moduledoc """
   Reads a MusicXML score and writes it as a song beside it, one part per part of the score, that plays the whole score once.
 
-      mix mx.import score.mxl --tempo 100 --part "Soprano=oboe" --part "Bass=cello"
-      mix mx.import piece.mid --grid 1/12 --part "Right=piano"
+      mx import score.mxl --tempo 100 --part "Soprano=oboe" --part "Bass=cello"
+      mx import piece.mid --grid 1/12 --part "Right=piano"
 
   `--part` names the synth a part plays on, and a part without one plays on tri.
   `--tempo` sets the tempo, which otherwise comes from the score's first metronome mark.

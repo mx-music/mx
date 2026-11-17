@@ -4,9 +4,9 @@ defmodule Mix.Tasks.Mx.Samples.Download do
   @moduledoc """
   Downloads a collection of samples into the user's cache, so songs play them with no network access.
 
-      mix mx.samples.download sonic_pi
-      mix mx.samples.download "vcsl:Idiophones/Struck Idiophones/Agogo Bells"
-      mix mx.samples.download "owner/repo@v1.0:Samples"
+      mx samples download sonic_pi
+      mx samples download "vcsl:Idiophones/Struck Idiophones/Agogo Bells"
+      mx samples download "owner/repo@v1.0:Samples"
 
   SOURCE is a collection mx knows by name, such as `sonic_pi` or `vcsl`, or a public GitHub repository as `owner/repo@ref`.
   Either is optionally followed by `:folder` to download only that folder; Sonic Pi's pack has no folders.

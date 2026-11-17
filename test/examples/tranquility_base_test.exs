@@ -27,8 +27,8 @@ defmodule Mx.Examples.TranquilityBaseTest do
              "courtesy of NASA, from https://nssdc.gsfc.nasa.gov/planetary/sound/index.html"
 
     guide = File.read!("documentation/examples.md")
-    assert guide =~ "mix mx.play examples/tranquility_base.exs"
-    assert guide =~ ~s(mix mx.samples.download "vcsl:Idiophones")
+    assert guide =~ "mx play examples/tranquility_base.exs"
+    assert guide =~ ~s(mx samples download "vcsl:Idiophones")
   end
 
   # Versilian Studios' Versilian Community Sample Library at the commit the piece names, in the

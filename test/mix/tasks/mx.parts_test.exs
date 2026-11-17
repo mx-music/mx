@@ -35,6 +35,6 @@ defmodule Mix.Tasks.Mx.PartsTest do
   end
 
   test "the guide to instruments names mix mx.parts" do
-    assert File.read!("documentation/instruments.md") =~ "mix mx.parts piano --note 60 --vel 0.6"
+    assert File.read!("documentation/instruments.md") =~ "mx parts piano --note 60 --vel 0.6"
   end
 end

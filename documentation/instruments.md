@@ -83,7 +83,7 @@ There are four ways to get a new instrument, from the least work to the most.
 | recordings of an instrument, key by key | a sampled instrument | `sampled`, in the song |
 | a sound in mind | a synth in Elixir | `defsynth`, in the song or a library |
 | a synth for mx itself | a synth in mxs | Rust, in the mxs crate |
-| a real instrument to imitate closely | a synth fitted to recordings | a synth, and `mix mx.measure` |
+| a real instrument to imitate closely | a synth fitted to recordings | a synth, and `mx measure` |
 
 ### From recordings
 
@@ -257,13 +257,11 @@ Most of mx's synths imitate a real instrument and were fitted to recordings of i
 Work on one goes through these steps.
 
 1. Find recordings under a free licence, such as the University of Iowa's, VCSL or Freesound's CC0 packs, of single notes or hits at several strengths.
-2. Measure them with `mix mx.measure`: `--held` for bowed, blown and organ notes, `--hits` for bars, bells and drums, and plain for plucked and struck strings. It prints each band's level and how fast it fades.
-3. Write the design in mxs, and compare it with the recordings by giving `mix mx.measure` the synth with `--synth`.
-4. For a held instrument, let `mix mx.fit` search for the values of the synth's options that bring it closest, and write them into the design. For a struck instrument recorded at many notes and velocities, let `mix mx.fit --struck` fit each recording partial by partial and write the figures mxs plays.
+2. Measure them with `mx measure`: `--held` for bowed, blown and organ notes, `--hits` for bars, bells and drums, and plain for plucked and struck strings. It prints each band's level and how fast it fades.
+3. Write the design in mxs, and compare it with the recordings by giving `mx measure` the synth with `--synth`.
+4. For a held instrument, let `mx fit` search for the values of the synth's options that bring it closest, and write them into the design. For a struck instrument recorded at many notes and velocities, let `mx fit --struck` fit each recording partial by partial and write the figures mxs plays.
 5. Pin the figures in `test/mx/designs_test.exs`, whose tests render the synth and measure it the same way, against the recordings' medians written in the test. They are tagged `engine`.
 6. Write a solo for it, in `examples/solo` or a folder of its own under `examples`, from real playing practice, and listen. A synth that passes every figure can still sound wrong, and the ear decides.
-
-With the mx command installed, each `mix mx.NAME` task here is also `mx NAME` with the same arguments, as the README's Install section says.
 
 [Measuring an instrument](#measuring-an-instrument) describes each command's options and what it prints.
 
@@ -297,8 +295,8 @@ The sections below give what each takes beyond those, and the recordings it is m
 - `guitar` is a nylon-string guitar measured from recordings of a real one, and reaches down to B1, the low string of a 7-string guitar. A note rings until it fades away by itself, the low notes for over ten seconds, unless `sustain` and `release` damp it.
 - `electric_bass` is an electric bass played with the fingers; it takes `vel` as the guitar does. A note rings until it fades by itself, a low one for many seconds and a high one for two or three, unless `sustain` and `release` damp it, and `release` is a tenth of a second unless given, as a finger stops the string. It is measured from the bass_electronic_018 instrument of Google's NSynth dataset, from E1 to D#4, and plays down to A#0.
 - `deep_bass` is a darker bass played with the fingers: on A1 its harmonics from 250 Hz to 1 kHz stand about 20 dB lower than `electric_bass`'s, and its fundamental rings almost three times as long. It takes `vel` as `electric_bass` does, and a note rings until it fades by itself unless `sustain` and `release` damp it. It is measured from the bass_electronic_025 and bass_electronic_027 instruments of Google's NSynth dataset, from E1 to D#4, and plays down to A#0.
-- `electric_piano` is an electric piano whose hammers strike tines: a note starts with a bell that rings shorter the higher the note, and a harder note is brighter. It takes `vel` as the piano does, and a note rings while held until it fades by itself, unless `sustain` and `release` damp it, as a key let go does. It is fitted partial by partial to the keyboard_electronic_098 instrument of Google's NSynth dataset, from E1 to E6, with `mix mx.fit --struck`, and in ERB bands it is within 0.5 dB of each recording at the median note and 2.7 dB at the worst.
-- `electric_guitar` is a solid-body electric guitar picked clean. It takes `vel` as the guitar does, and a note rings until it fades by itself, unless `sustain` and `release` damp it, as a hand muting the string does. It is fitted partial by partial to the guitar_electronic_028 instrument of Google's NSynth dataset, from E2 to D6, with `mix mx.fit --struck`, and in ERB bands it is within 0.3 dB of each recording at the median note and 1.3 dB at the worst.
+- `electric_piano` is an electric piano whose hammers strike tines: a note starts with a bell that rings shorter the higher the note, and a harder note is brighter. It takes `vel` as the piano does, and a note rings while held until it fades by itself, unless `sustain` and `release` damp it, as a key let go does. It is fitted partial by partial to the keyboard_electronic_098 instrument of Google's NSynth dataset, from E1 to E6, with `mx fit --struck`, and in ERB bands it is within 0.5 dB of each recording at the median note and 2.7 dB at the worst.
+- `electric_guitar` is a solid-body electric guitar picked clean. It takes `vel` as the guitar does, and a note rings until it fades by itself, unless `sustain` and `release` damp it, as a hand muting the string does. It is fitted partial by partial to the guitar_electronic_028 instrument of Google's NSynth dataset, from E2 to D6, with `mx fit --struck`, and in ERB bands it is within 0.3 dB of each recording at the median note and 1.3 dB at the worst.
 - `cavaquinho` and `bandolim` have steel strings, brighter and shorter.
 - `bandolim` takes `tremolo`, how many times a held note is picked per beat; 0 picks it once.
 - `harp` is a folk harp, the kind the Paraguayan and llanera harps are; it takes `vel` as the guitar does. A string rings for many seconds unless `sustain` and `release` damp it; the harp is measured from the folk harp of the Versilian Community Sample Library, from C2 to G#6.
@@ -334,15 +332,15 @@ The sections below give what each takes beyond those, and the recordings it is m
 ### Organs and reeds
 
 - `organ` is a pipe organ measured from VSCO 2's organ: it takes `loud: 1` for its loud set, a principal chorus, instead of its quiet one, a stopped flute, and no `vel`, since a pipe sounds the same however hard its key is struck; a note holds one level for its `sustain`.
-- `harmonium` is the reed organ pumped by hand that accompanies Hindustani singing, and takes `vel` as the guitar does; it has no vibrato and holds its note for its `sustain`. Its harmonics stand within 7 dB of the fundamental up to 2.5 kHz and fall away above, with the reeds' breathy noise between them about 27 dB below, and it speaks in about a quarter of a second. It is measured from the "Harmonium" pack by cabled_mess on Freesound, cut from "Harmonium Samples - All Keys and Drones" by donyaquick, at C2, C3, A3, C4 and D5, with every band of harmonics and of noise from 80 Hz to 4 kHz within 1 dB of the recordings', as `mix mx.fit --check` scores it.
-- `accordion` is an accordion's right hand, the free reeds pressed by bellows that carry the melody in tango, musette and forró, and takes `vel` as the guitar does; it holds its note for its `sustain`. Each note sounds two reeds, the second `detune` Hz above the first, 4 by default, so they beat about four times a second; `detune: 0` sounds one reed, dry. Its harmonics stand up to 9 dB above the fundamental from 250 Hz to 1 kHz and fall away above 1.6 kHz, with the reeds' noise between them 23 to 37 dB below, and it speaks in about 0.05 seconds. It is measured from "Accordeon master" by hammondman on Freesound, at C3, E3, G3, C4, E4, G4, B4 and D5, with every band of harmonics and of noise from 130 Hz to 4 kHz within 4 dB of the recordings' and its attack within 20 percent, as `mix mx.fit --check` scores it, and its beating compared with "Accordion wav samples" by hammondman.
+- `harmonium` is the reed organ pumped by hand that accompanies Hindustani singing, and takes `vel` as the guitar does; it has no vibrato and holds its note for its `sustain`. Its harmonics stand within 7 dB of the fundamental up to 2.5 kHz and fall away above, with the reeds' breathy noise between them about 27 dB below, and it speaks in about a quarter of a second. It is measured from the "Harmonium" pack by cabled_mess on Freesound, cut from "Harmonium Samples - All Keys and Drones" by donyaquick, at C2, C3, A3, C4 and D5, with every band of harmonics and of noise from 80 Hz to 4 kHz within 1 dB of the recordings', as `mx fit --check` scores it.
+- `accordion` is an accordion's right hand, the free reeds pressed by bellows that carry the melody in tango, musette and forró, and takes `vel` as the guitar does; it holds its note for its `sustain`. Each note sounds two reeds, the second `detune` Hz above the first, 4 by default, so they beat about four times a second; `detune: 0` sounds one reed, dry. Its harmonics stand up to 9 dB above the fundamental from 250 Hz to 1 kHz and fall away above 1.6 kHz, with the reeds' noise between them 23 to 37 dB below, and it speaks in about 0.05 seconds. It is measured from "Accordeon master" by hammondman on Freesound, at C3, E3, G3, C4, E4, G4, B4 and D5, with every band of harmonics and of noise from 130 Hz to 4 kHz within 4 dB of the recordings' and its attack within 20 percent, as `mx fit --check` scores it, and its beating compared with "Accordion wav samples" by hammondman.
 
 ### Tanpura and sitar
 
 - `tanpura` plays a drone with its note as Sa: four strings plucked in turn, Pa a fourth below, Sa twice and Sa an octave below, on beats 0, 2, 3 and 4 of a cycle of six gaps, as the Hindustani pattern goes. `gap` is the time between plucks in beats, 0.8 by default; the drone holds for its `sustain`, 16 beats by default, and the strings then ring out over its `release`. `vel` sets how hard the strings are plucked, and it has no vibrato. Each pluck brings the higher harmonics in over the next second, as the jawari, the strings buzzing on the bridge, does. The tanpura is measured from "Tanpura 10" by sankalp on Freesound, a big tanpura on Db3, with each band's harmonics and the noise between them within 6 dB of the recording's from 80 Hz to 16 kHz. Its body is lower the lower its Sa, as a bigger tanpura's is, but it is still 13 to 20 dB brighter than "Tanpura in E" by iluppai, a flat tanpura on E2, from 160 Hz to 1.6 kHz:
 
 ```
-$ mix mx.measure --held --drone "Tanpura in E.wav:E2" --synth tanpura
+$ mx measure --held --drone "Tanpura in E.wav:E2" --synth tanpura
 band               level     noise     level     noise     level     noise
 80-160 Hz        +0.0 dB   -0.1 dB   +0.0 dB   -2.0 dB   +0.0 dB   -1.9 dB
 160-250 Hz       -6.7 dB  -22.0 dB   +5.9 dB   +7.9 dB  +12.7 dB  +29.9 dB
@@ -359,7 +357,7 @@ band               level     noise     level     noise     level     noise
 - `sitar` plays a plucked sitar note, which rings until it fades by itself, the lowest harmonics for over ten seconds, unless `sustain` and `release` damp it. Its harmonics reach up to 16 kHz at once and the upper ones fade first, as the jawari, the string buzzing on the bridge, makes them. `sa` is the note its sympathetic strings are tuned to, Sa and its octave, C#3 by default; they ring on quietly after a note on Sa or its octave, and much less after other notes. `note_slide` glides from one note to the next on the same pluck, as meend does, and `vel` sets how hard the string is plucked, harder being louder and brighter. The sitar is measured from "sitar01.flac" on Freesound, its first main string plucked from E3 to G#3, with each band from 160 Hz to 4 kHz within 2 dB of the recording's level and fade. Beside "sitar j" by JOHNWALLY, a different sitar struck hard on G4, its harmonics ring for about half as long:
 
 ```
-$ mix mx.measure "sitar j.wav:G4" --synth sitar
+$ mx measure "sitar j.wav:G4" --synth sitar
 band          recordings          sitar at vel 0.6    difference
 250-400 Hz     22.96 s   +0.0 dB   11.16 s   +0.0 dB    -51%   +0.0 dB
 630-1000 Hz    24.28 s   -2.7 dB    9.87 s   +5.1 dB    -59%   +7.9 dB
@@ -465,13 +463,13 @@ These are the commands the steps under [After a real instrument](#after-a-real-i
 
 ### Plucked and struck strings
 
-mx's guitar was made by measuring recordings of a real guitar and fitting the design to the figures, and `mix mx.measure` takes the same measurements, so a design can be compared with the instrument it imitates.
+mx's guitar was made by measuring recordings of a real guitar and fitting the design to the figures, and `mx measure` takes the same measurements, so a design can be compared with the instrument it imitates.
 Give it recordings of single notes, plucked or struck, each file followed by a colon and the note it starts on.
 A file may hold several notes one after another a semitone apart, each starting from silence, as the University of Iowa's guitar recordings at https://theremin.music.uiowa.edu/MISguitar.html do.
 
 ```sh
-mix mx.measure Guitar.mf.sulA.A2B2.aif:A2 Guitar.mf.sulE.E2B2.aif:E2
-mix mx.measure Guitar.mf.sulA.A2B2.aif:A2 --synth guitar --vel 0.6
+mx measure Guitar.mf.sulA.A2B2.aif:A2 Guitar.mf.sulE.E2B2.aif:E2
+mx measure Guitar.mf.sulA.A2B2.aif:A2 --synth guitar --vel 0.6
 ```
 
 It prints the notes it found in each file, with their pitch and how far their harmonics are stretched sharp, then for each frequency band the median seconds a harmonic takes to fade 60 dB and its level in dB against the fundamental of the lowest note.
@@ -485,7 +483,7 @@ It prints up to that many of the strongest, lowest first, each with its frequenc
 It then names each line left out: a partial between harmonics with no strike and hardly any fall, such as a hum in the recording, which is not the instrument.
 
 ```sh
-mix mx.measure keyboard_electronic_098-064-025.wav:E4 --partials 20
+mx measure keyboard_electronic_098-064-025.wav:E4 --partials 20
 ```
 
 ### Held notes and hits
@@ -494,8 +492,8 @@ Recordings of held notes, bowed, blown or played on an organ, take `--held`, and
 A file of hits with no pitch needs no note after its name.
 
 ```sh
-mix mx.measure --held Flute.vib.mf.B3B4.aiff:B3 --synth flute
-mix mx.measure --hits Cowbell1_Hit_v1_rr1_Sum.wav --synth cowbell
+mx measure --held Flute.vib.mf.B3B4.aiff:B3 --synth flute
+mx measure --hits Cowbell1_Hit_v1_rr1_Sum.wav --synth cowbell
 ```
 
 With `--held`, it prints each note's pitch, attack and vibrato, then their median attack, the seconds until a note first reaches its held level, and their median vibrato, its rate and its depth in cents.
@@ -507,15 +505,15 @@ With `--synth`, a held note renders for as long as the recordings hold it, and a
 With `--synth`, the synth's partials print the same way under its name, after the recordings'.
 
 ```sh
-mix mx.measure --hits Agogo_Low_v1_rr1_Mid.wav --partials 12 --synth low_agogo
+mx measure --hits Agogo_Low_v1_rr1_Mid.wav --partials 12 --synth low_agogo
 ```
 
-`mix mx.parts` prints the same figures for a note of mx's piano without playing it: the harmonics the piano works out from its options, before any sound exists, and builds the note from.
+`mx parts` prints the same figures for a note of mx's piano without playing it: the harmonics the piano works out from its options, before any sound exists, and builds the note from.
 Each harmonic prints as a partial does under `--partials`, with its level against the loudest harmonic and the seconds it takes to fade 60 dB, followed by the partners that ring beside the harmonics, each the slow stage of a harmonic's fade or a twin that beats against it, then the hammer's thump and its knock through the soundboard.
 `--note`, `--vel` and `--pedal` give the note, and the piano's other options are given the same way.
 
 ```sh
-mix mx.parts piano --note 60 --vel 0.6
+mx parts piano --note 60 --vel 0.6
 ```
 
 ### The first moments of a hit
@@ -527,37 +525,37 @@ These moments catch what the fade misses, such as a hiss that holds its level an
 It prints which recorded hits it took, by file and second.
 
 ```sh
-mix mx.measure --hits "pandeiro A.wav" --synth pandeiro_thumb --compare thumb.wav
-mix mx.spectrogram thumb.wav
+mx measure --hits "pandeiro A.wav" --synth pandeiro_thumb --compare thumb.wav
+mx spectrogram thumb.wav
 ```
 
 ### Spectrograms
 
-`mix mx.spectrogram FILE` draws a spectrogram of a recording into a PNG image beside it, with seconds across and octaves up the side; `--out` names the image.
+`mx spectrogram FILE` draws a spectrogram of a recording into a PNG image beside it, with seconds across and octaves up the side; `--out` names the image.
 Several files are drawn into one image, one above another, so a render can be compared with a recording moment by moment.
 `--from` and `--seconds` draw a stretch of each, `--per-second` sets the pixels a second takes, and `--window` the milliseconds of sound in each column: the usual long window tells the harmonics apart, and a short one, such as 4, shows how the level moves within a note and where notes join.
 
 ```sh
-mix mx.spectrogram "cuica (2).wav" solo.wav --from 1 --seconds 2.4 --per-second 400 --window 4
+mx spectrogram "cuica (2).wav" solo.wav --from 1 --seconds 2.4 --per-second 400 --window 4
 ```
 
 `--width` gives the image's width in pixels in place of `--per-second`, and `--no-seconds` leaves out the line at each second, which suits a whole song in one image.
 A column that covers more sound than its window shows the loudest level each frequency reaches in the sound it covers, so a narrow image skips no note.
 
 ```sh
-mix mx.spectrogram song.wav --width 1500 --no-seconds
+mx spectrogram song.wav --width 1500 --no-seconds
 ```
 
 ### Levels over time
 
-`mix mx.levels FILE` gives the same picture as numbers, for a video or a light that reacts to what was played: comma-separated values with a first line naming the columns, then a row for each moment, 30 a second unless `--per-second` gives another count.
+`mx levels FILE` gives the same picture as numbers, for a video or a light that reacts to what was played: comma-separated values with a first line naming the columns, then a row for each moment, 30 a second unless `--per-second` gives another count.
 Each row has its second, the level of the whole sound and of each octave of the spectrogram's side, from 20 Hz to 20,480 Hz, all in dB under the recording's loudest row, and the brightness, the frequency half the sound's energy lies under.
 A row covers all the sound from its second to the next, so no stroke falls between two rows.
 `--strokes` prints instead the second each sound starts, where the spectrum rises sharply, and its level under the loudest stroke's, so a key struck again while it still rings is a stroke of its own.
 
 ```sh
-mix mx.levels performance.wav --per-second 60 > levels.csv
-mix mx.levels performance.wav --strokes
+mx levels performance.wav --per-second 60 > levels.csv
+mx levels performance.wav --strokes
 ```
 
 ### Strokes that run together
@@ -568,35 +566,35 @@ It prints each stroke with its number, the second it starts at, its length, the 
 `--alone` carries on into the ring a stroke played by itself leaves, and `--ignore` with two frequencies leaves out the harmonics between them, for a steady tone in the recording that is not the instrument's.
 
 ```sh
-mix mx.measure --strokes "cuica (2).wav"
-mix mx.measure --strokes "cuica (2).wav" --tracks 17,19 --ignore 8500-9100
+mx measure --strokes "cuica (2).wav"
+mx measure --strokes "cuica (2).wav" --tracks 17,19 --ignore 8500-9100
 ```
 
 The tracks are for an instrument whose bands' levels and fades can be matched by a design that still does not sound like it.
 The cuíca's design passed its figures as a fixed set of harmonics under one envelope and sounded synthetic, because in a real stroke each harmonic moves by itself, the level holds and is then cut off, and strokes join with no gap.
 Its synth instead plays the measured strokes back: mxs's `src/synths/drums/cuica.rs` holds the tracks this command prints for 28 strokes, and the synth picks the stroke nearest the note, scoop and length asked for, and plays it at that note with harmonics that follow the tracks and filtered noise at the noise's level.
-To judge such a synth, draw a stretch of a recording above a stretch of its render with `mix mx.spectrogram`, once with the long window and once with a short one, and look at them before measuring anything.
+To judge such a synth, draw a stretch of a recording above a stretch of its render with `mx spectrogram`, once with the long window and once with a short one, and look at them before measuring anything.
 
 ### Fitting a held instrument
 
-`mix mx.fit` searches for the numbers a held instrument's design needs.
+`mx fit` searches for the numbers a held instrument's design needs.
 Write each unknown number in the design as a temporary option of the synth, such as `k_odd`, rebuild, then give the synth, each dynamic as `--vel` and the files played at it, and each option as a `--control` with its starting value and step.
 A step written with an x, such as `x1.15`, multiplies and divides instead of adding and subtracting.
 
 ```sh
-mix mx.fit clarinet --vel 0.3 BbClar.pp.D3B3.aiff:D3 BbClar.pp.C4B4.aiff:C4 --vel 1 BbClar.ff.D3B3.aiff:D3 BbClar.ff.C4B4.aiff:C4 --from 160 --control k_odd=-2:2 --control k_att=0.15:x1.15
+mx fit clarinet --vel 0.3 BbClar.pp.D3B3.aiff:D3 BbClar.pp.C4B4.aiff:C4 --vel 1 BbClar.ff.D3B3.aiff:D3 BbClar.ff.C4B4.aiff:C4 --from 160 --control k_odd=-2:2 --control k_att=0.15:x1.15
 ```
 
 It leaves out notes found below the lowest note given, and stretches whose fundamental stands more than 25 dB below the rest of their dynamic, the breaths and key clicks between notes.
 It renders the synth at every semitone from the lowest note to the highest, at each dynamic's vel, each note held as long as the recordings' notes at that dynamic hold, and scores how far each band's harmonics and the noise between them, from `--from` up to 4 kHz, fall more than 4 dB from the recordings', and how far the attack falls more than 20 percent from theirs.
 It tries each control a step up and a step down, keeps whichever lowers the score, goes through the controls three times, and prints the best values, to write into the design in place of the controls.
 `--check` scores the starting values instead, with no control needed, and prints each band's level of harmonics and of noise in the recordings and how far the synth is off, marking those beyond 6 dB, and each attack beyond 30 percent.
-`--drone` measures each file as one note, as `mix mx.measure --held --drone` does, and leaves out the attack, since a drone's recording starts wherever it was cut.
+`--drone` measures each file as one note, as `mx measure --held --drone` does, and leaves out the attack, since a drone's recording starts wherever it was cut.
 The recordings' figures are kept in the system's temporary folder and reused until a file changes.
 
 ### Fitting a struck instrument
 
-`mix mx.fit --struck` fits a struck or plucked instrument from recordings of its notes, given as a folder or as a list.
+`mx fit --struck` fits a struck or plucked instrument from recordings of its notes, given as a folder or as a list.
 A folder holds single notes, one file a note and velocity, named as Google's NSynth dataset names them, ending in the MIDI note and the velocity, such as `keyboard_electronic_098-064-025.wav`.
 A list is a text file with a line for each recording: its notes, its velocity from 1 to 127, `kept` when the recordings keep their levels from one velocity to the next, and the file.
 
@@ -615,14 +613,14 @@ A run is split at each strike, and each piece is matched to the note it sounds; 
 A drum given in Hz is measured with that frequency as its pitch, and its figures go under the nearest MIDI note.
 `--struck` can be given more than once, to fit the recordings of several folders or lists into one synth.
 
-The fit measures each recording partial by partial, as `mix mx.measure --partials` does, then corrects each partial's level at 37 times over the note, up to 28 seconds, until a render of the partials measures as the recording does, and fits the strike's noise in bands one ERB wide, bands as wide as the ear's own, from 50 Hz to 8 kHz.
+The fit measures each recording partial by partial, as `mx measure --partials` does, then corrects each partial's level at 37 times over the note, up to 28 seconds, until a render of the partials measures as the recording does, and fits the strike's noise in bands one ERB wide, bands as wide as the ear's own, from 50 Hz to 8 kHz.
 A note is followed for as long as it rings in its recording, up to 30 seconds, or 2.9 seconds in an NSynth folder, whose notes are let go at 3 seconds; after that each partial falls on at its last slope.
 `--out` writes the figures, every partial of every recording, to a file for mxs to play; a note or velocity that was not recorded takes its figures from the recordings nearest it, across velocity first and then along the keyboard.
 `--notes` with two notes, such as `E1:E6`, keeps the recordings from the first to the second.
 
 ```sh
-mix mx.fit electric_piano --struck keyboard_electronic_098 --out electric_piano.mxf
-mix mx.fit electric_piano --struck keyboard_electronic_098 --notes E1:E6 --check
+mx fit electric_piano --struck keyboard_electronic_098 --out electric_piano.mxf
+mx fit electric_piano --struck keyboard_electronic_098 --notes E1:E6 --check
 ```
 
 `--check` renders the synth at each recording's note and velocity and compares it with that recording, each brought to the same total over its first half second.
@@ -636,7 +634,7 @@ A recording against itself delayed by 1 ms measures 0.1 dB at the median note in
 Each part starts 50 ms before its strike, lasts as long as the recording measured, and is brought to the same level over its first half second, with a second of silence after it.
 
 ```sh
-mix mx.fit electric_piano --struck electric_piano.txt --tour electric_piano_tour.wav --count 8
+mx fit electric_piano --struck electric_piano.txt --tour electric_piano_tour.wav --count 8
 ```
 
 To compare two versions of a synth, write a tour and a check from the same list on each, the released mxs and the refit, and listen to the tours one after the other.

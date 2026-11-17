@@ -1,16 +1,15 @@
 # Examples
 
-The songs in `examples` play from a clone of mx, each with `mix mx.play` and its path, such as `mix mx.play examples/salsa.exs`.
-With the mx command installed, each `mix mx.NAME` task here is also `mx NAME` with the same arguments, as the README's Install section says.
+The songs in `examples` play from a clone of mx, each with `mx play` and its path, such as `mx play examples/salsa.exs`.
 
 ## Pieces
 
 `examples/tranquility_base.exs` is made only of public recordings, with no synth: VCSL's marimba, vibraphone, hand chimes and drums play as sampled instruments, choosing strengths and alternating takes, its wine glasses are tuned by their rate into a chord, and NASA's Kennedy, Apollo and Sputnik recordings are cut at seconds, stuttered, reversed and fitted to the beat over it, through thirteen of mx's effects. It needs two of VCSL's folders downloaded once, 1.5 GB together, and NASA's recordings ship beside it:
 
 ```sh
-mix mx.samples.download "vcsl:Idiophones"
-mix mx.samples.download "vcsl:Membranophones"
-mix mx.play examples/tranquility_base.exs
+mx samples download "vcsl:Idiophones"
+mx samples download "vcsl:Membranophones"
+mx play examples/tranquility_base.exs
 ```
 
 `examples/ambient.exs` is a demo to start from, a slow ambient piece of pads, keys, bells and samples through reverb and echo.

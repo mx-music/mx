@@ -4,9 +4,9 @@ defmodule Mix.Tasks.Mx.Fit do
   @moduledoc """
   Searches for the values of a synth's controls that bring its held notes closest to recordings of them, as `Mx.Fit` describes.
 
-      mix mx.fit clarinet --vel 0.3 BbClar.pp.D3B3.aiff:D3 BbClar.pp.C4B4.aiff:C4 --vel 1 BbClar.ff.D3B3.aiff:D3 --from 160 --control k_odd=-2:2 --control k_att=0.15:x1.15
+      mx fit clarinet --vel 0.3 BbClar.pp.D3B3.aiff:D3 BbClar.pp.C4B4.aiff:C4 --vel 1 BbClar.ff.D3B3.aiff:D3 --from 160 --control k_odd=-2:2 --control k_att=0.15:x1.15
 
-  The synth comes first, then each dynamic as `--vel` and the files played at it, each with the note it starts on, as `mix mx.measure` takes them.
+  The synth comes first, then each dynamic as `--vel` and the files played at it, each with the note it starts on, as `mx measure` takes them.
   `--control` gives a control the synth takes, its starting value and its step, such as `k_odd=-2:2`; a step written with an x, such as `x1.15`, multiplies and divides instead of adding and subtracting.
   `--from` gives the lowest frequency in Hz of the bands compared, all of them below 4 kHz unless given.
   It prints how many notes it kept at each dynamic and how many it left out, the score it starts from, each change it keeps, and the best values at the end.
@@ -14,9 +14,9 @@ defmodule Mix.Tasks.Mx.Fit do
   `--check` scores the starting values instead of searching, and needs no control; it prints each dynamic's attack difference, and each band's level of harmonics and of noise in the recordings and how far the synth is off, marking those beyond 30 percent or 6 dB.
   The recordings' figures are kept in the system's temporary folder and reused until a file changes.
 
-      mix mx.fit electric_piano --struck keyboard_electronic_098 --out electric_piano.mxf
-      mix mx.fit marimba --struck marimba.txt --check
-      mix mx.fit marimba --struck marimba.txt --tour marimba_tour.wav --count 8
+      mx fit electric_piano --struck keyboard_electronic_098 --out electric_piano.mxf
+      mx fit marimba --struck marimba.txt --check
+      mx fit marimba --struck marimba.txt --tour marimba_tour.wav --count 8
 
   `--struck` with a folder of NSynth recordings, or a list of recordings with their notes and velocities, fits recordings of struck notes partial by partial instead, as `Mx.Fit.Struck` describes; it can be given more than once.
   `--out` writes the figures to a file, for mxs to play.
