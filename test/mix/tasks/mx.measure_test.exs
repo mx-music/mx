@@ -278,11 +278,11 @@ defmodule Mix.Tasks.Mx.MeasureTest do
     end
   end
 
-  test "--partials needs --hits and a count from 1 up", ctx do
+  test "--partials needs --hits or plucked notes, and a count from 1 up", ctx do
     path = write_wav(ctx, "hit.wav", hit(300, 1.0))
 
-    assert_raise Mix.Error, "--partials needs --hits", fn ->
-      Mix.Tasks.Mx.Measure.run([path, "--partials", "4"])
+    assert_raise Mix.Error, "--partials needs --hits or plucked notes", fn ->
+      Mix.Tasks.Mx.Measure.run(["--held", "#{path}:D4", "--partials", "4"])
     end
 
     for count <- ["0", "-2", "two", "1.5"] do
@@ -823,6 +823,46 @@ defmodule Mix.Tasks.Mx.MeasureTest do
   end
 
   # Six harmonics at 1/number of the first, held at one level after a 20 ms rise.
+  # The keyboard_electronic_098 instrument of the test set of Google's NSynth dataset, from
+  # https://magenta.tensorflow.org/datasets/nsynth, in the folder MX_NSYNTH names, which holds
+  # one folder an instrument.
+  describe "the NSynth electric piano recordings" do
+    @describetag :nsynth
+
+    setup do
+      dir =
+        System.get_env("MX_NSYNTH") ||
+          flunk("set MX_NSYNTH to the folder of the NSynth recordings")
+
+      %{dir: Path.join(dir, "keyboard_electronic_098")}
+    end
+
+    test "--partials prints E4's bell partial at velocity 25 with how it falls", %{dir: dir} do
+      path = Path.join(dir, "keyboard_electronic_098-064-025.wav")
+      output = capture_io(fn -> Mix.Tasks.Mx.Measure.run(["#{path}:E4", "--partials", "12"]) end)
+
+      assert [[ratio, fall]] =
+               Regex.scan(
+                 ~r/^ +[\d.]+ Hz +(7\.[0-6]\d\d)  between +-[\d.]+ dB  falls (\d+) dB\/s/m,
+                 output, capture: :all_but_first)
+
+      assert_in_delta String.to_float(ratio), 7.35, 0.05
+      assert String.to_integer(fall) > 20
+    end
+
+    test "--partials names G#2's steady line near 4 kHz at velocity 127 as left out", %{dir: dir} do
+      path = Path.join(dir, "keyboard_electronic_098-044-127.wav")
+      output = capture_io(fn -> Mix.Tasks.Mx.Measure.run(["#{path}:Gs2", "--partials", "3"]) end)
+
+      assert [[hz]] =
+               Regex.scan(~r/left out, no strike or fall: +([\d.]+) Hz/, output,
+                 capture: :all_but_first
+               )
+
+      assert_in_delta String.to_float(hz), 4108, 20
+    end
+  end
+
   defp held(f0, seconds) do
     for index <- 0..(round(seconds * 48_000) - 1) do
       time = index / 48_000

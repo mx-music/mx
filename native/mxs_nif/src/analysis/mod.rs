@@ -1,9 +1,11 @@
 //! Measuring recordings, for `Mx.Measure`: the pieces plucked notes, held notes and hits share, as `Mx.Signal` described them.
 //! Levels are in dB, and a spectrum holds the magnitude of each frequency bin below half the sample rate.
 
+pub mod fit;
 pub mod held;
 pub mod hits;
 pub mod hum;
+pub mod partials;
 pub mod plucked;
 pub mod strokes;
 
@@ -60,6 +62,16 @@ pub fn first_max<T>(items: impl IntoIterator<Item = T>, key: impl Fn(&T) -> f64)
 /// The integers from `first` to `last`, counting down when `first` is the larger, as an Elixir range without a step does.
 pub fn inferred(first: i64, last: i64) -> Vec<i64> {
     if first <= last { (first..=last).collect() } else { (last..=first).rev().collect() }
+}
+
+/// Each item mapped on its own thread, in order.
+pub fn parallel<T: Sync, U: Send>(items: &[T], map: impl Fn(&T) -> U + Sync) -> Vec<U> {
+    let threads = std::thread::available_parallelism().map_or(1, |n| n.get());
+    let size = items.len().div_ceil(threads).max(1);
+    std::thread::scope(|scope| {
+        let handles: Vec<_> = items.chunks(size).map(|chunk| scope.spawn(|| chunk.iter().map(&map).collect::<Vec<U>>())).collect();
+        handles.into_iter().flat_map(|handle| handle.join().unwrap()).collect()
+    })
 }
 
 /// Spectra through a periodic Hann window, with one plan kept for each size.

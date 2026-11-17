@@ -1,7 +1,7 @@
 //! Strokes that run into one another, for `Mx.Measure.Strokes`: where each stroke lies, its pitch every 4 ms, and its harmonics and noise every 8 ms from a least-squares fit.
 //! Sums follow the order the Elixir measuring took, so the figures come out the same.
 
-use super::median;
+use super::{median, parallel};
 use rustler::NifMap;
 use std::f64::consts::PI;
 
@@ -94,16 +94,6 @@ fn hann(size: usize) -> Vec<f64> {
 
 fn slice(sound: &[f64], from: i64, size: usize) -> Option<&[f64]> {
     (from >= 0 && from as usize + size <= sound.len()).then(|| &sound[from as usize..from as usize + size])
-}
-
-// Each item mapped on its own thread, in order.
-fn parallel<T: Sync, U: Send>(items: &[T], map: impl Fn(&T) -> U + Sync) -> Vec<U> {
-    let threads = std::thread::available_parallelism().map_or(1, |n| n.get());
-    let size = items.len().div_ceil(threads).max(1);
-    std::thread::scope(|scope| {
-        let handles: Vec<_> = items.chunks(size).map(|chunk| scope.spawn(|| chunk.iter().map(&map).collect::<Vec<U>>())).collect();
-        handles.into_iter().flat_map(|handle| handle.join().unwrap()).collect()
-    })
 }
 
 /// Finds the strokes of a sound and follows its pitch.

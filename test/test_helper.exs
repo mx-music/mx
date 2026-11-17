@@ -8,6 +8,7 @@ ExUnit.start(
     :ffmpeg,
     :bench,
     :philharmonia,
-    :nasa
+    :nasa,
+    :nsynth
   ]
 )

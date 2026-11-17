@@ -103,6 +103,65 @@ defmodule Mx.MeasureTest do
     assert Measure.file(silent, 45) == {:error, "found no notes in #{silent}"}
   end
 
+  describe "partials/2" do
+    test "follows each harmonic and a bell partial between them, with how each falls", ctx do
+      path = write_wav(ctx, "struck.wav", 16_000, struck(16_000))
+      assert {:ok, %{pitch: pitch, partials: partials}} = Measure.partials(path, 64)
+      assert_in_delta pitch, 329.63, 0.5
+
+      for number <- 1..6 do
+        %{fall: fall} = Enum.find(partials, &(&1.harmonic == number))
+        assert_in_delta fall, -10 * number, 2, "harmonic #{number} falls #{fall} dB a second"
+      end
+
+      bell =
+        Enum.find(partials, &(&1.harmonic == 0 and &1.freq / pitch > 7 and &1.freq / pitch < 7.7))
+
+      assert_in_delta bell.freq / pitch, 7.35, 0.01
+      # The bell falls 1.4 dB over the first 20 ms its level is read from.
+      assert_in_delta bell.level, -30, 1.5
+      assert_in_delta bell.fall, -70, 5
+    end
+
+    test "leaves out a steady line with no strike and no fall", ctx do
+      path = write_wav(ctx, "struck.wav", 16_000, struck(16_000, line: 4108))
+      assert {:ok, %{partials: partials, left_out: [line]}} = Measure.partials(path, 64)
+      assert_in_delta line.freq, 4108, 1
+      refute Enum.any?(partials, &(abs(&1.freq - 4108) < 10))
+    end
+
+    test "names a file it cannot read", ctx do
+      text = Path.join(ctx.tmp_dir, "note.txt")
+      File.write!(text, "not audio")
+      assert Measure.partials(text, 64) == {:error, "cannot read #{text}"}
+    end
+  end
+
+  # E4 struck 0.1 seconds in, rising over 2 ms, and held three seconds, over a noise floor 100 dB down: six harmonics
+  # at 1/number of the first, each falling 10 times its number in dB a second, and a bell at 7.35
+  # times the note, 30 dB down, falling 70 dB a second; with a steady line 80 dB down at `line` Hz
+  # from the first sample when given.
+  defp struck(rate, opts \\ []) do
+    :rand.seed(:exsss, {1, 2, 3})
+    f0 = 329.63
+    line = opts[:line]
+
+    for index <- 0..round(3.1 * rate - 1) do
+      at = index / rate
+      time = max(at - 0.1, 0)
+      wave = fn freq -> :math.sin(2 * :math.pi() * freq * time) end
+      struck = (1 - :math.cos(:math.pi() * min(time / 0.002, 1))) / 2
+
+      harmonics =
+        Enum.sum(for number <- 1..6, do: wave.(f0 * number) / number * 10 ** (-number * time / 2))
+
+      bell = wave.(f0 * 7.35) * 10 ** ((-30 - 70 * time) / 20)
+      steady = if line, do: :math.sin(2 * :math.pi() * line * at) * 1.0e-4, else: 0
+      noise = (:rand.uniform() - 0.5) * 2.0e-5
+      0.3 * (struck * (harmonics + bell) + steady) + noise
+    end
+  end
+
   # Twelve harmonics at 1/number of the first, each fading 60 dB over fade seconds, stretched
   # sharp by a stiffness.
   defp tone(f0, rate, seconds, opts \\ []) do

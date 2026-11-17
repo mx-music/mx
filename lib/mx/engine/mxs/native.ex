@@ -92,6 +92,15 @@ defmodule Mx.Engine.Mxs.Native do
   @doc "The held notes in a recording's data whose first is `note`, or with `whole`, the data as one held note from its first sample, as `Mx.Measure.Held` gives them."
   def measure_held(_data, _format, _rate, _note, _whole), do: :erlang.nif_error(:nif_not_loaded)
 
+  @doc "The note a recording's data starts with, struck, measured partial by partial as `Mx.Measure.partials/2` gives it."
+  def measure_struck(_data, _format, _rate, _note), do: :erlang.nif_error(:nif_not_loaded)
+
+  @doc "The figures of struck notes fitted partial by partial, as mxs reads them, from recordings each as `{data, format, rate, note, velocity}`."
+  def fit_struck(_recordings), do: :erlang.nif_error(:nif_not_loaded)
+
+  @doc "How far a render of a struck note is from a recording of it, partial by partial and in ERB bands, each given as `{data, format, rate}`."
+  def check_struck(_recording, _rendered, _note), do: :erlang.nif_error(:nif_not_loaded)
+
   @doc "The magnitudes of `size` samples of a recording's data from the frame `from`, through a periodic Hann window, bins 0 to `size / 2 - 1`."
   def spectrum(_data, _format, _from, _size), do: :erlang.nif_error(:nif_not_loaded)
 

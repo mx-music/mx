@@ -1,5 +1,5 @@
 defmodule Mix.Tasks.Mx.Fit do
-  @shortdoc "Searches for the values of a synth's controls that match recordings of held notes"
+  @shortdoc "Fits a synth to recordings of held notes by its controls, or of struck notes partial by partial"
 
   @moduledoc """
   Searches for the values of a synth's controls that bring its held notes closest to recordings of them, as `Mx.Fit` describes.
@@ -13,11 +13,20 @@ defmodule Mix.Tasks.Mx.Fit do
   `--drone` measures each file as one note held from its first sample to its last, for a drone plucked again and again, which would otherwise read as a note at each pluck, and leaves out the attack.
   `--check` scores the starting values instead of searching, and needs no control; it prints each dynamic's attack difference, and each band's level of harmonics and of noise in the recordings and how far the synth is off, marking those beyond 30 percent or 6 dB.
   The recordings' figures are kept in the system's temporary folder and reused until a file changes.
+
+      mix mx.fit electric_piano --struck keyboard_electronic_098 --out electric_piano.mxf
+      mix mx.fit electric_piano --struck keyboard_electronic_098 --notes E1:E6 --check
+
+  `--struck` with a folder fits recordings of struck notes partial by partial instead, as `Mx.Fit.Struck` describes, each file named as NSynth names them, ending in its MIDI note and velocity, such as `keyboard_electronic_098-064-025.wav`.
+  `--out` writes the figures to a file, for mxs to play.
+  `--notes` with two notes, such as `E1:E6`, keeps the recordings from the first to the second.
+  `--check` renders the synth at each recording's note and velocity and prints how far it is from the recordings: the share of the partials within 30 dB of each note's loudest that are within 2 dB over the first 20 ms and within 2 dB on average, the share of those 30 to 60 dB down within 4 dB on average, and the mean gap in ERB bands at the median note and the worst, then the ten partials and the ten notes furthest off.
   """
 
   use Mix.Task
 
   alias Mx.{Fit, Measure, Notes, Synths}
+  alias Mx.Fit.Struck
 
   @example "BbClar.pp.D3B3.aiff:D3"
 
@@ -25,6 +34,10 @@ defmodule Mix.Tasks.Mx.Fit do
   def run(args) when is_list(args) do
     Mx.Command.config()
     {synth, rest} = synth!(args)
+    if "--struck" in rest, do: struck(synth, rest), else: held(synth, rest)
+  end
+
+  defp held(synth, rest) do
     parsed = parse!(rest, %{dynamics: [], controls: [], from: 0, check: false, drone: false})
 
     dynamics =
@@ -56,6 +69,97 @@ defmodule Mix.Tasks.Mx.Fit do
           Enum.map_join(best, " ", fn {name, value} -> "#{name}=#{number(value)}" end)
       )
     end
+  end
+
+  defp struck(synth, rest) do
+    {opts, extra} =
+      OptionParser.parse!(rest,
+        strict: [struck: :string, out: :string, notes: :string, check: :boolean]
+      )
+
+    files = Enum.join(extra, " ")
+    if extra != [], do: Mx.Command.fail("--struck takes a folder, not files: #{files}")
+
+    if !opts[:out] and !opts[:check],
+      do: Mx.Command.fail("give --out with a file to write the figures to, or --check")
+
+    recordings =
+      case Struck.recordings(opts[:struck], opts[:notes] && notes!(opts[:notes])) do
+        {:ok, recordings} -> recordings
+        {:error, message} -> Mx.Command.fail(message)
+      end
+
+    if out = opts[:out] do
+      figures = Struck.figures(recordings)
+      File.write!(out, figures)
+      count = length(recordings)
+      bytes = byte_size(figures)
+      IO.puts("wrote the figures of #{count} recordings to #{out}, #{bytes} bytes")
+    end
+
+    if opts[:check], do: print_struck(synth, recordings)
+  end
+
+  defp print_struck(synth, recordings) do
+    checks = Struck.check(synth, recordings)
+    %{strong: strong, weaker: weaker, erb: erb} = Struck.summary(checks)
+    count = length(checks)
+    IO.puts("#{synth} against #{count} recordings")
+
+    strike = percent(strong.strike)
+    mean = percent(strong.mean)
+
+    IO.puts(
+      "#{strong.count} partials within 30 dB of the loudest: #{strike} within 2 dB over the first 20 ms, #{mean} within 2 dB on average"
+    )
+
+    mean = percent(weaker.mean)
+    IO.puts("#{weaker.count} partials 30 to 60 dB down: #{mean} within 4 dB on average")
+
+    median = decimals(erb.median)
+    worst = decimals(erb.worst)
+    note = checks |> Struck.furthest_notes(1) |> hd() |> Struck.label()
+    IO.puts("ERB bands: #{median} dB at the median note, #{worst} dB at the worst, #{note}")
+    IO.puts("\nthe ten partials furthest off on average:")
+
+    for partial <- Struck.furthest_partials(checks, 10) do
+      note = Struck.label(partial)
+      ratio = :erlang.float_to_binary(partial.ratio, decimals: 3)
+      kind = if partial.harmonic > 0, do: "harmonic #{partial.harmonic}", else: "between"
+      below = decimals(partial.below)
+      strike = signed_decimals(partial.strike)
+      mean = decimals(partial.mean)
+
+      IO.puts(
+        "  #{note}, #{ratio} #{kind}, #{below} dB down: first 20 ms #{strike} dB, mean #{mean} dB"
+      )
+    end
+
+    IO.puts("\nthe ten notes furthest off in ERB bands:")
+
+    for check <- Struck.furthest_notes(checks, 10) do
+      note = Struck.label(check)
+      erb = decimals(check.erb)
+      off = Enum.count(check.partials, &(&1.below <= 30 and &1.mean > 2))
+
+      IO.puts(
+        "  #{note}: #{erb} dB, #{off} of its partials within 30 dB of the loudest more than 2 dB off"
+      )
+    end
+  end
+
+  defp notes!(text) do
+    case String.split(text, ":") do
+      [low, high] -> note!(low)..note!(high)//1
+      _other -> Mx.Command.fail("give --notes as two notes, such as --notes E1:E6")
+    end
+  end
+
+  defp percent(nil), do: "-"
+
+  defp percent(share) do
+    percent = round(share * 100)
+    "#{percent}%"
   end
 
   defp recordings!(dynamics, drone) do

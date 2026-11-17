@@ -22,6 +22,9 @@ defmodule Mix.Tasks.Mx.Measure do
   `--hits` measures hits, as `Mx.Measure.Hits` describes, and a file with no pitch needs no note after its name.
   It prints the strongest peaks of each hit as ratios to the lowest, then for each band the seconds it takes to fade 60 dB and its level as the hit starts, against the loudest band.
   `--partials` with a count, such as `--partials 12`, also prints under each hit up to that many of its strongest partials, lowest first: the frequency in Hz, the ratio to the lowest, the level against the loudest, and the seconds it takes to fade 60 dB.
+  Without `--hits`, it prints under each file up to that many of the strongest partials of the note it starts with, as `Mx.Measure.partials/2` measures them, lowest first: the frequency in Hz, the ratio to the pitch, the harmonic or between, the level against the loudest as the note starts, and how it falls, or rises, in dB a second, with the second slope and where it starts when it slows; then each line left out as not the instrument's.
+
+      mix mx.measure keyboard_electronic_098-064-025.wav:E4 --partials 20
 
       mix mx.measure --hits Agogo_Low_v1_rr1_Mid.wav --partials 12 --synth low_agogo
 
@@ -87,18 +90,25 @@ defmodule Mix.Tasks.Mx.Measure do
       opts[:drone] && !opts[:held] -> Mx.Command.fail("--drone needs --held")
       opts[:held] -> held(files, synth, given, opts[:drone] || false)
       opts[:hits] -> hits(files, synth, given, count, compare)
-      true -> plucked(files, synth, given)
+      true -> plucked(files, synth, given, count)
     end
   end
 
-  defp plucked(files, synth, given) do
+  defp plucked(files, synth, given, count) do
     notes =
       files
       |> Enum.map(&parse!/1)
-      |> Task.async_stream(fn {path, note} -> {path, Measure.file(path, note)} end,
+      |> Task.async_stream(
+        fn {path, note} ->
+          {path, Measure.file(path, note), count && Measure.partials(path, note)}
+        end,
         timeout: :infinity
       )
-      |> Enum.flat_map(fn {:ok, {path, result}} -> print_file(path, result) end)
+      |> Enum.flat_map(fn {:ok, {path, result, partials}} ->
+        notes = print_file(path, result)
+        if partials, do: print_partials(partials, count)
+        notes
+      end)
 
     IO.puts("")
 
@@ -384,10 +394,10 @@ defmodule Mix.Tasks.Mx.Measure do
   end
 
   defp count!(opts) do
-    case {opts[:partials], opts[:hits]} do
-      {nil, _hits} -> nil
-      {_count, true} -> parse_count!(opts[:partials])
-      {_count, _hits} -> Mx.Command.fail("--partials needs --hits")
+    cond do
+      opts[:partials] == nil -> nil
+      opts[:held] || opts[:strokes] -> Mx.Command.fail("--partials needs --hits or plucked notes")
+      true -> parse_count!(opts[:partials])
     end
   end
 
@@ -440,6 +450,58 @@ defmodule Mix.Tasks.Mx.Measure do
     end
 
     notes
+  end
+
+  defp print_partials({:error, message}, _count), do: Mx.Command.fail(message)
+
+  defp print_partials({:ok, measured}, count) do
+    strongest =
+      measured.partials
+      |> Enum.sort_by(& &1.level, :desc)
+      |> Enum.take(count)
+      |> Enum.sort_by(& &1.freq)
+
+    Enum.each(strongest, &IO.puts(struck_partial(&1, measured.pitch, "")))
+
+    Enum.each(
+      measured.left_out,
+      &IO.puts(struck_partial(&1, measured.pitch, "left out, no strike or fall: "))
+    )
+  end
+
+  defp struck_partial(partial, pitch, label) do
+    hz = :erlang.float_to_binary(partial.freq, decimals: 1) <> " Hz"
+    ratio = :erlang.float_to_binary(partial.freq / pitch, decimals: 3)
+    kind = if partial.harmonic > 0, do: "harmonic #{partial.harmonic}", else: "between"
+
+    "    " <>
+      label <>
+      String.pad_leading(hz, 10) <>
+      String.pad_leading(ratio, 8) <>
+      "  " <>
+      String.pad_trailing(kind, 12) <>
+      String.pad_leading(decibels(partial.level), 8) <> "  " <> falls(partial)
+  end
+
+  defp falls(%{fall: nil}), do: "-"
+
+  defp falls(%{fall: fall, knee: nil}), do: slope(fall)
+
+  defp falls(%{fall: fall, knee: knee, then: then}) do
+    first = slope(fall)
+    second = slope(then)
+    knee = seconds(knee)
+    "#{first}, then #{second} after #{knee}"
+  end
+
+  defp slope(slope) when slope > 0 do
+    rate = round(slope)
+    "rises #{rate} dB/s"
+  end
+
+  defp slope(slope) do
+    rate = round(-slope)
+    "falls #{rate} dB/s"
   end
 
   defp print_held_file(_path, {:error, message}), do: Mx.Command.fail(message)

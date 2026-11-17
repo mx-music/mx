@@ -403,6 +403,33 @@ fn measure_held(data: Binary, format: (String, usize, usize), rate: f64, note: i
     Ok(if whole { analysis::held::note(&sound, rate, note).into_iter().collect() } else { analysis::held::notes(&sound, rate, note) })
 }
 
+/// A struck note in a recording's data, partial by partial, as `mix mx.measure` prints it with `--partials`.
+#[rustler::nif(schedule = "DirtyCpu")]
+fn measure_struck(data: Binary, format: (String, usize, usize), rate: f64, note: f64) -> NifResult<analysis::fit::Measured> {
+    Ok(analysis::fit::measure(&sound(&data, &format)?, rate, note))
+}
+
+/// A recording of a struck note: its data, format, rate, MIDI note and velocity.
+type Struck<'a> = (Binary<'a>, (String, usize, usize), f64, u8, u8);
+
+/// The figures of struck notes fitted partial by partial, as mxs reads them.
+#[rustler::nif(schedule = "DirtyCpu")]
+fn fit_struck<'a>(env: Env<'a>, recordings: Vec<Struck<'a>>) -> NifResult<Binary<'a>> {
+    let sounds = recordings.iter().map(|(data, format, rate, note, velocity)| Ok((sound(data, format)?, *rate, *note, *velocity))).collect::<NifResult<Vec<_>>>()?;
+    let fitted = analysis::parallel(&sounds, |(sound, rate, note, velocity)| (*note, *velocity, analysis::fit::fit(sound, *rate, *note as f64).0));
+    let bytes = analysis::fit::figures_bytes(&fitted);
+    let mut binary = OwnedBinary::new(bytes.len()).ok_or(rustler::Error::Atom("no_memory"))?;
+    binary.as_mut_slice().copy_from_slice(&bytes);
+    Ok(Binary::from_owned(binary, env))
+}
+
+/// How far a render of a struck note is from a recording of it, partial by partial and in ERB bands, each given as its data, format and rate.
+#[rustler::nif(schedule = "DirtyCpu")]
+fn check_struck(recording: (Binary, (String, usize, usize), f64), rendered: (Binary, (String, usize, usize), f64), note: f64) -> NifResult<analysis::fit::Check> {
+    let (theirs, ours) = (sound(&recording.0, &recording.1)?, sound(&rendered.0, &rendered.1)?);
+    Ok(analysis::fit::check(&theirs, recording.2, &ours, rendered.2, note))
+}
+
 struct StrokesResource {
     recording: analysis::strokes::Recording,
 }

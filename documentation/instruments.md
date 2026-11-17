@@ -259,7 +259,7 @@ Work on one goes through these steps.
 1. Find recordings under a free licence, such as the University of Iowa's, VCSL or Freesound's CC0 packs, of single notes or hits at several strengths.
 2. Measure them with `mix mx.measure`: `--held` for bowed, blown and organ notes, `--hits` for bars, bells and drums, and plain for plucked and struck strings. It prints each band's level and how fast it fades.
 3. Write the design in mxs, and compare it with the recordings by giving `mix mx.measure` the synth with `--synth`.
-4. For a held instrument, let `mix mx.fit` search for the values of the synth's options that bring it closest, and write them into the design.
+4. For a held instrument, let `mix mx.fit` search for the values of the synth's options that bring it closest, and write them into the design. For a struck instrument recorded at many notes and velocities, let `mix mx.fit --struck` fit each recording partial by partial and write the figures mxs plays.
 5. Pin the figures in `test/mx/designs_test.exs`, whose tests render the synth and measure it the same way, against the recordings' medians written in the test. They are tagged `engine`.
 6. Write a solo for it, in `examples/solo` or a folder of its own under `examples`, from real playing practice, and listen. A synth that passes every figure can still sound wrong, and the ear decides.
 
@@ -479,6 +479,15 @@ It prints the notes it found in each file, with their pitch and how far their ha
 `--option` gives the synth another option as a name and a number, such as `--option up=1` for a shaker's up stroke, and may be given more than once.
 The guitar's design tests check the same figures, measured the same way.
 
+`--partials` with a count, such as `--partials 20`, measures the note each file starts with partial by partial instead of by bands, as `Mx.Measure.partials/2` describes, over its first 2.9 seconds.
+It follows each partial every 2.5 ms, the harmonics and the peaks between them, such as a tine's bell, up to 8 kHz or the highest the recording holds, while it stands 10 dB above the noise floor of its third of an octave.
+It prints up to that many of the strongest, lowest first, each with its frequency, its ratio to the pitch, its harmonic number or "between", its level against the loudest as the note starts, and how it falls in dB a second, with a second slope after the knee where it slows.
+It then names each line left out: a partial between harmonics with no strike and hardly any fall, such as a hum in the recording, which is not the instrument.
+
+```sh
+mix mx.measure keyboard_electronic_098-064-025.wav:E4 --partials 20
+```
+
 ### Held notes and hits
 
 Recordings of held notes, bowed, blown or played on an organ, take `--held`, and recordings of hits, on bars, bells and drums, take `--hits`.
@@ -584,3 +593,20 @@ It tries each control a step up and a step down, keeps whichever lowers the scor
 `--check` scores the starting values instead, with no control needed, and prints each band's level of harmonics and of noise in the recordings and how far the synth is off, marking those beyond 6 dB, and each attack beyond 30 percent.
 `--drone` measures each file as one note, as `mix mx.measure --held --drone` does, and leaves out the attack, since a drone's recording starts wherever it was cut.
 The recordings' figures are kept in the system's temporary folder and reused until a file changes.
+
+### Fitting a struck instrument
+
+`mix mx.fit --struck` fits a struck or plucked instrument from a folder of single notes, one file a note and velocity, named as Google's NSynth dataset names them, ending in the MIDI note and the velocity, such as `keyboard_electronic_098-064-025.wav`.
+It measures each recording partial by partial, as `mix mx.measure --partials` does, then corrects each partial's level at 27 times over the note until a render of the partials measures as the recording does, and fits the strike's noise in bands one ERB wide, bands as wide as the ear's own, from 50 Hz to 8 kHz.
+`--out` writes the figures, every partial of every recording, to a file for mxs to play; a note or velocity that was not recorded takes its figures from the recordings nearest it, across velocity first and then along the keyboard.
+`--notes` with two notes, such as `E1:E6`, keeps the recordings from the first to the second.
+
+```sh
+mix mx.fit electric_piano --struck keyboard_electronic_098 --out electric_piano.mxf
+mix mx.fit electric_piano --struck keyboard_electronic_098 --notes E1:E6 --check
+```
+
+`--check` renders the synth at each recording's note and velocity and compares it with that recording, each brought to the same total over its first half second.
+Partial by partial, it takes the gap over the first 20 ms and the mean gap over the note while either stands 10 dB above the recording's floor; in ERB bands, it takes the mean gap over the note.
+It prints the share of the partials within 30 dB of each note's loudest that are within 2 dB at the strike and on average, the share of those 30 to 60 dB down within 4 dB on average, and the ERB gap at the median note and the worst, then the ten partials and the ten notes furthest off, so a single note's miss shows rather than hiding in a median.
+A recording against itself delayed by 1 ms measures 0.1 dB at the median note in ERB bands, and the same pitch recorded at a neighbouring velocity 4.7 dB, which sounds like a different note.

@@ -42,7 +42,8 @@ defmodule Mx.Signal do
      {"float_little", 64, 1}}
   end
 
-  defp native(%{kind: kind, bits: bits, channels: channels}),
+  @doc "The format of `Mx.Audio.raw/1`'s data as the native measuring takes it, `{kind, bits, channels}`."
+  def native(%{kind: kind, bits: bits, channels: channels}),
     do: {Atom.to_string(kind), bits, channels}
 
   @doc "The frequency of a note number."

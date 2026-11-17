@@ -16,6 +16,20 @@ defmodule Mx.Measure do
     Signal.measure_data(path, "notes", &Native.measure_plucked(&1, &2, &3, note, false))
   end
 
+  @doc """
+  Measures the note a recording of a struck note starts with, partial by partial, over its first 2.9 seconds, before NSynth lets its notes go.
+  Spectra every 2.5 ms, through windows eight periods of the fundamental long, from 80 to 250 ms, follow each partial's level, solved together so none takes in its neighbours'.
+  The partials are the harmonics up to 8 kHz or the highest the recording holds, and the peaks between them as the note starts, each kept while it stands 10 dB above the noise floor of its third of an octave.
+  A partial between harmonics with no strike and hardly any fall is a line that is not the instrument's, and is left out.
+  Returns `{:ok, %{pitch: hz, partials: partials, left_out: lines}}`, each partial with its `freq`, its `harmonic` number or 0 between harmonics, its `level` as the note starts in dB against the loudest, and how it falls: `fall` in dB a second, and where it slows, the `knee` in seconds and the slope it falls at `then`.
+  """
+  def partials(path, note) when is_binary(path) and is_integer(note) do
+    with {:ok, [measured]} <-
+           Signal.measure_data(path, "a note", &[Native.measure_struck(&1, &2, &3, note / 1)]) do
+      {:ok, measured}
+    end
+  end
+
   @doc "Measures each note of a sound whose first note is `first`, one after another a semitone apart."
   def notes(samples, rate, first)
       when is_list(samples) and is_integer(rate) and is_integer(first) do

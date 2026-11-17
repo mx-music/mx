@@ -174,6 +174,41 @@ defmodule Mix.Tasks.Mx.FitTest do
     end
   end
 
+  describe "--struck" do
+    test "writes the figures of each recording in a folder, those --notes keeps", ctx do
+      dir = struck_recordings(ctx, [{60, 25}, {60, 127}, {64, 75}])
+      out = Path.join(ctx.tmp_dir, "piano.mxf")
+
+      output =
+        capture_io(fn ->
+          Mix.Tasks.Mx.Fit.run([
+            "electric_piano",
+            "--struck",
+            dir,
+            "--notes",
+            "C4:D4",
+            "--out",
+            out
+          ])
+        end)
+
+      assert output =~ "wrote the figures of 2 recordings to #{out}"
+      assert <<"MXF1", times::little-16, _rest::binary>> = File.read!(out)
+      assert times == 27
+    end
+
+    test "refuses a folder with no recordings named by note and velocity, and asks for --out or --check",
+         ctx do
+      assert_raise Mix.Error, ~r/found no recordings named like name-064-025.wav in/, fn ->
+        Mix.Tasks.Mx.Fit.run(["electric_piano", "--struck", ctx.tmp_dir, "--check"])
+      end
+
+      assert_raise Mix.Error, "give --out with a file to write the figures to, or --check", fn ->
+        Mix.Tasks.Mx.Fit.run(["electric_piano", "--struck", ctx.tmp_dir])
+      end
+    end
+  end
+
   # The University of Iowa Electronic Music Studios' Bb clarinet recordings, from
   # https://theremin.music.uiowa.edu/MISBbclarinet.html, in the folder MX_IOWA_CLARINET names.
   describe "the Iowa clarinet recordings" do
@@ -253,6 +288,36 @@ defmodule Mix.Tasks.Mx.FitTest do
 
     path = write_wav(dir, "drone.wav", plucked)
     "#{path}:C4"
+  end
+
+  # Struck notes in a folder of their own, named as NSynth names its recordings: each note's first
+  # four harmonics fading over two seconds.
+  defp struck_recordings(ctx, notes) do
+    dir = Path.join(ctx.tmp_dir, "struck")
+    File.mkdir_p!(dir)
+    rate = Mxs.render_rate()
+
+    for {note, velocity} <- notes do
+      hz = 440 * 2 ** ((note - 69) / 12)
+
+      sound =
+        for index <- 0..(3 * rate - 1) do
+          time = index / rate
+          wave = Enum.sum(for n <- 1..4, do: :math.sin(2 * :math.pi() * hz * n * time) / n)
+          0.2 * wave * 10 ** (-1.5 * time)
+        end
+
+      name = :io_lib.format("piano-~3..0B-~3..0B.wav", [note, velocity]) |> to_string()
+      write_wav(dir, name, sound)
+    end
+
+    dir
+  end
+
+  defp captures(pattern, output) do
+    for value <- Regex.run(pattern, output, capture: :all_but_first) do
+      if value =~ ".", do: String.to_float(value), else: String.to_integer(value)
+    end
   end
 
   defp write_wav(dir, name, samples) do
