@@ -627,8 +627,10 @@ mx fit electric_piano --struck keyboard_electronic_098 --notes E1:E6 --check
 
 `--check` renders the synth at each recording's note and velocity and compares it with that recording, each brought to the same total over its first half second.
 Partial by partial, it takes the gap over the first 20 ms and the mean gap over the note while either stands 10 dB above the recording's floor; in ERB bands, it takes the mean gap over the note.
+The synth is read at its own pitch, each partial at the recording's frequency moved by the cents between the two fundamentals and each band moved with it, so a synth in tune is not counted off against a recording a few cents from its name.
 It prints the share of the partials within 30 dB of each note's loudest that are within 2 dB at the strike and on average, the share of those 30 to 60 dB down within 4 dB on average, and the ERB gap at the median note and the worst.
 For the recordings marked `kept`, it prints how far each velocity is under the loudest at its note over the first half second, in the recordings and in the synth.
+It reports the tuning apart from the levels, as "pitch: the recordings +13.2 cents from their names at the median note, synth +0.0, furthest at cs4 vel 80, +0.1", and names each note the synth plays more than 5 cents from its name.
 Then it prints the ten partials and the ten notes furthest off, so a single note's miss shows rather than hiding in a median.
 A recording against itself delayed by 1 ms measures 0.1 dB at the median note in ERB bands, and the same pitch recorded at a neighbouring velocity 4.7 dB, which sounds like a different note.
 

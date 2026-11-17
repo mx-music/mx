@@ -213,6 +213,7 @@ defmodule Mix.Tasks.Mx.Fit do
         " dB at the worst, #{note}" <> the_fit(fit && decimals(fit.erb.worst))
 
     IO.puts("ERB bands: #{median}; #{worst}")
+    print_pitch(Struck.pitch(checks), render)
     IO.puts("\nthe ten partials furthest off on average:")
 
     for partial <- Struck.furthest_partials(checks, 10) do
@@ -353,6 +354,26 @@ defmodule Mix.Tasks.Mx.Fit do
 
     Enum.join(["kind,at,row,ms,db" | lines], "\n") <> "\n"
   end
+
+  defp print_pitch(pitch, render) do
+    recordings = signed_cents(pitch.recordings)
+    rendered = signed_cents(elem(pitch.furthest.pitch, 1))
+    furthest = Struck.label(pitch.furthest)
+    median = signed_cents(pitch.render)
+
+    IO.puts(
+      "pitch: the recordings #{recordings} cents from their names at the median note, #{render} #{median}, furthest at #{furthest}, #{rendered}"
+    )
+
+    for check <- pitch.off do
+      note = Struck.label(check)
+      cents = signed_cents(elem(check.pitch, 1))
+      IO.puts("  #{render} plays #{note} #{cents} cents from its name")
+    end
+  end
+
+  defp signed_cents(cents) when cents >= 0, do: "+" <> :erlang.float_to_binary(cents, decimals: 1)
+  defp signed_cents(cents), do: :erlang.float_to_binary(cents, decimals: 1)
 
   defp off(check), do: Enum.count(check.partials, &(&1.below <= 30 and &1.mean > 2))
 

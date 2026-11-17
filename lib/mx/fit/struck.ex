@@ -185,6 +185,20 @@ defmodule Mx.Fit.Struck do
   end
 
   @doc """
+  The pitch over the checks, apart from their levels: the median cents from each note's name of the recordings and of the render, the check whose render is furthest from its name, and those whose render is more than 5 cents from it.
+  """
+  def pitch(checks) when is_list(checks) do
+    median = fn values -> values |> Enum.sort() |> Enum.at(div(length(values), 2)) end
+
+    %{
+      recordings: median.(Enum.map(checks, &elem(&1.pitch, 0))),
+      render: median.(Enum.map(checks, &elem(&1.pitch, 1))),
+      furthest: Enum.max_by(checks, &abs(elem(&1.pitch, 1))),
+      off: Enum.filter(checks, &(abs(elem(&1.pitch, 1)) > 5))
+    }
+  end
+
+  @doc """
   For the checks of recordings that keep their levels, each note recorded at more than one velocity: each velocity below the note's loudest, with how far under it the recording and the render are over their first half second, in dB.
   """
   def loudness(checks) when is_list(checks) do

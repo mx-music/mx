@@ -324,7 +324,7 @@ defmodule Mix.Tasks.Mx.FitTest do
       assert piano =~
                ~r/^\d+ partials within 30 dB of the loudest: \d+% within 2 dB over the first 20 ms, \d+% within 2 dB on average$/m
 
-      refute piano =~ "the fit "
+      refute piano =~ ~r/, the fit \d+%/
       refute piano =~ "piano"
       assert marimba == piano
       assert second < first / 2
@@ -416,6 +416,40 @@ defmodule Mix.Tasks.Mx.FitTest do
       assert_raise Mix.Error, "--until and --csv need --note and --vel", fn ->
         Mix.Tasks.Mx.Fit.run(~w(piano --struck #{list} --check --until 1))
       end
+    end
+
+    test "--check reads the synth at its own pitch, so a note 10 cents up keeps every strong partial's gaps and reads 10 cents off" do
+      base = with_floor(struck_note(60, 2))
+      check = fn render -> Mxs.Native.check_struck(struck(base), packed(render)) end
+      same = check.(base)
+      up = check.(with_floor(struck_note(Mx.Signal.hz(60) * 2 ** (10 / 1200), 2)))
+
+      for check <- [same, up], partial <- check.partials, partial.below <= 30 do
+        assert abs(partial.strike) <= 0.1 and partial.mean <= 0.1
+      end
+
+      assert same.erb < 0.05
+      assert up.erb < 0.5
+      {recording, render} = up.pitch
+      assert_in_delta render - recording, 10, 0.2
+      assert_in_delta recording, 0, 0.2
+    end
+
+    test "the pitch of the checks names each note a render plays more than 5 cents from its name" do
+      base = with_floor(struck_note(60, 2))
+      sharp = with_floor(struck_note(Mx.Signal.hz(60) * 2 ** (8 / 1200), 2))
+      in_tune = Mxs.Native.check_struck(struck(base), packed(base))
+      off = Mxs.Native.check_struck(struck(base), packed(sharp))
+
+      pitch =
+        Mx.Fit.Struck.pitch([
+          Map.merge(in_tune, %{note: 62, velocity: 127}),
+          Map.merge(off, %{note: 60, velocity: 127})
+        ])
+
+      assert [%{note: 60, pitch: {_, cents}}] = pitch.off
+      assert_in_delta cents, 8, 0.2
+      assert pitch.furthest.note == 60
     end
 
     test "refuses --own without --check", ctx do
@@ -615,6 +649,65 @@ defmodule Mix.Tasks.Mx.FitTest do
       {times, fitted} = figures(File.read!(out))
       at = fn velocity -> Enum.find(fitted, &(&1.note == 60 and &1.velocity == velocity)) end
       assert_in_delta loudness(times, at.(40)) - loudness(times, at.(127)), recordings, 1.5
+    end
+
+    @tag timeout: 600_000
+    test "--check reads the mf C4 to B4 against itself 10 cents up at the same shares, the ERB gap within 0.3 dB, and 10 cents off",
+         %{marimba: marimba} = ctx do
+      list = write_list(ctx, ["C4:B4 80 kept #{marimba}/Marimba.yarn.mf.C4B4.aif"])
+      {:ok, recordings, _lines} = Mx.Fit.Struck.listed(list)
+      {:ok, %{rate: rate} = format, data} = Mx.Audio.raw("#{marimba}/Marimba.yarn.mf.C4B4.aif")
+      packing = Mx.Signal.native(format)
+      size = div(format.bits + 7, 8) * format.channels
+
+      check = fn shift ->
+        for %{span: {from, to}} = recording <- recordings do
+          piece =
+            binary_part(data, from * size, (min(to, div(byte_size(data), size)) - from) * size)
+
+          fitted = {recording.pitch, recording.velocity, recording.seconds / 1, recording.exact}
+
+          check =
+            Mxs.Native.check_struck(
+              {{data, packing, rate / 1}, {from, to}, fitted},
+              {piece, packing, rate * shift}
+            )
+
+          Map.merge(check, Map.take(recording, [:note, :velocity]))
+        end
+      end
+
+      same = Mx.Fit.Struck.summary(check.(1.0))
+      up = check.(2 ** (10 / 1200))
+      moved = Mx.Fit.Struck.summary(up)
+      assert_in_delta moved.strong.strike, same.strong.strike, 0.01
+      assert_in_delta moved.strong.mean, same.strong.mean, 0.01
+      assert_in_delta moved.weaker.mean, same.weaker.mean, 0.01
+      assert moved.erb.median <= same.erb.median + 0.3
+      pitch = Mx.Fit.Struck.pitch(up)
+      assert_in_delta pitch.render - pitch.recordings, 10, 0.2
+    end
+
+    @tag timeout: 1_200_000
+    test "--check prints the pitch of the marimba's 183 yarn notes apart from the levels, for the recordings and the synth",
+         %{marimba: marimba} = ctx do
+      lines =
+        for {dynamic, velocity} <- [pp: 40, mf: 80, ff: 127],
+            file <- ~w(C2B2 C3B3 C4B4 C5B5 C6B6 C7) do
+          [first | _] = notes = Regex.scan(~r/[A-G]\d/, file) |> List.flatten()
+          range = if notes == [first], do: first, else: "#{first}:#{List.last(notes)}"
+          "#{range} #{velocity} kept #{marimba}/Marimba.yarn.#{dynamic}.#{file}.aif"
+        end
+
+      output =
+        capture_io(fn ->
+          Mix.Tasks.Mx.Fit.run(["marimba", "--struck", write_list(ctx, lines), "--check"])
+        end)
+
+      assert output =~ "marimba against 183 recordings"
+
+      assert output =~
+               ~r/^pitch: the recordings [-+][\d.]+ cents from their names at the median note, synth [-+][\d.]+, furthest at [a-g]s?\d vel \d+, [-+][\d.]+$/m
     end
 
     @tag timeout: 600_000
@@ -919,6 +1012,22 @@ defmodule Mix.Tasks.Mx.FitTest do
 
   # Notes one after another, each ringing 1.5 seconds.
   defp run(notes), do: Enum.flat_map(notes, &struck_note(&1, 1.5))
+
+  # A made note with a floor of white noise 90 dB down, as a recording has, so that the measuring finds no partials in the window's sidelobes.
+  defp with_floor(samples) do
+    :rand.seed(:exsss, {1, 2, 3})
+    for sample <- samples, do: sample + 3.0e-5 * (2 * :rand.uniform() - 1)
+  end
+
+  defp struck(samples) do
+    {data, packing} = Mx.Signal.packed(samples)
+    {{data, packing, Mxs.render_rate() / 1}, {0, length(samples)}, {60.0, 127, 2.9, false}}
+  end
+
+  defp packed(samples) do
+    {data, packing} = Mx.Signal.packed(samples)
+    {data, packing, Mxs.render_rate() / 1}
+  end
 
   defp write_list(ctx, lines) do
     path = Path.join(ctx.tmp_dir, "list.txt")

@@ -411,6 +411,18 @@ pub struct Check {
     pub bands: Vec<(f64, f64, usize)>,
     /// The recording's partials and the render's over their first half second, in dB.
     pub levels: (f64, f64),
+    /// The cents the recording's fundamental and the render's are from the note's name.
+    pub pitch: (f64, f64),
+}
+
+/// A recording's fundamental, and the ratio of a render's pitch to the recording's: of the render's peak within a quarter tone of the recording's loudest partial to that partial, over the frames where a partial's frequency is read.
+/// A recording more than a quarter tone from its name is left out before it is checked, so its fundamental is its partial within a quarter tone of the name, or where it has none, the pitch its harmonics give.
+pub fn tuning(theirs: &Note, ours: &partials::Spectra, note: f64) -> (f64, f64) {
+    let (named, quarter) = (hz(note), 2f64.powf(0.5 / 12.0));
+    let fundamental = theirs.partials.iter().chain(&theirs.left_out).map(|t| t.freq).filter(|f| (f / named).ln().abs() <= quarter.ln()).min_by(|a, b| (a / named).ln().abs().total_cmp(&(b / named).ln().abs())).unwrap_or(theirs.f0);
+    let Some(loudest) = theirs.partials.iter().max_by(|a, b| a.strike(0.02).total_cmp(&b.strike(0.02))) else { return (fundamental, 1.0) };
+    let found = partials::settle(ours, loudest.freq, loudest.freq * (quarter - 1.0));
+    (fundamental, found / loudest.freq)
 }
 
 /// Compares a render with a recording of the same note over `seconds` from its strike, each brought to the same total over its first half second.
@@ -419,7 +431,9 @@ pub fn check(recording: &[f64], rate: f64, rendered: &[f64], render_rate: f64, n
     let ours = partials::spectra(rendered, render_rate, hz(note), seconds);
     let half = (0.5 / HOP) as usize;
     let power = |levels: &[f64]| levels.iter().take(half).map(|l| 10f64.powf(l / 10.0)).sum::<f64>();
-    let freqs: Vec<f64> = theirs.partials.iter().chain(&theirs.left_out).map(|t| t.freq).collect();
+    // The render is read at its own pitch, so a synth in tune is not counted off against a recording that is not.
+    let (anchor, ratio) = tuning(&theirs, &ours, note);
+    let freqs: Vec<f64> = theirs.partials.iter().chain(&theirs.left_out).map(|t| t.freq * ratio).collect();
     let ours_tracks = partials::follow(rendered, &ours, &freqs);
     let total_theirs: f64 = theirs.partials.iter().map(|t| power(&t.levels)).sum();
     let total_ours: f64 = ours_tracks.iter().map(|l| power(l)).sum();
@@ -460,8 +474,10 @@ pub fn check(recording: &[f64], rate: f64, rendered: &[f64], render_rate: f64, n
             }
         })
         .collect();
-    let (erb, bands) = erb_gap(&theirs, &ours);
-    Check { partials, erb, bands, levels: (10.0 * total_theirs.log10(), 10.0 * total_ours.log10()) }
+    let (erb, bands) = erb_gap(&theirs, &ours, ratio);
+    let cents = |freq: f64| 1200.0 * (freq / hz(note)).log2();
+    let pitch = (cents(anchor), cents(anchor * ratio));
+    Check { partials, erb, bands, levels: (10.0 * total_theirs.log10(), 10.0 * total_ours.log10()), pitch }
 }
 
 /// How far the fit's own render of a recording, its figures played as sines and noise with no synth, is from the recording: the closest a synth playing the figures can come.
@@ -517,13 +533,18 @@ pub fn frames(sound: &[f64], rate: f64, note: f64, seconds: f64, exact: bool, sy
     let recorded_bands = erb_levels(&theirs.spectra, &bands);
     let (track_target, band_target) = (tracks_total(&recorded), bands_total(&recorded_bands));
     // Each sound's tracks and bands, and the shifts that bring its own render's totals to the recording's.
-    let measured = |sound: &[f64], spectra: &partials::Spectra| (partials::follow(sound, spectra, &freqs), erb_levels(spectra, &bands));
-    let (own_tracks, own_bands) = measured(&own, &own_spectra);
+    let measured = |sound: &[f64], spectra: &partials::Spectra, ratio: f64| {
+        let freqs: Vec<f64> = freqs.iter().map(|f| f * ratio).collect();
+        let moved: Vec<(f64, f64)> = bands.iter().map(|(low, high)| (low * ratio, high * ratio)).collect();
+        (partials::follow(sound, spectra, &freqs), erb_levels(spectra, &moved))
+    };
+    let own_ratio = tuning(&theirs, &own_spectra, note).1;
+    let (own_tracks, own_bands) = measured(&own, &own_spectra, own_ratio);
     let shifts = (track_target - tracks_total(&own_tracks), band_target - bands_total(&own_bands));
     let mut sounds: Vec<(String, Vec<Vec<f64>>, Vec<Vec<f64>>, (f64, f64))> = vec![("recording".to_string(), recorded, recorded_bands, (0.0, 0.0))];
     if let Some((synth, synth_rate)) = synth {
         let spectra = partials::spectra(synth, synth_rate, hz(note), seconds);
-        let (tracks, levels) = measured(synth, &spectra);
+        let (tracks, levels) = measured(synth, &spectra, tuning(&theirs, &spectra, note).1);
         let shift = (track_target - tracks_total(&tracks), band_target - bands_total(&levels));
         sounds.push(("synth".to_string(), tracks, levels, shift));
     }
@@ -531,7 +552,7 @@ pub fn frames(sound: &[f64], rate: f64, note: f64, seconds: f64, exact: bool, sy
     for (name, figures) in [("sines", &sines), ("noise", &noise)] {
         let rendered = render(figures, rate, 0.05, seconds + 0.3);
         let spectra = apart(figures);
-        let (tracks, levels) = measured(&rendered, &spectra);
+        let (tracks, levels) = measured(&rendered, &spectra, own_ratio);
         sounds.push((name.to_string(), tracks, levels, shifts));
     }
     let loudest = loudest(&theirs);
@@ -581,8 +602,12 @@ pub fn erb_levels(spectra: &partials::Spectra, bands: &[(f64, f64)]) -> Vec<Vec<
             bands
                 .iter()
                 .map(|(low, high)| {
-                    let (a, b) = bins(spectra, *low, *high);
-                    10.0 * f[a.min(f.len())..b.min(f.len())].iter().map(|m| m * m).sum::<f64>().max(1e-24).log10()
+                    // Each bin covers half a bin either side of its centre and counts for the share of that inside the band, so a band moved with a pitch takes the same part of each partial.
+                    let (from, to) = (low / spectra.bin, high / spectra.bin);
+                    let first = (from - 0.5).floor().max(0.0) as usize;
+                    let last = ((to + 0.5).ceil() as usize).min(f.len());
+                    let power: f64 = (first..last).map(|i| (f[i] * f[i]) * ((i as f64 + 0.5).min(to) - (i as f64 - 0.5).max(from)).max(0.0)).sum();
+                    10.0 * power.max(1e-24).log10()
                 })
                 .collect()
         })
@@ -591,9 +616,11 @@ pub fn erb_levels(spectra: &partials::Spectra, bands: &[(f64, f64)]) -> Vec<Vec<
 
 // The mean gap over every band and frame where either stands clear of the recording's floor, the render brought to the recording's total over its first half second.
 // Also each band's centre, its mean signed gap, and the frames it was compared in.
-fn erb_gap(theirs: &Note, ours: &partials::Spectra) -> (f64, Vec<(f64, f64, usize)>) {
+fn erb_gap(theirs: &Note, ours: &partials::Spectra, ratio: f64) -> (f64, Vec<(f64, f64, usize)>) {
     let bands = erb_bands();
-    let (a, b) = (erb_levels(&theirs.spectra, &bands), erb_levels(ours, &bands));
+    // The render's bands move with its pitch, so a partial a few cents off stays in the band it shares with the recording.
+    let moved: Vec<(f64, f64)> = bands.iter().map(|(low, high)| (low * ratio, high * ratio)).collect();
+    let (a, b) = (erb_levels(&theirs.spectra, &bands), erb_levels(ours, &moved));
     let half = (0.5 / HOP) as usize;
     let total = |e: &[Vec<f64>]| 10.0 * e.iter().take(half).flatten().map(|d| 10f64.powf(d / 10.0)).sum::<f64>().log10();
     let shift = total(&a) - total(&b);

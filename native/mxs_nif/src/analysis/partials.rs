@@ -349,8 +349,8 @@ pub fn measure(sound: &[f64], rate: f64, note: f64, seconds: f64, exact: bool) -
     Note { f0, spectra, floor, partials, left_out }
 }
 
-// A partial's frequency near `freq`, as the median of its peak over the settled frames.
-fn settle(spectra: &Spectra, freq: f64, width: f64) -> f64 {
+/// A partial's frequency near `freq`, as the median of its peak over the settled frames.
+pub fn settle(spectra: &Spectra, freq: f64, width: f64) -> f64 {
     let found: Vec<f64> = spectra.frames[spectra.settled()].iter().map(|f| peak_near(f, spectra.bin, freq, width).0).collect();
     if found.is_empty() { freq } else { median(&found) }
 }
