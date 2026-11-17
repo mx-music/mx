@@ -42,6 +42,14 @@ defmodule Mix.Tasks.Mx.Measure do
   `--tracks` with the numbers of strokes of one file prints each one's tracks instead: its note, the semitones it starts under it, then its pitch in cents at every step of 8 ms, and a row for each step of the levels of its 16 harmonics and of its noise, in dB under its loudest step, with -127 for silence.
   `--alone` with `--tracks` carries on past each stroke into the ring it leaves, for a stroke played by itself.
   `--ignore` with `--tracks` and two frequencies, such as `--ignore 8500-9100`, leaves out the harmonics between them, for a steady tone that is not the instrument's.
+
+      mx measure --known
+
+  `--known` measures notes it makes itself, whose partials are known exactly, in the same way `mx fit --struck` measures a recording, and needs no recordings.
+  There are six kinds of note, each at C2, C4 and C7: a partial falling 60 dB over 3 seconds, a partial falling 30 dB in 25 ms, two partials 20 Hz apart that beat, a fundamental rising 40 dB over 40 ms under a partial that starts at once, a partial 30 dB under a burst of white noise 50 ms long, and a short partial at once while the fundamental comes within 20 dB of its peak 30 ms later.
+  For each note it prints how far the measured strike is from the true one in ms, and for each partial how far its measured level is from the true one, as the peak over the first 20 ms and on average over the note in dB, and its frequency in cents.
+  A figure beyond 2 dB, the limit refit tickets use, is marked, and the last lines say at which pitches each kind is followed within it.
+  Read these figures before setting a refit's criteria: no fit can be closer to a recording than the measuring is to the truth.
   """
 
   use Mix.Task
@@ -71,7 +79,8 @@ defmodule Mix.Tasks.Mx.Measure do
       strokes: :boolean,
       tracks: :string,
       alone: :boolean,
-      ignore: :string
+      ignore: :string,
+      known: :boolean
     ]
 
     {opts, files} = OptionParser.parse!(args, strict: strict)
@@ -84,6 +93,7 @@ defmodule Mix.Tasks.Mx.Measure do
     count = count!(opts)
 
     cond do
+      opts[:known] -> known()
       opts[:held] && opts[:hits] -> Mx.Command.fail("give --held or --hits, not both")
       opts[:strokes] -> strokes(files, opts)
       opts[:tracks] || opts[:alone] || opts[:ignore] -> Mx.Command.fail("--tracks needs --strokes")
@@ -91,6 +101,70 @@ defmodule Mix.Tasks.Mx.Measure do
       opts[:held] -> held(files, synth, given, opts[:drone] || false)
       opts[:hits] -> hits(files, synth, given, count, compare)
       true -> plucked(files, synth, given, count)
+    end
+  end
+
+  defp known do
+    measured = Mxs.Native.measure_known()
+
+    for known <- measured do
+      name = String.upcase(Measure.name(round(known.note)))
+      strike = :erlang.float_to_binary(known.strike, decimals: 1)
+      IO.puts("#{name} #{known.kind}: strike #{signed(strike)} ms")
+      Enum.each(known.partials, &print_known/1)
+    end
+
+    IO.puts("")
+
+    for {kind, notes} <- Enum.group_by(measured, & &1.kind) |> Enum.sort_by(&kind_order/1) do
+      {followed, missed} = Enum.split_with(notes, & &1.followed)
+      IO.puts("#{kind}: #{followed_line(followed, missed)}")
+    end
+  end
+
+  defp kind_order({kind, _}),
+    do: Enum.find_index(~w(slow short beating building noisy early), &(&1 == kind))
+
+  defp print_known(%{found: false, freq: freq}),
+    do: IO.puts("  #{Float.round(freq, 1)} Hz: not found")
+
+  defp print_known(%{
+         freq: freq,
+         first: first,
+         mean: mean,
+         cents: cents,
+         off: {first_off, mean_off}
+       }) do
+    first = :erlang.float_to_binary(first, decimals: 1)
+    mean = :erlang.float_to_binary(mean, decimals: 1)
+    cents = :erlang.float_to_binary(cents, decimals: 1)
+
+    IO.puts(
+      "  #{Float.round(freq, 1)} Hz: first 20 ms #{signed(first)} dB#{beyond(first_off)}, " <>
+        "average #{mean} dB#{beyond(mean_off)}, #{signed(cents)} cents"
+    )
+  end
+
+  defp signed("-" <> _ = text), do: text
+  defp signed(text), do: "+" <> text
+
+  defp beyond(true), do: " (beyond 2 dB)"
+  defp beyond(false), do: ""
+
+  defp followed_line(followed, missed) do
+    names = fn notes ->
+      notes |> Enum.map(&Measure.name(round(&1.note))) |> Enum.map(&String.upcase/1)
+    end
+
+    case {names.(followed), names.(missed)} do
+      {[], missed} ->
+        "not followed within 2 dB at #{Enum.join(missed, ", ")}"
+
+      {followed, []} ->
+        "followed within 2 dB at #{Enum.join(followed, ", ")}"
+
+      {followed, missed} ->
+        "followed within 2 dB at #{Enum.join(followed, ", ")}, not at #{Enum.join(missed, ", ")}"
     end
   end
 

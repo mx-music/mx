@@ -409,6 +409,12 @@ fn measure_struck(data: Binary, format: (String, usize, usize), rate: f64, note:
     Ok(analysis::fit::measure(&sound(&data, &format)?, rate, note))
 }
 
+/// Notes with known partials of every kind at C2, C4 and C7, each measured as a struck recording is and compared with its truth.
+#[rustler::nif(schedule = "DirtyCpu")]
+fn measure_known() -> Vec<analysis::known::Known> {
+    analysis::known::all()
+}
+
 /// The notes of a recording's data that holds one of `notes` or a run of them, as `Mx.Fit.Struck` splits them.
 #[rustler::nif(schedule = "DirtyCpu")]
 fn split_struck(data: Binary, format: (String, usize, usize), rate: f64, notes: Vec<i64>) -> NifResult<Vec<analysis::runs::Piece>> {

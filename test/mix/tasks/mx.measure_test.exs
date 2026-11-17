@@ -10,6 +10,52 @@ defmodule Mix.Tasks.Mx.MeasureTest do
 
   @moduletag :tmp_dir
 
+  describe "--known" do
+    setup do
+      {micros, output} =
+        :timer.tc(fn -> capture_io(fn -> Mix.Tasks.Mx.Measure.run(["--known"]) end) end)
+
+      %{output: output, seconds: micros / 1_000_000}
+    end
+
+    test "measures six kinds of note at C2, C4 and C7, with each partial's errors, in under 30 seconds",
+         %{output: output, seconds: seconds} do
+      notes = Regex.scan(~r/^(C2|C4|C7) (\w+): strike [+-][\d.]+ ms$/m, output)
+      assert length(notes) == 18
+
+      assert notes |> Enum.map(&Enum.at(&1, 2)) |> Enum.uniq() ==
+               ~w(slow short beating building noisy early)
+
+      assert output =~
+               ~r/^  261\.6 Hz: first 20 ms [+-][\d.]+ dB, average [\d.]+ dB, [+-][\d.]+ cents$/m
+
+      assert seconds < 30
+    end
+
+    test "marks every figure beyond 2 dB and no figure within it", %{output: output} do
+      figures =
+        Regex.scan(~r/(?:first 20 ms|average) \+?(-?[\d.]+) dB( \(beyond 2 dB\))?/, output)
+
+      assert length(figures) > 60
+
+      for [_, value | mark] <- figures do
+        assert abs(String.to_float(value)) > 2 == (mark != []),
+               "#{value} dB is marked #{inspect(mark)}"
+      end
+    end
+
+    test "ends with a line for each kind saying at which pitches it is followed within 2 dB",
+         %{output: output} do
+      lines = output |> String.split("\n", trim: true) |> Enum.take(-6)
+
+      for {kind, line} <- Enum.zip(~w(slow short beating building noisy early), lines) do
+        assert line =~ ~r/^#{kind}: (not )?followed within 2 dB at /
+      end
+
+      assert List.first(lines) == "slow: followed within 2 dB at C4, C7, not at C2"
+    end
+  end
+
   test "prints the notes found in each file, and each band's fade and level", ctx do
     path = write_wav(ctx, "run.wav", Enum.flat_map(0..2, &tone(110 * 2 ** (&1 / 12), 3)))
     output = capture_io(fn -> Mix.Tasks.Mx.Measure.run(["#{path}:A2"]) end)

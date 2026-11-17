@@ -96,6 +96,7 @@ defmodule Mx.Engine.Mxs.Native do
   def measure_struck(_data, _format, _rate, _note), do: :erlang.nif_error(:nif_not_loaded)
 
   @doc "The notes of a recording's data that holds one of `notes`, MIDI note numbers, or a run of them, as `Mx.Fit.Struck` splits them."
+  def measure_known, do: :erlang.nif_error(:nif_not_loaded)
   def split_struck(_data, _format, _rate, _notes), do: :erlang.nif_error(:nif_not_loaded)
 
   @doc "The figures of struck notes fitted partial by partial, as mxs reads them, from recordings each as `{{data, format, rate}, {from, to}, {note, velocity, seconds, exact}}`, the samples it spans and its note, a MIDI number or between them for a pitch given exactly."

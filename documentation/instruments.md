@@ -615,6 +615,8 @@ A drum given in Hz is measured with that frequency as its pitch, and its figures
 
 The fit measures each recording partial by partial, as `mx measure --partials` does, then corrects each partial's level at 37 times over the note, up to 28 seconds, until a render of the partials measures as the recording does, and fits the strike's noise in bands one ERB wide, bands as wide as the ear's own, from 50 Hz to 8 kHz.
 A note is followed for as long as it rings in its recording, up to 30 seconds, or 2.9 seconds in an NSynth folder, whose notes are let go at 3 seconds; after that each partial falls on at its last slope.
+Before setting a refit's criteria, run `mx measure --known`: it measures notes with known partials in the same way, a fast strike partial, a beating pair and a slowly building fundamental among them, and prints how far the measuring is from the truth for each.
+No fit comes closer to a recording than the measuring follows it, so a criterion on what it cannot follow cannot be met.
 `--out` writes the figures, every partial of every recording, to a file for mxs to play; a note or velocity that was not recorded takes its figures from the recordings nearest it, across velocity first and then along the keyboard.
 `--notes` with two notes, such as `E1:E6`, keeps the recordings from the first to the second.
 

@@ -31,6 +31,11 @@ impl Spectra {
         let last = ((LEAD + self.window / 2.0 + 0.3) / HOP) as usize;
         first.min(self.frames.len().saturating_sub(1))..last.min(self.frames.len())
     }
+
+    /// The sample the strike was found at.
+    pub fn struck(&self) -> f64 {
+        self.start + LEAD * self.rate
+    }
 }
 
 /// The sample a note's strike starts at: the first within 20 dB of its peak.

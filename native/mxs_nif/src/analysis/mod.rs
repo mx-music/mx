@@ -5,6 +5,7 @@ pub mod fit;
 pub mod held;
 pub mod hits;
 pub mod hum;
+pub mod known;
 pub mod partials;
 pub mod plucked;
 pub mod runs;
