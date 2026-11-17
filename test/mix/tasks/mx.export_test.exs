@@ -141,4 +141,89 @@ defmodule Mix.Tasks.Mx.ExportTest do
       end
     end
   end
+
+  # Each note that starts in a bar of the first part, as its pitch, its staff, where it starts in
+  # the song and how long it lasts.
+  defp staves(path) do
+    {:ok, score} = Score.read(path)
+    bars = hd(score.parts).bars
+
+    {notes, _end} =
+      Enum.flat_map_reduce(bars, 0, fn bar, from ->
+        notes =
+          for voice <- bar.voices,
+              {piece, at} <- starts(voice),
+              note <- piece.notes || [],
+              not note.continues,
+              do: {note.midi, note.staff, from + at, piece.length}
+
+        {notes, from + (bar.voices |> hd() |> Enum.map(& &1.length) |> Enum.sum())}
+      end)
+
+    Enum.sort(notes)
+  end
+
+  defp export_part(dir, name, music) do
+    song = Path.join(dir, "#{name}.exs")
+    File.write!(song, "import Mx\nsong(music: part(:#{name}, #{music}, synth: :piano))\n")
+    out = Path.join(dir, "#{name}.musicxml")
+    capture_io(fn -> Export.run([song, "--out", out]) end)
+    out
+  end
+
+  test "the aria's organ is written on a grand staff, and the violin and the alto on one staff each",
+       %{tmp_dir: dir} do
+    score = Path.join(dir, "staves_aria.mxl")
+    File.cp!(@aria, score)
+    capture_io(fn -> Import.run([score]) end)
+    out = Path.join(dir, "staves_aria.musicxml")
+    capture_io(fn -> Export.run([Path.join(dir, "staves_aria.exs"), "--out", out]) end)
+
+    [violin, alto, organ] = String.split(File.read!(out), ~r/<part id=/) |> tl()
+    refute violin =~ "<staves>"
+    refute alto =~ "<staves>"
+    assert organ =~ "<staves>2</staves>"
+    assert organ =~ ~s(<clef number="1"><sign>G</sign><line>2</line></clef>)
+    assert organ =~ ~s(<clef number="2"><sign>F</sign><line>4</line></clef>)
+  end
+
+  test "C2, E3, G4 and C6 go on a grand staff, the two below middle C on the bass staff", %{
+    tmp_dir: dir
+  } do
+    out = export_part(dir, "wide", "seq(c2: 1, e3: 1, g4: 1, c6: 1)")
+
+    assert staves(out) == [
+             {36, 2, +0.0, 1.0},
+             {52, 2, 1.0, 1.0},
+             {67, 1, 2.0, 1.0},
+             {84, 1, 3.0, 1.0}
+           ]
+  end
+
+  test "a chord across middle C is split between the staves, each half keeping its start and length",
+       %{tmp_dir: dir} do
+    out =
+      export_part(
+        dir,
+        "split",
+        "seq([note(:c2, 1), note([:c3, :g3, :e4, :c5], 2), note(:c6, 1)])"
+      )
+
+    assert staves(out) == [
+             {36, 2, +0.0, 1.0},
+             {48, 2, 1.0, 2.0},
+             {55, 2, 1.0, 2.0},
+             {64, 1, 1.0, 2.0},
+             {72, 1, 1.0, 2.0},
+             {84, 1, 3.0, 1.0}
+           ]
+  end
+
+  test "a cello part from C2 to A4 is written on one bass staff", %{tmp_dir: dir} do
+    out = export_part(dir, "cello", "seq(c2: 1, g2: 1, d3: 1, a4: 1)")
+    xml = File.read!(out)
+
+    refute xml =~ "<staves>"
+    assert xml =~ "<clef><sign>F</sign><line>4</line></clef>"
+  end
 end

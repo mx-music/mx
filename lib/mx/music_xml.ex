@@ -125,13 +125,11 @@ defmodule Mx.MusicXML do
     {fifths, _mode} = key = Keyword.fetch!(opts, :key)
     bar = div(beats * @divisions * 4, type)
 
-    parts =
-      Enum.map(parts, fn {name, notes} ->
-        {name, notes, notes |> Enum.map(&quantize/1) |> chords() |> voices()}
-      end)
+    parts = Enum.map(parts, fn {name, notes} -> {name, notes, staves(notes)} end)
 
     ends =
-      for {_, _, voices} <- parts,
+      for {_, _, staves} <- parts,
+          {_staff, voices} <- staves,
           voice <- voices,
           {start, length, _} <- voice,
           do: start + length
@@ -155,8 +153,9 @@ defmodule Mx.MusicXML do
         ~s(    <score-part id="P#{index}"><part-name>#{name}</part-name></score-part>\n)
       end,
       "  </part-list>\n",
-      for {{_name, notes, voices}, index} <- list do
-        attributes = attributes(key, {beats, type}, clef(notes))
+      for {{_name, notes, staves}, index} <- list do
+        clefs = if length(staves) == 2, do: :grand, else: clef(notes)
+        attributes = attributes(key, {beats, type}, clefs)
         tempo = if index == 1, do: tempo(Keyword.fetch!(opts, :tempo)), else: ""
 
         [
@@ -168,7 +167,7 @@ defmodule Mx.MusicXML do
             [
               ~s(    <measure number="#{number}"#{implicit}>\n),
               first,
-              measure(voices, {from, ticks}, pickup, fifths),
+              measure(staves, {from, ticks}, pickup, fifths),
               "    </measure>\n"
             ]
           end,
@@ -231,6 +230,21 @@ defmodule Mx.MusicXML do
     ]
   end
 
+  # A part whose notes reach both below C3 and above C5 goes on a grand staff, its notes from middle
+  # C up on the treble staff and the rest on the bass staff; any other part goes on one staff.
+  defp staves(notes) do
+    pitches = Enum.map(notes, &elem(&1, 1))
+
+    if Enum.any?(pitches, &(&1 < 48)) and Enum.any?(pitches, &(&1 > 72)) do
+      {treble, bass} = Enum.split_with(notes, &(round(elem(&1, 1)) >= 60))
+      [{1, layered(treble)}, {2, layered(bass)}]
+    else
+      [{nil, layered(notes)}]
+    end
+  end
+
+  defp layered(notes), do: notes |> Enum.map(&quantize/1) |> chords() |> voices()
+
   defp quantize({beat, note, beats}) do
     start = round(beat * @divisions)
     {start, max(round((beat + beats) * @divisions) - start, 1), round(note)}
@@ -266,15 +280,26 @@ defmodule Mx.MusicXML do
     |> Enum.map(&Enum.reverse/1)
   end
 
-  defp measure(voices, {from, bar}, pickup, fifths) do
-    voices
-    |> Enum.with_index(1)
-    |> Enum.map(fn {voice, index} -> {index, pieces(voice, from, bar)} end)
-    |> Enum.filter(fn {index, pieces} ->
-      index == 1 or Enum.any?(pieces, &(elem(&1, 2) != nil))
-    end)
-    |> Enum.map(fn {index, pieces} -> write_voice(pieces, index, bar, {pickup, fifths}) end)
-    |> Enum.intersperse("      <backup><duration>#{bar}</duration></backup>\n")
+  # Each staff's voices are numbered on from the staff above's, and each staff writes its first
+  # voice even when it rests the whole bar.
+  defp measure(staves, {from, bar}, pickup, fifths) do
+    {written, _count} =
+      Enum.flat_map_reduce(staves, 0, fn {staff, voices}, count ->
+        written =
+          voices
+          |> Enum.with_index(1)
+          |> Enum.map(fn {voice, index} -> {index, pieces(voice, from, bar)} end)
+          |> Enum.filter(fn {index, pieces} ->
+            index == 1 or Enum.any?(pieces, &(elem(&1, 2) != nil))
+          end)
+          |> Enum.map(fn {index, pieces} ->
+            write_voice(pieces, count + index, bar, {pickup, fifths, staff})
+          end)
+
+        {written, count + length(voices)}
+      end)
+
+    Enum.intersperse(written, "      <backup><duration>#{bar}</duration></backup>\n")
   end
 
   # The voice's notes and rests within the bar from `from`, as `{start, length, notes, tied}`, a
@@ -295,12 +320,14 @@ defmodule Mx.MusicXML do
     if cursor < to, do: pieces ++ [{cursor, to - cursor, nil, {false, false}}], else: pieces
   end
 
-  defp write_voice([{_, bar, nil, _}], voice, bar, _context) do
-    ~s(      <note><rest measure="yes"/><duration>#{bar}</duration><voice>#{voice}</voice></note>\n)
+  defp write_voice([{_, bar, nil, _}], voice, bar, {_pickup, _fifths, staff}) do
+    staff = staff_tag(staff)
+
+    ~s(      <note><rest measure="yes"/><duration>#{bar}</duration><voice>#{voice}</voice>#{staff}</note>\n)
   end
 
   # Rests fill to the beat from the first full bar's downbeat, after any pickup.
-  defp write_voice(pieces, voice, _bar, {pickup, fifths}) do
+  defp write_voice(pieces, voice, _bar, {pickup, fifths, staff}) do
     for {start, length, notes, {tied_in, tied_out}} <- pieces do
       values = if notes, do: values(length), else: rest_values(start - pickup, length)
       count = length(values)
@@ -310,7 +337,7 @@ defmodule Mx.MusicXML do
       |> Enum.map(fn {value, index} ->
         stop = tied_in or index > 0
         start = tied_out or index < count - 1
-        write_value(notes, value, voice, {stop, start}, fifths)
+        write_value(notes, value, {voice, staff}, {stop, start}, fifths)
       end)
     end
   end
@@ -342,7 +369,7 @@ defmodule Mx.MusicXML do
     end)
   end
 
-  defp duration_parts({ticks, type, dots, triplet}, voice) do
+  defp duration_parts({ticks, type, dots, triplet}, {voice, staff}) do
     dots = String.duplicate("<dot/>", dots)
 
     modification =
@@ -353,7 +380,7 @@ defmodule Mx.MusicXML do
       end
 
     {"<duration>#{ticks}</duration>",
-     "<voice>#{voice}</voice><type>#{type}</type>#{dots}#{modification}"}
+     "<voice>#{voice}</voice><type>#{type}</type>#{dots}#{modification}#{staff_tag(staff)}"}
   end
 
   # A length as note values, from the plain ones when it is a whole number of 32nd notes and from
@@ -420,6 +447,17 @@ defmodule Mx.MusicXML do
     {to_string(step), alter}
   end
 
+  defp attributes({fifths, mode}, {beats, type}, :grand) do
+    [
+      "      <attributes><divisions>#{@divisions}</divisions>",
+      "<key><fifths>#{fifths}</fifths><mode>#{mode}</mode></key>",
+      "<time><beats>#{beats}</beats><beat-type>#{type}</beat-type></time>",
+      "<staves>2</staves>",
+      ~s(<clef number="1"><sign>G</sign><line>2</line></clef>),
+      ~s(<clef number="2"><sign>F</sign><line>4</line></clef></attributes>\n)
+    ]
+  end
+
   defp attributes({fifths, mode}, {beats, type}, {sign, line}) do
     [
       "      <attributes><divisions>#{@divisions}</divisions>",
@@ -440,6 +478,9 @@ defmodule Mx.MusicXML do
   end
 
   # A part whose notes lie mostly below middle C reads in the bass clef.
+  defp staff_tag(nil), do: ""
+  defp staff_tag(staff), do: "<staff>#{staff}</staff>"
+
   defp clef([]), do: {"G", 2}
 
   defp clef(notes) do

@@ -93,6 +93,8 @@ Without `--pickup` the first bar is a full bar starting on the song's first beat
 A note is written as long as its sustain when it is given one, and as long as its beats otherwise, a beat being a quarter note.
 Starts and lengths snap to a 24th of a beat, which holds 32nd notes and triplets, and a note between semitones is written at the nearest one.
 Notes of a part that start together and last as long are written as a chord, and notes that overlap otherwise go to as few voices as they need.
+A part whose notes reach both below C3 and above C5, such as an organ or a piano, is written on a grand staff, a treble staff above a bass staff: its notes from middle C up go on the treble staff and the rest on the bass staff, so a chord across middle C is split between them.
+Any other part is written on one staff, in the bass clef when its middle note is below middle C and in the treble clef otherwise.
 A note that crosses a bar line, or whose length no single note value writes, is written as tied notes.
 The score's tempo is the song's starting tempo, as a metronome mark at the first bar.
 Tempo changes after the first, dynamics, articulations and percussion staves are left out.
