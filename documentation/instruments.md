@@ -632,6 +632,14 @@ For the recordings marked `kept`, it prints how far each velocity is under the l
 Then it prints the ten partials and the ten notes furthest off, so a single note's miss shows rather than hiding in a median.
 A recording against itself delayed by 1 ms measures 0.1 dB at the median note in ERB bands, and the same pitch recorded at a neighbouring velocity 4.7 dB, which sounds like a different note.
 
+Each figure is followed by the same figure for the fit's own render, each recording's figures played as sines and noise with no synth, such as "91% within 2 dB over the first 20 ms, the fit 93%".
+The fit's figure is the most a synth playing those figures can reach, so a refit's criterion above it cannot be met, and a gap between the two is the synth's to close.
+`--own` with `--check` prints the fit's figures alone and renders no synth, so it runs before the refit is in the engine; the fit's checks are kept in the system's temporary folder and reused until the recording or mxs changes.
+
+```sh
+mx fit marimba --struck marimba.txt --check --own
+```
+
 `--tour` writes a WAV file to listen to: twelve recordings spread across the notes and velocities, or as many as `--count` gives, each followed by the synth at the same note and velocity.
 Each part starts 50 ms before its strike, lasts as long as the recording measured, and is brought to the same level over its first half second, with a second of silence after it.
 

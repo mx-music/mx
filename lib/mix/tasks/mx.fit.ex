@@ -21,7 +21,8 @@ defmodule Mix.Tasks.Mx.Fit do
   `--struck` with a folder of NSynth recordings, or a list of recordings with their notes and velocities, fits recordings of struck notes partial by partial instead, as `Mx.Fit.Struck` describes; it can be given more than once.
   `--out` writes the figures to a file, for mxs to play.
   `--notes` with two notes, such as `E1:E6`, keeps the recordings from the first to the second.
-  `--check` renders the synth at each recording's note and velocity and prints how far it is from the recordings.
+  `--check` renders the synth at each recording's note and velocity and prints how far it is from the recordings, each figure followed by the same figure for the fit's own render, the figures played with no synth, which is the closest the synth can come.
+  `--own` with `--check` prints the fit's figures alone and renders no synth, so it runs before the synth plays the figures.
   `--tour` writes a WAV file of twelve recordings, or as many as `--count` gives, each followed by the synth.
   The guide on instruments, under "Fitting a struck instrument", describes the list and what the check prints.
   """
@@ -82,6 +83,7 @@ defmodule Mix.Tasks.Mx.Fit do
           out: :string,
           notes: :string,
           check: :boolean,
+          own: :boolean,
           tour: :string,
           count: :integer
         ]
@@ -97,6 +99,8 @@ defmodule Mix.Tasks.Mx.Fit do
         Mx.Command.fail(
           "give --out with a file to write the figures to, --check, or --tour with a file to write a tour to"
         )
+
+    if opts[:own] && !opts[:check], do: Mx.Command.fail("--own needs --check")
 
     notes = opts[:notes] && notes!(opts[:notes])
 
@@ -114,7 +118,17 @@ defmodule Mix.Tasks.Mx.Fit do
       IO.puts("wrote the figures of #{count} recordings to #{out}, #{bytes} bytes")
     end
 
-    if opts[:check], do: print_struck(synth, recordings)
+    cond do
+      opts[:own] ->
+        print_struck(Struck.own(recordings), "the fit's own render", "the fit")
+
+      opts[:check] ->
+        checks = Struck.beside(Struck.check(synth, recordings), Struck.own(recordings))
+        print_struck(checks, synth, "synth")
+
+      true ->
+        :ok
+    end
 
     if tour = opts[:tour] do
       {data, rate} = Struck.tour(synth, recordings, opts[:count] || 12)
@@ -158,26 +172,32 @@ defmodule Mix.Tasks.Mx.Fit do
     end
   end
 
-  defp print_struck(synth, recordings) do
-    checks = Struck.check(synth, recordings)
+  defp print_struck(checks, heading, render) do
     %{strong: strong, weaker: weaker, erb: erb} = Struck.summary(checks)
+    fit = Map.has_key?(hd(checks), :own) && Struck.summary(Enum.map(checks, & &1.own))
     count = length(checks)
-    IO.puts("#{synth} against #{count} recordings")
+    IO.puts("#{heading} against #{count} recordings")
 
-    strike = percent(strong.strike)
-    mean = percent(strong.mean)
+    strike = percent(strong.strike) <> " within 2 dB over the first 20 ms"
+    strike = strike <> the_fit(fit && percent(fit.strong.strike))
+    mean = percent(strong.mean) <> " within 2 dB on average"
+    mean = mean <> the_fit(fit && percent(fit.strong.mean))
+    IO.puts("#{strong.count} partials within 30 dB of the loudest: #{strike}, #{mean}")
 
-    IO.puts(
-      "#{strong.count} partials within 30 dB of the loudest: #{strike} within 2 dB over the first 20 ms, #{mean} within 2 dB on average"
-    )
+    mean = percent(weaker.mean) <> " within 4 dB on average"
+    mean = mean <> the_fit(fit && percent(fit.weaker.mean))
+    IO.puts("#{weaker.count} partials 30 to 60 dB down: #{mean}")
 
-    mean = percent(weaker.mean)
-    IO.puts("#{weaker.count} partials 30 to 60 dB down: #{mean} within 4 dB on average")
+    median =
+      decimals(erb.median) <> " dB at the median note" <> the_fit(fit && decimals(fit.erb.median))
 
-    median = decimals(erb.median)
-    worst = decimals(erb.worst)
     note = checks |> Struck.furthest_notes(1) |> hd() |> Struck.label()
-    IO.puts("ERB bands: #{median} dB at the median note, #{worst} dB at the worst, #{note}")
+
+    worst =
+      decimals(erb.worst) <>
+        " dB at the worst, #{note}" <> the_fit(fit && decimals(fit.erb.worst))
+
+    IO.puts("ERB bands: #{median}; #{worst}")
     IO.puts("\nthe ten partials furthest off on average:")
 
     for partial <- Struck.furthest_partials(checks, 10) do
@@ -185,38 +205,57 @@ defmodule Mix.Tasks.Mx.Fit do
       ratio = :erlang.float_to_binary(partial.ratio, decimals: 3)
       kind = if partial.harmonic > 0, do: "harmonic #{partial.harmonic}", else: "between"
       below = decimals(partial.below)
-      strike = signed_decimals(partial.strike)
-      mean = decimals(partial.mean)
+      own = partial[:own]
+
+      strike =
+        signed_decimals(partial.strike) <> " dB" <> the_fit(own && signed_decimals(own.strike))
+
+      mean = decimals(partial.mean) <> " dB" <> the_fit(own && decimals(own.mean))
 
       IO.puts(
-        "  #{note}, #{ratio} #{kind}, #{below} dB down: first 20 ms #{strike} dB, mean #{mean} dB"
+        "  #{note}, #{ratio} #{kind}, #{below} dB down: first 20 ms #{strike}, mean #{mean}"
       )
     end
 
-    print_loudness(Struck.loudness(checks))
+    print_loudness(
+      Struck.loudness(checks),
+      fit && Struck.loudness(Enum.map(checks, & &1.own)),
+      render
+    )
+
     IO.puts("\nthe ten notes furthest off in ERB bands:")
 
     for check <- Struck.furthest_notes(checks, 10) do
       note = Struck.label(check)
-      erb = decimals(check.erb)
-      off = Enum.count(check.partials, &(&1.below <= 30 and &1.mean > 2))
-
-      IO.puts(
-        "  #{note}: #{erb} dB, #{off} of its partials within 30 dB of the loudest more than 2 dB off"
-      )
+      own = check[:own]
+      erb = decimals(check.erb) <> " dB" <> the_fit(own && decimals(own.erb))
+      off = Integer.to_string(off(check))
+      off = off <> " of its partials within 30 dB of the loudest more than 2 dB off"
+      off = off <> the_fit(own && Integer.to_string(off(own)))
+      IO.puts("  #{note}: #{erb}; #{off}")
     end
   end
 
-  defp print_loudness([]), do: :ok
+  defp off(check), do: Enum.count(check.partials, &(&1.below <= 30 and &1.mean > 2))
 
-  defp print_loudness(rows) do
+  defp the_fit(nil), do: ""
+  defp the_fit(false), do: ""
+  defp the_fit(text), do: ", the fit #{text}"
+
+  defp print_loudness([], _fit, _render), do: :ok
+
+  defp print_loudness(rows, fit, render) do
     IO.puts("\neach velocity under the loudest at its note, over the first half second:")
 
-    for row <- rows do
+    for {row, own} <- Enum.zip(rows, fit || List.duplicate(nil, length(rows))) do
       note = Measure.name(row.note)
       recording = signed_decimals(row.recording)
-      render = signed_decimals(row.render)
-      IO.puts("  #{note} vel #{row.velocity}: recordings #{recording} dB, synth #{render} dB")
+
+      rendered =
+        signed_decimals(row.render) <>
+          " dB" <> the_fit(own && signed_decimals(own.render) <> " dB")
+
+      IO.puts("  #{note} vel #{row.velocity}: recordings #{recording} dB, #{render} #{rendered}")
     end
   end
 

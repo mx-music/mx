@@ -464,6 +464,13 @@ pub fn check(recording: &[f64], rate: f64, rendered: &[f64], render_rate: f64, n
     Check { partials, erb, bands, levels: (10.0 * total_theirs.log10(), 10.0 * total_ours.log10()) }
 }
 
+/// How far the fit's own render of a recording, its figures played as sines and noise with no synth, is from the recording: the closest a synth playing the figures can come.
+pub fn own(sound: &[f64], rate: f64, note: f64, seconds: f64, exact: bool) -> Check {
+    let (figures, _) = fit(sound, rate, note, seconds, exact);
+    let rendered = render(&figures, rate, 0.05, seconds + 0.3);
+    check(sound, rate, &rendered, rate, note, seconds, exact)
+}
+
 /// The bands one ERB wide from 50 Hz to 8 kHz.
 pub fn erb_bands() -> Vec<(f64, f64)> {
     let erb = |hz: f64| 21.4 * (1.0 + 0.00437 * hz).log10();

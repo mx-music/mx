@@ -106,6 +106,7 @@ defmodule Mx.Engine.Mxs.Native do
   def check_struck(_recording, _rendered), do: :erlang.nif_error(:nif_not_loaded)
 
   @doc "A tour for listening of recordings of struck notes, each as `fit_struck/1` takes it, beside a render as `{data, format, rate}`, as 32-bit floats at the renders' rate."
+  def check_fit_struck(_recording), do: :erlang.nif_error(:nif_not_loaded)
   def tour_struck(_pairs), do: :erlang.nif_error(:nif_not_loaded)
 
   @doc "The magnitudes of `size` samples of a recording's data from the frame `from`, through a periodic Hann window, bins 0 to `size / 2 - 1`."

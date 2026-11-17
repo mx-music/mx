@@ -449,6 +449,13 @@ fn check_struck(recording: Struck, rendered: (Binary, (String, usize, usize), f6
     Ok(analysis::fit::check(&theirs, rate, &ours, rendered.2, note, seconds, exact))
 }
 
+/// How far the fit's own render of a struck note, its figures played with no synth, is from the recording, as `check_struck` compares them: the recording as a struck one is given to `fit_struck`.
+#[rustler::nif(schedule = "DirtyCpu")]
+fn check_fit_struck(recording: Struck) -> NifResult<analysis::fit::Check> {
+    let ((data, format, rate), within, (note, _velocity, seconds, exact)) = recording;
+    Ok(analysis::fit::own(&span(&data, &format, within)?, rate, note, seconds, exact))
+}
+
 /// A tour for listening of recordings of struck notes, each given as to `fit_struck`, beside renders given as their data, format and rate, as 32-bit floats at the renders' rate.
 #[rustler::nif(schedule = "DirtyCpu")]
 fn tour_struck<'a>(env: Env<'a>, pairs: Vec<(Struck<'a>, (Binary<'a>, (String, usize, usize), f64))>) -> NifResult<Binary<'a>> {

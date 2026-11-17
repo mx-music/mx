@@ -281,6 +281,64 @@ defmodule Mix.Tasks.Mx.FitTest do
       refute output =~ "d4 vel 40: recordings"
     end
 
+    test "--check prints each figure for the synth followed by the fit's own", ctx do
+      write_wav(ctx.tmp_dir, "c4.wav", struck_note(60, 2))
+      write_wav(ctx.tmp_dir, "d4.wav", struck_note(62, 2, fade: 10))
+      list = write_list(ctx, ["C4 127 kept c4.wav", "D4 127 kept d4.wav"])
+
+      output =
+        capture_io(fn -> Mix.Tasks.Mx.Fit.run(["piano", "--struck", list, "--check"]) end)
+
+      assert output =~ "piano against 2 recordings"
+
+      assert output =~
+               ~r/^\d+ partials within 30 dB of the loudest: \d+% within 2 dB over the first 20 ms, the fit \d+%, \d+% within 2 dB on average, the fit \d+%$/m
+
+      assert output =~
+               ~r/^\d+ partials 30 to 60 dB down: (\d+%|-) within 4 dB on average, the fit (\d+%|-)$/m
+
+      assert output =~
+               ~r/^ERB bands: [\d.]+ dB at the median note, the fit [\d.]+; [\d.]+ dB at the worst, [cd]4 vel 127, the fit [\d.]+$/m
+
+      assert output =~
+               ~r/^  [cd]4 vel 127, [\d.]+ harmonic \d+, [\d.]+ dB down: first 20 ms [-+][\d.]+ dB, the fit [-+][\d.]+, mean [\d.]+ dB, the fit [\d.]+$/m
+
+      assert output =~
+               ~r/^  [cd]4 vel 127: [\d.]+ dB, the fit [\d.]+; \d+ of its partials within 30 dB of the loudest more than 2 dB off, the fit \d+$/m
+    end
+
+    test "--check --own prints the fit's figures alone, the same whichever synth is named, and twice as fast the second time",
+         ctx do
+      write_wav(ctx.tmp_dir, "c4.wav", struck_note(60, 2))
+      write_wav(ctx.tmp_dir, "e4.wav", struck_note(64, 2, fade: 10))
+      list = write_list(ctx, ["C4 127 kept c4.wav", "E4 40 kept e4.wav"])
+
+      run =
+        &capture_io(fn -> Mix.Tasks.Mx.Fit.run([&1, "--struck", list, "--check", "--own"]) end)
+
+      {first, piano} = :timer.tc(fn -> run.("piano") end)
+      {second, marimba} = :timer.tc(fn -> run.("marimba") end)
+
+      assert piano =~ "the fit's own render against 2 recordings"
+
+      assert piano =~
+               ~r/^\d+ partials within 30 dB of the loudest: \d+% within 2 dB over the first 20 ms, \d+% within 2 dB on average$/m
+
+      refute piano =~ "the fit "
+      refute piano =~ "piano"
+      assert marimba == piano
+      assert second < first / 2
+    end
+
+    test "refuses --own without --check", ctx do
+      write_wav(ctx.tmp_dir, "c4.wav", struck_note(60, 2))
+      list = write_list(ctx, ["C4 127 kept c4.wav"])
+
+      assert_raise Mix.Error, "--own needs --check", fn ->
+        Mix.Tasks.Mx.Fit.run(["piano", "--struck", list, "--out", "x.mxf", "--own"])
+      end
+    end
+
     test "refuses a list line it cannot read", ctx do
       list = write_list(ctx, ["# the loud C4", "C4 loud.wav"])
 
@@ -682,7 +740,7 @@ defmodule Mix.Tasks.Mx.FitTest do
   defp assert_close(output) do
     [strike, mean] =
       captures(
-        ~r/partials within 30 dB of the loudest: (\d+)% within 2 dB over the first 20 ms, (\d+)% within 2 dB on average/,
+        ~r/partials within 30 dB of the loudest: (\d+)% within 2 dB over the first 20 ms, the fit \d+%, (\d+)% within 2 dB on average, the fit \d+%/,
         output
       )
 
@@ -691,7 +749,10 @@ defmodule Mix.Tasks.Mx.FitTest do
     assert weaker >= 80
 
     [median, worst] =
-      captures(~r/ERB bands: ([\d.]+) dB at the median note, ([\d.]+) dB at the worst/, output)
+      captures(
+        ~r/ERB bands: ([\d.]+) dB at the median note, the fit [\d.]+; ([\d.]+) dB at the worst/,
+        output
+      )
 
     assert median <= 1.5 and worst <= 3
 
@@ -700,12 +761,17 @@ defmodule Mix.Tasks.Mx.FitTest do
 
     assert length(
              Regex.scan(
-               ~r/^  [a-g]s?\d vel \d+, [\d.]+ (harmonic \d+|between), [\d.]+ dB down: first 20 ms [-+][\d.]+ dB, mean [\d.]+ dB$/m,
+               ~r/^  [a-g]s?\d vel \d+, [\d.]+ (harmonic \d+|between), [\d.]+ dB down: first 20 ms [-+][\d.]+ dB, the fit [-+][\d.]+, mean [\d.]+ dB, the fit [\d.]+$/m,
                partials
              )
            ) == 10
 
-    assert length(Regex.scan(~r/^  [a-g]s?\d vel \d+: [\d.]+ dB, \d+ of its partials/m, notes)) ==
+    assert length(
+             Regex.scan(
+               ~r/^  [a-g]s?\d vel \d+: [\d.]+ dB, the fit [\d.]+; \d+ of its partials/m,
+               notes
+             )
+           ) ==
              10
   end
 

@@ -23,6 +23,7 @@ defmodule Mx.Fit.Struck do
   Checking renders the synth at each recording's note and velocity and compares the two in the same way, each brought to the same total over its first half second:
   partial by partial, the gap over the first 20 ms and the mean gap over the note while either stands 10 dB above the recording's noise floor;
   and in ERB bands, the mean gap over the note while either stands clear of the floor.
+  The fit's own render, each recording's figures played as sines and noise with no synth, is checked in the same way, as the closest a synth playing those figures can come.
   """
 
   alias Mx.{Audio, Measure, Notes, Signal}
@@ -103,6 +104,27 @@ defmodule Mx.Fit.Struck do
       timeout: :infinity
     )
     |> Enum.map(fn {:ok, check} -> check end)
+  end
+
+  @doc """
+  Checks the fit's own render of each recording against it, as `check/2` checks a synth: the figures fitted to the recording played as sines and noise, with no synth.
+  Each check is kept in the system's temporary folder and reused until the recording or mxs changes.
+  """
+  def own(recordings) when is_list(recordings) do
+    recordings
+    |> Task.async_stream(&own_check/1, timeout: :infinity)
+    |> Enum.map(fn {:ok, check} -> check end)
+  end
+
+  @doc "Each synth check with the fit's own check of the same recording under `own`, and each of its partials with the fit's own partial under `own`."
+  def beside(checks, owns) do
+    for {check, own} <- Enum.zip(checks, owns) do
+      partials =
+        for {partial, ours} <- Enum.zip(check.partials, own.partials),
+            do: Map.put(partial, :own, ours)
+
+      %{check | partials: partials} |> Map.put(:own, own)
+    end
   end
 
   @doc "A tour for listening of `count` recordings spread over the notes and velocities, each followed by `synth` at its note and velocity, as `{samples, rate}`, the samples as 32-bit floats."
@@ -368,6 +390,42 @@ defmodule Mx.Fit.Struck do
     sound = Mxs.render_note(synth, [note: recording.note, vel: vel], seconds, nil, [])
     {rendered, packing} = Signal.packed(sound)
     {rendered, packing, Mxs.render_rate() / 1}
+  end
+
+  defp own_check(recording) do
+    path = own_path(recording)
+
+    case File.read(path) do
+      {:ok, binary} ->
+        :erlang.binary_to_term(binary)
+
+      {:error, _reason} ->
+        check =
+          recording
+          |> struck(raws([recording]))
+          |> Native.check_fit_struck()
+          |> Map.merge(Map.take(recording, [:note, :velocity, :kept]))
+
+        File.mkdir_p!(Path.dirname(path))
+        File.write!(path, :erlang.term_to_binary(check))
+        check
+    end
+  end
+
+  # A check is named after the recording, the part of it fitted, its file's size and time of change, and the build of mxs that fitted it.
+  defp own_path(recording) do
+    built = :mx |> :code.priv_dir() |> Path.join("native/*mxs_nif*") |> Path.wildcard()
+    files = Enum.map([recording.path | built], &{Path.expand(&1), stamp(&1)})
+    fitted = Map.take(recording, [:span, :pitch, :velocity, :seconds, :exact])
+    key = :erlang.phash2({files, fitted}, 4_294_967_296)
+    Path.join([System.tmp_dir!(), "mx-fit-struck", "#{key}.term"])
+  end
+
+  defp stamp(path) do
+    case File.stat(path, time: :posix) do
+      {:ok, %{size: size, mtime: mtime}} -> {size, mtime}
+      {:error, _reason} -> nil
+    end
   end
 
   defp share([], _keep), do: nil
