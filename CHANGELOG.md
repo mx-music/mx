@@ -1,5 +1,12 @@
 # Changelog for mx v0.2
 
+## Unreleased
+
+### 1. Enhancements
+
+  * [synths] Add `deep_bass`, a darker bass played with the fingers, from mxs 0.1.2, with its solo `examples/solo/deep_bass.exs`
+  * [synths] Add alpha versions of `electric_piano` and `electric_guitar`, from mxs 0.1.2, with their solos; both will be refitted
+
 ## v0.2.2 (2026-11-16)
 
 ### 1. Enhancements

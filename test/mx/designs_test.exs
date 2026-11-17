@@ -1317,7 +1317,7 @@ defmodule Mx.DesignsTest do
                highs(soft, 2000, 0, 0.5) / rms(soft, 0, 0.5)
 
       louder = 20 * :math.log10(rms(hard, 0, 0.5) / rms(soft, 0, 0.5))
-      assert louder > 3 and louder < 6, "note #{note} is #{louder} dB louder"
+      assert louder > 0 and abs(louder - 0.4) < 6, "note #{note} is #{louder} dB louder"
     end
   end
 
@@ -1345,6 +1345,283 @@ defmodule Mx.DesignsTest do
 
     damped = render(ctx, :electric_bass, [note: 33, sustain: 0.2, release: 0.1], 2)
     assert last_sound(damped) < 0.4
+  end
+
+  # Measured from the bass_electronic_025 and bass_electronic_027 instruments of the test set of
+  # Google's NSynth dataset, together, their notes from E1 up at velocities 25, 75 and 127 against
+  # vel 0.2, 0.59 and 1, each cut at 2.9 seconds, before its key is let go, and brought from 16 kHz
+  # to 48 kHz: the notes of each velocity, and as medians over them by the harmonic's frequency the
+  # seconds a harmonic takes to fade 60 dB and its level against the fundamental of the lowest.
+  # The bands above 1.6 kHz are left out: there the recordings hold only their noise floor, 55 to
+  # 70 dB down, which reads as fades of 10 to 40 seconds.
+  @deep_bass %{
+    0.2 =>
+      {[28, 31, 36, 38, 40, 43, 44, 47, 48, 50, 51, 52, 53, 54, 55, 57, 58, 59, 62],
+       %{
+         {80, 160} => {4.47, 15.3},
+         {160, 250} => {5.30, 9.5},
+         {250, 400} => {3.25, -5.3},
+         {400, 630} => {2.63, -24.2},
+         {630, 1000} => {3.21, -43.7},
+         {1000, 1600} => {4.68, -47.7}
+       }},
+    0.59 =>
+      {[32, 36, 37, 39, 41, 44, 45, 47, 48, 51, 53, 55, 56, 57, 58, 61, 62],
+       %{
+         {80, 160} => {5.10, 4.1},
+         {160, 250} => {5.08, 0.3},
+         {250, 400} => {3.11, -16.7},
+         {400, 630} => {2.68, -36.3},
+         {630, 1000} => {3.06, -53.1},
+         {1000, 1600} => {2.04, -57.7}
+       }},
+    1 =>
+      {[28, 29, 31, 32, 33, 35, 36, 37, 39, 40, 44, 46, 52, 53, 56, 58, 59, 61, 62],
+       %{
+         {80, 160} => {8.06, 15.9},
+         {160, 250} => {6.72, 4.8},
+         {250, 400} => {3.99, -12.9},
+         {400, 630} => {3.44, -27.1},
+         {630, 1000} => {4.85, -45.7},
+         {1000, 1600} => {4.13, -48.8}
+       }}
+  }
+
+  test "deep_bass's harmonics fade and stand as the recorded basses' do at each velocity", ctx do
+    for {vel, {notes, bands}} <- @deep_bass do
+      measured = Map.new(Measure.bands(bass_notes(ctx, :deep_bass, notes, vel)), &{&1.band, &1})
+
+      for {band, {fade, level}} <- bands do
+        %{fade: synth_fade, level: synth_level} = measured[band]
+        assert_in_delta synth_level, level, 6, "vel #{vel} #{inspect(band)} at #{synth_level} dB"
+
+        assert_in_delta synth_fade / fade,
+                        1,
+                        0.3,
+                        "vel #{vel} #{inspect(band)} fades in #{synth_fade} s"
+      end
+    end
+  end
+
+  # The recordings are each brought to the same peak: E2 of instrument 025 at velocity 127 is 0.4 dB
+  # louder than at 25 over its whole length, -11.2 dB against -11.6.
+  test "deep_bass at vel 1 is louder than at vel 0.3, within 6 dB of the recordings", ctx do
+    for note <- [28, 33, 40, 45] do
+      soft = render(ctx, :deep_bass, [note: note, vel: 0.3], 0.6)
+      hard = render(ctx, :deep_bass, [note: note, vel: 1], 0.6)
+      louder = 20 * :math.log10(rms(hard, 0, 0.5) / rms(soft, 0, 0.5))
+      assert louder > 0 and abs(louder - 0.4) < 6, "note #{note} is #{louder} dB louder"
+    end
+  end
+
+  test "deep_bass plays MIDI 22 and 63, the lowest and highest notes of the recordings, at their pitch",
+       ctx do
+    for note <- [22, 63] do
+      expected = 440 * :math.pow(2, (note - 69) / 12)
+      sound = render(ctx, :deep_bass, [note: note], 1.2)
+      hz = pitch(window(sound, 0.1, 1.1), expected)
+      cents = 1200 * :math.log2(hz / expected)
+      assert abs(cents) < 5, "note #{note} is #{cents} cents off"
+    end
+  end
+
+  # The recorded A1s at velocity 127 are 2.0 and 1.6 dB under their level at a tenth of a second
+  # after one second, and 10.0 and 4.9 dB under it after 2.8.
+  # At the softer velocities the recorded A1's second harmonic rings 12 to 28 seconds, far longer
+  # than those of the notes around it, and the design holds the medians over the notes.
+  test "deep_bass's A1 fades as the recorded ones do, and sustain and release damp it", ctx do
+    sound = render(ctx, :deep_bass, [note: 33, vel: 1], 3.2)
+    under = fn at -> 20 * :math.log10(rms(sound, at, at + 0.1) / rms(sound, 0.1, 0.2)) end
+    assert_in_delta under.(1.0), -1.8, 3
+    assert_in_delta under.(2.8), -7.5, 3
+
+    damped = render(ctx, :deep_bass, [note: 33, sustain: 0.2, release: 0.1], 2)
+    assert last_sound(damped) < 0.4
+  end
+
+  # Measured from the keyboard_electronic_098 instrument of the test set of Google's NSynth
+  # dataset, its notes from E1 to E6 at velocities 25, 75 and 127 against vel 0.2, 0.59 and 1, each
+  # cut at 2.9 seconds, before its key is let go, and brought from 16 kHz to 48 kHz: the notes of
+  # each velocity, and as medians over them by the harmonic's frequency the seconds a harmonic takes
+  # to fade 60 dB and its level against the fundamental of the lowest.
+  # The bands above 2.5 kHz are left out: there the fades grow long again, 6 to 10 seconds from 4 to
+  # 6.3 kHz at 35 to 78 dB down, which is the recordings' noise floor.
+  @electric_piano %{
+    0.2 =>
+      {[28, 29, 44, 46, 51, 54, 55, 58, 64, 72, 73, 78, 79, 80, 82, 85, 88],
+       %{
+         {80, 160} => {19.09, 2.8},
+         {160, 250} => {9.08, -7.9},
+         {250, 400} => {5.87, -7.5},
+         {400, 630} => {3.54, -34.3},
+         {630, 1000} => {2.62, -42.0},
+         {1000, 1600} => {1.77, -55.6},
+         {1600, 2500} => {1.19, -39.0}
+       }},
+    0.59 =>
+      {[30, 32, 36, 47, 57, 61, 67, 74, 77, 78, 81, 82, 83, 86, 87],
+       %{
+         {80, 160} => {39.02, 27.7},
+         {160, 250} => {15.47, 24.8},
+         {250, 400} => {8.04, 20.5},
+         {400, 630} => {5.78, 6.7},
+         {630, 1000} => {3.44, -8.4},
+         {1000, 1600} => {2.09, -21.6},
+         {1600, 2500} => {0.97, -15.1}
+       }},
+    1 =>
+      {[28, 38, 39, 40, 41, 42, 44, 46, 57, 59, 62, 63, 68, 71, 73, 75, 79],
+       %{
+         {80, 160} => {28.13, 11.7},
+         {160, 250} => {19.75, 30.5},
+         {250, 400} => {13.86, 26.5},
+         {400, 630} => {5.27, 26.2},
+         {630, 1000} => {4.38, 15.4},
+         {1000, 1600} => {2.45, -1.0},
+         {1600, 2500} => {1.87, -18.3}
+       }}
+  }
+
+  test "electric_piano's harmonics fade and stand as the recorded electric piano's do at each velocity",
+       ctx do
+    for {vel, {notes, bands}} <- @electric_piano do
+      measured =
+        Map.new(Measure.bands(bass_notes(ctx, :electric_piano, notes, vel)), &{&1.band, &1})
+
+      for {band, {fade, level}} <- bands do
+        %{fade: synth_fade, level: synth_level} = measured[band]
+        assert_in_delta synth_level, level, 6, "vel #{vel} #{inspect(band)} at #{synth_level} dB"
+
+        assert_in_delta synth_fade / fade,
+                        1,
+                        0.3,
+                        "vel #{vel} #{inspect(band)} fades in #{synth_fade} s"
+      end
+    end
+  end
+
+  # The recording's E4 at velocity 25 has a partial at 7.35 times its note, 39.5 dB under the
+  # loudest, that fades 60 dB in 0.89 seconds: the tine's bell.
+  test "electric_piano's soft E4 rings a bell partial near 7.35 times its note that dies within 1.5 seconds",
+       ctx do
+    %{partials: partials} =
+      Hits.hit(render(ctx, :electric_piano, [note: 64, vel: 0.2], 3), @rate, 64, partials: 12)
+
+    assert %{ring: ring} = Enum.find(partials, &(&1.ratio > 7 and &1.ratio < 7.7))
+    assert ring < 1.5
+  end
+
+  # The recordings are each brought to the same peak, so they do not say how much louder a harder
+  # note is; at E1 velocity 127 is 3 dB quieter than 25 over the whole note, as it fades faster.
+  test "electric_piano at vel 1 is louder than at vel 0.3 by 3 to 6 dB, and brighter", ctx do
+    for note <- [40, 52, 64, 76] do
+      soft = render(ctx, :electric_piano, [note: note, vel: 0.3], 0.6)
+      hard = render(ctx, :electric_piano, [note: note, vel: 1], 0.6)
+      louder = 20 * :math.log10(rms(hard, 0, 0.5) / rms(soft, 0, 0.5))
+      assert louder > 3 and louder < 6, "note #{note} is #{louder} dB louder"
+    end
+
+    bright = fn vel ->
+      [note | _] = bass_notes(ctx, :electric_piano, [48], vel)
+      [first | _] = note.harmonics
+      tenth = Enum.find(note.harmonics, &(&1.number == 10))
+      tenth.level - first.level
+    end
+
+    assert bright.(1) > bright.(0.2)
+  end
+
+  test "electric_piano plays MIDI 28 and 88 at their pitch", ctx do
+    for note <- [28, 88] do
+      expected = 440 * :math.pow(2, (note - 69) / 12)
+      sound = render(ctx, :electric_piano, [note: note], 1.2)
+      hz = pitch(window(sound, 0.1, 1.1), expected)
+      cents = 1200 * :math.log2(hz / expected)
+      assert abs(cents) < 5, "note #{note} is #{cents} cents off"
+    end
+  end
+
+  # Measured from the guitar_electronic_028 instrument of the test set of Google's NSynth dataset,
+  # its notes from E2 to D6 at velocities 25, 75 and 127 against vel 0.2, 0.59 and 1, each cut at
+  # 2.9 seconds and brought from 16 kHz to 48 kHz: the notes of each velocity, and as medians over
+  # them by the harmonic's frequency the seconds a harmonic takes to fade 60 dB and its level
+  # against the fundamental of the lowest.
+  @electric_guitar %{
+    0.2 =>
+      {[40, 57, 58, 59, 67, 69, 72, 76, 79, 81, 86],
+       %{
+         {80, 160} => {9.65, 0.0},
+         {160, 250} => {9.44, 6.8},
+         {250, 400} => {6.94, 10.8},
+         {400, 630} => {6.23, 12.1},
+         {630, 1000} => {3.35, 12.4},
+         {1000, 1600} => {1.62, 4.5},
+         {1600, 2500} => {1.09, -20.1},
+         {2500, 4000} => {1.38, -39.5}
+       }},
+    0.59 =>
+      {[45, 51, 52, 57, 60, 61, 66, 68, 72, 85],
+       %{
+         {80, 160} => {9.70, 2.5},
+         {160, 250} => {9.52, 5.5},
+         {250, 400} => {8.06, 6.0},
+         {400, 630} => {5.43, 7.9},
+         {630, 1000} => {2.57, 5.8},
+         {1000, 1600} => {1.40, -6.3},
+         {1600, 2500} => {0.87, -34.8},
+         {2500, 4000} => {1.17, -43.6}
+       }},
+    1 =>
+      {[41, 45, 48, 62, 70, 75, 77, 82, 84],
+       %{
+         {80, 160} => {9.71, 4.8},
+         {160, 250} => {7.91, 11.4},
+         {250, 400} => {6.08, 13.6},
+         {400, 630} => {3.94, 12.9},
+         {630, 1000} => {1.97, 0.7},
+         {1000, 1600} => {0.92, -11.5},
+         {1600, 2500} => {1.04, -25.3},
+         {2500, 4000} => {0.79, -27.4}
+       }}
+  }
+
+  test "electric_guitar's harmonics fade and stand as the recorded electric guitar's do at each velocity",
+       ctx do
+    for {vel, {notes, bands}} <- @electric_guitar do
+      measured =
+        Map.new(Measure.bands(bass_notes(ctx, :electric_guitar, notes, vel)), &{&1.band, &1})
+
+      for {band, {fade, level}} <- bands do
+        %{fade: synth_fade, level: synth_level} = measured[band]
+        assert_in_delta synth_level, level, 6, "vel #{vel} #{inspect(band)} at #{synth_level} dB"
+
+        assert_in_delta synth_fade / fade,
+                        1,
+                        0.3,
+                        "vel #{vel} #{inspect(band)} fades in #{synth_fade} s"
+      end
+    end
+  end
+
+  # The recordings are each brought to the same peak, so they do not say how much louder a harder
+  # note is.
+  test "electric_guitar at vel 1 is louder than at vel 0.3 by 3 to 6 dB", ctx do
+    for note <- [40, 52, 64, 76] do
+      soft = render(ctx, :electric_guitar, [note: note, vel: 0.3], 0.6)
+      hard = render(ctx, :electric_guitar, [note: note, vel: 1], 0.6)
+      louder = 20 * :math.log10(rms(hard, 0, 0.5) / rms(soft, 0, 0.5))
+      assert louder > 3 and louder < 6, "note #{note} is #{louder} dB louder"
+    end
+  end
+
+  test "electric_guitar plays MIDI 40 and 86 at their pitch", ctx do
+    for note <- [40, 86] do
+      expected = 440 * :math.pow(2, (note - 69) / 12)
+      sound = render(ctx, :electric_guitar, [note: note], 1.2)
+      hz = pitch(window(sound, 0.1, 1.1), expected)
+      cents = 1200 * :math.log2(hz / expected)
+      assert abs(cents) < 5, "note #{note} is #{cents} cents off"
+    end
   end
 
   # Measured from the University of Iowa's violin, bowed without vibrato on every string from G3
@@ -5967,6 +6244,18 @@ defmodule Mx.DesignsTest do
     |> Task.async_stream(
       fn note ->
         sound = render(ctx, :electric_bass, [note: note, vel: vel], 4.5)
+        Measure.note(sound, @rate, note)
+      end,
+      timeout: :infinity
+    )
+    |> Enum.map(fn {:ok, note} -> note end)
+  end
+
+  defp bass_notes(ctx, synth, notes, vel) do
+    notes
+    |> Task.async_stream(
+      fn note ->
+        sound = render(ctx, synth, [note: note, vel: vel], 4.5)
         Measure.note(sound, @rate, note)
       end,
       timeout: :infinity

@@ -63,6 +63,12 @@ Its files are fetched as the song loads.
 
 `examples/solo/electric_bass.exs` is the electric bass on its own: a funk line in E in sixteenths around the low E with its octave, each note held until the next, then a walking line in quarters through D minor, G, C and A, a ballad's long notes left to ring, and a last funk bar that ends on the low E.
 
+`examples/solo/deep_bass.exs` is the deep bass on its own: a ballad's long roots walking down from C to the low D, a slow groove on A minor and D with the octave off the beat, a phrase high up the neck to D sharp, and an ending that drops to the low E and leaves it ringing.
+
+`examples/solo/electric_piano.exs` is the electric piano on its own: soft ninth chords through D minor, G, C and A left to ring, the same chords under a melody struck harder, a bass line down to the low E with chords answering it, and a phrase that climbs to the top E.
+
+`examples/solo/electric_guitar.exs` is the electric guitar on its own: open chords through A minor, F, C and G strummed and left to ring, a line picked in eighths over the open A, muted sixteenths on the low strings answered by chord stabs, and a phrase that climbs to the high D and ends on the low E.
+
 `examples/guitar/` shows the guitar on its own: `fingerpicking.exs` lets each string ring until it is plucked again, `bass_line.exs` walks the low strings of a 7-string guitar, and `soft_and_hard.exs` plays one phrase softly, normally and hard.
 
 `examples/solo/violin.exs` is the violin on its own, in D minor: a cantabile slurred in groups whose long notes swell and ease, bariolage against the open A string as in the Preludio of Bach's Partita No. 3, the melodic minor slurred eight notes to a bow and arpeggios in short notes, chords plucked down to the open G, and a climb on audible shifts to a long D7 with vibrato.
