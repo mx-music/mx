@@ -37,14 +37,20 @@ defmodule Mx.Score do
   defstruct title: nil, tempo: nil, parts: [], order: [], runs: [], left_out: []
 
   @doc """
-  Reads a compressed .mxl or an uncompressed MusicXML file, or a MIDI file ending in .mid or .midi, and returns `{:ok, score}` or `{:error, message}`.
+  Reads a compressed .mxl or an uncompressed MusicXML file, a MIDI file ending in .mid or .midi, or an ABC file, and returns `{:ok, score}` or `{:error, message}`.
   A MIDI file's notes move to the nearest `grid:`, a fraction of a whole note, 1/16 unless given.
+  An ABC file, ending in .abc, gives the tune `tune:` numbers by its X: field, or its first tune.
   """
   def read(path, opts \\ []) when is_binary(path) and is_list(opts) do
-    if Path.extname(path) in [".mid", ".midi"] do
-      Mx.MIDI.score(path, Keyword.get(opts, :grid, {1, 16}))
-    else
-      read_musicxml(path)
+    case Path.extname(path) do
+      extension when extension in [".mid", ".midi"] ->
+        Mx.MIDI.score(path, Keyword.get(opts, :grid, {1, 16}))
+
+      ".abc" ->
+        Mx.ABC.score(path, opts[:tune])
+
+      _other ->
+        read_musicxml(path)
     end
   end
 

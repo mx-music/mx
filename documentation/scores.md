@@ -1,19 +1,21 @@
 # Scores and hums
 
 A song need not be typed in by hand.
-mx writes one from a MusicXML score, a MIDI file or a recording of a melody you hum, and writes a song back out as a MusicXML score or a MIDI file.
+mx writes one from a MusicXML score, a MIDI file, a tune in ABC notation or a recording of a melody you hum, and writes a song back out as a MusicXML score or a MIDI file.
 With the mx command installed, each `mix mx.NAME` task here is also `mx NAME` with the same arguments, as the README's Install section says.
 
 ```mermaid
 graph LR
   score["MusicXML score"]
   midi["MIDI file"]
+  abc["ABC tune"]
   hum["Recording of a hum"]
   song["Song file"]
 
   score -->|mix mx.import| song
   song -->|mix mx.export| score
   midi -->|mix mx.import| song
+  abc -->|mix mx.import| song
   song -->|mix mx.export| midi
   hum -->|mix mx.hum| song
 ```
@@ -110,6 +112,24 @@ A MIDI file holds when each key goes down and up and how hard, and nothing of ho
 It names no note as C sharp or D flat, so notes are spelled from the key signature, in sharps or in flats; it marks no repeat, so the song plays the file through; and a file recorded from playing has notes off the beat.
 So starts and ends move to the nearest sixteenth note, and `--grid` names another division of a whole note, such as `--grid 1/32`, or `--grid 1/12` for eighth-note triplets.
 Notes on channel 10, which General MIDI keeps for drums, the sustain pedal, other controllers and tempo changes after the first are left out, and mx says what it left out, part by part.
+
+## Import a tune from ABC
+
+ABC is the plain-text notation folk and traditional tunes are shared in, a few lines per tune and often many tunes to a file.
+`mix mx.import` reads a file ending in `.abc`, with `--part`, `--tempo`, `--out` and `--force` working as they do for a score:
+
+```sh
+mix mx.import tunes.abc --tune 2 --part "The Test Reel=flute"
+```
+
+`--tune` picks a tune by its `X:` number, and without it mx imports the first; when the file holds more than one, mx lists them with their numbers and titles.
+The tune's meter, unit note length, key and tempo come from its `M:`, `L:`, `K:` and `Q:` fields, and `--tempo` overrides `Q:`.
+Without `L:` a unit is an eighth note, or a sixteenth in a meter under 3/4, and without `Q:` the tune plays at 120 quarter notes a minute.
+Notes, rests, accidentals, ties, chords, broken rhythms such as `a>b` and tuplets such as `(3abc` play as written, and repeats play twice with their first and second endings in turn.
+Each voice a `V:` field names becomes a part named after it, and a tune without voices is one part named after its title.
+Grace notes are kept with the note they lead into, and left out of the song as a score's are.
+Chord symbols in quotes, decorations such as `~` and `!trill!`, lyrics and other text are left out, and mx says how many of each.
+A line mx cannot read, such as one with a voice overlay `&`, stops the import with its line number and what it could not read.
 
 ## Turn a hum into a song
 

@@ -1,5 +1,5 @@
 defmodule Mix.Tasks.Mx.Import do
-  @shortdoc "Writes a MusicXML score or a MIDI file as a song"
+  @shortdoc "Writes a MusicXML score, a MIDI file or an ABC tune as a song"
 
   @moduledoc """
   Reads a MusicXML score and writes it as a song beside it, one part per part of the score, that plays the whole score once.
@@ -14,6 +14,9 @@ defmodule Mix.Tasks.Mx.Import do
   A file ending in .mid or .midi is read as a MIDI file, one part per track that plays notes, or per channel when a single track holds them all, each note at the vel it was struck with.
   Its notes move to the nearest sixteenth note, and `--grid` names another division of a whole note, such as 1/32, or 1/12 for eighth-note triplets.
   Notes on channel 10, which General MIDI keeps for drums, the sustain pedal and other controllers are left out, and the task says so part by part.
+
+  A file ending in .abc is read as ABC notation, and `--tune` picks a tune by its X: number from a file of several, the first unless given; the task then lists the file's tunes.
+  Each voice is a part, or the tune is one part named after its title, and chord symbols, decorations, lyrics and other text are left out, the task saying how many of each.
   """
 
   use Mix.Task
@@ -24,13 +27,20 @@ defmodule Mix.Tasks.Mx.Import do
   def run(args) when is_list(args) do
     {opts, [path]} =
       OptionParser.parse!(args,
-        strict: [out: :string, part: :keep, tempo: :string, force: :boolean, grid: :string]
+        strict: [
+          out: :string,
+          part: :keep,
+          tempo: :string,
+          force: :boolean,
+          grid: :string,
+          tune: :integer
+        ]
       )
 
     out = Keyword.get(opts, :out, Path.rootname(path) <> ".exs")
 
     score =
-      case Score.read(path, grid: grid(opts[:grid])) do
+      case Score.read(path, grid: grid(opts[:grid]), tune: opts[:tune]) do
         {:ok, score} -> score
         {:error, message} -> Mx.Command.fail(message)
       end
@@ -53,6 +63,20 @@ defmodule Mix.Tasks.Mx.Import do
     end
 
     Enum.each(score.left_out, &Mx.Command.info/1)
+    list_tunes(path)
+  end
+
+  defp list_tunes(path) do
+    with ".abc" <- Path.extname(path),
+         {:ok, [_, _ | _] = tunes} <- Mx.ABC.tunes(path) do
+      Mx.Command.info(
+        "#{Path.basename(path)} holds #{length(tunes)} tunes, and --tune picks one:"
+      )
+
+      for {number, title} <- tunes do
+        Mx.Command.info("  X:#{number} #{title}")
+      end
+    end
   end
 
   defp grid(nil), do: {1, 16}
