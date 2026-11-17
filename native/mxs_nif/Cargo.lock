@@ -676,9 +676,9 @@ checksum = "743fb55ba31b18fb1ecef6bdc9aa2743314978ac084044301a7eee33fb99a20d"
 
 [[package]]
 name = "mxs"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ddf4644da3ae458fda0d69ce139b7f9f560f9b8eb278fc95a65bf934190c57ce"
+checksum = "1f46d7fcfc9c5201d740b19eb2e5e815677382282119d7352dc751a506f77a68"
 dependencies = [
  "claxon",
  "cpal",
