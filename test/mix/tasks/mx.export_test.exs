@@ -13,9 +13,10 @@ defmodule Mix.Tasks.Mx.ExportTest do
   test "the aria imported and exported again has the notes the imported song plays", %{
     tmp_dir: dir
   } do
-    score = Path.join(dir, "bwv244.39.mxl")
+    # Named apart from the import tests' copy, whose song defines the module Bwv24439.
+    score = Path.join(dir, "exported_aria.mxl")
     File.cp!(@aria, score)
-    song = Path.join(dir, "bwv244.39.exs")
+    song = Path.join(dir, "exported_aria.exs")
     out = Path.join(dir, "aria.musicxml")
     capture_io(fn -> Import.run([score]) end)
 
