@@ -158,6 +158,40 @@ defmodule Mx.MusicXML do
     |> IO.iodata_to_binary()
   end
 
+  @doc false
+  # Each part laid out in bars as `score/2` lays it out, for another writer: `{bar, bars, parts}`,
+  # `bar` the ticks in a bar at 24 a beat, and each part `{name, voices}`, each voice its bars, and
+  # each bar its pieces as `{start, notes, values, {tied_in, tied_out}}`, `notes` nil for a rest
+  # and `values` the note values that write its length.
+  def layout(parts, {beats, type}, length) do
+    bar = div(beats * @divisions * 4, type)
+
+    parts =
+      Enum.map(parts, fn {name, notes} ->
+        {name, notes |> Enum.map(&quantize/1) |> chords() |> voices()}
+      end)
+
+    ends = for {_, voices} <- parts, voice <- voices, {start, held, _} <- voice, do: start + held
+    bars = max(1, ceil(Enum.max([round(length * @divisions) | ends]) / bar))
+
+    parts =
+      for {name, voices} <- parts do
+        voices =
+          for voice <- voices do
+            for number <- 1..bars do
+              for {start, held, notes, ties} <- pieces(voice, (number - 1) * bar, bar) do
+                values = if notes, do: values(held), else: rest_values(start, held)
+                {start, notes, Enum.map(values, &elem(&1, 0)), ties}
+              end
+            end
+          end
+
+        {name, voices}
+      end
+
+    {bar, bars, parts}
+  end
+
   defp quantize({beat, note, beats}) do
     start = round(beat * @divisions)
     {start, max(round((beat + beats) * @divisions) - start, 1), round(note)}

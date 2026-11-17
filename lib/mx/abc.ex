@@ -8,9 +8,13 @@ defmodule Mx.ABC do
   Each voice a `V:` field names is a part named after the voice, and a tune without voices is one part named after its title.
   Repeats, first and second endings, ties, chords, broken rhythms and tuplets play as written, and grace notes are kept with the note they lead into.
   Chord symbols, decorations, lyrics and other text are left out, and the score counts them in `left_out`.
+
+  A song written as ABC is one tune, each part that plays notes with a pitch a voice named after the part, and a part whose notes overlap without forming chords a further voice for each overlap, named after the part and numbered.
+  Lengths are written as plain and dotted note values, tied where one value does not write a note, and triplets as fractions of the unit note.
+  Velocity, the pedal, each part's synth and its effects are left out, as ABC has no place for them.
   """
 
-  alias Mx.Score
+  alias Mx.{MusicXML, Page, Score, Song}
 
   @whole 241_920
   @steps %{"C" => 0, "D" => 2, "E" => 4, "F" => 5, "G" => 7, "A" => 9, "B" => 11}
@@ -767,5 +771,167 @@ defmodule Mx.ABC do
         count -> ["#{count} #{many} are left out"]
       end
     end)
+  end
+
+  @doc """
+  Writes the song at `path` as an ABC tune to `out`, with `time:`, `key:`, `title:` and `force:` as `Mx.MusicXML.write/3` takes them.
+  Returns `{:ok, %{parts: parts, left_out: left_out, notes: notes}}`, as `Mx.MusicXML.write/3` returns and with `notes` saying what ABC leaves out, or `{:error, message}`.
+  """
+  def write(path, out, opts \\ []) when is_binary(path) and is_binary(out) and is_list(opts) do
+    key_text = Keyword.get(opts, :key, "c")
+
+    with {:ok, {beats, type} = time} <- MusicXML.time(Keyword.get(opts, :time, "4/4")),
+         {:ok, {fifths, _mode} = key} <- MusicXML.key(key_text),
+         :ok <- Page.check(out, Keyword.get(opts, :force, false)),
+         {:ok, song} <- Song.load(path),
+         {:ok, parts, left_out} <- MusicXML.parts(song, path) do
+      length = parts |> Enum.map(&elem(&1, 2)) |> Enum.max(fn -> 0 end)
+      title = Keyword.get_lazy(opts, :title, fn -> MusicXML.title(path) end)
+
+      {_bar, _bars, laid} =
+        MusicXML.layout(
+          Enum.map(parts, fn {name, notes, _, _} -> {name, notes} end),
+          time,
+          length
+        )
+
+      voices =
+        for {name, part_voices} <- laid,
+            {bars, index} <- Enum.with_index(part_voices, 1),
+            do: {if(index == 1, do: name, else: "#{name} #{index}"), bars}
+
+      unit = unit_ticks(voices)
+      tempo = song.tempo
+      tempo = if tempo == trunc(tempo), do: trunc(tempo), else: tempo
+
+      header = [
+        "X:1\n",
+        "T:#{title}\n",
+        "M:#{beats}/#{type}\n",
+        "L:1/#{div(96, unit)}\n",
+        "Q:1/4=#{tempo}\n",
+        for({{name, _bars}, id} <- Enum.with_index(voices, 1), do: ~s(V:#{id} name="#{name}"\n)),
+        "K:#{key_name(key_text)}\n"
+      ]
+
+      body =
+        for {{_name, bars}, id} <- Enum.with_index(voices, 1) do
+          lines =
+            bars
+            |> Enum.map(&bar_text(&1, unit, fifths))
+            |> Enum.chunk_every(4)
+            |> Enum.map_join(" |\n", &Enum.join(&1, " | "))
+
+          ["V:#{id}\n", lines, " |]\n"]
+        end
+
+      File.write!(out, [header, body])
+
+      {:ok,
+       %{
+         parts: Enum.map(parts, fn {name, notes, _, _} -> MusicXML.summary(name, notes, key) end),
+         left_out: left_out,
+         notes: ["ABC leaves out velocity, the pedal, each part's synth and its effects"]
+       }}
+    end
+  end
+
+  # The unit note suits the median note: a quarter, an eighth or a sixteenth, in ticks of 24 a beat.
+  defp unit_ticks(voices) do
+    lengths =
+      for {_name, bars} <- voices,
+          pieces <- bars,
+          {_start, notes, values, _ties} <- pieces,
+          notes != nil,
+          value <- values,
+          do: value
+
+    case Enum.sort(lengths) do
+      [] -> 12
+      sorted -> sorted |> Enum.at(div(length(sorted), 2)) |> unit_for()
+    end
+  end
+
+  defp unit_for(median) when median >= 24, do: 24
+  defp unit_for(median) when median >= 12, do: 12
+  defp unit_for(_median), do: 6
+
+  defp length_text(ticks, unit) do
+    gcd = Integer.gcd(ticks, unit)
+
+    case {div(ticks, gcd), div(unit, gcd)} do
+      {1, 1} -> ""
+      {top, 1} -> "#{top}"
+      {1, 2} -> "/"
+      {top, bottom} when top == 1 -> "/#{bottom}"
+      {top, bottom} -> "#{top}/#{bottom}"
+    end
+  end
+
+  defp key_name(text) do
+    name = String.downcase(text)
+
+    {tonic, minor} =
+      if String.ends_with?(name, "m"),
+        do: {String.trim_trailing(name, "m"), "m"},
+        else: {name, ""}
+
+    {letter, accidental} = String.split_at(tonic, 1)
+    String.upcase(letter) <> String.replace(accidental, "s", "#") <> minor
+  end
+
+  # A bar's pieces, each written as its note values, tied to one another and to the next bar where
+  # the note goes on; an accidental holds to the end of the bar, as ABC reads it.
+  defp bar_text(pieces, unit, fifths) do
+    {tokens, _accidentals} =
+      Enum.flat_map_reduce(pieces, %{}, fn {_start, notes, values, {_tied_in, tied_out}},
+                                           accidentals ->
+        count = length(values)
+
+        values
+        |> Enum.with_index()
+        |> Enum.map_reduce(accidentals, fn {ticks, index}, accidentals ->
+          tie = if notes != nil and (index < count - 1 or tied_out), do: "-", else: ""
+          length = length_text(ticks, unit)
+
+          case notes do
+            nil ->
+              {"z" <> length, accidentals}
+
+            [note] ->
+              {pitch, accidentals} = abc_pitch(note, fifths, accidentals)
+              {pitch <> length <> tie, accidentals}
+
+            notes ->
+              {pitches, accidentals} =
+                Enum.map_reduce(notes, accidentals, &abc_pitch(&1, fifths, &2))
+
+              {"[" <> Enum.join(pitches) <> "]" <> length <> tie, accidentals}
+          end
+        end)
+      end)
+
+    Enum.join(tokens, " ")
+  end
+
+  defp abc_pitch(note, fifths, accidentals) do
+    {step, alter, octave} = MusicXML.spell(note, fifths)
+    in_effect = Map.get_lazy(accidentals, {step, octave}, fn -> key_alter(fifths, step) end)
+
+    {sign, accidentals} =
+      if alter == in_effect do
+        {"", accidentals}
+      else
+        {%{-2 => "__", -1 => "_", 0 => "=", 1 => "^", 2 => "^^"}[alter],
+         Map.put(accidentals, {step, octave}, alter)}
+      end
+
+    letter =
+      cond do
+        octave >= 5 -> String.downcase(step) <> String.duplicate("'", octave - 5)
+        true -> step <> String.duplicate(",", 4 - octave)
+      end
+
+    {sign <> letter, accidentals}
   end
 end

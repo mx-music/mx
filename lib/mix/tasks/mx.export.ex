@@ -1,5 +1,5 @@
 defmodule Mix.Tasks.Mx.Export do
-  @shortdoc "Writes a song as a MusicXML score or a MIDI file"
+  @shortdoc "Writes a song as a MusicXML score, a MIDI file or an ABC tune"
 
   @moduledoc """
   Writes a song as a MusicXML score, one part of the score for each part of the song that plays notes, through the whole of its music once.
@@ -14,6 +14,9 @@ defmodule Mix.Tasks.Mx.Export do
 
   When `--out` ends in .mid or .midi it writes a MIDI file instead: one track per part, named after the part, each note at its vel, with the song's tempo and the time signature and key given.
   The tracks name no instrument, since mx's synths have no General MIDI number.
+
+  When `--out` ends in .abc it writes an ABC tune: one voice per part, named after it, with the time signature and key given and the song's tempo.
+  ABC has no place for velocity, the pedal, synths or effects, and the task says they are left out.
   """
 
   use Mix.Task
@@ -25,7 +28,12 @@ defmodule Mix.Tasks.Mx.Export do
     out = Keyword.get_lazy(opts, :out, fn -> Path.rootname(path) <> ".musicxml" end)
     Mx.Command.start()
 
-    writer = if Path.extname(out) in [".mid", ".midi"], do: Mx.MIDI, else: Mx.MusicXML
+    writer =
+      case Path.extname(out) do
+        extension when extension in [".mid", ".midi"] -> Mx.MIDI
+        ".abc" -> Mx.ABC
+        _other -> Mx.MusicXML
+      end
 
     case writer.write(path, out, Keyword.take(opts, [:time, :key, :title, :force])) do
       {:ok, report} ->
@@ -38,6 +46,8 @@ defmodule Mix.Tasks.Mx.Export do
         for {name, why} <- report.left_out do
           Mx.Command.info("#{name} is left out: #{why}")
         end
+
+        Enum.each(Map.get(report, :notes, []), &Mx.Command.info/1)
 
       {:error, message} ->
         Mx.Command.fail(message)

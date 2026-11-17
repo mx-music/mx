@@ -3,7 +3,7 @@ defmodule Mx.ABCTest do
 
   import ExUnit.CaptureIO
 
-  alias Mix.Tasks.Mx.Import
+  alias Mix.Tasks.Mx.{Export, Import}
   alias Mx.{Score, ScoreNotes}
 
   @moduletag :tmp_dir
@@ -178,5 +178,74 @@ defmodule Mx.ABCTest do
     path = write(dir, "overlay.abc", "X:1\nT:Overlay\nM:4/4\nL:1/4\nK:C\nC D E F|\nG A & B c|]\n")
 
     assert_raise Mix.Error, ~s(#{path}: line 7: cannot read "&"), fn -> Import.run([path]) end
+  end
+
+  defp gymnopedie(dir) do
+    [_, code] = Regex.run(~r/```elixir\n(.*?)```/s, File.read!("README.md"))
+    song = Path.join(dir, "gymnopedie.exs")
+    File.write!(song, code)
+    song
+  end
+
+  test "the README's Gymnopedie exports with M:3/4 and K:D, and a voice for each hand", %{
+    tmp_dir: dir
+  } do
+    song = gymnopedie(dir)
+    out = Path.join(dir, "gymnopedie.abc")
+    capture_io(fn -> Export.run([song, "--time", "3/4", "--key", "d", "--out", out]) end)
+    abc = File.read!(out)
+
+    assert abc =~ ~r/^M:3\/4$/m
+    assert abc =~ ~r/^K:D$/m
+    assert abc =~ ~s(V:1 name="right"\n)
+    assert abc =~ ~s(V:2 name="left"\n)
+  end
+
+  test "the exported Gymnopedie imports back with the song's pitches, starts and lengths", %{
+    tmp_dir: dir
+  } do
+    song = gymnopedie(dir)
+    out = Path.join(dir, "gymnopedie_again.abc")
+    capture_io(fn -> Export.run([song, "--time", "3/4", "--key", "d", "--out", out]) end)
+    {again, _output} = import!(out)
+
+    assert again |> ScoreNotes.played() |> Enum.concat() |> Enum.sort() ==
+             song |> ScoreNotes.played() |> Enum.concat() |> Enum.sort()
+  end
+
+  test "a note lasting five eighth notes in 6/8 is written as tied notes", %{tmp_dir: dir} do
+    song = Path.join(dir, "jig.exs")
+
+    File.write!(
+      song,
+      "import Mx\nsong(music: part(:tin_whistle, seq(c5: 2.5, d5: 0.5), synth: :tri))\n"
+    )
+
+    out = Path.join(dir, "jig.abc")
+    capture_io(fn -> Export.run([song, "--time", "6/8", "--out", out]) end)
+
+    assert File.read!(out) =~ "V:1\nc4- c d |]"
+  end
+
+  test "an export says once what ABC leaves out, and writes no voice for drums", %{tmp_dir: dir} do
+    song = Path.join(dir, "band.exs")
+
+    File.write!(song, """
+    import Mx
+    song(music: together([
+      part(:lead, seq(e4: 1, g4: 1), synth: :piano, defaults: [vel: 0.4, pedal: 1]),
+      part(:kick, steps("x...", 1), synth: :kick),
+      part(:bass, note(:c2, 2), synth: :tri)
+    ]))
+    """)
+
+    out = Path.join(dir, "band.abc")
+    output = capture_io(fn -> Export.run([song, "--out", out]) end)
+
+    assert length(String.split(output, "ABC leaves out")) == 2
+    assert output =~ "ABC leaves out velocity, the pedal, each part's synth and its effects\n"
+    assert output =~ "kick is left out: it plays no notes with a pitch\n"
+    assert Regex.scan(~r/^V:\d+ name=/m, File.read!(out)) == [[~s(V:1 name=)], [~s(V:2 name=)]]
+    refute File.read!(out) =~ "kick"
   end
 end

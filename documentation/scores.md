@@ -1,7 +1,7 @@
 # Scores and hums
 
 A song need not be typed in by hand.
-mx writes one from a MusicXML score, a MIDI file, a tune in ABC notation or a recording of a melody you hum, and writes a song back out as a MusicXML score or a MIDI file.
+mx writes one from a MusicXML score, a MIDI file, a tune in ABC notation or a recording of a melody you hum, and writes a song back out as a MusicXML score, a MIDI file or an ABC tune.
 With the mx command installed, each `mix mx.NAME` task here is also `mx NAME` with the same arguments, as the README's Install section says.
 
 ```mermaid
@@ -16,6 +16,7 @@ graph LR
   song -->|mix mx.export| score
   midi -->|mix mx.import| song
   abc -->|mix mx.import| song
+  song -->|mix mx.export| abc
   song -->|mix mx.export| midi
   hum -->|mix mx.hum| song
 ```
@@ -130,6 +131,17 @@ Each voice a `V:` field names becomes a part named after it, and a tune without 
 Grace notes are kept with the note they lead into, and left out of the song as a score's are.
 Chord symbols in quotes, decorations such as `~` and `!trill!`, lyrics and other text are left out, and mx says how many of each.
 A line mx cannot read, such as one with a voice overlay `&`, stops the import with its line number and what it could not read.
+
+`mix mx.export` writes a song as an ABC tune when `--out` ends in `.abc`, so a melody can be pasted into a forum or a tune site:
+
+```sh
+mix mx.export song.exs --time 6/8 --key g --out song.abc
+```
+
+The tune is X:1, titled from `--title` or the song file's name, with `M:` from `--time`, `K:` from `--key`, `Q:` from the song's tempo, and a unit note length that suits most of its notes.
+Each part that plays notes with a pitch becomes a voice named after it, through the whole of its music once, and a part whose notes overlap without forming chords gets a further voice for each overlap, such as left 2.
+Bar lines fall where the time signature puts them, notes are spelled in the key as in a score, notes that start and end together are a chord, and a length no plain or dotted note writes is written as tied notes.
+ABC has no place for velocity, the pedal, synths or effects, so they are left out, and parts are left out as for a score; mx says so.
 
 ## Turn a hum into a song
 
