@@ -324,11 +324,11 @@ defmodule Mix.Tasks.Mx.MeasureTest do
     end
   end
 
-  test "--partials needs --hits or plucked notes, and a count from 1 up", ctx do
+  test "--partials needs --hits, --held or plucked notes, and a count from 1 up", ctx do
     path = write_wav(ctx, "hit.wav", hit(300, 1.0))
 
-    assert_raise Mix.Error, "--partials needs --hits or plucked notes", fn ->
-      Mix.Tasks.Mx.Measure.run(["--held", "#{path}:D4", "--partials", "4"])
+    assert_raise Mix.Error, "--partials needs --hits, --held or plucked notes", fn ->
+      Mix.Tasks.Mx.Measure.run(["--strokes", path, "--partials", "4"])
     end
 
     for count <- ["0", "-2", "two", "1.5"] do
@@ -336,6 +336,26 @@ defmodule Mix.Tasks.Mx.MeasureTest do
         Mix.Tasks.Mx.Measure.run(["--hits", path, "--partials", count])
       end
     end
+  end
+
+  test "with --held, --partials prints each note's hold, letting go and fall, and its partials through the attack, held and let go",
+       ctx do
+    path = write_wav(ctx, "held.wav", held(220, 2))
+
+    output =
+      capture_io(fn -> Mix.Tasks.Mx.Measure.run(["--held", "#{path}:A3", "--partials", "3"]) end)
+
+    assert output =~ "held.wav: 1 notes"
+
+    assert output =~
+             ~r/a3 at 220\.\d Hz: holds from [\d.]+ s, let go at [\d.]+ s, then falls \d+ dB\/s; no vibrato/
+
+    assert length(
+             Regex.scan(
+               ~r/^    harmonic \d+, [\d.]+ Hz: attack .* holds at -?[\d.]+ dB; let go, falls \d+ dB\/s$/m,
+               output
+             )
+           ) == 3
   end
 
   @tag :engine
@@ -890,7 +910,9 @@ defmodule Mix.Tasks.Mx.MeasureTest do
       assert [[ratio, fall]] =
                Regex.scan(
                  ~r/^ +[\d.]+ Hz +(7\.[0-6]\d\d)  between +-[\d.]+ dB  falls (\d+) dB\/s/m,
-                 output, capture: :all_but_first)
+                 output,
+                 capture: :all_but_first
+               )
 
       assert_in_delta String.to_float(ratio), 7.35, 0.05
       assert String.to_integer(fall) > 20

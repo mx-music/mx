@@ -11,6 +11,7 @@ pub mod partials;
 pub mod plucked;
 pub mod runs;
 pub mod strokes;
+pub mod sustained;
 
 use rustfft::{Fft, FftPlanner, num_complex::Complex};
 use std::collections::HashMap;

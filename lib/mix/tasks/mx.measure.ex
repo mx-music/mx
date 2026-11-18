@@ -22,7 +22,8 @@ defmodule Mix.Tasks.Mx.Measure do
   `--hits` measures hits, as `Mx.Measure.Hits` describes, and a file with no pitch needs no note after its name.
   It prints the strongest peaks of each hit as ratios to the lowest, then for each band the seconds it takes to fade 60 dB and its level as the hit starts, against the loudest band.
   `--partials` with a count, such as `--partials 12`, also prints under each hit up to that many of its strongest partials, lowest first: the frequency in Hz, the ratio to the lowest, the level against the loudest, and the seconds it takes to fade 60 dB.
-  Without `--hits`, it prints under each file up to that many of the strongest partials of the note it starts with, as `Mx.Measure.partials/2` measures them, lowest first: the frequency in Hz, the ratio to the pitch, the harmonic or between, the level against the loudest as the note starts, and how it falls, or rises, in dB a second, with the second slope and where it starts when it slows; then each line left out as not the instrument's.
+  With `--held`, it prints for each note where it holds from, where it is let go, how fast it falls then and its vibrato, and under it up to that many of its strongest partials: the level at each moment of the attack before it holds, the level it holds at, its slope once let go and how far it swings with the vibrato, as `Mx.Fit.Held` measures them.
+  Without `--hits` or `--held`, it prints under each file up to that many of the strongest partials of the note it starts with, as `Mx.Measure.partials/2` measures them, lowest first: the frequency in Hz, the ratio to the pitch, the harmonic or between, the level against the loudest as the note starts, and how it falls, or rises, in dB a second, with the second slope and where it starts when it slows; then each line left out as not the instrument's.
 
       mx measure keyboard_electronic_098-064-025.wav:E4 --partials 20
 
@@ -62,6 +63,7 @@ defmodule Mix.Tasks.Mx.Measure do
   @moments "levels in dB at 0, 50, 100 and 200 ms after the loudest moment, against the loudest band then"
   @compared 0.6
   @gap 0.25
+  @attack_ms [0, 10, 20, 40, 70, 115, 180, 280, 440, 700]
 
   @impl true
   def run(args) when is_list(args) do
@@ -98,6 +100,7 @@ defmodule Mix.Tasks.Mx.Measure do
       opts[:strokes] -> strokes(files, opts)
       opts[:tracks] || opts[:alone] || opts[:ignore] -> Mx.Command.fail("--tracks needs --strokes")
       opts[:drone] && !opts[:held] -> Mx.Command.fail("--drone needs --held")
+      opts[:held] && count -> held_partials(files, count)
       opts[:held] -> held(files, synth, given, opts[:drone] || false)
       opts[:hits] -> hits(files, synth, given, count, compare)
       true -> plucked(files, synth, given, count)
@@ -212,6 +215,66 @@ defmodule Mix.Tasks.Mx.Measure do
       print_held_beside(recorded, rendered, synth, given)
     else
       print_held(recorded)
+    end
+  end
+
+  defp held_partials(files, count) do
+    for {path, note} <- Enum.map(files, &parse!/1) do
+      notes =
+        case Held.file(path, note) do
+          {:ok, found} -> Enum.map(found, & &1.note)
+          {:error, message} -> Mx.Command.fail(message)
+        end
+
+      recordings =
+        case Mx.Fit.Struck.in_file(path, notes, 127, held: true) do
+          {:ok, recordings} -> Enum.sort_by(recordings, & &1.note)
+          {:error, message} -> Mx.Command.fail(message)
+        end
+
+      name = Path.basename(path)
+      IO.puts("#{name}: #{length(recordings)} notes")
+      Enum.each(Mx.Fit.Held.measure(recordings), &print_held_partials(&1, count))
+    end
+  end
+
+  defp print_held_partials(measured, count) do
+    label = Measure.name(measured.note)
+    pitch = :erlang.float_to_binary(measured.pitch, decimals: 1)
+    held = seconds(measured.held)
+    release = seconds(measured.release)
+    falls = slope(measured.fall)
+    {rate, depth} = measured.vibrato
+
+    vibrato =
+      if depth > 0,
+        do: "vibrato #{:erlang.float_to_binary(rate, decimals: 1)} Hz, #{round(depth)} cents",
+        else: "no vibrato"
+
+    IO.puts("  #{label} at #{pitch} Hz: holds from #{held}, let go at #{release}, then #{falls}; #{vibrato}")
+
+    partials =
+      measured.partials |> Enum.sort_by(& &1.held, :desc) |> Enum.take(count) |> Enum.sort_by(& &1.freq)
+
+    for partial <- partials do
+      freq = :erlang.float_to_binary(partial.freq, decimals: 1)
+      level = :erlang.float_to_binary(partial.held, decimals: 1)
+
+      attack =
+        partial.attack
+        |> Enum.filter(fn {at, _level} -> round(at * 1000) in @attack_ms end)
+        |> Enum.map_join(", ", fn {at, level} ->
+          ms = round(at * 1000)
+          "#{:erlang.float_to_binary(level, decimals: 1)} at #{ms} ms"
+        end)
+
+      falls = slope(partial.release)
+      swing = :erlang.float_to_binary(partial.swing, decimals: 1)
+      swings = if depth > 0, do: ", swings #{swing} dB with the vibrato", else: ""
+
+      IO.puts(
+        "    harmonic #{partial.harmonic}, #{freq} Hz: attack #{attack}; holds at #{level} dB; let go, #{falls}#{swings}"
+      )
     end
   end
 
@@ -470,7 +533,7 @@ defmodule Mix.Tasks.Mx.Measure do
   defp count!(opts) do
     cond do
       opts[:partials] == nil -> nil
-      opts[:held] || opts[:strokes] -> Mx.Command.fail("--partials needs --hits or plucked notes")
+      opts[:strokes] -> Mx.Command.fail("--partials needs --hits, --held or plucked notes")
       true -> parse_count!(opts[:partials])
     end
   end

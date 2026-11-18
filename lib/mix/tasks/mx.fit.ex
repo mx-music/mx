@@ -1,5 +1,5 @@
 defmodule Mix.Tasks.Mx.Fit do
-  @shortdoc "Fits a synth to recordings of held notes by its controls, or of struck notes partial by partial"
+  @shortdoc "Fits a synth to recordings of held or struck notes partial by partial, or of held notes by its controls"
 
   @moduledoc """
   Searches for the values of a synth's controls that bring its held notes closest to recordings of them, as `Mx.Fit` describes.
@@ -27,13 +27,19 @@ defmodule Mix.Tasks.Mx.Fit do
   `--until` with seconds carries the rows on to that time in 24 steps, and `--csv` with a file name also writes the figures as a table.
   `--tour` writes a WAV file of twelve recordings, or as many as `--count` gives, each followed by the synth.
   `--option` with a synth's option and its value, such as `--option pedal=1`, renders the synth with it in `--check` and `--tour`; it can be given more than once.
+
+      mx fit clarinet --held clarinet.txt --out clarinet.mxh
+      mx fit clarinet --held clarinet.txt --check
+
+  `--held` with a list fits recordings of held notes partial by partial, bowed or blown, as `Mx.Fit.Held` describes, and takes the same options except `--note` and `--vel`.
+  Its check compares each partial over the attack and on average where the note holds, and the ERB bands until a second after the note is let go, with the synth held as long as the recording.
   The guide on instruments, under "Fitting a struck instrument", describes the list and what the check prints.
   """
 
   use Mix.Task
 
   alias Mx.{Fit, Measure, Notes, Signal, Synths}
-  alias Mx.Fit.Struck
+  alias Mx.Fit.{Held, Struck}
 
   @example "BbClar.pp.D3B3.aiff:D3"
 
@@ -41,7 +47,11 @@ defmodule Mix.Tasks.Mx.Fit do
   def run(args) when is_list(args) do
     Mx.Command.config()
     {synth, rest} = synth!(args)
-    if "--struck" in rest, do: struck(synth, rest), else: held(synth, rest)
+    cond do
+      "--struck" in rest -> struck(synth, rest, :struck)
+      "--held" in rest -> struck(synth, rest, :held)
+      true -> held(synth, rest)
+    end
   end
 
   defp held(synth, rest) do
@@ -78,11 +88,14 @@ defmodule Mix.Tasks.Mx.Fit do
     end
   end
 
-  defp struck(synth, rest) do
+  defp struck(synth, rest, kind) do
+    fitter = if kind == :held, do: Held, else: Struck
+
     {opts, extra} =
       OptionParser.parse!(rest,
         strict: [
           struck: :keep,
+          held: :keep,
           out: :string,
           notes: :string,
           check: :boolean,
@@ -100,7 +113,10 @@ defmodule Mix.Tasks.Mx.Fit do
     files = Enum.join(extra, " ")
 
     if extra != [],
-      do: Mx.Command.fail("--struck takes a folder or a list, not files: #{files}")
+      do: Mx.Command.fail("--#{kind} takes a folder or a list, not files: #{files}")
+
+    if kind == :held and opts[:note],
+      do: Mx.Command.fail("--note and --vel go with --struck, not --held")
 
     if !opts[:out] and !opts[:check] and !opts[:tour],
       do:
@@ -121,12 +137,12 @@ defmodule Mix.Tasks.Mx.Fit do
 
     recordings =
       opts
-      |> Keyword.get_values(:struck)
-      |> Enum.flat_map(&struck_recordings!(&1, notes))
+      |> Keyword.get_values(kind)
+      |> Enum.flat_map(&struck_recordings!(&1, notes, kind))
       |> Enum.sort_by(&{&1.note, &1.velocity})
 
     if out = opts[:out] do
-      figures = Struck.figures(recordings)
+      figures = fitter.figures(recordings)
       File.write!(out, figures)
       count = length(recordings)
       bytes = byte_size(figures)
@@ -138,18 +154,18 @@ defmodule Mix.Tasks.Mx.Fit do
         print_frames(!opts[:own] && synth, recordings, opts, options)
 
       opts[:own] ->
-        print_struck(Struck.own(recordings), "the fit's own render", "the fit")
+        print_struck(fitter.own(recordings), "the fit's own render", "the fit", kind)
 
       opts[:check] ->
-        checks = Struck.beside(Struck.check(synth, recordings, options), Struck.own(recordings))
-        print_struck(checks, synth, "synth")
+        checks = Struck.beside(fitter.check(synth, recordings, options), fitter.own(recordings))
+        print_struck(checks, synth, "synth", kind)
 
       true ->
         :ok
     end
 
     if tour = opts[:tour] do
-      {data, rate} = Struck.tour(synth, recordings, opts[:count] || 12, options)
+      {data, rate} = fitter.tour(synth, recordings, opts[:count] || 12, options)
       Mx.Audio.write_floats(tour, data, rate)
       count = min(opts[:count] || 12, length(recordings))
       IO.puts("wrote a tour of #{count} recordings, each followed by #{synth}, to #{tour}")
@@ -165,9 +181,14 @@ defmodule Mix.Tasks.Mx.Fit do
     end
   end
 
-  defp struck_recordings!(path, notes) do
+  defp struck_recordings!(path, notes, kind) do
     found =
-      if File.dir?(path), do: Struck.recordings(path, notes), else: Struck.listed(path, notes)
+      cond do
+        kind == :held and File.dir?(path) -> {:error, "--held takes a list, not a folder: #{path}"}
+        File.dir?(path) -> Struck.recordings(path, notes)
+        kind == :held -> Held.listed(path, notes)
+        true -> Struck.listed(path, notes)
+      end
 
     case found do
       {:ok, recordings} ->
@@ -199,15 +220,18 @@ defmodule Mix.Tasks.Mx.Fit do
     end
   end
 
-  defp print_struck(checks, heading, render) do
+  defp print_struck(checks, heading, render, kind) do
+    first = if kind == :held, do: "over the attack", else: "over the first 20 ms"
+    first_short = if kind == :held, do: "attack", else: "first 20 ms"
+    average = if kind == :held, do: "on average where it holds", else: "on average"
     %{strong: strong, weaker: weaker, erb: erb} = Struck.summary(checks)
     fit = Map.has_key?(hd(checks), :own) && Struck.summary(Enum.map(checks, & &1.own))
     count = length(checks)
     IO.puts("#{heading} against #{count} recordings")
 
-    strike = percent(strong.strike) <> " within 2 dB over the first 20 ms"
+    strike = percent(strong.strike) <> " within 2 dB #{first}"
     strike = strike <> the_fit(fit && percent(fit.strong.strike))
-    mean = percent(strong.mean) <> " within 2 dB on average"
+    mean = percent(strong.mean) <> " within 2 dB #{average}"
     mean = mean <> the_fit(fit && percent(fit.strong.mean))
     IO.puts("#{strong.count} partials within 30 dB of the loudest: #{strike}, #{mean}")
 
@@ -231,7 +255,7 @@ defmodule Mix.Tasks.Mx.Fit do
     for partial <- Struck.furthest_partials(checks, 10) do
       note = Struck.label(partial)
       ratio = :erlang.float_to_binary(partial.ratio, decimals: 3)
-      kind = if partial.harmonic > 0, do: "harmonic #{partial.harmonic}", else: "between"
+      which = if partial.harmonic > 0, do: "harmonic #{partial.harmonic}", else: "between"
       below = decimals(partial.below)
       own = partial[:own]
 
@@ -241,7 +265,7 @@ defmodule Mix.Tasks.Mx.Fit do
       mean = decimals(partial.mean) <> " dB" <> the_fit(own && decimals(own.mean))
 
       IO.puts(
-        "  #{note}, #{ratio} #{kind}, #{below} dB down: first 20 ms #{strike}, mean #{mean}"
+        "  #{note}, #{ratio} #{which}, #{below} dB down: #{first_short} #{strike}, mean #{mean}"
       )
     end
 

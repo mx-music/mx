@@ -520,6 +520,91 @@ defmodule Mix.Tasks.Mx.FitTest do
     end
   end
 
+  describe "--held" do
+    test "a list splits a run of held notes where each comes out of the quiet, and writes their figures",
+         ctx do
+      write_wav(ctx.tmp_dir, "run.wav", held_run([60, 62, 64]))
+      list = write_list(ctx, ["C4:E4 80 run.wav"])
+      out = Path.join(ctx.tmp_dir, "run.mxh")
+
+      output =
+        capture_io(fn -> Mix.Tasks.Mx.Fit.run(["cello", "--held", list, "--out", out]) end)
+
+      assert output =~ "run.wav: c4 d4 e4\n  not found: cs4 ds4\n"
+      assert output =~ "wrote the figures of 3 recordings"
+      assert {_times, [%{note: 60}, %{note: 62}, %{note: 64}]} = held_figures(File.read!(out))
+    end
+
+    test "fits the vibrato's rate and depth, and each harmonic's swing with it", ctx do
+      write_wav(ctx.tmp_dir, "vib.wav", held_note(60, 3, vibrato: {5.0, 20}))
+      list = write_list(ctx, ["C4 80 vib.wav"])
+      out = Path.join(ctx.tmp_dir, "vib.mxh")
+      capture_io(fn -> Mix.Tasks.Mx.Fit.run(["cello", "--held", list, "--out", out]) end)
+
+      {_times, [%{vibrato: {rate, depth}, partials: partials}]} = held_figures(File.read!(out))
+      assert_in_delta rate, 5.0, 0.2
+      assert_in_delta depth, 20, 3
+      assert Enum.all?(partials, &(abs(&1.swing) < 1))
+    end
+
+    test "levels follow the note until it is let go and hold the last after, and each harmonic falls at its slope",
+         ctx do
+      write_wav(ctx.tmp_dir, "held.wav", held_note(60, 2, fall: 60))
+      list = write_list(ctx, ["C4 80 held.wav"])
+      out = Path.join(ctx.tmp_dir, "held.mxh")
+      capture_io(fn -> Mix.Tasks.Mx.Fit.run(["cello", "--held", list, "--out", out]) end)
+
+      {times, [%{held: held, release: release, partials: partials}]} =
+        held_figures(File.read!(out))
+
+      assert_in_delta release, 2.0, 0.1
+      assert held < 0.5
+      %{levels: levels, tail: tail} = Enum.find(partials, &(&1.harmonic == 1))
+      at = Map.new(Enum.zip(times, levels))
+      assert_in_delta at[1.1], at[0.7], 0.5
+      assert at[28.0] == List.last(levels)
+      assert_in_delta tail, -60, 12
+    end
+
+    test "--check prints each figure over the attack and where the note holds", ctx do
+      write_wav(ctx.tmp_dir, "c4.wav", held_note(60, 2))
+      list = write_list(ctx, ["C4 80 c4.wav"])
+
+      output = capture_io(fn -> Mix.Tasks.Mx.Fit.run(["cello", "--held", list, "--check"]) end)
+
+      assert output =~ "cello against 1 recordings"
+
+      assert output =~
+               ~r/within 2 dB over the attack, the fit \d+%, \d+% within 2 dB on average where it holds/
+
+      assert output =~ ~r/ERB bands: [\d.]+ dB at the median note, the fit [\d.]+/
+    end
+
+    test "--tour writes each recording followed by the synth", ctx do
+      write_wav(ctx.tmp_dir, "c4.wav", held_note(60, 2))
+      list = write_list(ctx, ["C4 80 c4.wav"])
+      tour = Path.join(ctx.tmp_dir, "tour.wav")
+
+      output =
+        capture_io(fn -> Mix.Tasks.Mx.Fit.run(["cello", "--held", list, "--tour", tour]) end)
+
+      assert output =~ "wrote a tour of 1 recordings, each followed by cello, to #{tour}"
+      assert File.stat!(tour).size > 44
+    end
+
+    test "refuses a folder and --note", ctx do
+      assert_raise Mix.Error, "--held takes a list, not a folder: #{ctx.tmp_dir}", fn ->
+        Mix.Tasks.Mx.Fit.run(["cello", "--held", ctx.tmp_dir, "--check"])
+      end
+
+      list = write_list(ctx, ["C4 80 c4.wav"])
+
+      assert_raise Mix.Error, "--note and --vel go with --struck, not --held", fn ->
+        Mix.Tasks.Mx.Fit.run(["cello", "--held", list, "--check", "--note", "C4"])
+      end
+    end
+  end
+
   # The keyboard_electronic_098 and guitar_electronic_028 instruments of the test set of Google's
   # NSynth dataset, from https://magenta.tensorflow.org/datasets/nsynth, in the folder MX_NSYNTH
   # names, which holds one folder an instrument.
@@ -1028,6 +1113,39 @@ defmodule Mix.Tasks.Mx.FitTest do
       end
   end
 
+  # A held note with harmonics at 1/n, after 0.2 seconds of silence: it swells in over 50 ms, holds
+  # for `seconds`, then falls at `fall` dB a second for a second, with `vibrato` as a rate in Hz
+  # and a depth in cents either side, full from the start.
+  defp held_note(note, seconds, opts \\ []) do
+    rate = Mxs.render_rate()
+    hz = Mx.Signal.hz(note)
+    {vibrato, cents} = Keyword.get(opts, :vibrato, {0.0, 0})
+    fall = Keyword.get(opts, :fall, 40)
+
+    {samples, _phase} =
+      Enum.map_reduce(0..round((seconds + 1) * rate - 1), 0.0, fn index, phase ->
+        time = index / rate
+        freq = hz * 2 ** (cents * :math.sin(2 * :math.pi() * vibrato * time) / 1200)
+        wave = Enum.sum(for n <- 1..6, do: :math.sin(n * phase) / n)
+        level = min(time / 0.05, 1) * 10 ** (-fall * max(time - seconds, 0) / 20)
+        {0.2 * wave * level, phase + 2 * :math.pi() * freq / rate}
+      end)
+
+    with_floor(List.duplicate(0.0, round(0.2 * rate)) ++ samples)
+  end
+
+  # Held notes one after another, each held a second, with digital silence then a room's noise
+  # 56 dB down between them, as the University of Iowa's runs have.
+  defp held_run(notes) do
+    rate = Mxs.render_rate()
+    :rand.seed(:exsss, {4, 5, 6})
+    room = for _ <- 1..round(0.6 * rate), do: 1.6e-3 * (2 * :rand.uniform() - 1)
+
+    Enum.flat_map(notes, fn note ->
+      List.duplicate(0.0, round(0.5 * rate)) ++ room ++ held_note(note, 1, fall: 200) ++ room
+    end)
+  end
+
   # Notes one after another, each ringing 1.5 seconds.
   defp run(notes), do: Enum.flat_map(notes, &struck_note(&1, 1.5))
 
@@ -1077,6 +1195,52 @@ defmodule Mix.Tasks.Mx.FitTest do
 
         <<_noise::binary-size(^noise_bytes), rest::binary>> = rest
         {%{note: note, velocity: velocity, partials: partials}, rest}
+      end)
+
+    {times, recordings}
+  end
+
+  # Figures of held notes as mxs reads them: the times, and each recording's note, velocity, held
+  # and release times, vibrato rate and depth, and partials, each with its ratio, harmonic, slope,
+  # swing and levels in dB.
+  defp held_figures(<<"MXH1", count::little-16, rest::binary>>) do
+    {time_bytes, level_bytes} = {count * 4, count * 2}
+    <<times::binary-size(^time_bytes), bands::little-16, rest::binary>> = rest
+    times = for <<time::float-little-32 <- times>>, do: Float.round(time, 4)
+    {edge_bytes, noise_bytes} = {bands * 8, bands * (count + 1) * 2}
+    <<_edges::binary-size(^edge_bytes), recordings::little-16, rest::binary>> = rest
+
+    {recordings, <<>>} =
+      Enum.map_reduce(1..recordings//1, rest, fn _, rest ->
+        <<note, velocity, held::float-little-32, release::float-little-32, rate::float-little-32,
+          depth::float-little-32, partials::little-16, rest::binary>> = rest
+
+        {partials, rest} =
+          Enum.map_reduce(1..partials//1, rest, fn _, rest ->
+            <<ratio::float-little-32, harmonic::little-16, tail::little-signed-16,
+              swing::little-signed-16, levels::binary-size(^level_bytes), rest::binary>> = rest
+
+            levels = for <<level::little-signed-16 <- levels>>, do: level / 10
+
+            {%{
+               ratio: ratio,
+               harmonic: harmonic,
+               tail: tail / 10,
+               swing: swing / 10,
+               levels: levels
+             }, rest}
+          end)
+
+        <<_noise::binary-size(^noise_bytes), rest::binary>> = rest
+
+        {%{
+           note: note,
+           velocity: velocity,
+           held: held,
+           release: release,
+           vibrato: {rate, depth},
+           partials: partials
+         }, rest}
       end)
 
     {times, recordings}

@@ -60,11 +60,14 @@ defmodule Mx.Fit.Struck do
   @doc """
   The recordings a list gives, those whose note is in `notes` when given, and what each line found.
   Returns `{:ok, recordings, lines}`, each line with its `path`, the `notes` it gives, the notes it `found`, those it `left_out` as `{note, seconds, why}`, and those `missing`; or `{:error, message}`.
+  With `held: true`, a run is split into held notes, which swell rather than strike.
   """
-  def listed(list, notes \\ nil) when is_binary(list) do
+  def listed(list, notes \\ nil, options \\ []) when is_binary(list) do
+    held = Keyword.get(options, :held, false)
+
     with {:ok, text} <- read(list),
          {:ok, lines} <- lines(text, Path.dirname(list)) do
-      found = Enum.map(lines, &split/1)
+      found = Enum.map(lines, &split(&1, held))
 
       case Enum.find(found, &match?({:error, _}, &1)) do
         {:error, message} ->
@@ -80,6 +83,14 @@ defmodule Mx.Fit.Struck do
           {:ok, Enum.sort_by(recordings, &{&1.note, &1.velocity}),
            for({:ok, _recordings, line} <- found, do: line)}
       end
+    end
+  end
+
+  @doc "The recordings of a file that holds `notes`, MIDI note numbers, or a run of them, at `velocity`, split as a list's line is, into held notes with `held: true`."
+  def in_file(path, notes, velocity \\ 127, options \\ []) do
+    case split(%{path: path, notes: notes, velocity: velocity, kept: false}, Keyword.get(options, :held, false)) do
+      {:ok, recordings, _line} -> {:ok, recordings}
+      error -> error
     end
   end
 
@@ -338,9 +349,9 @@ defmodule Mx.Fit.Struck do
     ArgumentError -> :error
   end
 
-  defp split(%{path: path} = line) do
+  defp split(%{path: path} = line, held) do
     case Audio.raw(path) do
-      {:ok, %{rate: rate} = format, data} -> {:ok, pieces(line, format, data, rate), line}
+      {:ok, %{rate: rate} = format, data} -> {:ok, pieces(line, format, data, rate, held), line}
       {:error, message} -> {:error, message}
     end
     |> case do
@@ -349,7 +360,7 @@ defmodule Mx.Fit.Struck do
     end
   end
 
-  defp pieces(%{notes: {:hz, hz}} = line, format, data, rate) do
+  defp pieces(%{notes: {:hz, hz}} = line, format, data, rate, _held) do
     seconds = min(byte_size(data) / frame_size(format) / rate, @longest)
     pitch = 69 + 12 * :math.log2(hz / 440)
     note = round(pitch)
@@ -368,8 +379,8 @@ defmodule Mx.Fit.Struck do
     {[recording], %{found: [note], left_out: [], missing: []}}
   end
 
-  defp pieces(line, format, data, rate) do
-    pieces = Native.split_struck(data, Signal.native(format), rate / 1, line.notes)
+  defp pieces(line, format, data, rate, held) do
+    pieces = Native.split_struck(data, Signal.native(format), rate / 1, line.notes, held)
 
     recordings =
       for %{left_out: nil, note: note, from: from, to: to} <- pieces,
@@ -394,6 +405,12 @@ defmodule Mx.Fit.Struck do
   end
 
   defp frame_size(%{channels: channels, bits: bits}), do: channels * div(bits + 7, 8)
+
+  @doc false
+  def native(recordings) do
+    raws = raws(recordings)
+    Enum.map(recordings, &struck(&1, raws))
+  end
 
   defp raws(recordings) do
     recordings
