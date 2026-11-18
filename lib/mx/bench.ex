@@ -12,6 +12,7 @@ defmodule Mx.Bench do
 
   @tick_ms 33
   @frames 512
+  @band Mx.Bench.Band
 
   @doc """
   Plays the song at `path` for `seconds` under each of four loads: an idle machine, every scheduler of the VM busy, the song loaded and laid out every 300 ms, and twice as many busy OS processes as schedulers.
@@ -65,13 +66,27 @@ defmodule Mx.Bench do
     children = [
       Supervisor.child_spec({Mxs, [live: false]}, shutdown: 10_000),
       {Inputs, name: nil, midi: false},
-      {Band, song: song, play: timed(table, fn -> 0 end), new_id: &Mxs.new_id/0}
+      {Band,
+       name: @band,
+       song: song,
+       play: timed(table, fn -> 0 end),
+       new_id: &Mxs.new_id/0,
+       start_fx: &Mxs.start_fx/1,
+       stop_fx: &Mxs.stop_fx/2,
+       start_part: &Mxs.start_part(&1, &2, beats: true),
+       hand: handed(table),
+       place_beats: &Mxs.place_beats/1,
+       set_tempo: &Mxs.set_tempo/2}
     ]
 
     monitor = spawn(fn -> held(table) end)
     before = :erlang.system_monitor(monitor, [{:long_schedule, 1}])
     {:ok, session} = Supervisor.start_link(children, strategy: :rest_for_one)
+    # The engine renders, unheard, as the sound card would, so it says when each pass ends.
+    renderer = spawn_link(&render/0)
     Process.sleep(round(seconds * 1000))
+    Process.unlink(renderer)
+    Process.exit(renderer, :kill)
     Supervisor.stop(session)
     :erlang.system_monitor(before)
     Process.exit(monitor, :kill)
@@ -104,6 +119,28 @@ defmodule Mx.Bench do
       :ets.insert(table, {:caller, self()})
       :ok
     end
+  end
+
+  # Each note of a pass is timed from the call that hands it over to its beat.
+  defp handed(table) do
+    fn name, span, label, events, opts ->
+      before = System.os_time(:microsecond)
+      Mxs.pass(name, span, label, events, opts)
+      took = System.os_time(:microsecond) - before
+      timeline = Band.timeline(@band)
+
+      for {beat, _event} <- events,
+          do: :ets.insert(table, {:play, 0, Band.time_at(timeline, beat) - before, took})
+
+      :ets.insert(table, {:caller, self()})
+      :ok
+    end
+  end
+
+  defp render do
+    Mxs.render_to(System.os_time(:microsecond))
+    Process.sleep(10)
+    render()
   end
 
   defp spin, do: spin()

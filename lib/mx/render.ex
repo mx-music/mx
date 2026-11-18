@@ -11,6 +11,7 @@ defmodule Mx.Render do
   alias Mx.{Band, Clock, Inputs, Recording, Song}
   alias Mx.Engine.Mxs
 
+  @ahead_us 500_000
   @step_us 10_000
   @fade_us 4_000_000
 
@@ -72,6 +73,7 @@ defmodule Mx.Render do
         Band.start_link(
           song: song,
           start_us: start_us,
+          ahead_ms: div(@ahead_us, 1000),
           follow: follow,
           play: &Mxs.play/2,
           new_id: &Mxs.new_id/0,
@@ -79,6 +81,10 @@ defmodule Mx.Render do
           load_sample: &Mxs.load_sample/2,
           start_fx: &Mxs.start_fx/1,
           stop_fx: &Mxs.stop_fx/2,
+          start_part: &Mxs.start_part(&1, &2, beats: true),
+          hand: &Mxs.pass/5,
+          place_beats: &Mxs.place_beats/1,
+          set_tempo: &Mxs.set_tempo/2,
           out: fn _at_us, message -> send(render, {:sent, self(), elem(message, 0)}) end,
           inputs: &Inputs.snapshot_at(inputs, &1, &2),
           set: &Inputs.put(inputs, &1, &2, &3, &4),
@@ -88,6 +94,7 @@ defmodule Mx.Render do
 
       stop_us = if seconds, do: start_us + round(seconds * 1_000_000)
       last_us = play(band, start_us, stop_us, MapSet.new())
+      cut(band, last_us - @step_us + @ahead_us)
       GenServer.stop(band)
       fade(last_us, last_us + @fade_us)
       GenServer.stop(inputs)
@@ -95,6 +102,12 @@ defmodule Mx.Render do
     after
       Clock.stop_render()
     end
+  end
+
+  # The engine holds each pass whole, so what a loop would not have sent by the last step is dropped.
+  defp cut(band, until_us) do
+    beat = Band.beat_at(Band.timeline(band), until_us)
+    for pid <- Band.loops(band), name = name(pid), do: Mxs.cut(name, beat)
   end
 
   defp play(band, now_us, stop_us, told) do
@@ -105,12 +118,18 @@ defmodule Mx.Render do
         if stop_us != nil and now_us >= stop_us do
           now_us
         else
-          band |> Band.loops() |> Enum.sort_by(&name/1) |> Enum.each(&tick/1)
+          wakes = band |> Band.loops() |> Enum.sort_by(&name/1) |> Enum.map(&tick/1)
           told = tell_sent(told)
-          Mxs.render_to(now_us)
-          now_us = now_us + @step_us
-          Clock.advance(now_us)
-          play(band, now_us, stop_us, told)
+
+          next_us =
+            case Enum.min([stop_us || :infinity | wakes]) do
+              :infinity -> now_us + @step_us
+              next_us -> max(next_us, now_us + @step_us)
+            end
+
+          Mxs.render_to(next_us - @step_us)
+          Clock.advance(next_us)
+          play(band, next_us, stop_us, told)
         end
     end
   end
@@ -140,12 +159,13 @@ defmodule Mx.Render do
     :exit, _ -> nil
   end
 
-  # A loop that has ended since the band listed it is left alone.
+  # Gives the time the loop next needs a tick; a loop that has ended since the band listed it is
+  # left alone.
   defp tick(pid) do
     send(pid, :tick)
-    :sys.get_state(pid)
+    :sys.get_state(pid).wake_us || :infinity
   catch
-    :exit, _ -> :ok
+    :exit, _ -> :infinity
   end
 
   defp fade(now_us, until_us) do

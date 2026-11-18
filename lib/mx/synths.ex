@@ -94,6 +94,13 @@ defmodule Mx.Synths do
     given ++ Enum.sort(implied)
   end
 
+  @doc "The options given with their rates per second at a tempo, and their times left in beats, for an engine that places a pass from its beats."
+  def rates_to_seconds(opts, tempo) when is_list(opts) and is_number(tempo) do
+    Enum.map(opts, fn {key, value} ->
+      if Atom.to_string(key) in @rate_options, do: {key, value * tempo / 60}, else: {key, value}
+    end)
+  end
+
   @doc "The options given with their times in seconds at a tempo, and their rates per second."
   def given_to_seconds({:effect, effect}, opts, tempo) do
     given_to_seconds(fx(effect), opts, tempo)

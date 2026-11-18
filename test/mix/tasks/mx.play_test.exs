@@ -188,6 +188,53 @@ defmodule Mix.Tasks.Mx.PlayTest do
     assert line =~ ~r/peaking at -inf dB\.$/
   end
 
+  @tag :engine
+  test "a song plays on, every note at its beat, while mx is held up for less than the two beats the engine holds",
+       ctx do
+    path = Path.join(ctx.tmp_dir, "held.exs")
+    out = Path.join(ctx.tmp_dir, "held.wav")
+
+    # At -80 dB the notes are not heard, but the recording holds them.
+    File.write!(
+      path,
+      "import Mx\nsong(tempo: 60, music: part(:a, loop(4, fn _, _ -> seq(for _ <- 1..4, do: seq([note(72, 0.25, amp: 0.0001, release: 0.05), rest(0.75)])) end), synth: :saw))\n"
+    )
+
+    {:ok, song} = Mx.Song.load(path)
+    {:ok, session} = Mx.Session.start_link(path: path, song: song, record: out)
+    [{0, start_us, 60}] = Mx.Band.timeline(Mx.Band)
+
+    # The pass from beat 8 is handed over at beat 6, and mx is held up from beat 6.5 to beat 8.3.
+    Process.sleep(div(start_us + 6_500_000 - System.os_time(:microsecond), 1000))
+    held = [Mx.Band | Mx.Band.loops(Mx.Band)]
+    Enum.each(held, &:sys.suspend/1)
+    Process.sleep(1800)
+    Enum.each(held, &:sys.resume/1)
+    Process.sleep(2500)
+    Supervisor.stop(session)
+
+    {:ok, %{samples: samples, rate: rate}} = Mx.Audio.read(out)
+    [first | _] = starts = note_starts(samples)
+    beats = Enum.map(starts, &((&1 - first) / rate))
+
+    assert length(beats) == 11
+
+    for {beat, at} <- Enum.with_index(beats) do
+      assert_in_delta beat, at, 2 / rate
+    end
+  end
+
+  # The frames of a recording at which a sound starts after a tenth of a second of silence.
+  defp note_starts(samples) do
+    sounding =
+      for {sample, frame} <- Enum.with_index(samples), abs(sample) > 1.0e-6, do: frame
+
+    sounding
+    |> Enum.zip([nil | sounding])
+    |> Enum.filter(fn {frame, before} -> before == nil or frame - before > 4800 end)
+    |> Enum.map(&elem(&1, 0))
+  end
+
   # A session that records a song whose lead is heard and whose bass is silent, subscribed to its saves.
   defp lead_and_silent_bass(ctx) do
     path = Path.join(ctx.tmp_dir, "parts.exs")

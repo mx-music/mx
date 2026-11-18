@@ -574,6 +574,170 @@ defmodule Mx.BandTest do
     end
   end
 
+  describe "given hand, passes handed over whole in beats" do
+    @describetag :tmp_dir
+
+    setup do
+      test = self()
+
+      %{
+        hand_opts: [
+          hand: fn name, span, label, events, opts ->
+            send(test, {:handed, name, span, label, events, opts})
+          end,
+          place_beats: fn start_us -> send(test, {:beats_placed, start_us}) end,
+          set_tempo: fn beat, tempo -> send(test, {:tempo_set, beat, tempo}) end
+        ]
+      }
+    end
+
+    test "a loop hands each pass with its beats, its number and every sound at its beat, with times left in beats",
+         ctx do
+      song =
+        load(ctx, """
+        import Mx
+        song(tempo: 6000, music: part(:a, loop(4, fn _, _ -> seq([note(60, 1, release: 2), note(64, 1.5), rest(1.5)]) end), synth: :saw))
+        """)
+
+      {_band, start_us} = start(song, ctx, ctx.hand_opts)
+
+      assert_receive {:beats_placed, ^start_us}
+      assert_receive {:tempo_set, 0, 6000}
+      assert_receive {:handed, :a, {first_from, first_to}, 0, events, notice: 2}
+      assert {first_from, first_to} == {0, 4}
+      assert [{first, {:note, _, :saw, _, _, _} = low}, {second, high}] = events
+      assert {first, second} == {0, 1}
+      assert %{note: 60.0, sustain: 1.0, release: 2.0} = params_map(low)
+      assert %{note: 64.0, sustain: 1.5} = params_map(high)
+      assert_receive {:handed, :a, {second_from, second_to}, 1, _events, notice: 2}
+      assert {second_from, second_to} == {4, 8}
+      refute_received {:played, _, _}
+    end
+
+    test "works out the next pass as soon as it is told the pass ends, however far ahead that is",
+         ctx do
+      song =
+        load(ctx, """
+        import Mx
+        song(tempo: 60, music: part(:a, loop(8, fn _, _ -> seq([note(60, 1), rest(7)]) end)))
+        """)
+
+      {band, _start_us} = start(song, ctx, ctx.hand_opts)
+      assert_receive {:handed, :a, _span, 0, _events, _opts}
+      refute_receive {:handed, _, _, _, _, _}, 100
+      [loop] = Band.loops(band)
+
+      send(loop, {:mx_pass_ending, :a, 4.0})
+      refute_receive {:handed, _, _, _, _, _}, 100
+      send(loop, {:mx_pass_ending, :a, 8.0})
+      assert_receive {:handed, :a, {from, to}, 1, [{at, _note}], _opts}, 200
+      assert {from, to, at} == {8, 16, 8}
+    end
+
+    test "the next pass reads the inputs as they are when the engine says the pass ends, and a later value waits a pass",
+         ctx do
+      {:ok, agent} = Agent.start_link(fn -> %{} end)
+
+      song =
+        load(ctx, """
+        import Mx
+        song(tempo: 60, music: part(:a, loop(4, fn _, inputs -> seq([note(inputs.cc[74] || 1, 1), rest(3)]) end)))
+        """)
+
+      opts = ctx.hand_opts ++ [inputs: fn _beat, _until_us -> Agent.get(agent, & &1) end]
+      {band, _start_us} = start(song, ctx, opts)
+      assert_receive {:handed, :a, _span, 0, [{0, first}], _opts}
+      assert %{note: 1.0} = params_map(first)
+      [loop] = Band.loops(band)
+
+      Agent.update(agent, &Map.put(&1, {:cc, 74}, 64))
+      send(loop, {:mx_pass_ending, :a, 4.0})
+      assert_receive {:handed, :a, _span, 1, [{4, second}], _opts}, 200
+      Agent.update(agent, &Map.put(&1, {:cc, 74}, 100))
+
+      assert %{note: 64.0} = params_map(second)
+      send(loop, {:mx_pass_ending, :a, 8.0})
+      assert_receive {:handed, :a, _span, 2, [{8, third}], _opts}, 200
+      assert %{note: 100.0} = params_map(third)
+    end
+
+    test "a change saved in the middle of a pass is handed over with the next pass", ctx do
+      first =
+        load(ctx, song(60, ["part(:a, loop(4, fn _, _ -> seq([note(60, 1), rest(3)]) end))"]))
+
+      second =
+        load(ctx, song(60, ["part(:a, loop(4, fn _, _ -> seq([note(67, 1), rest(3)]) end))"]))
+
+      {band, _start_us} = start(first, ctx, ctx.hand_opts)
+      assert_receive {:handed, :a, _span, 0, [{0, _note}], _opts}
+      [loop] = Band.loops(band)
+      Band.switch(band, second)
+      refute_receive {:handed, _, _, _, _, _}, 100
+
+      send(loop, {:mx_pass_ending, :a, 4.0})
+      assert_receive {:handed, :a, _span, 1, [{4, changed}], _opts}, 200
+      assert %{note: 67.0} = params_map(changed)
+    end
+
+    test "a saved version with a new tempo starts it on the first whole beat more than 150 ms away",
+         ctx do
+      part = "part(:a, loop(4, fn _, _ -> seq([rest(4)]) end))"
+      first = load(ctx, song(120, [part]))
+      second = load(ctx, song(90, [part]))
+      at_beat_10_2 = System.os_time(:microsecond) - 5_100_000
+
+      capture_io(:stderr, fn ->
+        {band, _} = start(first, ctx, ctx.hand_opts ++ [start_us: at_beat_10_2, ahead_ms: 500])
+        assert_receive {:tempo_set, 0, 120}
+        Band.switch(band, second)
+
+        assert_receive {:tempo_set, 11, 90}
+        assert [{11, _, 90}, {0, ^at_beat_10_2, 120}] = Band.timeline(band)
+        GenServer.stop(band)
+      end)
+    end
+
+    test "without hand, a saved tempo waits for the notes already sent", ctx do
+      part = "part(:a, loop(4, fn _, _ -> seq([rest(4)]) end))"
+      first = load(ctx, song(120, [part]))
+      second = load(ctx, song(90, [part]))
+      at_beat_10_2 = System.os_time(:microsecond) - 5_100_000
+
+      capture_io(:stderr, fn ->
+        {band, _} = start(first, ctx, start_us: at_beat_10_2, ahead_ms: 500)
+        Band.switch(band, second)
+
+        assert [{12, _, 90}, {0, ^at_beat_10_2, 120}] = Band.timeline(band)
+        GenServer.stop(band)
+      end)
+    end
+
+    test "tells set_tempo each change the music writes, at its beat, and leaves the effects in beats",
+         ctx do
+      test = self()
+
+      start_part = fn name, chain ->
+        send(test, {:part_started, name, chain})
+        %{part: name}
+      end
+
+      song =
+        load(ctx, """
+        import Mx
+        song(tempo: 6000, music: part(:a, seq([tempo(7800, over: 16), repeat(seq([note(60, 0), rest(1)]), 24)]), fx: [echo: [phase: 0.5]]))
+        """)
+
+      start(song, ctx, ctx.hand_opts ++ [start_part: start_part])
+
+      assert_receive {:tempo_set, 0, 6000}
+      assert_receive {:tempo_set, 0, {:ramp, 6000, 7800, 16}}
+      assert_receive {:part_started, :a, [echo: [phase: 0.5]]}
+      assert_receive {:handed, :a, _span, 0, _events, _opts}
+      refute_received {:part_started, _, _}
+      refute_received {:tempo_set, _, _}
+    end
+  end
+
   describe "samples" do
     @describetag :tmp_dir
 

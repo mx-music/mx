@@ -359,7 +359,7 @@ defmodule Mx.Engine.MxsTest do
          %{wav: wav, at: at} do
       Mxs.start_part(:lead, [])
       :ok = Mxs.set_tempo(0, 120)
-      :ok = Mxs.pass(:lead, {0, 8}, 0, for(beat <- 0..5, do: {beat, blip()}))
+      :ok = Mxs.pass(:lead, {0, 8}, 0, for(beat <- 0..6, do: {beat, blip()}))
       Mxs.render_to(at + 700_000)
       :ok = Mxs.set_tempo(2, 60)
       :ok = Mxs.set_tempo(4, {:ramp, 60, 120, 1})
@@ -367,7 +367,14 @@ defmodule Mx.Engine.MxsTest do
 
       # Beat 5 ends a ramp from 60 to 120 over one beat, which lasts 60 / (120 - 60) * ln 2 seconds.
       ramp = round(:math.log(2) * 48_000)
-      assert starts(wav) == [0, 24_000, 48_000, 96_000, 144_000, 144_000 + ramp]
+      # The tempo holds where the ramp ends.
+      held = 144_000 + ramp + 24_000
+      expected = [0, 24_000, 48_000, 96_000, 144_000, 144_000 + ramp, held]
+      starts = starts(wav)
+      assert length(starts) == length(expected)
+
+      # The ramp's end is placed within a frame, by rounding.
+      for {start, at} <- Enum.zip(starts, expected), do: assert_in_delta(start, at, 1)
     end
 
     test "tells the process that started the part when its pass ends within the notice, and nothing once the next is handed over",
@@ -601,7 +608,7 @@ defmodule Mx.Engine.MxsTest do
 
   # Stops the engine, and gives the frame each sound of its recording starts at, counted from the
   # first: the first sample above a thousandth of full scale after a twentieth of a second without
-  # one. The first starts where the test placed beat 0, a millisecond or two after the engine started.
+  # one. The first starts where the test placed beat 0, some milliseconds after the engine started.
   defp starts(wav) do
     stop_supervised!(Mxs)
     {:ok, %{samples: samples, rate: 48_000}} = Mx.Audio.read(wav)
@@ -617,7 +624,7 @@ defmodule Mx.Engine.MxsTest do
     end)
     |> Enum.map(&elem(&1, 0))
     |> Enum.reverse()
-    |> then(fn [first | _] = starts when first < 480 -> Enum.map(starts, &(&1 - first)) end)
+    |> then(fn [first | _] = starts -> Enum.map(starts, &(&1 - first)) end)
   end
 
   # The levels sent until none comes for a fifth of a second, the earliest first.

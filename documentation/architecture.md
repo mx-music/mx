@@ -33,7 +33,7 @@ graph TD
   file --> watcher
   watcher -->|tempo and music| band
   inputs -.->|snapshot for each pass| band
-  band -->|notes, half a second ahead| engine
+  band -->|tempo, and each pass whole, in beats| engine
   band -->|MIDI and OSC steps| out
   engine --> card
   out --> devices
@@ -44,12 +44,16 @@ The functions of `Mx.Music` build the music as plain values and raise as soon as
 The song's music is split into sections, the items of its outermost `seq`, and each part becomes a loop whose pass `n` plays that part's notes in section `n`.
 
 The band starts one `Mx.Loop` process for each loop.
-A loop works out each pass half a second before it starts, through `Mx.Pass`, which is a pure function of the loop, the pass number and a snapshot of the inputs, so the same pass always plays the same notes.
-Each note then goes to the engine half a second before it plays, stamped with the Unix time in microseconds of its beat.
+A loop works out each pass through `Mx.Pass`, which is a pure function of the loop, the pass number and a snapshot of the inputs, so the same pass always plays the same notes.
+It hands the pass to the engine whole, every note and change at its beat, with the options measured in beats left in beats.
+mx keeps the music: the song, its passes and when each is worked out.
+The engine keeps time: the tempo map, where each beat falls, and the notes of the passes handed to it until they play.
 
-A pass that takes longer than that half second to work out is late.
-mx drops its notes that are more than a quarter of a beat late, sends the rest, and prints a warning naming the part and how many notes it dropped.
-The part plays on, and its next pass is on time once it catches up.
+The engine tells a loop two beats before its pass ends, and the loop then works out and hands over the next one, so a part always has between two beats and a pass of music waiting in the engine.
+The first pass, and one that no word came for, is worked out half a second before it starts.
+mx's VM held up for less than the music waiting is not heard.
+A pass handed over late plays its notes less than a quarter of a beat late at once, and the engine drops the rest.
+MIDI and OSC are still sent by mx, each step half a second before its time.
 
 ## Time
 
@@ -58,14 +62,15 @@ Every loop works out the real time of each note from its beat on that timeline, 
 
 mxs plays events on its own clock, the sound card's, which drifts from the system's.
 `Mx.Engine.Mxs` turns each Unix time into the second at which mxs renders it, following that drift.
-`Mx.Clock` is the time the band plays against: the system's while a song plays, and the time the render has reached while `Mx.Render` renders a song offline, 10 ms at a time.
-A render runs the same band, loops and engine as playing does, only as fast as the machine goes.
+The band hands the engine the song's tempo and each change the music writes, at its beat, so a note handed over moves with a tempo change made before it plays.
+`Mx.Clock` is the time the band plays against: the system's while a song plays, and the time the render has reached while `Mx.Render` renders a song offline.
+A render runs the same band, loops and engine as playing does, only as fast as the machine goes: it moves its clock to the next time a loop needs to work something out, and the engine renders up to there.
 
 ## Changing a song while it plays
 
 Saving the file loads it again, and a version that fails to load prints its error while the playing version carries on.
 A changed loop takes over at the end of its own pass, a new loop starts on the next beat, and a removed loop stops at the end of its pass.
-A new tempo starts on the first whole beat after the notes already sent, so every loop changes on the same beat.
+A new tempo starts on the first whole beat more than 150 ms away, so every loop changes on the same beat.
 Saving the file with the same `song(tempo:)` keeps the tempo the music has changed to.
 `Mx.Band` has the full rules.
 
@@ -78,7 +83,7 @@ That NIF crate is compiled with mx, so building mx needs the mxs repository chec
 mxs knows synths and effects by name, each with its options declared.
 `Mx.Synths` reads that catalog from mxs the first time it is needed, so a song's synth names and options are checked against what mxs declares.
 An event is a note of a synth, a sample, or a change to sounds that are playing; `Mx.Engine` lists them.
-A part's effects form a chain in mxs that its notes play into, and the chain is replaced only when its effects or the tempo change.
+A part's effects form a chain in mxs, a part named after the loop, that its notes play into; its options in beats follow the tempo, and the chain is replaced only when its effects change.
 
 A panic in a NIF call reaches Elixir as an error, as Rustler turns it into one, so the BEAM carries on.
 A panic while mxs fills the sound card's buffer turns the output silent and marks the engine failed, instead of ending the process.

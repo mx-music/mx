@@ -11,6 +11,8 @@ defmodule Mx.Band do
   The band starts a loop again when its process fails.
   Given `subscribe`, it subscribes to the inputs, and passes each one to the loops whose `on:` waits for it.
   Each version's live audio goes to `live`, which starts, changes and stops it.
+  Given `hand`, each loop hands the engine its passes whole, in beats, as `Mx.Loop` describes; `place_beats` is then given the real time of beat 0 as the band starts, and `set_tempo` each tempo that goes on the timeline with its beat, so the engine places the passes on the band's timeline.
+  A saved version with a new tempo then starts it on the first whole beat more than 150 ms away.
   Given `start_part`, each loop plays into a part of the engine by its name, which `mute/3` and `solo/2` silence through the `mute` and `solo` functions; a muted part plays on in its place, and stays muted through new versions of the song.
   Each version of the song goes through `prepare` first, which loads its samples, so playing starts only once they are ready.
   When every loop has played its last pass, the band calls `on_end`.
@@ -22,6 +24,9 @@ defmodule Mx.Band do
   use GenServer
 
   alias Mx.Loop
+
+  # How far ahead of its sound the engine places an event it holds in beats.
+  @tempo_lead_us 150_000
 
   @doc "Starts the band with the `:song` in `opts`, the `:play` function its notes go to the engine through, as `c:Mx.Engine.play/2` takes them, an optional `:new_id` as `c:Mx.Engine.new_id/0`, optional functions for samples, effects, inputs and live audio, and an optional `:name`."
   def start_link(opts) when is_list(opts) do
@@ -89,6 +94,7 @@ defmodule Mx.Band do
           :start_fx,
           :stop_fx,
           :start_part,
+          :hand,
           :out,
           :inputs,
           :set,
@@ -101,6 +107,8 @@ defmodule Mx.Band do
       loops: %{},
       stopping: %{},
       delay_us: Keyword.get(opts, :delay, fn _band -> 0 end).(self()),
+      set_tempo: Keyword.get(opts, :set_tempo, fn _beat, _tempo -> :ok end),
+      tempo_lead_us: if(opts[:hand], do: @tempo_lead_us, else: ahead_us),
       mute: Keyword.get(opts, :mute, fn _name, _muted -> :ok end),
       solo: Keyword.get(opts, :solo, fn _name, _soloed -> :ok end),
       soloed: [],
@@ -108,6 +116,8 @@ defmodule Mx.Band do
       told: []
     }
 
+    Keyword.get(opts, :place_beats, fn _start_us -> :ok end).(start_us)
+    state.set_tempo.(0, song.tempo)
     if subscribe = opts[:subscribe], do: subscribe.(self())
     state = Map.put(state, :live, Keyword.get(opts, :live, fn _lives, _tempo -> :ok end))
     state.live.(song.live, song.tempo)
@@ -356,17 +366,26 @@ defmodule Mx.Band do
   # A loop started by input numbers its own passes, which are not the song's sections.
   defp sections?(song, name), do: Enum.any?(song.loops, &(&1.name == name and &1.on == nil))
 
+  # The engine moves the notes it holds in beats, so the tempo changes sooner when it holds them.
   defp retempo(state, tempo) do
-    %{state | timeline: Mx.Tempo.put(state.timeline, next_beat(state), tempo, 0)}
+    put_tempo(state, floor(beat_at(state.timeline, now() + state.tempo_lead_us)) + 1, tempo, 0)
   end
 
   defp put_changes(state, start, pass) do
-    timeline =
-      Enum.reduce(Mx.Tempo.changes(state.song.tempos, pass), state.timeline, fn
-        {beat, bpm, over}, timeline -> Mx.Tempo.put(timeline, start + beat, bpm, over)
+    state =
+      Enum.reduce(Mx.Tempo.changes(state.song.tempos, pass), state, fn
+        {beat, bpm, over}, state -> put_tempo(state, start + beat, bpm, over)
       end)
 
-    %{state | timeline: timeline, tempo_pass: pass}
+    %{state | tempo_pass: pass}
+  end
+
+  # Puts a change on the timeline, and tells `set_tempo` the entry that starts it.
+  defp put_tempo(state, beat, bpm, over) do
+    timeline = Mx.Tempo.put(state.timeline, beat, bpm, over)
+    {_beat, _us, tempo} = Enum.find(timeline, fn {entry, _, _} -> entry == beat end)
+    state.set_tempo.(beat, tempo)
+    %{state | timeline: timeline}
   end
 
   # The first whole beat after every note a loop may already have sent.
