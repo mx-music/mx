@@ -32,6 +32,7 @@ defmodule Mix.Tasks.Mx.Fit do
       mx fit clarinet --held clarinet.txt --check
 
   `--held` with a list fits recordings of held notes partial by partial, bowed or blown, as `Mx.Fit.Held` describes, and takes the same options except `--note` and `--vel`.
+  `--steady` with `--held` holds each note at one level from where it starts holding, for recordings that ease off before they are let go, as the University of Iowa's flute does.
   Its check compares each partial over the attack and on average where the note holds, and the ERB bands until a second after the note is let go, with the synth held as long as the recording.
   The guide on instruments, under "Fitting a struck instrument", describes the list and what the check prints.
   """
@@ -106,7 +107,8 @@ defmodule Mix.Tasks.Mx.Fit do
           csv: :string,
           tour: :string,
           count: :integer,
-          option: :keep
+          option: :keep,
+          steady: :boolean
         ]
       )
 
@@ -117,6 +119,9 @@ defmodule Mix.Tasks.Mx.Fit do
 
     if kind == :held and opts[:note],
       do: Mx.Command.fail("--note and --vel go with --struck, not --held")
+
+    if kind == :struck and opts[:steady],
+      do: Mx.Command.fail("--steady goes with --held, not --struck")
 
     if !opts[:out] and !opts[:check] and !opts[:tour],
       do:
@@ -142,7 +147,7 @@ defmodule Mix.Tasks.Mx.Fit do
       |> Enum.sort_by(&{&1.note, &1.velocity})
 
     if out = opts[:out] do
-      figures = fitter.figures(recordings)
+      figures = figures(kind, recordings, opts)
       File.write!(out, figures)
       count = length(recordings)
       bytes = byte_size(figures)
@@ -154,10 +159,10 @@ defmodule Mix.Tasks.Mx.Fit do
         print_frames(!opts[:own] && synth, recordings, opts, options)
 
       opts[:own] ->
-        print_struck(fitter.own(recordings), "the fit's own render", "the fit", kind)
+        print_struck(own(kind, recordings, opts), "the fit's own render", "the fit", kind)
 
       opts[:check] ->
-        checks = Struck.beside(fitter.check(synth, recordings, options), fitter.own(recordings))
+        checks = Struck.beside(fitter.check(synth, recordings, options), own(kind, recordings, opts))
         print_struck(checks, synth, "synth", kind)
 
       true ->
@@ -171,6 +176,12 @@ defmodule Mix.Tasks.Mx.Fit do
       IO.puts("wrote a tour of #{count} recordings, each followed by #{synth}, to #{tour}")
     end
   end
+
+  defp figures(:held, recordings, opts), do: Held.figures(recordings, steady: !!opts[:steady])
+  defp figures(:struck, recordings, _opts), do: Struck.figures(recordings)
+
+  defp own(:held, recordings, opts), do: Held.own(recordings, steady: !!opts[:steady])
+  defp own(:struck, recordings, _opts), do: Struck.own(recordings)
 
   defp option!(text) do
     with [name, value] <- String.split(text, "="),

@@ -34,9 +34,12 @@ defmodule Mx.Fit.Held do
     end
   end
 
-  @doc "The figures fitted to the recordings, as mxs reads them."
-  def figures(recordings) when is_list(recordings),
-    do: recordings |> Struck.native() |> Native.fit_held()
+  @doc """
+  The figures fitted to the recordings, as mxs reads them.
+  `steady: true` holds each note at one level from where it starts holding, for recordings that ease off before they are let go.
+  """
+  def figures(recordings, options \\ []) when is_list(recordings),
+    do: recordings |> Struck.native() |> Native.fit_held(Keyword.get(options, :steady, false))
 
   @doc "Each recording measured partial by partial: its pitch, where it holds from and is let go, its fall after, its vibrato, and each partial's levels."
   def measure(recordings) when is_list(recordings) do
@@ -66,11 +69,13 @@ defmodule Mx.Fit.Held do
     |> Enum.map(fn {:ok, check} -> check end)
   end
 
-  @doc "Checks the fit's own render of each recording against it, as `check/3` checks a synth: the figures fitted to the recording played as sines and noise with their vibrato, with no synth."
-  def own(recordings) when is_list(recordings) do
+  @doc "Checks the fit's own render of each recording against it, as `check/3` checks a synth: the figures fitted to the recording played as sines and noise with their vibrato, with no synth, fitted with `options` as `figures/2` takes them."
+  def own(recordings, options \\ []) when is_list(recordings) do
+    steady = Keyword.get(options, :steady, false)
+
     recordings
     |> Struck.native()
-    |> Task.async_stream(&Native.check_fit_held/1, timeout: :infinity)
+    |> Task.async_stream(&Native.check_fit_held(&1, steady), timeout: :infinity)
     |> Enum.zip_with(recordings, fn {:ok, check}, recording ->
       Map.merge(check, Map.take(recording, [:note, :velocity, :kept]))
     end)

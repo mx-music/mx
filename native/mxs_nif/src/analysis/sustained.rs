@@ -350,15 +350,16 @@ pub fn render(held: &Held, rate: f64, lead: f64, release: f64, seconds: f64, vib
 
 /// Fits a held note's figures over `seconds` from its start: each partial's level at each time from its track on the steadied sound, until the recording lets it go, and the noise from what the recording holds beyond the partials, both corrected against steady renders measured the same way.
 /// After the last time before the recording lets the note go, every level holds, so a note held longer holds as the recording last did.
-pub fn fit(sound: &[f64], rate: f64, note: f64, seconds: f64) -> (Held, Measured) {
+/// With `steady`, every level holds from where the note starts holding instead, at one level over the whole stretch, for recordings that ease off before they are let go, as Iowa's flute does, since a longer note should not hold the easing.
+pub fn fit(sound: &[f64], rate: f64, note: f64, seconds: f64, steady: bool) -> (Held, Measured) {
     let measured = measure(sound, rate, note, seconds);
     let recorded = &measured.note;
     let spectra = &recorded.spectra;
     let seconds = spectra.frames.len() as f64 * HOP + spectra.window / 2.0 - LEAD;
     let frame = |t: f64| ((t + LEAD) / HOP).round().max(0.0) as usize;
     let last = measured.holding.end.min(spectra.frames.len());
-    // From where the note holds, one level over the whole stretch, since a recorded note eases off before it is let go and a longer one should not hold that.
-    let holds = TIMES.partition_point(|t| frame(*t) < last).max(1).min(TIMES.partition_point(|t| *t < measured.held) + 1);
+    let follows = TIMES.partition_point(|t| frame(*t) < last).max(1);
+    let holds = if steady { follows.min(TIMES.partition_point(|t| *t < measured.held) + 1) } else { follows };
     // The frames each time is read over: those nearer it than its neighbours, the last time's reaching to where the note is let go.
     let segments: Vec<std::ops::Range<usize>> = (0..holds)
         .map(|j| {
@@ -694,8 +695,8 @@ pub fn check(recording: &[f64], rate: f64, rendered: &[f64], render_rate: f64, b
 }
 
 /// How far the fit's own render of a held note, its figures played as sines and noise with their vibrato and no synth, is from the recording.
-pub fn own(sound: &[f64], rate: f64, note: f64, seconds: f64) -> fit::Check {
-    let (held, _) = fit(sound, rate, note, seconds);
+pub fn own(sound: &[f64], rate: f64, note: f64, seconds: f64, steady: bool) -> fit::Check {
+    let (held, _) = fit(sound, rate, note, seconds, steady);
     let rendered = render(&held, rate, 0.05, held.release, seconds + 0.3, true);
     check(sound, rate, &rendered, rate, (0.05 * rate).round() as usize, note, seconds)
 }
@@ -835,7 +836,7 @@ mod tests {
     fn a_held_note_holds_its_last_level_after_it_is_let_go_and_falls_at_its_slope() {
         let rate = 48000.0;
         let sound = held(rate, hz(60.0), 2.0, 60.0, (0.0, 0.0));
-        let (figures, _) = fit(&sound, rate, 60.0, 3.5);
+        let (figures, _) = fit(&sound, rate, 60.0, 3.5, false);
         assert!((figures.release - 2.0).abs() < 0.1, "{}", figures.release);
         let first = figures.figures.partials.iter().find(|p| p.harmonic == 1).unwrap();
         let last = *first.levels.last().unwrap();
@@ -845,10 +846,30 @@ mod tests {
     }
 
     #[test]
+    fn a_note_easing_off_before_it_is_let_go_holds_its_easing_unless_steady() {
+        // Its fundamental holds while its upper harmonics fall 18 dB over the last second it is held, as a recorded flute's do.
+        let rate = 48000.0;
+        let f0 = hz(60.0);
+        let mut sound = vec![0.0; (0.2 * rate) as usize];
+        sound.extend((0..(3.5 * rate) as usize).map(|i| {
+            let t = i as f64 / rate;
+            let easing = 10f64.powf(-18.0 * (t - 1.0).clamp(0.0, 1.0) / 20.0);
+            let wave: f64 = (1..=6).map(|n| (2.0 * PI * n as f64 * f0 * t).sin() / n as f64 * if n >= 3 { easing } else { 1.0 }).sum();
+            0.2 * wave * (t / 0.05).min(1.0) * 10f64.powf(-60.0 * (t - 2.0).max(0.0) / 20.0)
+        }));
+        let held_level = |steady: bool| {
+            let (figures, _) = fit(&sound, rate, 60.0, 3.5, steady);
+            *figures.figures.partials.iter().find(|p| p.harmonic == 4).unwrap().levels.last().unwrap()
+        };
+        let (following, steady) = (held_level(false), held_level(true));
+        assert!(steady - following > 6.0, "steady {steady}, following {following}");
+    }
+
+    #[test]
     fn the_fits_own_render_of_a_held_note_with_vibrato_is_close_partial_by_partial_and_in_erb_bands() {
         let rate = 48000.0;
         let sound = held(rate, hz(60.0), 2.0, 60.0, (5.0, 20.0));
-        let check = own(&sound, rate, 60.0, 3.5);
+        let check = own(&sound, rate, 60.0, 3.5, false);
         assert!(check.erb < 1.5, "{}", check.erb);
         let strong: Vec<_> = check.partials.iter().filter(|p| p.below < 30.0).collect();
         assert!(!strong.is_empty() && strong.iter().all(|p| p.mean.abs() < 2.0), "{:?}", strong.iter().map(|p| p.mean).collect::<Vec<_>>());

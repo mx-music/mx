@@ -603,6 +603,14 @@ defmodule Mix.Tasks.Mx.FitTest do
         Mix.Tasks.Mx.Fit.run(["cello", "--held", list, "--check", "--note", "C4"])
       end
     end
+
+    test "--steady goes with --held, not --struck", ctx do
+      list = write_list(ctx, ["C4 80 c4.wav"])
+
+      assert_raise Mix.Error, "--steady goes with --held, not --struck", fn ->
+        Mix.Tasks.Mx.Fit.run(["marimba", "--struck", list, "--check", "--steady"])
+      end
+    end
   end
 
   # The keyboard_electronic_098 and guitar_electronic_028 instruments of the test set of Google's

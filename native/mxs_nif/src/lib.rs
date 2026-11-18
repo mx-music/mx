@@ -510,11 +510,11 @@ fn tour_struck<'a>(env: Env<'a>, pairs: Vec<(Struck<'a>, (Binary<'a>, (String, u
     Ok(Binary::from_owned(binary, env))
 }
 
-/// The figures of held notes fitted partial by partial, as mxs reads them, each recording given as to `fit_struck`.
+/// The figures of held notes fitted partial by partial, as mxs reads them, each recording given as to `fit_struck`, and each note held at one level when `steady`, as `analysis::sustained::fit` does.
 #[rustler::nif(schedule = "DirtyCpu")]
-fn fit_held<'a>(env: Env<'a>, recordings: Vec<Struck<'a>>) -> NifResult<Binary<'a>> {
+fn fit_held<'a>(env: Env<'a>, recordings: Vec<Struck<'a>>, steady: bool) -> NifResult<Binary<'a>> {
     let sounds = recordings.iter().map(|((data, format, rate), within, (note, velocity, seconds, _))| Ok((span(data, format, *within)?, *rate, *note, *velocity, *seconds))).collect::<NifResult<Vec<_>>>()?;
-    let fitted = analysis::parallel(&sounds, |(sound, rate, note, velocity, seconds)| (note.round() as u8, *velocity, analysis::sustained::fit(sound, *rate, *note, *seconds).0));
+    let fitted = analysis::parallel(&sounds, |(sound, rate, note, velocity, seconds)| (note.round() as u8, *velocity, analysis::sustained::fit(sound, *rate, *note, *seconds, steady).0));
     let bytes = analysis::sustained::figures_bytes(&fitted);
     let mut binary = OwnedBinary::new(bytes.len()).ok_or(rustler::Error::Atom("no_memory"))?;
     binary.as_mut_slice().copy_from_slice(&bytes);
@@ -531,9 +531,9 @@ fn check_held(recording: Struck, rendered: (Binary, (String, usize, usize), f64)
 
 /// How far the fit's own render of a held note is from the recording, as `check_held` compares them.
 #[rustler::nif(schedule = "DirtyCpu")]
-fn check_fit_held(recording: Struck) -> NifResult<analysis::fit::Check> {
+fn check_fit_held(recording: Struck, steady: bool) -> NifResult<analysis::fit::Check> {
     let ((data, format, rate), within, (note, _velocity, seconds, _)) = recording;
-    Ok(analysis::sustained::own(&span(&data, &format, within)?, rate, note, seconds))
+    Ok(analysis::sustained::own(&span(&data, &format, within)?, rate, note, seconds, steady))
 }
 
 /// Where a recording of a held note holds from and is let go, in seconds after it starts, and the seconds into its span it starts at.

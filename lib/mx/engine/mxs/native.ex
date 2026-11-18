@@ -119,14 +119,14 @@ defmodule Mx.Engine.Mxs.Native do
   def frames_struck(_recording, _rendered, _times), do: :erlang.nif_error(:nif_not_loaded)
   def tour_struck(_pairs), do: :erlang.nif_error(:nif_not_loaded)
 
-  @doc "The figures of held notes fitted partial by partial, as mxs reads them, from recordings each as `fit_struck/1` takes them."
-  def fit_held(_recordings), do: :erlang.nif_error(:nif_not_loaded)
+  @doc "The figures of held notes fitted partial by partial, as mxs reads them, from recordings each as `fit_struck/1` takes them, each note held at one level from where it starts holding when `steady`."
+  def fit_held(_recordings, _steady), do: :erlang.nif_error(:nif_not_loaded)
 
   @doc "How far a render of a held note is from a recording of it, as `check_struck/2` takes them."
   def check_held(_recording, _rendered), do: :erlang.nif_error(:nif_not_loaded)
 
   @doc "How far the fit's own render of a held note is from the recording; where a recording holds from and is let go, in seconds after it starts, and the seconds into its span it starts at; and a held note measured partial by partial."
-  def check_fit_held(_recording), do: :erlang.nif_error(:nif_not_loaded)
+  def check_fit_held(_recording, _steady), do: :erlang.nif_error(:nif_not_loaded)
   def timing_held(_recording), do: :erlang.nif_error(:nif_not_loaded)
   def measure_held_partials(_recording), do: :erlang.nif_error(:nif_not_loaded)
 
