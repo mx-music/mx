@@ -259,7 +259,7 @@ defmodule Mx.ABCTest do
     assert length(String.split(output, "ABC leaves out")) == 2
     assert output =~ "ABC leaves out velocity, the pedal, each part's synth and its effects\n"
     assert output =~ "kick is left out: it plays no notes with a pitch\n"
-    assert Regex.scan(~r/^V:\d+ name=/m, File.read!(out)) == [[~s(V:1 name=)], [~s(V:2 name=)]]
+    assert Regex.scan(~r/^V:\d+ name=/m, File.read!(out)) == [["V:1 name="], ["V:2 name="]]
     refute File.read!(out) =~ "kick"
   end
 end

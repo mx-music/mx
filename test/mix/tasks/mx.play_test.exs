@@ -255,7 +255,7 @@ defmodule Mix.Tasks.Mx.PlayTest do
     rights = note_starts(for <<_l::float-32-little, r::float-32-little <- data>>, do: r)
 
     assert length(lefts) == length(rights)
-    for {l, r} <- Enum.zip(lefts, rights), do: assert(abs(l - r) <= 1)
+    for {left, right} <- Enum.zip(lefts, rights), do: assert(abs(left - right) <= 1)
 
     # Beat 0 is the first click, so the change falls this far into the recording.
     changed = hd(lefts) + (changed_us - start_us) * rate / 1_000_000
@@ -272,12 +272,13 @@ defmodule Mix.Tasks.Mx.PlayTest do
       for {sample, frame} <- Enum.with_index(samples), abs(sample) > 1.0e-6, do: frame
 
     sounding
-    |> Enum.zip([nil | sounding])
+    |> Enum.zip([nil] ++ sounding)
     |> Enum.filter(fn {frame, before} -> before == nil or frame - before > 4800 end)
     |> Enum.map(&elem(&1, 0))
   end
 
-  # A session that records a song whose lead is heard and whose bass is silent, subscribed to its saves.
+  # A session that records a song whose lead is heard and whose bass is silent, subscribed to its
+  # saves.
   defp lead_and_silent_bass(ctx) do
     path = Path.join(ctx.tmp_dir, "parts.exs")
     out = Path.join(ctx.tmp_dir, "parts.wav")

@@ -6,6 +6,7 @@ defmodule Mix.Tasks.Mx.FitTest do
 
   alias Mx.Engine.Mxs
   alias Mx.Fit
+  alias Mx.Fit.Struck
 
   @moduletag :tmp_dir
 
@@ -398,7 +399,7 @@ defmodule Mix.Tasks.Mx.FitTest do
              ) == printed
 
       assert lines
-             |> Enum.map(&(&1 |> String.split(",") |> Enum.at(3)))
+             |> Enum.map(&fourth_field/1)
              |> Enum.uniq()
              |> length() == 22
     end
@@ -460,7 +461,7 @@ defmodule Mix.Tasks.Mx.FitTest do
       off = Mxs.Native.check_struck(struck(base), packed(sharp))
 
       pitch =
-        Mx.Fit.Struck.pitch([
+        Struck.pitch([
           Map.merge(in_tune, %{note: 62, velocity: 127}),
           Map.merge(off, %{note: 60, velocity: 127})
         ])
@@ -662,9 +663,9 @@ defmodule Mix.Tasks.Mx.FitTest do
 
     test "C#5 at velocity 127 loses its 7th harmonic by 0.5 seconds and holds its fundamental at 2 seconds",
          %{dir: dir} do
-      {:ok, recordings} = Mx.Fit.Struck.recordings(dir, [73])
+      {:ok, recordings} = Struck.recordings(dir, [73])
       recording = Enum.find(recordings, &(&1.velocity == 127))
-      [%{partials: partials}] = Mx.Fit.Struck.check(:electric_piano, [recording])
+      [%{partials: partials}] = Struck.check(:electric_piano, [recording])
 
       %{floor: floor, levels: levels} = Enum.find(partials, &(&1.harmonic == 7))
       {0.5, _recorded, rendered} = List.keyfind(levels, 0.5, 0)
@@ -766,7 +767,7 @@ defmodule Mix.Tasks.Mx.FitTest do
     test "--check reads the mf C4 to B4 against itself 10 cents up at the same shares, the ERB gap within 0.3 dB, and 10 cents off",
          %{marimba: marimba} = ctx do
       list = write_list(ctx, ["C4:B4 80 kept #{marimba}/Marimba.yarn.mf.C4B4.aif"])
-      {:ok, recordings, _lines} = Mx.Fit.Struck.listed(list)
+      {:ok, recordings, _lines} = Struck.listed(list)
       {:ok, %{rate: rate} = format, data} = Mx.Audio.raw("#{marimba}/Marimba.yarn.mf.C4B4.aif")
       packing = Mx.Signal.native(format)
       size = div(format.bits + 7, 8) * format.channels
@@ -788,14 +789,14 @@ defmodule Mix.Tasks.Mx.FitTest do
         end
       end
 
-      same = Mx.Fit.Struck.summary(check.(1.0))
+      same = Struck.summary(check.(1.0))
       up = check.(2 ** (10 / 1200))
-      moved = Mx.Fit.Struck.summary(up)
+      moved = Struck.summary(up)
       assert_in_delta moved.strong.strike, same.strong.strike, 0.01
       assert_in_delta moved.strong.mean, same.strong.mean, 0.01
       assert_in_delta moved.weaker.mean, same.weaker.mean, 0.01
       assert moved.erb.median <= same.erb.median + 0.3
-      pitch = Mx.Fit.Struck.pitch(up)
+      pitch = Struck.pitch(up)
       assert_in_delta pitch.render - pitch.recordings, 10, 0.2
     end
 
@@ -839,9 +840,10 @@ defmodule Mix.Tasks.Mx.FitTest do
                  ~r/^#{partial}\n  recording( +[-\d.]+){22}\n  synth( +[-\d.]+){22}\n  the fit( +[-\d.]+){22}\n/m
       end
 
-      {:ok, recordings, _lines} = Mx.Fit.Struck.listed(list)
+      {:ok, recordings, _lines} = Struck.listed(list)
       recording = Enum.find(recordings, &(&1.note == 36))
-      frames = Mx.Fit.Struck.frames(nil, recording, for(step <- 0..21, do: (5 * step - 5) / 1000))
+      times = for step <- 0..21, do: (5 * step - 5) / 1000
+      frames = Struck.frames(nil, recording, times)
 
       for rows <- frames.partials ++ frames.bands,
           [fit, sines, noise] =
@@ -873,8 +875,8 @@ defmodule Mix.Tasks.Mx.FitTest do
     end
   end
 
-  # The folk harp and the Steinway B of the Versilian Community Sample Library, in the folder MX_VCSL
-  # names.
+  # The folk harp and the Steinway B of the Versilian Community Sample Library, in the folder
+  # MX_VCSL names.
   describe "the VCSL harp and piano recordings" do
     @describetag :vcsl
 
@@ -909,8 +911,8 @@ defmodule Mix.Tasks.Mx.FitTest do
       out = Path.join(ctx.tmp_dir, "piano.mxf")
       capture_io(fn -> Mix.Tasks.Mx.Fit.run(["piano", "--struck", list, "--out", out]) end)
 
-      {:ok, [recording], _lines} = Mx.Fit.Struck.listed(list)
-      [%{partials: partials}] = Mx.Fit.Struck.check(:piano, [recording])
+      {:ok, [recording], _lines} = Struck.listed(list)
+      [%{partials: partials}] = Struck.check(:piano, [recording])
       %{levels: checked} = Enum.find(partials, &(&1.harmonic == 1))
       assert {17.0, _recorded, _rendered} = List.keyfind(checked, 17.0, 0)
 
@@ -1047,7 +1049,13 @@ defmodule Mix.Tasks.Mx.FitTest do
       sound =
         for index <- 0..(3 * rate - 1) do
           time = index / rate
-          wave = Enum.sum(for n <- 1..4, do: :math.sin(2 * :math.pi() * hz * n * time) / n)
+
+          wave =
+            Enum.sum(
+              for harmonic <- 1..4,
+                  do: :math.sin(2 * :math.pi() * hz * harmonic * time) / harmonic
+            )
+
           0.2 * wave * 10 ** (-1.5 * time)
         end
 
@@ -1058,8 +1066,9 @@ defmodule Mix.Tasks.Mx.FitTest do
     dir
   end
 
-  # The shares --check prints are within the criteria of mx-00162, and it names the ten partials
-  # and the ten notes furthest off.
+  # The shares --check prints are at least 90% for the strong partials, 80% for the weaker ones,
+  # and the ERB bands 1.5 dB off at the median note and 3 dB at the worst, and it names the ten
+  # partials and the ten notes furthest off.
   defp assert_close(output) do
     [strike, mean] =
       captures(
@@ -1121,9 +1130,9 @@ defmodule Mix.Tasks.Mx.FitTest do
       end
   end
 
-  # A held note with harmonics at 1/n, after 0.2 seconds of silence: it swells in over 50 ms, holds
-  # for `seconds`, then falls at `fall` dB a second for a second, with `vibrato` as a rate in Hz
-  # and a depth in cents either side, full from the start.
+  # A held note with harmonics at 1/n, after 0.2 seconds of silence: it swells in over 50 ms,
+  # holds for `seconds`, then falls at `fall` dB a second for a second, with `vibrato` as a rate
+  # in Hz and a depth in cents either side, full from the start.
   defp held_note(note, seconds, opts \\ []) do
     rate = Mxs.render_rate()
     hz = Mx.Signal.hz(note)
@@ -1134,7 +1143,7 @@ defmodule Mix.Tasks.Mx.FitTest do
       Enum.map_reduce(0..round((seconds + 1) * rate - 1), 0.0, fn index, phase ->
         time = index / rate
         freq = hz * 2 ** (cents * :math.sin(2 * :math.pi() * vibrato * time) / 1200)
-        wave = Enum.sum(for n <- 1..6, do: :math.sin(n * phase) / n)
+        wave = Enum.sum(for harmonic <- 1..6, do: :math.sin(harmonic * phase) / harmonic)
         level = min(time / 0.05, 1) * 10 ** (-fall * max(time - seconds, 0) / 20)
         {0.2 * wave * level, phase + 2 * :math.pi() * freq / rate}
       end)
@@ -1157,7 +1166,8 @@ defmodule Mix.Tasks.Mx.FitTest do
   # Notes one after another, each ringing 1.5 seconds.
   defp run(notes), do: Enum.flat_map(notes, &struck_note(&1, 1.5))
 
-  # A made note with a floor of white noise 90 dB down, as a recording has, so that the measuring finds no partials in the window's sidelobes.
+  # A made note with a floor of white noise 90 dB down, as a recording has, so that the measuring
+  # finds no partials in the window's sidelobes.
   defp with_floor(samples) do
     :rand.seed(:exsss, {1, 2, 3})
     for sample <- samples, do: sample + 3.0e-5 * (2 * :rand.uniform() - 1)
@@ -1257,10 +1267,12 @@ defmodule Mix.Tasks.Mx.FitTest do
   # A level of figures between their times, in straight lines.
   defp level_at(times, levels, time) do
     {earlier, later} = times |> Enum.zip(levels) |> Enum.split_while(fn {t, _} -> t <= time end)
-    {t0, l0} = List.last(earlier)
-    {t1, l1} = List.first(later)
-    l0 + (time - t0) / (t1 - t0) * (l1 - l0)
+    {before, level_before} = List.last(earlier)
+    {next, level_next} = List.first(later)
+    level_before + (time - before) / (next - before) * (level_next - level_before)
   end
+
+  defp fourth_field(line), do: line |> String.split(",") |> Enum.at(3)
 
   # The power of a recording's partials over its first half second, in dB, as the check sums it.
   defp loudness(times, %{partials: partials}) do

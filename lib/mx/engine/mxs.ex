@@ -617,7 +617,8 @@ defmodule Mx.Engine.Mxs do
     {:noreply, Enum.reduce(Map.keys(state.asked), state, &stop_sending(&2, &1, pid))}
   end
 
-  # The clock's reports keep the delay current, which the output's report gives only as the device opens.
+  # The clock's reports keep the delay current, which the output's report gives only as the device
+  # opens.
   defp current(%{output: %{device: nil} = output}), do: output
   defp current(state), do: %{state.output | delay_ms: state.delay_us / 1000}
 

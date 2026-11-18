@@ -1269,8 +1269,8 @@ defmodule Mx.BandTest do
   describe "a loop started by input on a grid" do
     @describetag :tmp_dir
 
-    # A song at tempo 120 whose loop plays one note when a MIDI note comes, and the band started so
-    # that beat `beat` is now.
+    # A song at tempo 120 whose loop plays one note when a MIDI note comes, and the band started
+    # so that beat `beat` is now.
     defp start_at_beat(ctx, beat, grid) do
       on = if grid, do: "on: :midi_note, grid: #{grid}", else: "on: :midi_note"
 
@@ -1365,8 +1365,9 @@ defmodule Mx.BandTest do
       }
     end
 
-    defp four(name, pitch),
-      do: "part(:#{name}, loop(4, fn _, _ -> seq([note(#{pitch}, 1), rest(3)]) end))"
+    defp four(name, pitch) do
+      "part(:#{name}, loop(4, fn _, _ -> seq([note(#{pitch}, 1), rest(3)]) end))"
+    end
 
     test "examples/choro.exs saved 4 beats into a section waits 28 beats for every part", ctx do
       {:ok, song} = Song.load("examples/choro.exs")
@@ -2173,8 +2174,9 @@ defmodule Mx.BandTest do
     |> Enum.find_value(fn [a, b, c] -> if b - a == gap_before and c - b == gap_after, do: b end)
   end
 
-  defp click(pitch \\ 60),
-    do: "part(:a, loop(1, fn _, _ -> seq([note(#{pitch}, 0), rest(1)]) end))"
+  defp click(pitch \\ 60) do
+    "part(:a, loop(1, fn _, _ -> seq([note(#{pitch}, 0), rest(1)]) end))"
+  end
 
   # Ends a band and its loops at once, so no loop is left calling it.
   defp stop_quietly(band) do

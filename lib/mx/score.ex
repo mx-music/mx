@@ -557,7 +557,7 @@ defmodule Mx.Score do
         staff: note.staff,
         tie: note.tie,
         continues: note.continues,
-        vel: Map.get(note, :vel)
+        vel: note[:vel]
       }
     ]
   end

@@ -393,7 +393,9 @@ defmodule Mix.Tasks.Mx.Import do
   # A note read from a MIDI file plays at the vel it was struck with, a chord at the mean of the
   # notes that start in it.
   defp group_vel(group) do
-    case for(note <- group.notes, note.vel != nil and not note.continues, do: note.vel) do
+    vels = for note <- group.notes, note.vel != nil and not note.continues, do: note.vel
+
+    case vels do
       [] -> vel(group.mark)
       vels -> Float.round(Enum.sum(vels) / length(vels), 2)
     end

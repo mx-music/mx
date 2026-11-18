@@ -501,7 +501,7 @@ defmodule Mx.ABC do
     voice =
       if accidental != "", do: put_accidental(voice, letter, octave, accidental), else: voice
 
-    continues = MapSet.member?(voice.ties, midi)
+    continues = midi in voice.ties
     {voice, %{midi: midi, name: name, tie: tie, continues: continues}}
   end
 
@@ -535,8 +535,9 @@ defmodule Mx.ABC do
     {midi, name}
   end
 
-  defp occurrences(text, char) when is_binary(text),
-    do: text |> String.graphemes() |> Enum.count(&(&1 == char))
+  defp occurrences(text, char) when is_binary(text) do
+    text |> String.graphemes() |> Enum.count(&(&1 == char))
+  end
 
   defp key_alter(fifths, step) when fifths > 0 do
     if step in Enum.take(@sharps, fifths), do: 1, else: 0
@@ -577,11 +578,13 @@ defmodule Mx.ABC do
     end
   end
 
-  defp multiply({top, bottom}, {other_top, other_bottom}),
-    do: {top * other_top, bottom * other_bottom}
+  defp multiply({top, bottom}, {other_top, other_bottom}) do
+    {top * other_top, bottom * other_bottom}
+  end
 
-  defp add({top, bottom}, {other_top, other_bottom}),
-    do: {top * other_bottom + other_top * bottom, bottom * other_bottom}
+  defp add({top, bottom}, {other_top, other_bottom}) do
+    {top * other_bottom + other_top * bottom, bottom * other_bottom}
+  end
 
   # An item takes the time a tuplet or a broken rhythm gives it; a broken rhythm also changes the
   # item before it.
@@ -650,32 +653,34 @@ defmodule Mx.ABC do
     ending = Regex.run(~r/(\d+(?:[,-]\d+)*)$/, bar, capture: :all_but_first)
     stops = backward or forward or ending != nil or String.contains?(bar, ["||", "]", "[|"])
 
-    voice =
-      if voice.items == [] and voice.cursor == 0 do
-        voice
-        |> then(&if(backward, do: mark_last(&1, :backward, 2), else: &1))
-        |> then(&if(stops and &1.open and &1.ending == nil, do: stop_ending(&1), else: &1))
-      else
-        measure = measure(voice, if(backward, do: 2))
-
-        voice = %{
-          voice
-          | measures: [measure | voice.measures],
-            items: [],
-            cursor: 0,
-            accidentals: %{},
-            forward: false,
-            ending: nil
-        }
-
-        if stops and voice.open, do: stop_ending(voice), else: voice
-      end
-
+    voice = end_measure(voice, backward, stops)
     voice = if forward, do: %{voice | forward: true}, else: voice
 
     case ending do
       [numbers] -> open_ending(voice, numbers)
       nil -> voice
+    end
+  end
+
+  defp end_measure(voice, backward, stops) do
+    if voice.items == [] and voice.cursor == 0 do
+      voice
+      |> then(&if(backward, do: mark_last(&1, :backward, 2), else: &1))
+      |> then(&if(stops and &1.open and &1.ending == nil, do: stop_ending(&1), else: &1))
+    else
+      measure = measure(voice, if(backward, do: 2))
+
+      voice = %{
+        voice
+        | measures: [measure | voice.measures],
+          items: [],
+          cursor: 0,
+          accidentals: %{},
+          forward: false,
+          ending: nil
+      }
+
+      if stops and voice.open, do: stop_ending(voice), else: voice
     end
   end
 
@@ -812,7 +817,7 @@ defmodule Mx.ABC do
         "M:#{beats}/#{type}\n",
         "L:1/#{div(96, unit)}\n",
         "Q:1/4=#{tempo}\n",
-        for({{name, _bars}, id} <- Enum.with_index(voices, 1), do: ~s(V:#{id} name="#{name}"\n)),
+        voice_lines(voices),
         "K:#{key_name(key_text)}\n"
       ]
 
@@ -838,7 +843,12 @@ defmodule Mx.ABC do
     end
   end
 
-  # The unit note suits the median note: a quarter, an eighth or a sixteenth, in ticks of 24 a beat.
+  defp voice_lines(voices) do
+    for {{name, _bars}, id} <- Enum.with_index(voices, 1), do: ~s(V:#{id} name="#{name}"\n)
+  end
+
+  # The unit note suits the median note: a quarter, an eighth or a sixteenth, in ticks of 24 a
+  # beat.
   defp unit_ticks(voices) do
     lengths =
       for {_name, bars} <- voices,
@@ -850,13 +860,13 @@ defmodule Mx.ABC do
 
     case Enum.sort(lengths) do
       [] -> 12
-      sorted -> sorted |> Enum.at(div(length(sorted), 2)) |> unit_for()
+      sorted -> sorted |> Enum.at(div(length(sorted), 2)) |> unit()
     end
   end
 
-  defp unit_for(median) when median >= 24, do: 24
-  defp unit_for(median) when median >= 12, do: 12
-  defp unit_for(_median), do: 6
+  defp unit(median) when median >= 24, do: 24
+  defp unit(median) when median >= 12, do: 12
+  defp unit(_median), do: 6
 
   defp length_text(ticks, unit) do
     gcd = Integer.gcd(ticks, unit)
@@ -874,9 +884,11 @@ defmodule Mx.ABC do
     name = String.downcase(text)
 
     {tonic, minor} =
-      if String.ends_with?(name, "m"),
-        do: {String.trim_trailing(name, "m"), "m"},
-        else: {name, ""}
+      if String.ends_with?(name, "m") do
+        {String.trim_trailing(name, "m"), "m"}
+      else
+        {name, ""}
+      end
 
     {letter, accidental} = String.split_at(tonic, 1)
     String.upcase(letter) <> String.replace(accidental, "s", "#") <> minor
@@ -929,9 +941,10 @@ defmodule Mx.ABC do
       end
 
     letter =
-      cond do
-        octave >= 5 -> String.downcase(step) <> String.duplicate("'", octave - 5)
-        true -> step <> String.duplicate(",", 4 - octave)
+      if octave >= 5 do
+        String.downcase(step) <> String.duplicate("'", octave - 5)
+      else
+        step <> String.duplicate(",", 4 - octave)
       end
 
     {sign <> letter, accidentals}

@@ -150,12 +150,14 @@ defmodule Mx.MIDI do
             {part_name, on, Enum.filter(controls, &(elem(&1, 0) == channel))}
           end
 
-        left_out =
-          Enum.flat_map(parts, &controls_left_out/1) ++
-            if(@drums in channels,
-              do: ["the notes on channel 10, which General MIDI keeps for drums, are left out"],
-              else: []
-            )
+        drums_left_out =
+          if @drums in channels do
+            ["the notes on channel 10, which General MIDI keeps for drums, are left out"]
+          else
+            []
+          end
+
+        left_out = Enum.flat_map(parts, &controls_left_out/1) ++ drums_left_out
 
         {Enum.map(parts, &strip/1), left_out ++ tempo_left_out(midi)}
 
@@ -269,7 +271,9 @@ defmodule Mx.MIDI do
     Enum.sort_by(notes ++ unended, fn {channel, start, _, key, _} -> {start, key, channel} end)
   end
 
-  defp tempos(events), do: for({tick, {:meta, 0x51, <<us::24>>}} <- events, do: {tick, us})
+  defp tempos(events) do
+    for {tick, {:meta, 0x51, <<us::24>>}} <- events, do: {tick, us}
+  end
 
   defp to_score(midi, parts, left_out, {count, division}) do
     tpq = midi.division
@@ -389,8 +393,9 @@ defmodule Mx.MIDI do
     |> Enum.to_list()
   end
 
-  defp drop_passed([_current, {at, _} = next | rest], from) when at <= from,
-    do: drop_passed([next | rest], from)
+  defp drop_passed([_current, {at, _} = next | rest], from) when at <= from do
+    drop_passed([next | rest], from)
+  end
 
   defp drop_passed(meters, _from), do: meters
 
@@ -511,8 +516,8 @@ defmodule Mx.MIDI do
 
   defp meta(type, payload), do: <<0xFF, type>> <> vlq(byte_size(payload)) <> payload
 
-  # A track's events as {tick, order, bytes}, a note's end before another's start at the same tick,
-  # and its end no earlier than the song's.
+  # A track's events as {tick, order, bytes}, a note's end before another's start at the same
+  # tick, and its end no earlier than the song's.
   defp track(events, ending) do
     events = Enum.sort_by(events, fn {tick, order, _bytes} -> {tick, order} end)
     last = events |> Enum.map(&elem(&1, 0)) |> Enum.max(fn -> 0 end)

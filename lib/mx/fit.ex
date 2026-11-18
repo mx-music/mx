@@ -220,7 +220,8 @@ defmodule Mx.Fit do
     Path.join([System.tmp_dir!(), "mx-fit", "#{:erlang.phash2(key, 4_294_967_296)}.term"])
   end
 
-  defp stamp(path) do
+  @doc "A file's size and time of change, which name what was fitted to it, or nil when it cannot be read."
+  def stamp(path) do
     case File.stat(path, time: :posix) do
       {:ok, %{size: size, mtime: mtime}} -> {size, mtime}
       {:error, _reason} -> nil

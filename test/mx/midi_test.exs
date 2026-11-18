@@ -165,7 +165,9 @@ defmodule Mx.MIDITest do
     midi.tracks
   end
 
-  defp metas(track, type), do: for({_tick, {:meta, ^type, payload}} <- track, do: payload)
+  defp metas(track, type) do
+    for {_tick, {:meta, ^type, payload}} <- track, do: payload
+  end
 
   test "a song exports as one track per part that plays notes, named after the part, at the song's tempo, leaving drums out",
        %{tmp_dir: dir} do
@@ -194,11 +196,10 @@ defmodule Mx.MIDITest do
     assert metas(melody, 0x03) == ["melody"]
     assert metas(bass, 0x03) == ["bass"]
 
-    assert for({tick, {:on, _, key, velocity}} <- bass, do: {tick, key, velocity}) == [
-             {0, 36, 102}
-           ]
-
-    assert for({tick, {:off, _, key}} <- bass, do: {tick, key}) == [{960, 36}]
+    ons = for {tick, {:on, _, key, velocity}} <- bass, do: {tick, key, velocity}
+    offs = for {tick, {:off, _, key}} <- bass, do: {tick, key}
+    assert ons == [{0, 36, 102}]
+    assert offs == [{960, 36}]
   end
 
   test "a song exported and imported again plays the same notes", %{tmp_dir: dir} do

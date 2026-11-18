@@ -222,11 +222,13 @@ defmodule Mx.Band do
   end
 
   def handle_call({:mute, name, muted}, {_, _}, %{} = state) do
-    with {:ok, [part]} <- parts(state, [name]) do
-      state.mute.(part, muted)
-      {:reply, :ok, state}
-    else
-      error -> {:reply, error, state}
+    case parts(state, [name]) do
+      {:ok, [part]} ->
+        state.mute.(part, muted)
+        {:reply, :ok, state}
+
+      error ->
+        {:reply, error, state}
     end
   end
 
@@ -246,20 +248,21 @@ defmodule Mx.Band do
   end
 
   def handle_call({:stop_trying, name}, {_, _}, %{} = state) do
-    with {:ok, [part]} <- parts(state, [name]) do
-      {:reply, :ok, put_trial(state, part, %{})}
-    else
+    case parts(state, [name]) do
+      {:ok, [part]} -> {:reply, :ok, put_trial(state, part, %{})}
       error -> {:reply, error, state}
     end
   end
 
   def handle_call({:solo, names}, {_, _}, %{} = state) do
-    with {:ok, parts} <- parts(state, names) do
-      for part <- state.soloed -- parts, do: state.solo.(part, false)
-      for part <- parts -- state.soloed, do: state.solo.(part, true)
-      {:reply, :ok, %{state | soloed: parts}}
-    else
-      error -> {:reply, error, state}
+    case parts(state, names) do
+      {:ok, parts} ->
+        for part <- state.soloed -- parts, do: state.solo.(part, false)
+        for part <- parts -- state.soloed, do: state.solo.(part, true)
+        {:reply, :ok, %{state | soloed: parts}}
+
+      error ->
+        {:reply, error, state}
     end
   end
 
@@ -447,9 +450,11 @@ defmodule Mx.Band do
   defp check_synth(nil), do: :ok
 
   defp check_synth(synth) do
-    if is_atom(synth) and Mx.Synths.exists?(synth),
-      do: :ok,
-      else: {:error, "there is no synth named #{synth}"}
+    if is_atom(synth) and Mx.Synths.exists?(synth) do
+      :ok
+    else
+      {:error, "there is no synth named #{synth}"}
+    end
   end
 
   defp check_options(synth, opts) do
@@ -588,8 +593,8 @@ defmodule Mx.Band do
     %{state | tempo_pass: pass}
   end
 
-  # Puts a change to the song's tempo `bpm` on the timeline at the share, and tells `set_tempo` the
-  # entry that starts it.
+  # Puts a change to the song's tempo `bpm` on the timeline at the share, and tells `set_tempo`
+  # the entry that starts it.
   defp put_tempo(state, beat, bpm, over) do
     timeline = Mx.Tempo.put(state.timeline, beat, bpm * state.share, over)
     {_beat, _us, tempo} = Enum.find(timeline, fn {entry, _, _} -> entry == beat end)

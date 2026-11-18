@@ -137,10 +137,10 @@ defmodule Mx.MeasureTest do
     end
   end
 
-  # E4 struck 0.1 seconds in, rising over 2 ms, and held three seconds, over a noise floor 100 dB down: six harmonics
-  # at 1/number of the first, each falling 10 times its number in dB a second, and a bell at 7.35
-  # times the note, 30 dB down, falling 70 dB a second; with a steady line 80 dB down at `line` Hz
-  # from the first sample when given.
+  # E4 struck 0.1 seconds in, rising over 2 ms, and held three seconds, over a noise floor 100 dB
+  # down: six harmonics at 1/number of the first, each falling 10 times its number in dB a second,
+  # and a bell at 7.35 times the note, 30 dB down, falling 70 dB a second; with a steady line 80
+  # dB down at `line` Hz from the first sample when given.
   defp struck(rate, opts \\ []) do
     :rand.seed(:exsss, {1, 2, 3})
     f0 = 329.63

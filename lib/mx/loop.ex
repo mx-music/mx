@@ -331,7 +331,8 @@ defmodule Mx.Loop do
 
     # A render ticks each loop in its turn, so it asks for no word from the engine.
     notice = if Mx.Clock.rendering?(), do: [], else: [notice: @notice_beats]
-    state.hand.(state.loop.name, span, state.pass, Enum.reverse(handed), notice)
+    events = Enum.reverse(handed)
+    state.hand.(state.loop.name, span, state.pass, events, notice)
     {state, out}
   end
 
@@ -349,7 +350,7 @@ defmodule Mx.Loop do
 
         left_out =
           Enum.reduce(left, state.left_out, fn {key, _}, left_out ->
-            if not MapSet.member?(left_out, {synth, key}) do
+            if {synth, key} not in left_out do
               warn(
                 "loop #{state.loop.name}: #{inspect(synth)} takes no option #{key}, so it is left out"
               )

@@ -236,11 +236,8 @@ defmodule Mx.Engine.MxsTest do
       Mxs.render_to(at + 1_500_000)
       assert_receive {:mx_voices, 0}
 
-      :ok =
-        Mxs.play(
-          at + 2_000_000,
-          for(note <- [60, 64, 67], do: {:note, nil, :piano, note, [], nil})
-        )
+      chord = for note <- [60, 64, 67], do: {:note, nil, :piano, note, [], nil}
+      :ok = Mxs.play(at + 2_000_000, chord)
 
       Mxs.render_to(at + 3_500_000)
       assert_receive {:mx_voices, 3}
@@ -349,7 +346,8 @@ defmodule Mx.Engine.MxsTest do
     } do
       Mxs.start_part(:lead, [])
       :ok = Mxs.set_tempo(0, 120)
-      :ok = Mxs.pass(:lead, {0, 4}, 0, for(beat <- 0..3, do: {beat, blip()}))
+      blips = for beat <- 0..3, do: {beat, blip()}
+      :ok = Mxs.pass(:lead, {0, 4}, 0, blips)
       Mxs.render_to(at + 2_500_000)
 
       assert starts(wav) == [0, 24_000, 48_000, 72_000]
@@ -359,13 +357,15 @@ defmodule Mx.Engine.MxsTest do
          %{wav: wav, at: at} do
       Mxs.start_part(:lead, [])
       :ok = Mxs.set_tempo(0, 120)
-      :ok = Mxs.pass(:lead, {0, 8}, 0, for(beat <- 0..6, do: {beat, blip()}))
+      blips = for beat <- 0..6, do: {beat, blip()}
+      :ok = Mxs.pass(:lead, {0, 8}, 0, blips)
       Mxs.render_to(at + 700_000)
       :ok = Mxs.set_tempo(2, 60)
       :ok = Mxs.set_tempo(4, {:ramp, 60, 120, 1})
       Mxs.render_to(at + 5_000_000)
 
-      # Beat 5 ends a ramp from 60 to 120 over one beat, which lasts 60 / (120 - 60) * ln 2 seconds.
+      # Beat 5 ends a ramp from 60 to 120 over one beat, which lasts 60 / (120 - 60) * ln 2
+      # seconds.
       ramp = round(:math.log(2) * 48_000)
       # The tempo holds where the ramp ends.
       held = 144_000 + ramp + 24_000
@@ -397,7 +397,8 @@ defmodule Mx.Engine.MxsTest do
          %{wav: wav, at: at} do
       Mxs.start_part(:lead, [echo: [phase: 1, decay: 0.01, mix: 0.5]], beats: true)
       :ok = Mxs.set_tempo(0, 120)
-      :ok = Mxs.pass(:lead, {0, 16}, 0, for(beat <- [0, 8, 12], do: {beat, blip()}))
+      blips = for beat <- [0, 8, 12], do: {beat, blip()}
+      :ok = Mxs.pass(:lead, {0, 16}, 0, blips)
       :ok = Mxs.cut(:lead, 10)
       Mxs.render_to(at + 8_000_000)
 
@@ -574,7 +575,8 @@ defmodule Mx.Engine.MxsTest do
       Process.sleep(300)
       :ok = Mxs.voices(self())
 
-      # The first report comes as soon as it is asked for, and the rest on the engine's whole seconds.
+      # The first report comes as soon as it is asked for, and the rest on the engine's whole
+      # seconds.
       assert_receive {:mx_voices, 3}, 1500
 
       times =
@@ -608,7 +610,8 @@ defmodule Mx.Engine.MxsTest do
 
   # Stops the engine, and gives the frame each sound of its recording starts at, counted from the
   # first: the first sample above a thousandth of full scale after a twentieth of a second without
-  # one. The first starts where the test placed beat 0, some milliseconds after the engine started.
+  # one. The first starts where the test placed beat 0, some milliseconds after the engine
+  # started.
   defp starts(wav) do
     stop_supervised!(Mxs)
     {:ok, %{samples: samples, rate: 48_000}} = Mx.Audio.read(wav)

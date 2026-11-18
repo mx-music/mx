@@ -344,7 +344,7 @@ defmodule Mx.GitHubSamplesTest do
   end
 
   test "mx with no arguments shows how to download samples" do
-    {1, listing} = ExUnit.CaptureIO.with_io(:stderr, fn -> Mx.CLI.run([]) end)
+    {1, listing} = with_io(:stderr, fn -> Mx.CLI.run([]) end)
     assert listing =~ "mx samples download"
   end
 

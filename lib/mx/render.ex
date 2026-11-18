@@ -109,7 +109,8 @@ defmodule Mx.Render do
     end
   end
 
-  # The engine holds each pass whole, so what a loop would not have sent by the last step is dropped.
+  # The engine holds each pass whole, so what a loop would not have sent by the last step is
+  # dropped.
   defp cut(band, until_us) do
     beat = Band.beat_at(Band.timeline(band), until_us)
     for pid <- Band.loops(band), name = name(pid), do: Mxs.cut(name, beat)

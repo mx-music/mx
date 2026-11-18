@@ -52,7 +52,7 @@ defmodule Mx.CLI do
 
     Enum.find_value([2, 1], fn count ->
       {words, args} = Enum.split(argv, count)
-      module = length(words) == count && Map.get(commands, words)
+      module = length(words) == count && commands[words]
       module && {module, args}
     end)
   end

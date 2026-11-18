@@ -47,9 +47,11 @@ defmodule Mx.Fit.Struck do
               notes == nil or note in notes,
               do: whole(Path.join(folder, name), note, String.to_integer(velocity))
 
-        if found == [],
-          do: {:error, "found no recordings named like name-064-025.wav in #{folder}"},
-          else: {:ok, Enum.sort_by(found, &{&1.note, &1.velocity})}
+        if found == [] do
+          {:error, "found no recordings named like name-064-025.wav in #{folder}"}
+        else
+          {:ok, Enum.sort_by(found, &{&1.note, &1.velocity})}
+        end
 
       {:error, reason} ->
         reason = :file.format_error(reason)
@@ -80,15 +82,18 @@ defmodule Mx.Fit.Struck do
                 notes == nil or recording.note in notes,
                 do: recording
 
-          {:ok, Enum.sort_by(recordings, &{&1.note, &1.velocity}),
-           for({:ok, _recordings, line} <- found, do: line)}
+          lines = for {:ok, _recordings, line} <- found, do: line
+          {:ok, Enum.sort_by(recordings, &{&1.note, &1.velocity}), lines}
       end
     end
   end
 
   @doc "The recordings of a file that holds `notes`, MIDI note numbers, or a run of them, at `velocity`, split as a list's line is, into held notes with `held: true`."
   def in_file(path, notes, velocity \\ 127, options \\ []) do
-    case split(%{path: path, notes: notes, velocity: velocity, kept: false}, Keyword.get(options, :held, false)) do
+    case split(
+           %{path: path, notes: notes, velocity: velocity, kept: false},
+           Keyword.get(options, :held, false)
+         ) do
       {:ok, recordings, _line} -> {:ok, recordings}
       error -> error
     end
@@ -168,11 +173,14 @@ defmodule Mx.Fit.Struck do
     sorted = Enum.sort_by(recordings, &{&1.note, &1.velocity})
     last = length(sorted) - 1
 
-    if count > last,
-      do: sorted,
-      else:
-        for(i <- 0..(count - 1), do: Enum.at(sorted, round(i * last / max(count - 1, 1))))
-        |> Enum.uniq()
+    if count > last do
+      sorted
+    else
+      picked =
+        for step <- 0..(count - 1), do: Enum.at(sorted, round(step * last / max(count - 1, 1)))
+
+      Enum.uniq(picked)
+    end
   end
 
   @doc """
@@ -246,8 +254,9 @@ defmodule Mx.Fit.Struck do
   end
 
   @doc "The `count` notes furthest off in ERB bands, furthest first."
-  def furthest_notes(checks, count),
-    do: checks |> Enum.sort_by(& &1.erb, :desc) |> Enum.take(count)
+  def furthest_notes(checks, count) do
+    checks |> Enum.sort_by(& &1.erb, :desc) |> Enum.take(count)
+  end
 
   @doc "A recording's note and velocity as the check prints them, such as `e4 vel 25`."
   def label(%{note: note, velocity: velocity}) do
@@ -351,12 +360,12 @@ defmodule Mx.Fit.Struck do
 
   defp split(%{path: path} = line, held) do
     case Audio.raw(path) do
-      {:ok, %{rate: rate} = format, data} -> {:ok, pieces(line, format, data, rate, held), line}
-      {:error, message} -> {:error, message}
-    end
-    |> case do
-      {:ok, {recordings, report}, line} -> {:ok, recordings, Map.merge(line, report)}
-      error -> error
+      {:ok, %{rate: rate} = format, data} ->
+        {recordings, report} = pieces(line, format, data, rate, held)
+        {:ok, recordings, Map.merge(line, report)}
+
+      {:error, message} ->
+        {:error, message}
     end
   end
 
@@ -455,20 +464,14 @@ defmodule Mx.Fit.Struck do
     end
   end
 
-  # A check is named after the recording, the part of it fitted, its file's size and time of change, and the build of mxs that fitted it.
+  # A check is named after the recording, the part of it fitted, its file's size and time of
+  # change, and the build of mxs that fitted it.
   defp own_path(recording) do
     built = :mx |> :code.priv_dir() |> Path.join("native/*mxs_nif*") |> Path.wildcard()
-    files = Enum.map([recording.path | built], &{Path.expand(&1), stamp(&1)})
+    files = Enum.map([recording.path | built], &{Path.expand(&1), Mx.Fit.stamp(&1)})
     fitted = Map.take(recording, [:span, :pitch, :velocity, :seconds, :exact])
     key = :erlang.phash2({files, fitted}, 4_294_967_296)
     Path.join([System.tmp_dir!(), "mx-fit-struck", "#{key}.term"])
-  end
-
-  defp stamp(path) do
-    case File.stat(path, time: :posix) do
-      {:ok, %{size: size, mtime: mtime}} -> {size, mtime}
-      {:error, _reason} -> nil
-    end
   end
 
   defp share([], _keep), do: nil

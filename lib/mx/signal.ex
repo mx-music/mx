@@ -38,13 +38,14 @@ defmodule Mx.Signal do
 
   @doc "Samples from -1 to 1 as data the native measuring reads, with its `{kind, bits, channels}`."
   def packed(samples) when is_list(samples) do
-    {for(sample <- samples, into: <<>>, do: <<sample / 1::float-little-64>>),
-     {"float_little", 64, 1}}
+    data = for sample <- samples, into: <<>>, do: <<sample / 1::float-little-64>>
+    {data, {"float_little", 64, 1}}
   end
 
   @doc "The format of `Mx.Audio.raw/1`'s data as the native measuring takes it, `{kind, bits, channels}`."
-  def native(%{kind: kind, bits: bits, channels: channels}),
-    do: {Atom.to_string(kind), bits, channels}
+  def native(%{kind: kind, bits: bits, channels: channels}) do
+    {Atom.to_string(kind), bits, channels}
+  end
 
   @doc "The frequency of a note number."
   def hz(note) when is_number(note), do: 440 * 2 ** ((note - 69) / 12)

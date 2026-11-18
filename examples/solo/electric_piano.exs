@@ -39,7 +39,7 @@ defmodule ElectricPiano do
   # the and of three.
   defp notes(:chords, pass) do
     for {chord, bar} <- Enum.with_index(chords()),
-        {beat, sustain} <- if(rem(pass, 2) == 0, do: [{0, 3.9}], else: [{0, 2.4}, {2.5, 1.4}]),
+        {beat, sustain} <- strikes(pass),
         do: {bar * 4 + beat, chord, 0.3, sustain}
   end
 
@@ -81,6 +81,9 @@ defmodule ElectricPiano do
   end
 
   # D minor 9, G 13, C major 9 and A 7 with a flat ninth, voiced around middle C.
+  defp strikes(pass) when rem(pass, 2) == 0, do: [{0, 3.9}]
+  defp strikes(_pass), do: [{0, 2.4}, {2.5, 1.4}]
+
   defp chords do
     [[50, 60, 64, 65, 69], [43, 59, 64, 65, 69], [48, 59, 62, 64, 67], [45, 58, 61, 67, 70]]
   end

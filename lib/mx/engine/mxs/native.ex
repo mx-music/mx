@@ -85,12 +85,14 @@ defmodule Mx.Engine.Mxs.Native do
   def strokes(_data, _format, _rate), do: :erlang.nif_error(:nif_not_loaded)
 
   @doc "The notes plucked or struck in a recording's data whose first is `note`, or with `whole`, the data as one note from its first sample, as `Mx.Measure` gives them."
-  def measure_plucked(_data, _format, _rate, _note, _whole),
-    do: :erlang.nif_error(:nif_not_loaded)
+  def measure_plucked(_data, _format, _rate, _note, _whole) do
+    :erlang.nif_error(:nif_not_loaded)
+  end
 
   @doc "The hits in a recording's data, with their note or nil and how many partials to list or nil, or with `whole`, the data as one hit from its first sample, as `Mx.Measure.Hits` gives them."
-  def measure_hits(_data, _format, _rate, _note, _partials, _whole),
-    do: :erlang.nif_error(:nif_not_loaded)
+  def measure_hits(_data, _format, _rate, _note, _partials, _whole) do
+    :erlang.nif_error(:nif_not_loaded)
+  end
 
   @doc "The held notes in a recording's data whose first is `note`, or with `whole`, the data as one held note from its first sample, as `Mx.Measure.Held` gives them."
   def measure_held(_data, _format, _rate, _note, _whole), do: :erlang.nif_error(:nif_not_loaded)
@@ -98,14 +100,16 @@ defmodule Mx.Engine.Mxs.Native do
   @doc "The note a recording's data starts with, struck, measured partial by partial as `Mx.Measure.partials/2` gives it."
   def measure_struck(_data, _format, _rate, _note), do: :erlang.nif_error(:nif_not_loaded)
 
-  @doc "The notes of a recording's data that holds one of `notes`, MIDI note numbers, or a run of them, as `Mx.Fit.Struck` splits them."
+  @doc "Notes made with partials known exactly, measured as a recording of a struck note is, as `mx measure --known` prints them."
   def measure_known, do: :erlang.nif_error(:nif_not_loaded)
+
+  @doc "The notes of a recording's data that holds one of `notes`, MIDI note numbers, or a run of them, as `Mx.Fit.Struck` splits them."
   def split_struck(_data, _format, _rate, _notes, _held), do: :erlang.nif_error(:nif_not_loaded)
 
-  @doc "mx-00181's spike: mx-00177's known notes as damped modes, each with a rising term when `rising`."
+  @doc "The notes `measure_known/0` makes, fitted as damped modes, each with a rising term when `rising`."
   def spike_known_modes(_rising), do: :erlang.nif_error(:nif_not_loaded)
 
-  @doc "mx-00181's spike: a recorded struck note's first `seconds` as damped modes, beside today's fit."
+  @doc "A recorded struck note's first `seconds` fitted as damped modes, beside its fit partial by partial."
   def spike_strike_modes(_recording, _seconds, _rising), do: :erlang.nif_error(:nif_not_loaded)
 
   @doc "The figures of struck notes fitted partial by partial, as mxs reads them, from recordings each as `{{data, format, rate}, {from, to}, {note, velocity, seconds, exact}}`, the samples it spans and its note, a MIDI number or between them for a pitch given exactly."
@@ -114,9 +118,13 @@ defmodule Mx.Engine.Mxs.Native do
   @doc "How far a render of a struck note is from a recording of it, partial by partial and in ERB bands, the recording as `fit_struck/1` takes it and the render as `{data, format, rate}`."
   def check_struck(_recording, _rendered), do: :erlang.nif_error(:nif_not_loaded)
 
-  @doc "A tour for listening of recordings of struck notes, each as `fit_struck/1` takes it, beside a render as `{data, format, rate}`, as 32-bit floats at the renders' rate."
+  @doc "How far the fit's own render of a struck note is from the recording, the recording as `fit_struck/1` takes it."
   def check_fit_struck(_recording), do: :erlang.nif_error(:nif_not_loaded)
+
+  @doc "A recording of a struck note beside a render of it, or the fit's own render alone when `rendered` is nil, frame by frame at `times` seconds after the strike, as `Mx.Fit.Struck.frames/4` gives them."
   def frames_struck(_recording, _rendered, _times), do: :erlang.nif_error(:nif_not_loaded)
+
+  @doc "A tour for listening of recordings, each as `fit_struck/1` takes it, beside a render as `{data, format, rate}`, as 32-bit floats at the renders' rate."
   def tour_struck(_pairs), do: :erlang.nif_error(:nif_not_loaded)
 
   @doc "The figures of held notes fitted partial by partial, as mxs reads them, from recordings each as `fit_struck/1` takes them, each note held at one level from where it starts holding when `steady`."
@@ -125,9 +133,13 @@ defmodule Mx.Engine.Mxs.Native do
   @doc "How far a render of a held note is from a recording of it, as `check_struck/2` takes them."
   def check_held(_recording, _rendered), do: :erlang.nif_error(:nif_not_loaded)
 
-  @doc "How far the fit's own render of a held note is from the recording; where a recording holds from and is let go, in seconds after it starts, and the seconds into its span it starts at; and a held note measured partial by partial."
+  @doc "How far the fit's own render of a held note is from the recording, each note held at one level when `steady`."
   def check_fit_held(_recording, _steady), do: :erlang.nif_error(:nif_not_loaded)
+
+  @doc "Where a recording of a held note holds from and is let go, in seconds after it starts, and the seconds into its span it starts at, as `{held, release, start}`."
   def timing_held(_recording), do: :erlang.nif_error(:nif_not_loaded)
+
+  @doc "A recording of a held note measured partial by partial, as `Mx.Fit.Held.measure/1` gives it."
   def measure_held_partials(_recording), do: :erlang.nif_error(:nif_not_loaded)
 
   @doc "The magnitudes of `size` samples of a recording's data from the frame `from`, through a periodic Hann window, bins 0 to `size / 2 - 1`."
@@ -169,8 +181,9 @@ defmodule Mx.Engine.Mxs.Native do
   `label` is a number of the caller's, and `notice` the beats before `to` at which a subscriber to `"passes"` is told the pass ends, unless another was handed over by then, or nil for no report.
   Returns the reply with the warnings since the last call.
   """
-  def pass(_engine, _name, _span, _label, _notice, _events),
-    do: :erlang.nif_error(:nif_not_loaded)
+  def pass(_engine, _name, _span, _label, _notice, _events) do
+    :erlang.nif_error(:nif_not_loaded)
+  end
 
   @doc "Drops every event in beats handed to the part `name` for `beat` or after that has not started."
   def cut(_engine, _name, _beat), do: :erlang.nif_error(:nif_not_loaded)

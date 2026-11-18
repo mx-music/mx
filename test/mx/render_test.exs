@@ -24,7 +24,7 @@ defmodule Mx.RenderTest do
 
     starts =
       sounding
-      |> Enum.zip([nil | sounding])
+      |> Enum.zip([nil] ++ sounding)
       |> Enum.filter(fn {frame, before} -> before == nil or frame - before > 4800 end)
       |> Enum.map(&elem(&1, 0))
 

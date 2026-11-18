@@ -48,6 +48,7 @@ defmodule Mix.Tasks.Mx.Fit do
   def run(args) when is_list(args) do
     Mx.Command.config()
     {synth, rest} = synth!(args)
+
     cond do
       "--struck" in rest -> struck(synth, rest, :struck)
       "--held" in rest -> struck(synth, rest, :held)
@@ -112,33 +113,9 @@ defmodule Mix.Tasks.Mx.Fit do
         ]
       )
 
-    files = Enum.join(extra, " ")
-
-    if extra != [],
-      do: Mx.Command.fail("--#{kind} takes a folder or a list, not files: #{files}")
-
-    if kind == :held and opts[:note],
-      do: Mx.Command.fail("--note and --vel go with --struck, not --held")
-
-    if kind == :struck and opts[:steady],
-      do: Mx.Command.fail("--steady goes with --held, not --struck")
-
-    if !opts[:out] and !opts[:check] and !opts[:tour],
-      do:
-        Mx.Command.fail(
-          "give --out with a file to write the figures to, --check, or --tour with a file to write a tour to"
-        )
-
-    if opts[:own] && !opts[:check], do: Mx.Command.fail("--own needs --check")
-
-    if (opts[:note] || opts[:vel]) && !(opts[:check] && opts[:note] && opts[:vel]),
-      do: Mx.Command.fail("--note and --vel go together, with --check")
-
-    if (opts[:until] || opts[:csv]) && !opts[:note],
-      do: Mx.Command.fail("--until and --csv need --note and --vel")
-
+    check_flags!(kind, opts, extra)
     notes = opts[:notes] && notes!(opts[:notes])
-    options = opts |> Keyword.get_values(:option) |> Enum.map(&option!/1)
+    options = opts |> Keyword.get_values(:option) |> Enum.map(&given_option!(synth, &1))
 
     recordings =
       opts
@@ -162,7 +139,9 @@ defmodule Mix.Tasks.Mx.Fit do
         print_struck(own(kind, recordings, opts), "the fit's own render", "the fit", kind)
 
       opts[:check] ->
-        checks = Struck.beside(fitter.check(synth, recordings, options), own(kind, recordings, opts))
+        checks =
+          Struck.beside(fitter.check(synth, recordings, options), own(kind, recordings, opts))
+
         print_struck(checks, synth, "synth", kind)
 
       true ->
@@ -183,10 +162,49 @@ defmodule Mix.Tasks.Mx.Fit do
   defp own(:held, recordings, opts), do: Held.own(recordings, steady: !!opts[:steady])
   defp own(:struck, recordings, _opts), do: Struck.own(recordings)
 
-  defp option!(text) do
+  defp check_flags!(kind, opts, extra) do
+    files = Enum.join(extra, " ")
+
+    cond do
+      extra != [] ->
+        Mx.Command.fail("--#{kind} takes a folder or a list, not files: #{files}")
+
+      kind == :held and opts[:note] ->
+        Mx.Command.fail("--note and --vel go with --struck, not --held")
+
+      kind == :struck and opts[:steady] ->
+        Mx.Command.fail("--steady goes with --held, not --struck")
+
+      true ->
+        check_outputs!(opts)
+    end
+  end
+
+  defp check_outputs!(opts) do
+    cond do
+      !(opts[:out] || opts[:check] || opts[:tour]) ->
+        Mx.Command.fail(
+          "give --out with a file to write the figures to, --check, or --tour with a file to write a tour to"
+        )
+
+      opts[:own] && !opts[:check] ->
+        Mx.Command.fail("--own needs --check")
+
+      (opts[:note] || opts[:vel]) && !(opts[:check] && opts[:note] && opts[:vel]) ->
+        Mx.Command.fail("--note and --vel go together, with --check")
+
+      (opts[:until] || opts[:csv]) && !opts[:note] ->
+        Mx.Command.fail("--until and --csv need --note and --vel")
+
+      true ->
+        :ok
+    end
+  end
+
+  defp given_option!(synth, text) do
     with [name, value] <- String.split(text, "="),
          {number, ""} <- Float.parse(value) do
-      {String.to_atom(name), number}
+      {option!(synth, name), number}
     else
       _ -> Mx.Command.fail("give --option as a name and a number, such as pedal=1, not #{text}")
     end
@@ -195,10 +213,17 @@ defmodule Mix.Tasks.Mx.Fit do
   defp struck_recordings!(path, notes, kind) do
     found =
       cond do
-        kind == :held and File.dir?(path) -> {:error, "--held takes a list, not a folder: #{path}"}
-        File.dir?(path) -> Struck.recordings(path, notes)
-        kind == :held -> Held.listed(path, notes)
-        true -> Struck.listed(path, notes)
+        kind == :held and File.dir?(path) ->
+          {:error, "--held takes a list, not a folder: #{path}"}
+
+        File.dir?(path) ->
+          Struck.recordings(path, notes)
+
+        kind == :held ->
+          Held.listed(path, notes)
+
+        true ->
+          Struck.listed(path, notes)
       end
 
     case found do
@@ -261,6 +286,18 @@ defmodule Mix.Tasks.Mx.Fit do
 
     IO.puts("ERB bands: #{median}; #{worst}")
     print_pitch(Struck.pitch(checks), render)
+    print_partials(checks, first_short)
+
+    print_loudness(
+      Struck.loudness(checks),
+      fit && Struck.loudness(Enum.map(checks, & &1.own)),
+      render
+    )
+
+    print_notes(checks)
+  end
+
+  defp print_partials(checks, first_short) do
     IO.puts("\nthe ten partials furthest off on average:")
 
     for partial <- Struck.furthest_partials(checks, 10) do
@@ -279,13 +316,9 @@ defmodule Mix.Tasks.Mx.Fit do
         "  #{note}, #{ratio} #{which}, #{below} dB down: #{first_short} #{strike}, mean #{mean}"
       )
     end
+  end
 
-    print_loudness(
-      Struck.loudness(checks),
-      fit && Struck.loudness(Enum.map(checks, & &1.own)),
-      render
-    )
-
+  defp print_notes(checks) do
     IO.puts("\nthe ten notes furthest off in ERB bands:")
 
     for check <- Struck.furthest_notes(checks, 10) do
@@ -348,8 +381,11 @@ defmodule Mix.Tasks.Mx.Fit do
     end
   end
 
-  # Every 5 ms from 5 ms before the strike to 100 ms after, or 24 steps to `until`, each at a frame of the measuring, 2.5 ms apart.
-  defp times(nil), do: for(step <- 0..21, do: (5 * step - 5) / 1000)
+  # Every 5 ms from 5 ms before the strike to 100 ms after, or 24 steps to `until`, each at a
+  # frame of the measuring, 2.5 ms apart.
+  defp times(nil) do
+    for step <- 0..21, do: (5 * step - 5) / 1000
+  end
 
   defp times(until) do
     for step <- 0..23 do
@@ -378,8 +414,9 @@ defmodule Mix.Tasks.Mx.Fit do
   defp row_name(row) when row in ["sines", "noise"], do: "    #{row}"
   defp row_name(row), do: "  #{row}"
 
-  defp row_line(name, figures),
-    do: String.pad_trailing(name, 12) <> Enum.map_join(figures, &String.pad_leading(&1, 7))
+  defp row_line(name, figures) do
+    String.pad_trailing(name, 12) <> Enum.map_join(figures, &String.pad_leading(&1, 7))
+  end
 
   defp level(level, floor) when level <= floor, do: "-"
   defp level(level, _floor), do: :erlang.float_to_binary(level, decimals: 1)
@@ -582,16 +619,8 @@ defmodule Mix.Tasks.Mx.Fit do
   defp ratio("x" <> step), do: {true, step}
   defp ratio(step), do: {false, step}
 
-  # Every control a synth takes is already an atom, so a name that is not one is no control.
   defp option!(synth, name) do
-    option =
-      try do
-        String.to_existing_atom(name)
-      rescue
-        ArgumentError -> nil
-      end
-
-    if option && Synths.option?(synth, option) do
+    if option = Synths.option(synth, name) do
       option
     else
       Mx.Command.fail("#{synth} takes no control #{name}")

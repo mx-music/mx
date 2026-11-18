@@ -42,7 +42,8 @@ defmodule Mx.Beat do
       timeline
       |> Enum.reverse()
       |> Enum.reduce({[], nil}, fn
-        # A ramp is followed on the timeline by the tempo it ends at, which its message already holds.
+        # A ramp is followed on the timeline by the tempo it ends at, which its message already
+        # holds.
         {beat, _us, bpm}, {messages, {beat, bpm}} ->
           {messages, nil}
 

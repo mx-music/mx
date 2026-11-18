@@ -51,7 +51,7 @@ defmodule Mx.Measure.Strokes do
   """
   def tracks(%{strokes: strokes, native: native}, index, opts \\ [])
       when is_integer(index) and index >= 0 and is_list(opts) do
-    Enum.fetch!(strokes, index)
+    _stroke = Enum.fetch!(strokes, index)
     ignore = with {low, high} <- Keyword.get(opts, :ignore), do: {low / 1, high / 1}
     Native.stroke_tracks(native, index, Keyword.get(opts, :alone, false), ignore)
   end

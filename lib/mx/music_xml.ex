@@ -181,9 +181,10 @@ defmodule Mx.MusicXML do
 
   @doc false
   # Each part laid out in bars as `score/2` lays it out, for another writer: `{bar, bars, parts}`,
-  # `bar` the ticks in a bar at 24 a beat, and each part `{name, voices}`, each voice its bars, and
-  # each bar its pieces as `{start, notes, values, {tied_in, tied_out}}`, `notes` nil for a rest
-  # and `values` the note values that write its length; a pickup of `pickup` beats is the first bar.
+  # `bar` the ticks in a bar at 24 a beat, and each part `{name, voices}`, each voice its bars,
+  # and each bar its pieces as `{start, notes, values, {tied_in, tied_out}}`, `notes` nil for a
+  # rest and `values` the note values that write its length; a pickup of `pickup` beats is the
+  # first bar.
   def layout(parts, {beats, type}, length, pickup \\ 0) do
     bar = div(beats * @divisions * 4, type)
     pickup = round(pickup * @divisions)
@@ -200,12 +201,7 @@ defmodule Mx.MusicXML do
       for {name, voices} <- parts do
         voices =
           for voice <- voices do
-            for {_number, from, ticks} <- bars do
-              for {start, held, notes, ties} <- pieces(voice, from, ticks) do
-                values = if notes, do: values(held), else: rest_values(start - pickup, held)
-                {start, notes, Enum.map(values, &elem(&1, 0)), ties}
-              end
-            end
+            for {_number, from, ticks} <- bars, do: bar_pieces(voice, from, ticks, pickup)
           end
 
         {name, voices}
@@ -214,8 +210,15 @@ defmodule Mx.MusicXML do
     {bar, length(bars), parts}
   end
 
-  # The bars that hold `length` ticks as `{number, from, ticks}`: a pickup of `pickup` ticks as bar
-  # 0 when there is one, then full bars from 1.
+  defp bar_pieces(voice, from, ticks, pickup) do
+    for {start, held, notes, ties} <- pieces(voice, from, ticks) do
+      values = if notes, do: values(held), else: rest_values(start - pickup, held)
+      {start, notes, Enum.map(values, &elem(&1, 0)), ties}
+    end
+  end
+
+  # The bars that hold `length` ticks as `{number, from, ticks}`: a pickup of `pickup` ticks as
+  # bar 0 when there is one, then full bars from 1.
   defp bars(length, bar, 0) do
     for number <- 1..max(1, ceil(length / bar)), do: {number, (number - 1) * bar, bar}
   end
@@ -223,15 +226,15 @@ defmodule Mx.MusicXML do
   defp bars(length, bar, pickup) do
     [
       {0, 0, pickup}
-      | for(
-          number <- 1..max(1, ceil((length - pickup) / bar)),
-          do: {number, pickup + (number - 1) * bar, bar}
-        )
+      | for number <- 1..max(1, ceil((length - pickup) / bar)) do
+          {number, pickup + (number - 1) * bar, bar}
+        end
     ]
   end
 
-  # A part whose notes reach both below C3 and above C5 goes on a grand staff, its notes from middle
-  # C up on the treble staff and the rest on the bass staff; any other part goes on one staff.
+  # A part whose notes reach both below C3 and above C5 goes on a grand staff, its notes from
+  # middle C up on the treble staff and the rest on the bass staff; any other part goes on one
+  # staff.
   defp staves(notes) do
     pitches = Enum.map(notes, &elem(&1, 1))
 
@@ -496,14 +499,14 @@ defmodule Mx.MusicXML do
   end
 
   @doc false
-  # Each part that plays notes with a pitch as {name, notes, beats, vels}, and each part left out as
-  # {name, why}, as `{:ok, parts, left_out}` or `{:error, message}`.
+  # Each part that plays notes with a pitch as {name, notes, beats, vels}, and each part left out
+  # as {name, why}, as `{:ok, parts, left_out}` or `{:error, message}`.
   def parts(song, path) do
     with {:ok, played} <- played(song), do: pitched(played, path)
   end
 
-  # Each part as its notes through the whole of its music once, their vels and its length in beats,
-  # or why it is left out.
+  # Each part as its notes through the whole of its music once, their vels and its length in
+  # beats, or why it is left out.
   defp played(song) do
     map_ok(song.loops, fn
       %{on: on} = loop when on != nil ->

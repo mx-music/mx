@@ -1271,11 +1271,11 @@ defmodule Mx.DesignsTest do
 
   # Measured from the bass_electronic_025 and bass_electronic_027 instruments of the test set of
   # Google's NSynth dataset, together, their notes from E1 up at velocities 25, 75 and 127 against
-  # vel 0.2, 0.59 and 1, each cut at 2.9 seconds, before its key is let go, and brought from 16 kHz
-  # to 48 kHz: the notes of each velocity, and as medians over them by the harmonic's frequency the
-  # seconds a harmonic takes to fade 60 dB and its level against the fundamental of the lowest.
-  # The bands above 1.6 kHz are left out: there the recordings hold only their noise floor, 55 to
-  # 70 dB down, which reads as fades of 10 to 40 seconds.
+  # vel 0.2, 0.59 and 1, each cut at 2.9 seconds, before its key is let go, and brought from 16
+  # kHz to 48 kHz: the notes of each velocity, and as medians over them by the harmonic's
+  # frequency the seconds a harmonic takes to fade 60 dB and its level against the fundamental of
+  # the lowest. The bands above 1.6 kHz are left out: there the recordings hold only their noise
+  # floor, 55 to 70 dB down, which reads as fades of 10 to 40 seconds.
   @deep_bass %{
     0.2 =>
       {[28, 31, 36, 38, 40, 43, 44, 47, 48, 50, 51, 52, 53, 54, 55, 57, 58, 59, 62],
@@ -1325,8 +1325,8 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  # The recordings are each brought to the same peak: E2 of instrument 025 at velocity 127 is 0.4 dB
-  # louder than at 25 over its whole length, -11.2 dB against -11.6.
+  # The recordings are each brought to the same peak: E2 of instrument 025 at velocity 127 is 0.4
+  # dB louder than at 25 over its whole length, -11.2 dB against -11.6.
   test "deep_bass at vel 1 is louder than at vel 0.3, within 6 dB of the recordings", ctx do
     for note <- [28, 33, 40, 45] do
       soft = render(ctx, :deep_bass, [note: note, vel: 0.3], 0.6)

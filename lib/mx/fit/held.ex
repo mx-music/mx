@@ -15,9 +15,9 @@ defmodule Mx.Fit.Held do
   partial by partial, the mean gap over the attack and over the held part while either stands 10 dB above the floor; and in ERB bands, the mean gap from the start until a second after the note is let go while either stands clear of the floor.
   """
 
-  alias Mx.Fit.Struck
   alias Mx.Engine.Mxs
   alias Mx.Engine.Mxs.Native
+  alias Mx.Fit.Struck
   alias Mx.Signal
 
   @doc "The recordings a list gives, as `Mx.Fit.Struck.listed/3` gives them, split into held notes, each note and velocity from the first line that gives it."
@@ -38,8 +38,9 @@ defmodule Mx.Fit.Held do
   The figures fitted to the recordings, as mxs reads them.
   `steady: true` holds each note at one level from where it starts holding, for recordings that ease off before they are let go.
   """
-  def figures(recordings, options \\ []) when is_list(recordings),
-    do: recordings |> Struck.native() |> Native.fit_held(Keyword.get(options, :steady, false))
+  def figures(recordings, options \\ []) when is_list(recordings) do
+    recordings |> Struck.native() |> Native.fit_held(Keyword.get(options, :steady, false))
+  end
 
   @doc "Each recording measured partial by partial: its pitch, where it holds from and is let go, its fall after, its vibrato, and each partial's levels."
   def measure(recordings) when is_list(recordings) do
@@ -89,7 +90,8 @@ defmodule Mx.Fit.Held do
       picked
       |> Struck.native()
       |> Enum.zip(picked)
-      |> Task.async_stream(fn {native, recording} -> {native, render(synth, recording, native, options)} end,
+      |> Task.async_stream(
+        fn {native, recording} -> {native, render(synth, recording, native, options)} end,
         timeout: :infinity
       )
       |> Enum.map(fn {:ok, pair} -> pair end)

@@ -95,15 +95,39 @@ defmodule Mix.Tasks.Mx.Measure do
     count = count!(opts)
 
     cond do
-      opts[:known] -> known()
-      opts[:held] && opts[:hits] -> Mx.Command.fail("give --held or --hits, not both")
-      opts[:strokes] -> strokes(files, opts)
-      opts[:tracks] || opts[:alone] || opts[:ignore] -> Mx.Command.fail("--tracks needs --strokes")
-      opts[:drone] && !opts[:held] -> Mx.Command.fail("--drone needs --held")
-      opts[:held] && count -> held_partials(files, count)
-      opts[:held] -> held(files, synth, given, opts[:drone] || false)
-      opts[:hits] -> hits(files, synth, given, count, compare)
-      true -> plucked(files, synth, given, count)
+      opts[:known] ->
+        known()
+
+      opts[:held] && opts[:hits] ->
+        Mx.Command.fail("give --held or --hits, not both")
+
+      opts[:strokes] ->
+        strokes(files, opts)
+
+      opts[:tracks] || opts[:alone] || opts[:ignore] ->
+        Mx.Command.fail("--tracks needs --strokes")
+
+      opts[:drone] && !opts[:held] ->
+        Mx.Command.fail("--drone needs --held")
+
+      true ->
+        measure(files, opts, {synth, given, count, compare})
+    end
+  end
+
+  defp measure(files, opts, {synth, given, count, compare}) do
+    cond do
+      opts[:held] && count ->
+        held_partials(files, count)
+
+      opts[:held] ->
+        held(files, synth, given, opts[:drone] || false)
+
+      opts[:hits] ->
+        hits(files, synth, given, count, compare)
+
+      true ->
+        plucked(files, synth, given, count)
     end
   end
 
@@ -125,11 +149,14 @@ defmodule Mix.Tasks.Mx.Measure do
     end
   end
 
-  defp kind_order({kind, _}),
-    do: Enum.find_index(~w(slow short beating building noisy early), &(&1 == kind))
+  defp kind_order({kind, _}) do
+    Enum.find_index(~w(slow short beating building noisy early), &(&1 == kind))
+  end
 
-  defp print_known(%{found: false, freq: freq}),
-    do: IO.puts("  #{Float.round(freq, 1)} Hz: not found")
+  defp print_known(%{found: false, freq: freq}) do
+    freq = Float.round(freq, 1)
+    IO.puts("  #{freq} Hz: not found")
+  end
 
   defp print_known(%{
          freq: freq,
@@ -247,14 +274,22 @@ defmodule Mix.Tasks.Mx.Measure do
     {rate, depth} = measured.vibrato
 
     vibrato =
-      if depth > 0,
-        do: "vibrato #{:erlang.float_to_binary(rate, decimals: 1)} Hz, #{round(depth)} cents",
-        else: "no vibrato"
+      if depth > 0 do
+        rate = :erlang.float_to_binary(rate, decimals: 1)
+        "vibrato #{rate} Hz, #{round(depth)} cents"
+      else
+        "no vibrato"
+      end
 
-    IO.puts("  #{label} at #{pitch} Hz: holds from #{held}, let go at #{release}, then #{falls}; #{vibrato}")
+    IO.puts(
+      "  #{label} at #{pitch} Hz: holds from #{held}, let go at #{release}, then #{falls}; #{vibrato}"
+    )
 
     partials =
-      measured.partials |> Enum.sort_by(& &1.held, :desc) |> Enum.take(count) |> Enum.sort_by(& &1.freq)
+      measured.partials
+      |> Enum.sort_by(& &1.held, :desc)
+      |> Enum.take(count)
+      |> Enum.sort_by(& &1.freq)
 
     for partial <- partials do
       freq = :erlang.float_to_binary(partial.freq, decimals: 1)
@@ -337,8 +372,11 @@ defmodule Mix.Tasks.Mx.Measure do
 
     for number <- String.split(text, ",") do
       case Integer.parse(number) do
-        {index, ""} when index in 0..last//1 -> index
-        _other -> Mx.Command.fail("--tracks takes strokes from 0 to #{last}, such as --tracks 0,3")
+        {index, ""} when index in 0..last//1 ->
+          index
+
+        _other ->
+          Mx.Command.fail("--tracks takes strokes from 0 to #{last}, such as --tracks 0,3")
       end
     end
   end
@@ -351,7 +389,8 @@ defmodule Mix.Tasks.Mx.Measure do
          {high, ""} <- Float.parse(high) do
       {low, high}
     else
-      _other -> Mx.Command.fail("--ignore takes two frequencies in Hz, such as --ignore 8500-9100")
+      _other ->
+        Mx.Command.fail("--ignore takes two frequencies in Hz, such as --ignore 8500-9100")
     end
   end
 
@@ -834,16 +873,8 @@ defmodule Mix.Tasks.Mx.Measure do
     end
   end
 
-  # Every option a synth takes is already an atom, so a name that is not one is no option.
   defp option!(synth, name) do
-    option =
-      try do
-        String.to_existing_atom(name)
-      rescue
-        ArgumentError -> nil
-      end
-
-    if option && Synths.option?(synth, option) do
+    if option = Synths.option(synth, name) do
       option
     else
       Mx.Command.fail("#{synth} has no option #{name}")
