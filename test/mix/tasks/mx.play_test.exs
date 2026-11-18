@@ -146,6 +146,62 @@ defmodule Mix.Tasks.Mx.PlayTest do
     assert_receive {:mx_beat, :stopped}
   end
 
+  @tag :engine
+  test "a part muted in a session stays silent through a save that changes the tempo, and the file is left as saved",
+       ctx do
+    {session, path, song, out} = lead_and_silent_bass(ctx)
+
+    assert Mx.Session.mute(session, :lead) == :ok
+
+    assert Mx.Session.mute(session, :no_such_part) ==
+             {:error, "the song has no part named no_such_part"}
+
+    Process.sleep(1000)
+    assert File.read!(path) == song
+    saved = String.replace(song, "tempo: 120", "tempo: 90")
+    File.write!(path, saved)
+    assert_receive {:mx_loaded, 1, {:ok, _}}, 2000
+    Process.sleep(2500)
+    Supervisor.stop(session)
+
+    assert File.read!(path) == saved
+    assert [line] = Mx.Recording.report(out)
+    assert line =~ ~r/^Recorded [4-9]\.\d seconds .* peaking at -inf dB\.$/
+  end
+
+  @tag :engine
+  test "with another part soloed in a session, a part is not heard", ctx do
+    {session, _path, _song, out} = lead_and_silent_bass(ctx)
+
+    assert Mx.Session.solo(session, ["bass"]) == :ok
+    assert Mx.Session.solo(session, [:bass, :nope]) == {:error, "the song has no part named nope"}
+    Process.sleep(2500)
+    Supervisor.stop(session)
+
+    assert [line] = Mx.Recording.report(out)
+    assert line =~ ~r/peaking at -inf dB\.$/
+  end
+
+  # A session that records a song whose lead is heard and whose bass is silent, subscribed to its saves.
+  defp lead_and_silent_bass(ctx) do
+    path = Path.join(ctx.tmp_dir, "parts.exs")
+    out = Path.join(ctx.tmp_dir, "parts.wav")
+
+    song =
+      "import Mx\nsong(tempo: 120, music: together([part(:lead, loop(1, fn _, _ -> seq([note(72, 1)]) end), synth: :saw, fx: [echo: [phase: 0.5]]), part(:bass, loop(1, fn _, _ -> seq([note(40, 1, amp: 0)]) end))]))\n"
+
+    File.write!(path, song)
+    {:ok, loaded} = Mx.Song.load(path)
+    {:ok, session} = Mx.Session.start_link(path: path, song: loaded, record: out)
+    {:ok, device} = StringIO.open("")
+
+    for {_id, pid, _type, _modules} <- Supervisor.which_children(session),
+        do: Process.group_leader(pid, device)
+
+    Mx.Session.subscribe(session)
+    {session, path, song, out}
+  end
+
   defp record(ctx, music, opts \\ []), do: ctx |> record_to(music, opts) |> elem(0)
 
   defp record_to(ctx, music, opts \\ []) do

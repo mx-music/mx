@@ -22,9 +22,32 @@ defmodule Mx.Session do
   def description(session) when is_pid(session), do: Watcher.description(watcher(session))
 
   @doc "Sends the calling process where the beat of the session's song is, as `{:mx_beat, message}`, now and whenever the tempo or the output's delay changes; `Mx.Beat` says what a message holds and how to work out the beat from it."
-  def follow_beat(session) when is_pid(session) do
+  def follow_beat(session) when is_pid(session), do: Band.follow(band(session))
+
+  @doc """
+  Mutes the part `name` of the session's song, or lets it be heard again with `muted` false.
+
+  The part goes silent at once, the notes it has already sent included, and plays on unheard, so it comes back in time.
+  It stays muted while the session plays, through every save of the song's file, and nothing is written to the file.
+  A name the song has no part of is refused with `{:error, message}`.
+  """
+  def mute(session, name, muted \\ true) when is_pid(session) and is_boolean(muted) do
+    Band.mute(band(session), name, muted)
+  end
+
+  @doc """
+  Solos the parts named, so only they are heard, in place of the parts soloed before; with none named every part is heard again.
+
+  A soloed part that is also muted stays silent.
+  Solo lasts as `mute/3` does, and a name the song has no part of is refused with `{:error, message}`.
+  """
+  def solo(session, names) when is_pid(session) and is_list(names) do
+    Band.solo(band(session), names)
+  end
+
+  defp band(session) do
     {Band, pid, _type, _modules} = List.keyfind(Supervisor.which_children(session), Band, 0)
-    Band.follow(pid)
+    pid
   end
 
   defp watcher(session) do
@@ -50,6 +73,9 @@ defmodule Mx.Session do
        load_sample: &Mxs.load_sample/2,
        start_fx: &Mxs.start_fx/1,
        stop_fx: &Mxs.stop_fx/2,
+       start_part: &Mxs.start_part/2,
+       mute: &Mxs.mute/2,
+       solo: &Mxs.solo/2,
        out: &Out.schedule/2,
        inputs: &Inputs.snapshot_at/2,
        set: &Inputs.put/4,

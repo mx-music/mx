@@ -11,6 +11,8 @@ defmodule Mx.Engine.Mxs do
   When the input and output run at different rates mxs cannot start, and the message ends with `input_advice:`, by default the advice to take live audio out of the song.
   A changed live audio changes in place, unless its input, channels or effects change; a removed one stops at once.
 
+  A part started with `start_part/2` is a part of mxs by its name, which `mute/2` and `solo/2` silence and bring back while it plays.
+
   `output/1` gives the device it plays to, its sample rate and its delay, and tells the caller when the engine reports another output.
   `voices/1` has the number of notes that sound sent to the caller about once a second, until `stop_voices/1`.
 
@@ -24,6 +26,9 @@ defmodule Mx.Engine.Mxs do
 
   alias Mx.Engine.Mxs.Native
   alias Mx.Synths
+
+  # Whether each part named is muted and soloed, for a part started after it was asked.
+  @parts __MODULE__.Parts
 
   @impl Mx.Engine
   def start_link(opts), do: GenServer.start_link(__MODULE__, opts, name: __MODULE__)
@@ -119,6 +124,7 @@ defmodule Mx.Engine.Mxs do
       origin = Mx.Clock.now() - round(Native.now(engine) * 1_000_000)
       :persistent_term.put(__MODULE__, {engine, origin})
       :persistent_term.put({__MODULE__, :ids}, :atomics.new(1, []))
+      :ets.new(@parts, [:named_table, :public])
 
       {:ok,
        %{
@@ -214,7 +220,59 @@ defmodule Mx.Engine.Mxs do
     end
   end
 
+  @doc """
+  Starts the part `name` with a part's effects, none for a part without any, and returns the chain its notes play into, as `start_fx/1` does.
+
+  The part starts muted or soloed if `mute/2` or `solo/2` left its name so, and a part of that name already started is removed first.
+  """
+  def start_part(name, effects) when is_atom(name) do
+    {engine, _} = :persistent_term.get(__MODULE__)
+    part = Atom.to_string(name)
+
+    effects =
+      for {effect, opts} <- effects, do: {Atom.to_string(effect), options(opts)}
+
+    case Native.start_part(engine, part, effects) do
+      {:ok, key} ->
+        with [{_part, muted, soloed}] <- :ets.lookup(@parts, part) do
+          if muted, do: Native.mute_part(engine, part, true)
+          if soloed, do: Native.solo_part(engine, part, true)
+        end
+
+        %{key: key, part: part}
+
+      {:error, message} ->
+        raise ArgumentError, message
+    end
+  end
+
+  @doc "Mutes the part `name` at once, the notes already handed over included, or lets it be heard again; a part started later by that name starts as it was left."
+  def mute(name, muted) when is_boolean(muted) do
+    {engine, _} = :persistent_term.get(__MODULE__)
+    part = to_string(name)
+    :ets.insert_new(@parts, {part, false, false})
+    :ets.update_element(@parts, part, {2, muted})
+    Native.mute_part(engine, part, muted)
+    :ok
+  end
+
+  @doc "Solos the part `name` at once, or ends its solo: while any part is soloed, only the soloed parts are heard; a part started later by that name starts as it was left."
+  def solo(name, soloed) when is_boolean(soloed) do
+    {engine, _} = :persistent_term.get(__MODULE__)
+    part = to_string(name)
+    :ets.insert_new(@parts, {part, false, false})
+    :ets.update_element(@parts, part, {3, soloed})
+    Native.solo_part(engine, part, soloed)
+    :ok
+  end
+
   @impl Mx.Engine
+  def stop_fx(%{key: key, part: part}, at_us) do
+    {engine, origin} = :persistent_term.get(__MODULE__)
+    Native.stop_part(engine, part, key, seconds(engine, at_us, origin))
+    :ok
+  end
+
   def stop_fx(%{key: key}, at_us) do
     {engine, origin} = :persistent_term.get(__MODULE__)
     Native.stop_effects(engine, key, seconds(engine, at_us, origin))

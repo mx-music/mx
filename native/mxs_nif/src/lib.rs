@@ -595,6 +595,48 @@ fn stop_effects(env: Env, resource: ResourceArc<EngineResource>, chain: u64, at:
     reply(env, lock(&resource).stop_effects(chain, at))
 }
 
+/// Starts the part `name` with `effects`, as `start_effects` takes them, and returns the chain notes name to play into it.
+/// A part of that name already started is removed first, so its sounds end through it and the name is the new part's.
+#[rustler::nif]
+fn start_part(resource: ResourceArc<EngineResource>, name: String, effects: Vec<(String, Term)>) -> NifResult<Result<u64, String>> {
+    let effects = effects.into_iter().map(|(name, opts)| Ok((name, options(opts)?))).collect::<NifResult<Vec<_>>>()?;
+    let mut engine = lock(&resource);
+    if engine.part(&name).is_ok() {
+        let now = engine.now();
+        if let Err(e) = engine.stop_part(&name, now) {
+            return Ok(Err(e.to_string()));
+        }
+    }
+    Ok(engine.start_part(&name, &effects).map_err(|e| e.to_string()))
+}
+
+/// Removes the part `name` at `at` seconds, once its notes and its effects' tails have ended, if `chain` is still what it plays into; a chain another part took the name of is removed alone.
+#[rustler::nif]
+fn stop_part(env: Env, resource: ResourceArc<EngineResource>, name: String, chain: u64, at: f64) -> Term {
+    let mut engine = lock(&resource);
+    if engine.part(&name).is_ok_and(|current| current == chain) {
+        reply(env, engine.stop_part(&name, at))
+    } else {
+        reply(env, engine.stop_effects(chain, at))
+    }
+}
+
+/// Mutes the part `name` now, or lets it be heard again; the sounds handed over before are muted with it.
+#[rustler::nif]
+fn mute_part(env: Env, resource: ResourceArc<EngineResource>, name: String, muted: bool) -> Term {
+    let mut engine = lock(&resource);
+    let now = engine.now();
+    reply(env, engine.mute(&name, muted, now))
+}
+
+/// Solos the part `name` now, or ends its solo: while any part is soloed, only the soloed parts are heard.
+#[rustler::nif]
+fn solo_part(env: Env, resource: ResourceArc<EngineResource>, name: String, soloed: bool) -> Term {
+    let mut engine = lock(&resource);
+    let now = engine.now();
+    reply(env, engine.solo(&name, soloed, now))
+}
+
 /// Renders the next seconds of an offline engine, as the left and right channels in native-endian 32-bit floats.
 #[rustler::nif(schedule = "DirtyCpu")]
 fn render<'a>(env: Env<'a>, resource: ResourceArc<EngineResource>, seconds: f64) -> Result<(Binary<'a>, Binary<'a>), String> {

@@ -11,6 +11,7 @@ defmodule Mx.Band do
   The band starts a loop again when its process fails.
   Given `subscribe`, it subscribes to the inputs, and passes each one to the loops whose `on:` waits for it.
   Each version's live audio goes to `live`, which starts, changes and stops it.
+  Given `start_part`, each loop plays into a part of the engine by its name, which `mute/3` and `solo/2` silence through the `mute` and `solo` functions; a muted part plays on in its place, and stays muted through new versions of the song.
   Each version of the song goes through `prepare` first, which loads its samples, so playing starts only once they are ready.
   When every loop has played its last pass, the band calls `on_end`.
   Given `from`, a beat of the song, each loop starts in the pass that holds that beat and plays it from there, so that beat sounds first; a loop whose passes end before it does not start.
@@ -37,6 +38,17 @@ defmodule Mx.Band do
 
   @doc "Sends the calling process where the beat is, as `{:mx_beat, message}`, now and whenever it changes, and `{:mx_beat, :stopped}` when the band stops; `Mx.Beat` says what a message holds."
   def follow(band) when is_pid(band) or is_atom(band), do: GenServer.call(band, :follow)
+
+  @doc "Mutes the part `name` of the song, or lets it be heard again with `muted` false, through the band's `:mute` function; refused with `{:error, message}` for a part the song does not have."
+  def mute(band, name, muted \\ true)
+      when (is_pid(band) or is_atom(band)) and is_boolean(muted) do
+    GenServer.call(band, {:mute, name, muted})
+  end
+
+  @doc "Solos the parts named and no others, through the band's `:solo` function, so only they are heard, and every part is with none named; refused with `{:error, message}` for a part the song does not have."
+  def solo(band, names) when (is_pid(band) or is_atom(band)) and is_list(names) do
+    GenServer.call(band, {:solo, names})
+  end
 
   @doc "The tempo timeline, the latest entry first."
   def timeline(band) when is_pid(band) or is_atom(band), do: GenServer.call(band, :timeline)
@@ -72,7 +84,16 @@ defmodule Mx.Band do
       prepare: prepare,
       load_sample: Keyword.get(opts, :load_sample, fn _path, _loop -> :ok end),
       loop_opts:
-        Keyword.take(opts, [:new_id, :start_fx, :stop_fx, :out, :inputs, :set, :worked_out]),
+        Keyword.take(opts, [
+          :new_id,
+          :start_fx,
+          :stop_fx,
+          :start_part,
+          :out,
+          :inputs,
+          :set,
+          :worked_out
+        ]),
       timeline: Mx.Tempo.new(song.tempo, start_us),
       tempo_pass: -1,
       on_end: Keyword.get(opts, :on_end, fn -> :ok end),
@@ -80,6 +101,9 @@ defmodule Mx.Band do
       loops: %{},
       stopping: %{},
       delay_us: Keyword.get(opts, :delay, fn _band -> 0 end).(self()),
+      mute: Keyword.get(opts, :mute, fn _name, _muted -> :ok end),
+      solo: Keyword.get(opts, :solo, fn _name, _soloed -> :ok end),
+      soloed: [],
       followers: Keyword.get(opts, :follow, []),
       told: []
     }
@@ -98,6 +122,25 @@ defmodule Mx.Band do
     Process.monitor(pid)
     for message <- messages(state), do: send(pid, {:mx_beat, message})
     {:reply, :ok, %{state | followers: [pid | state.followers]}}
+  end
+
+  def handle_call({:mute, name, muted}, {_, _}, %{} = state) do
+    with {:ok, [part]} <- parts(state, [name]) do
+      state.mute.(part, muted)
+      {:reply, :ok, state}
+    else
+      error -> {:reply, error, state}
+    end
+  end
+
+  def handle_call({:solo, names}, {_, _}, %{} = state) do
+    with {:ok, parts} <- parts(state, names) do
+      for part <- state.soloed -- parts, do: state.solo.(part, false)
+      for part <- parts -- state.soloed, do: state.solo.(part, true)
+      {:reply, :ok, %{state | soloed: parts}}
+    else
+      error -> {:reply, error, state}
+    end
   end
 
   def handle_call(:loops, {_, _}, %{} = state) do
@@ -200,6 +243,16 @@ defmodule Mx.Band do
   end
 
   defp messages(state), do: Mx.Beat.messages(state.timeline, state.delay_us, now())
+
+  # The song's parts by the names given, as atoms or strings.
+  defp parts(state, names) do
+    known = Map.new(state.song.loops, &{Atom.to_string(&1.name), &1.name})
+
+    case Enum.find(names, &(not is_map_key(known, to_string(&1)))) do
+      nil -> {:ok, Enum.uniq(for name <- names, do: known[to_string(name)])}
+      unknown -> {:error, "the song has no part named #{unknown}"}
+    end
+  end
 
   # Sends the followers each message they were not sent yet.
   defp tell(state) do

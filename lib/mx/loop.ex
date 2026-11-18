@@ -17,6 +17,7 @@ defmodule Mx.Loop do
   A loop with effects starts its chain with `start_fx` before its first pass, and plays its notes into the chain.
   The chain lasts from pass to pass, and is replaced at the start of a pass whose effects or tempo give it other options.
   A replaced chain, or the chain of a stopped loop, is handed to `stop_fx` with the end of its last pass, so its sounds finish through it.
+  Given `start_part`, every loop has a chain, started by the loop's name with its effects, so the engine can mute and solo it by that name.
 
   MIDI and OSC steps go to `out` with the real time of their beat, as the loop's notes go to the engine through `play`; a MIDI note is a note on and a note off after its length.
 
@@ -72,6 +73,7 @@ defmodule Mx.Loop do
       out: Keyword.get(opts, :out, fn _at_us, _message -> :ok end),
       start_fx: Keyword.get(opts, :start_fx, fn _chain -> nil end),
       stop_fx: Keyword.get(opts, :stop_fx, fn _fx, _at_us -> :ok end),
+      start_part: Keyword.get(opts, :start_part),
       chain: [],
       fx: nil,
       loaded: %{},
@@ -303,16 +305,19 @@ defmodule Mx.Loop do
 
     # A part that changes all its playing sounds plays them in a group of its own, which an empty
     # chain gives it.
-    grouped = chain != [] or match?(%{changed: true}, state.loop.music)
+    grouped =
+      chain != [] or match?(%{changed: true}, state.loop.music) or state.start_part != nil
 
     if chain == state.chain and grouped == (state.fx != nil) do
       state
     else
       if state.fx, do: state.stop_fx.(state.fx, Band.time_at(timeline, start))
-      fx = if grouped, do: state.start_fx.(chain)
-      %{state | chain: chain, fx: fx}
+      %{state | chain: chain, fx: if(grouped, do: start_chain(state, chain))}
     end
   end
+
+  defp start_chain(%{start_part: nil} = state, chain), do: state.start_fx.(chain)
+  defp start_chain(state, chain), do: state.start_part.(state.loop.name, chain)
 
   defp next_pass(%{pending: nil} = state, until_us) do
     case Pass.events(state.loop, state.pass, pass_opts(state, until_us)) do

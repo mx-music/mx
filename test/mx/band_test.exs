@@ -687,6 +687,74 @@ defmodule Mx.BandTest do
     end
 
     @tag :tmp_dir
+    test "given start_part, every loop plays into a part started by its name with its effects",
+         ctx do
+      test = self()
+
+      start_part = fn name, chain ->
+        send(test, {:part_started, name, chain})
+        %{part: name}
+      end
+
+      song =
+        load(
+          ctx,
+          "import Mx\nsong(tempo: 6000, music: together([part(:wet, loop(1, fn _, _ -> seq([note(60, 0), rest(1)]) end), fx: :reverb), part(:dry, loop(1, fn _, _ -> seq([note(62, 0), rest(1)]) end))]))\n"
+        )
+
+      start(song, ctx, ctx.fx_opts ++ [start_part: start_part])
+      assert_receive {:part_started, :wet, [{:reverb, _}]}
+      assert_receive {:part_started, :dry, []}
+      notes = collect_targets(200)
+
+      assert notes |> Enum.map(&{&1.note, &1.chain}) |> Enum.uniq() |> Enum.sort() ==
+               [{60.0, %{part: :wet}}, {62.0, %{part: :dry}}]
+
+      refute_received {:part_started, _, _}
+      refute_received {:fx_started, _, _}
+    end
+
+    @tag :tmp_dir
+    test "mutes and solos the song's parts by name through its functions, and refuses a part the song does not have",
+         ctx do
+      test = self()
+
+      opts = [
+        mute: fn name, muted -> send(test, {:mute, name, muted}) end,
+        solo: fn name, soloed -> send(test, {:solo, name, soloed}) end
+      ]
+
+      content =
+        "import Mx\nsong(tempo: 6000, music: together([part(:bass, loop(1, fn _, _ -> seq([note(40, 0), rest(1)]) end)), part(:lead, loop(1, fn _, _ -> seq([note(72, 0), rest(1)]) end)), part(:keys, loop(1, fn _, _ -> seq([note(60, 0), rest(1)]) end))]))\n"
+
+      {band, _} = start(load(ctx, content), ctx, opts)
+
+      assert Band.mute(band, :lead) == :ok
+      assert_received {:mute, :lead, true}
+      assert Band.mute(band, "lead", false) == :ok
+      assert_received {:mute, :lead, false}
+
+      assert Band.mute(band, :no_such_part) == {:error, "the song has no part named no_such_part"}
+      assert Band.solo(band, [:bass, "nope"]) == {:error, "the song has no part named nope"}
+      refute_received {:mute, _, _}
+      refute_received {:solo, _, _}
+
+      assert Band.solo(band, [:bass, :keys]) == :ok
+      assert_received {:solo, :bass, true}
+      assert_received {:solo, :keys, true}
+      assert Band.solo(band, ["keys", :lead]) == :ok
+      assert_received {:solo, :bass, false}
+      assert_received {:solo, :lead, true}
+      refute_received {:solo, :keys, _}
+
+      Band.switch(band, load(ctx, String.replace(content, "6000", "3000")))
+      assert Band.solo(band, []) == :ok
+      assert_received {:solo, :keys, false}
+      assert_received {:solo, :lead, false}
+      refute_received {:solo, _, _}
+    end
+
+    @tag :tmp_dir
     test "a part of a song written as music that another changes plays in a group of its own, which the change sets",
          ctx do
       song =

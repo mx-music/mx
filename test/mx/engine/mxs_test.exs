@@ -263,6 +263,75 @@ defmodule Mx.Engine.MxsTest do
     end
   end
 
+  describe "parts" do
+    @describetag :tmp_dir
+
+    setup %{tmp_dir: dir} do
+      wav = Path.join(dir, "parts.wav")
+      start_supervised!({Mxs, live: false, record: wav, fade_ms: 0})
+      %{wav: wav, at: System.os_time(:microsecond)}
+    end
+
+    test "a muted part is silent, the note handed over before included, and is heard again when unmuted",
+         %{wav: wav, at: at} do
+      lead = Mxs.start_part(:lead, [])
+      :ok = Mxs.play(at, [{:note, nil, :saw, 60, [sustain: 5], lead}])
+      Mxs.render_to(at + 1_000_000)
+      :ok = Mxs.mute(:lead, true)
+      Mxs.render_to(at + 2_000_000)
+      :ok = Mxs.mute("lead", false)
+      Mxs.render_to(at + 3_000_000)
+
+      assert [heard, muted, back] = peaks(wav, [{0.1, 1.0}, {1.1, 2.0}, {2.1, 3.0}])
+      assert heard > 0.05
+      assert muted == 0.0
+      assert_in_delta back, heard, heard / 2
+    end
+
+    test "with a part soloed only it is heard, and every part again once no part is", %{
+      wav: wav,
+      at: at
+    } do
+      lead = Mxs.start_part(:lead, [])
+      Mxs.start_part(:bass, [])
+      :ok = Mxs.play(at, [{:note, nil, :saw, 60, [sustain: 5], lead}])
+      :ok = Mxs.solo(:bass, true)
+      Mxs.render_to(at + 1_000_000)
+      :ok = Mxs.solo(:lead, true)
+      Mxs.render_to(at + 2_000_000)
+      :ok = Mxs.solo(:lead, false)
+      Mxs.render_to(at + 3_000_000)
+      :ok = Mxs.solo(:bass, false)
+      Mxs.render_to(at + 4_000_000)
+
+      assert [other, both, other_again, none] =
+               peaks(wav, [{0.1, 1.0}, {1.1, 2.0}, {2.1, 3.0}, {3.1, 4.0}])
+
+      assert other == 0.0 and other_again == 0.0
+      assert both > 0.05 and none > 0.05
+    end
+
+    # The engine mutes over 10 ms, and a loop starts its part well before its first note.
+    test "a part started after it was muted starts muted, each time it is started", %{
+      wav: wav,
+      at: at
+    } do
+      :ok = Mxs.mute(:lead, true)
+      first = Mxs.start_part(:lead, [])
+      :ok = Mxs.play(at + 20_000, [{:note, nil, :saw, 60, [sustain: 1], first}])
+      Mxs.render_to(at + 1_000_000)
+      :ok = Mxs.stop_fx(first, at + 1_000_000)
+      second = Mxs.start_part(:lead, echo: [phase: 0.25])
+      :ok = Mxs.play(at + 1_020_000, [{:note, nil, :saw, 64, [sustain: 1], second}])
+      Mxs.render_to(at + 2_000_000)
+      third = Mxs.start_part(:lead, [])
+      :ok = Mxs.play(at + 2_020_000, [{:note, nil, :saw, 67, [sustain: 1], third}])
+      Mxs.render_to(at + 3_000_000)
+
+      assert peaks(wav, [{0.0, 3.0}]) == [0.0]
+    end
+  end
+
   describe "a live engine" do
     setup do
       start_supervised!(Mxs)
@@ -300,6 +369,18 @@ defmodule Mx.Engine.MxsTest do
 
       assert_in_delta first, 1000, 300
       assert_in_delta second, 1000, 300
+    end
+  end
+
+  # Stops the engine, and gives the peak of its recording within each stretch of seconds.
+  defp peaks(wav, stretches) do
+    stop_supervised!(Mxs)
+    {:ok, %{samples: samples, rate: rate}} = Mx.Audio.read(wav)
+
+    for {from, to} <- stretches do
+      first = round(from * rate)
+      count = round(to * rate) - first
+      samples |> Enum.slice(first, count) |> Enum.map(&abs/1) |> Enum.max()
     end
   end
 

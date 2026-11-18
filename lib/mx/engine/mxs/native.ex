@@ -151,6 +151,18 @@ defmodule Mx.Engine.Mxs.Native do
   @doc "Removes an effect chain at `at` seconds, once its notes and its effects' tails have ended."
   def stop_effects(_engine, _chain, _at), do: :erlang.nif_error(:nif_not_loaded)
 
+  @doc "Starts the part `name` with effects as `start_effects/2` takes them, and returns the chain notes name to play into it; a part of that name already started is removed first."
+  def start_part(_engine, _name, _effects), do: :erlang.nif_error(:nif_not_loaded)
+
+  @doc "Removes the part `name` at `at` seconds, once its notes and its effects' tails have ended, if `chain` is still what it plays into; otherwise removes the chain alone."
+  def stop_part(_engine, _name, _chain, _at), do: :erlang.nif_error(:nif_not_loaded)
+
+  @doc "Mutes the part `name` now, or lets it be heard again, the sounds handed over before included."
+  def mute_part(_engine, _name, _muted), do: :erlang.nif_error(:nif_not_loaded)
+
+  @doc "Solos the part `name` now, or ends its solo: while any part is soloed, only the soloed parts are heard."
+  def solo_part(_engine, _name, _soloed), do: :erlang.nif_error(:nif_not_loaded)
+
   @doc "Renders the next seconds of an offline engine, as the left and right channels in native-endian 32-bit floats."
   def render(_engine, _seconds), do: :erlang.nif_error(:nif_not_loaded)
 
