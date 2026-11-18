@@ -412,6 +412,8 @@ defmodule Mx.Band do
 
   @impl true
   def terminate(_reason, %{} = state) do
+    # A loop is linked, so only a band stopped for a reason other than :normal ends it.
+    for {_name, pid} <- Map.merge(state.stopping, state.loops), do: Process.exit(pid, :shutdown)
     for pid <- state.followers, do: send(pid, {:mx_beat, :stopped})
     :ok
   end

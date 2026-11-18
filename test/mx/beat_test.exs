@@ -142,7 +142,6 @@ defmodule Mx.BeatTest do
     end)
   end
 
-  @tag :capture_log
   test "stopping the song sends a message that says it stopped", ctx do
     capture_io(:stderr, fn ->
       {band, _start_us} = start(ctx, song(120))
