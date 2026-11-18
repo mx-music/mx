@@ -239,9 +239,9 @@ defmodule Mx.Engine.Mxs do
   @impl Mx.Engine
   def play(at_us, events) do
     {engine, origin} = :persistent_term.get(__MODULE__)
-    at = seconds(engine, at_us, origin)
-
-    send_events(engine, at, Enum.map(events, &event/1))
+    {reply, warnings} = Native.play_at(engine, at_us, origin, Enum.map(events, &event/1))
+    with {:error, message} <- reply, do: IO.puts(:stderr, "mxs: #{message}")
+    Enum.each(warnings, &IO.puts(:stderr, &1))
   end
 
   defp send_events(engine, at, events) do

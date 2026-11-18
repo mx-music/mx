@@ -16,7 +16,7 @@ defmodule Mx.Bench do
 
   @doc """
   Plays the song at `path` for `seconds` under each of four loads: an idle machine, every scheduler of the VM busy, the song loaded and laid out every 300 ms, and twice as many busy OS processes as schedulers.
-  Returns `{:ok, rows, figures}`, each row a map with `:load`, `:calls`, `:late`, `:least_lead_ms` and `:longest_call_ms`, or `{:error, message}`.
+  Returns `{:ok, rows, figures}`, each row a map with `:load`, `:calls`, `:late`, `:least_lead_ms`, `:longest_call_ms` and `:held_ms`, the longest a process handing notes over kept a normal scheduler of the VM without a break, 0 when under a millisecond, or `{:error, message}`.
   """
   def lead(path, seconds) when is_binary(path) and is_number(seconds) do
     with {:ok, song} <- Song.load(path) do
@@ -40,7 +40,7 @@ defmodule Mx.Bench do
         end
 
       figures =
-        for row <- rows, key <- [:late, :least_lead_ms, :longest_call_ms], into: %{} do
+        for row <- rows, key <- [:late, :least_lead_ms, :longest_call_ms, :held_ms], into: %{} do
           {"lead/#{row.load}/#{key}", row[key]}
         end
 
@@ -48,9 +48,10 @@ defmodule Mx.Bench do
     end
   end
 
-  defp lead_row(name, calls) do
+  defp lead_row(name, {calls, held_ms}) do
     %{
       load: name,
+      held_ms: held_ms,
       calls: length(calls),
       late: Enum.count(calls, fn {lead, _took} -> lead < 0 end),
       least_lead_ms: calls |> Enum.map(&elem(&1, 0)) |> Enum.min(fn -> 0 end) |> ms(),
@@ -58,7 +59,7 @@ defmodule Mx.Bench do
     }
   end
 
-  # The lead and the length of every call that hands notes to the engine, in microseconds.
+  # The lead and the length of every call that hands notes to the engine, in microseconds, and the longest a caller held a scheduler, in milliseconds.
   defp played(song, seconds) do
     table = :ets.new(:bench, [:public, :duplicate_bag])
 
@@ -68,12 +69,32 @@ defmodule Mx.Bench do
       {Band, song: song, play: timed(table, fn -> 0 end), new_id: &Mxs.new_id/0}
     ]
 
+    monitor = spawn(fn -> held(table) end)
+    before = :erlang.system_monitor(monitor, [{:long_schedule, 1}])
     {:ok, session} = Supervisor.start_link(children, strategy: :rest_for_one)
     Process.sleep(round(seconds * 1000))
     Supervisor.stop(session)
-    calls = for {:play, _at, lead, took} <- :ets.tab2list(table), do: {lead, took}
+    :erlang.system_monitor(before)
+    Process.exit(monitor, :kill)
+    rows = :ets.tab2list(table)
     :ets.delete(table)
-    calls
+    callers = for {:caller, pid} <- rows, into: MapSet.new(), do: pid
+    held = for {:held, pid, held_ms} <- rows, pid in callers, do: held_ms
+    calls = for {:play, _at, lead, took} <- rows, do: {lead, took}
+    {calls, Enum.max(held, fn -> 0 end)}
+  end
+
+  # The VM says when a process kept a normal scheduler for a millisecond or more without a break.
+  defp held(table) do
+    receive do
+      {:monitor, pid, :long_schedule, info} when is_pid(pid) ->
+        :ets.insert(table, {:held, pid, info[:timeout]})
+
+      _other ->
+        :ok
+    end
+
+    held(table)
   end
 
   defp timed(table, at) do
@@ -81,6 +102,7 @@ defmodule Mx.Bench do
       before = System.os_time(:microsecond)
       Mxs.play(at_us, events)
       :ets.insert(table, {:play, at.(), at_us - before, System.os_time(:microsecond) - before})
+      :ets.insert(table, {:caller, self()})
       :ok
     end
   end

@@ -53,6 +53,9 @@ defmodule Mx.Engine.Mxs.Native do
   @doc "Plays `{seconds, event}` pairs, each event a note, a sample, an input, a change to sounds playing, or a stop."
   def play(_engine, _events), do: :erlang.nif_error(:nif_not_loaded)
 
+  @doc "Plays events, all at the Unix time given in microseconds, or that time less `origin_us` into an offline engine's seconds, and returns `{reply, warnings}` in one wait for the engine."
+  def play_at(_engine, _unix_us, _origin_us, _events), do: :erlang.nif_error(:nif_not_loaded)
+
   @doc "Loads a sample, and returns its number and channels."
   def load_sample(_engine, _path), do: :erlang.nif_error(:nif_not_loaded)
 

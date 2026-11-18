@@ -143,10 +143,25 @@ fn inputs(resource: ResourceArc<EngineResource>) -> usize {
 }
 
 /// Plays `{seconds, event}` pairs, each event `{:note, id, synth, options, chain}`, `{:sample, id, sample, options, chain}`, `{:input, id, input, channels, options, chain}`, `{:set, target, options}` or `{:stop, ids}`.
-#[rustler::nif]
+#[rustler::nif(schedule = "DirtyCpu")]
 fn play<'a>(env: Env<'a>, resource: ResourceArc<EngineResource>, events: Vec<(f64, Term<'a>)>) -> NifResult<Term<'a>> {
     let events = events.into_iter().map(|(at, term)| Ok((at, event(term)?))).collect::<NifResult<Vec<_>>>()?;
     Ok(reply(env, lock(&resource).play(&events)))
+}
+
+/// Plays events, all at the Unix time `unix_us` in microseconds, and returns the reply with the warnings since the last call, waiting for the engine once.
+/// An offline engine has no Unix time, and plays them `unix_us` less `origin_us` into its own seconds.
+// Building a note's voice takes about a millisecond, more than a NIF may hold a normal scheduler for.
+#[rustler::nif(schedule = "DirtyCpu")]
+fn play_at<'a>(env: Env<'a>, resource: ResourceArc<EngineResource>, unix_us: i64, origin_us: i64, events: Vec<Term<'a>>) -> NifResult<Term<'a>> {
+    let events = events.into_iter().map(event).collect::<NifResult<Vec<_>>>()?;
+    let mut engine = lock(&resource);
+    let at = std::time::SystemTime::UNIX_EPOCH + std::time::Duration::from_micros(unix_us.max(0) as u64);
+    let seconds = engine.seconds_at(at).unwrap_or((unix_us - origin_us) as f64 / 1_000_000.0);
+    let timed: Vec<(f64, Event)> = events.into_iter().map(|event| (seconds, event)).collect();
+    let result = engine.play(&timed);
+    let warnings = engine.warnings();
+    Ok((reply(env, result), warnings).encode(env))
 }
 
 fn event(term: Term) -> NifResult<Event> {

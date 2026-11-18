@@ -131,6 +131,23 @@ defmodule Mx.Engine.MxsTest do
       assert output == "piano's option vel was held to its range, 0.05 to 1\n"
     end
 
+    test "a chord of fifty notes handed over does not hold up another process, with one scheduler" do
+      online = :erlang.system_flag(:schedulers_online, 1)
+      on_exit(fn -> :erlang.system_flag(:schedulers_online, online) end)
+      test = self()
+      ticker = spawn_link(fn -> tick(test, System.monotonic_time(:microsecond), 0) end)
+      Process.sleep(20)
+      chord = for note <- 21..70, do: {:note, nil, :piano, note, [], nil}
+      at = System.os_time(:microsecond)
+      {call_us, :ok} = :timer.tc(fn -> Mxs.play(at, chord) end)
+      send(ticker, :stop)
+      assert_receive {:latest, late_us}
+
+      # Building fifty piano voices takes tens of milliseconds, which the ticker must not wait for.
+      assert call_us > 10_000
+      assert late_us < call_us / 4
+    end
+
     test "ids count up for the sounds a later change reaches" do
       assert Mxs.new_id() + 1 == Mxs.new_id()
     end
@@ -188,6 +205,17 @@ defmodule Mx.Engine.MxsTest do
 
       assert Mxs.record_input(wav, {:input, 1}, at) ==
                {:error, "mxs could not record to #{wav}: the sound card has no input 1"}
+    end
+  end
+
+  # Wakes every millisecond, and says the longest it was woken late by, in microseconds.
+  defp tick(test, last, latest) do
+    receive do
+      :stop -> send(test, {:latest, latest})
+    after
+      1 ->
+        now = System.monotonic_time(:microsecond)
+        tick(test, now, max(latest, now - last - 1000))
     end
   end
 

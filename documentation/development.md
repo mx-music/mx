@@ -30,15 +30,16 @@ mix mx.bench buffers examples/choro.exs examples/trap.exs examples/afrobeat.exs
 `lead` prints a row for each of four loads, such as:
 
 ```
-load,notes,late,least_lead_ms,longest_call_ms
-idle,682,0,493.7,5.1
-vm_busy,682,0,497.5,1.5
-saves,682,0,495.5,4.9
-os_busy,682,0,443.9,4.4
+load,notes,late,least_lead_ms,longest_call_ms,held_ms
+idle,682,0,495.7,3.4,4
+vm_busy,682,0,496.6,1.7,2
+saves,682,0,497.3,2.3,3
+os_busy,682,0,459.9,1.9,2
 ```
 
 The lead is the time between a note being handed to the engine and its beat, and mx hands each note over 500 ms ahead, so a least lead near 500 says nothing held the note up, and a late note is one handed over after its beat.
 The longest call is the longest time one call that hands notes to the engine took.
+`held_ms` is the longest a process handing notes over kept one of the VM's normal schedulers without a break, as the VM reports it from a millisecond up, and 0 when it never did; on a busy machine it also counts the times the operating system held the scheduler's own thread back.
 
 `saves` prints a row for each second, with the longest gap between two beat messages to a window, and under them how many times mx loaded the saves and how long each load by the window took.
 `buffers` prints, for each song, the time filling a buffer of 512 frames took as a share of the time it lasts, and `over` counts the buffers that took longer than they last, which a sound card would have played as a gap.

@@ -17,10 +17,10 @@ defmodule Mix.Tasks.Mx.BenchTest do
     [header | loads] =
       rows(capture_io(fn -> Bench.run(["lead", "examples/choro.exs", "--seconds", "5"]) end))
 
-    assert header == ["load", "notes", "late", "least_lead_ms", "longest_call_ms"]
+    assert header == ["load", "notes", "late", "least_lead_ms", "longest_call_ms", "held_ms"]
     assert Enum.map(loads, &hd/1) == ["idle", "vm_busy", "saves", "os_busy"]
 
-    for [_load, notes, late, lead, _call] <- loads do
+    for [_load, notes, late, lead, _call, _held] <- loads do
       assert String.to_integer(notes) > 100
       assert late == "0"
       assert String.to_float(lead) > 300
