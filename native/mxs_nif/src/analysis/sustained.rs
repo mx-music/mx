@@ -18,6 +18,10 @@ const SETTLING: f64 = 0.1;
 /// The fewest cents a vibrato swings by to count as one.
 const VIBRATO: f64 = 3.0;
 const ROUNDS: usize = 5;
+/// The highest a held note's noise is fitted to, as a flute's breath reaches past 8 kHz.
+const NOISE_TOP: f64 = 16_000.0;
+/// The lowest a held note's noise is fitted from, as under it the recordings hold the room's rumble and no breath.
+const NOISE_BOTTOM: f64 = 200.0;
 
 /// A held note's figures: levels at the struck figures' times until the recording lets the note go, held at the last after, each partial's and band's tail its slope once let go.
 #[derive(Clone)]
@@ -353,7 +357,8 @@ pub fn fit(sound: &[f64], rate: f64, note: f64, seconds: f64) -> (Held, Measured
     let seconds = spectra.frames.len() as f64 * HOP + spectra.window / 2.0 - LEAD;
     let frame = |t: f64| ((t + LEAD) / HOP).round().max(0.0) as usize;
     let last = measured.holding.end.min(spectra.frames.len());
-    let holds = TIMES.partition_point(|t| frame(*t) < last).max(1);
+    // From where the note holds, one level over the whole stretch, since a recorded note eases off before it is let go and a longer one should not hold that.
+    let holds = TIMES.partition_point(|t| frame(*t) < last).max(1).min(TIMES.partition_point(|t| *t < measured.held) + 1);
     // The frames each time is read over: those nearer it than its neighbours, the last time's reaching to where the note is let go.
     let segments: Vec<std::ops::Range<usize>> = (0..holds)
         .map(|j| {
@@ -376,7 +381,7 @@ pub fn fit(sound: &[f64], rate: f64, note: f64, seconds: f64) -> (Held, Measured
             Partial { ratio: track.freq / recorded.f0, harmonic: track.harmonic, levels, tail: release_slope(track, &measured) }
         })
         .collect();
-    let bands = fit::erb_bands();
+    let bands = fit::erb_bands_to(NOISE_TOP);
     let noise = bands.iter().map(|(low, high)| Band { low: *low, high: *high, levels: vec![SILENT; TIMES.len()], tail: measured.fall }).collect();
     let mut held = Held {
         figures: Figures { f0: recorded.f0, pitch: hz(note), partials, noise, reached: TIMES[TIMES.len() - 1] },
@@ -389,7 +394,34 @@ pub fn fit(sound: &[f64], rate: f64, note: f64, seconds: f64) -> (Held, Measured
     let bins: Vec<Vec<usize>> = bands.iter().map(|(low, high)| { let a = (low / spectra.bin).round() as usize; (a..((high / spectra.bin).round() as usize).max(a + 1)).collect() }).collect();
     let gains = fit::noise_gains(spectra, &bands, &bins, rate);
     let theirs = fit::band_powers(spectra, &bins);
-    let floors: Vec<f64> = bands.iter().zip(&bins).map(|((low, high), bins)| 10f64.powf((recorded.floor.at((low * high).sqrt()) + 10.0 * (bins.len() as f64).log10() + CLEAR) / 10.0)).collect();
+    // A band's noise is read from its bins clear of the partials, scaled to the whole band, so a band holding a partial keeps the noise around it.
+    let near: Vec<f64> = freqs.iter().copied().chain((1..).map(|n| n as f64 * recorded.f0).take_while(|f| *f <= NOISE_TOP)).collect();
+    let clear: Vec<Vec<usize>> = bins.iter().map(|bins| bins.iter().copied().filter(|&i| near.iter().all(|f| (i as f64 * spectra.bin - f).abs() > 2.0 * spectra.resolution)).collect()).collect();
+    let clear_powers = |spectra: &partials::Spectra| -> Vec<Vec<f64>> {
+        spectra
+            .frames
+            .iter()
+            .map(|f| {
+                clear
+                    .iter()
+                    .zip(&bins)
+                    .map(|(clear, all)| {
+                        let power = clear.iter().filter_map(|&i| f.get(i)).map(|m| m * m).sum::<f64>() / clear.len().max(1) as f64 * all.len() as f64;
+                        10.0 * power.max(1e-24).log10()
+                    })
+                    .collect()
+            })
+            .collect()
+    };
+    let theirs_clear = clear_powers(spectra);
+    // The room's floor in each band is its quietest frames, before the note and after it ends, since between a held note's partials is its breath or bow.
+    let floors: Vec<f64> = (0..bands.len())
+        .map(|k| {
+            let mut levels: Vec<f64> = theirs.iter().map(|row| row[k]).collect();
+            levels.sort_by(|a, b| a.partial_cmp(b).unwrap());
+            10f64.powf((levels.get(levels.len() / 20).copied().unwrap_or(SILENT) + CLEAR) / 10.0)
+        })
+        .collect();
     let lead = (0.05 * rate).round() as usize;
     for round in 0..ROUNDS {
         let rendered = render(&held, rate, 0.05, measured.release, seconds + 0.1, false);
@@ -397,21 +429,24 @@ pub fn fit(sound: &[f64], rate: f64, note: f64, seconds: f64) -> (Held, Measured
         let tracks = partials::follow(&rendered, &ours, &freqs);
         for ((partial, track), mine) in held.figures.partials.iter_mut().zip(&recorded.partials).zip(&tracks) {
             let ceiling = track.levels.iter().cloned().fold(f64::MIN, f64::max) + 12.0;
-            // Each frame's gap where either stands clear, as the check reads it, averaged over each time's frames.
-            let gap = |k: usize| {
+            // Each frame's level and the render's where either stands clear, as the check reads them.
+            let pair = |k: usize| {
                 let (theirs, mine) = (*track.levels.get(k)?, *mine.get(k)?);
                 if theirs > track.floor + CLEAR {
-                    Some(theirs - mine)
+                    Some((theirs, mine))
                 } else if mine > track.floor + CLEAR {
-                    Some(track.floor + 5.0 - mine)
+                    Some((track.floor + 5.0, mine))
                 } else {
                     None
                 }
             };
+            let gap = |k: usize| pair(k).map(|(theirs, mine)| theirs - mine);
+            // Over each time's frames the gap is between their powers, as the ear hears a level that swings, not between their dB.
             for (j, range) in segments.iter().enumerate() {
-                let gaps: Vec<f64> = range.clone().filter_map(gap).collect();
-                if !gaps.is_empty() {
-                    let change = (0.8 * gaps.iter().sum::<f64>() / gaps.len() as f64).clamp(-12.0, 12.0);
+                let pairs: Vec<(f64, f64)> = range.clone().filter_map(pair).collect();
+                if !pairs.is_empty() {
+                    let (theirs, mine): (Vec<f64>, Vec<f64>) = pairs.into_iter().unzip();
+                    let change = (0.8 * (mean_db(&theirs) - mean_db(&mine))).clamp(-12.0, 12.0);
                     partial.levels[j] = (partial.levels[j] + change).min(ceiling);
                 }
             }
@@ -431,13 +466,15 @@ pub fn fit(sound: &[f64], rate: f64, note: f64, seconds: f64) -> (Held, Measured
             let sines_spectra = partials::spectra_from(&render(&sines, rate, 0.05, measured.release, seconds + 0.1, false), rate, recorded.f0, seconds, lead);
             let sines_powers = fit::band_powers(&sines_spectra, &bins);
             let ours_powers = fit::band_powers(&ours, &bins);
+            let (sines_clear, ours_clear) = (clear_powers(&sines_spectra), clear_powers(&ours));
             for (k, band) in held.figures.noise.iter_mut().enumerate() {
                 let power = |levels: &Vec<Vec<f64>>, f: usize| levels.get(f).map_or(0.0, |row| 10f64.powf(row[k] / 10.0));
+                let (theirs, sines_powers, ours_powers) = if clear[k].is_empty() { (&theirs, &sines_powers, &ours_powers) } else { (&theirs_clear, &sines_clear, &ours_clear) };
                 let wanted = |f: usize| {
-                    let (a, s) = (power(&theirs, f), power(&sines_powers, f));
-                    if a > floors[k] && a > 2.0 * s { a - s } else { 0.0 }
+                    let (a, s) = (power(theirs, f), power(sines_powers, f));
+                    if band.high > NOISE_BOTTOM && a > floors[k] && a > 2.0 * s { a - s } else { 0.0 }
                 };
-                let made = |f: usize| (power(&ours_powers, f) - power(&sines_powers, f)).max(0.0);
+                let made = |f: usize| (power(ours_powers, f) - power(sines_powers, f)).max(0.0);
                 let set = |level: &mut f64, range: &std::ops::Range<usize>| {
                     if range.is_empty() {
                         return;
@@ -460,7 +497,7 @@ pub fn fit(sound: &[f64], rate: f64, note: f64, seconds: f64) -> (Held, Measured
                 let floor = 10.0 * floors[k].log10() - CLEAR;
                 let after: Vec<(f64, f64)> = (last..last + (1.0 / HOP) as usize)
                     .filter_map(|f| {
-                        let (a, o) = (10.0 * power(&theirs, f).max(1e-30).log10(), 10.0 * power(&ours_powers, f).max(1e-30).log10());
+                        let (a, o) = (10.0 * power(theirs, f).max(1e-30).log10(), 10.0 * power(ours_powers, f).max(1e-30).log10());
                         (a > floor + CLEAR || o > floor + CLEAR).then(|| (a.max(floor) - o.max(floor), (f - last) as f64 * HOP))
                     })
                     .collect();
@@ -674,22 +711,32 @@ pub fn timing(sound: &[f64], rate: f64, note: f64, seconds: f64) -> (f64, f64, f
 /// Each recording is its MIDI note and velocity as u8, the seconds it holds from, the seconds the recording let it go at, the vibrato's rate in Hz and depth in cents, all as f32, and its partials as a u16 count.
 /// Each partial is its frequency over the note's equal-tempered pitch as f32, its harmonic number as u16, its slope once let go, its swing with the vibrato, and its level at each time, in tenths of a dB as i16.
 /// Then each noise band's slope once let go, and its level at each time, in tenths of a dB as i16.
+/// Each recording is moved as a whole onto its velocity's smooth curve of held loudness against pitch, see `leveled`.
 pub fn figures_bytes(recordings: &[(u8, u8, Held)]) -> Vec<u8> {
     let tenths = |value: f64| ((value * 10.0).round().clamp(-32000.0, 32000.0) as i16).to_le_bytes();
+    let loudness: Vec<(u8, u8, f64)> = recordings
+        .iter()
+        .map(|(note, velocity, held)| {
+            let power: f64 = held.figures.partials.iter().map(|p| 10f64.powf(p.levels[p.levels.len() - 1] / 10.0)).sum();
+            (*note, *velocity, 10.0 * power.max(1e-30).log10())
+        })
+        .collect();
+    let offsets = leveled(&loudness);
     let mut bytes = b"MXH1".to_vec();
     bytes.extend((TIMES.len() as u16).to_le_bytes());
     for time in TIMES {
         bytes.extend((time as f32).to_le_bytes());
     }
-    let bands = fit::erb_bands();
+    let bands = fit::erb_bands_to(NOISE_TOP);
     bytes.extend((bands.len() as u16).to_le_bytes());
     for (low, high) in &bands {
         bytes.extend((*low as f32).to_le_bytes());
         bytes.extend((*high as f32).to_le_bytes());
     }
     bytes.extend((recordings.len() as u16).to_le_bytes());
-    for (note, velocity, held) in recordings {
+    for ((note, velocity, held), offset) in recordings.iter().zip(&offsets) {
         let figures = &held.figures;
+        let moved = |level: f64| if level <= SILENT { level } else { level + offset };
         bytes.extend([*note, *velocity]);
         for value in [held.held, held.release, held.vibrato.0, held.vibrato.1] {
             bytes.extend((value as f32).to_le_bytes());
@@ -702,17 +749,49 @@ pub fn figures_bytes(recordings: &[(u8, u8, Held)]) -> Vec<u8> {
             bytes.extend(tenths(partial.tail));
             bytes.extend(tenths(*swing));
             for level in &partial.levels {
-                bytes.extend(tenths(*level));
+                bytes.extend(tenths(moved(*level)));
             }
         }
         for band in &figures.noise {
             bytes.extend(tenths(band.tail));
             for level in &band.levels {
-                bytes.extend(tenths(*level));
+                bytes.extend(tenths(moved(*level)));
             }
         }
     }
     bytes
+}
+
+/// The dB that moves each recording onto its velocity's smooth curve of held loudness against pitch: the median of the recordings within 3 semitones, averaged over 2 semitones either side, at most 15 dB away.
+/// A recording played quieter or louder than its neighbours would otherwise drop or jump as a slur reaches it, while the curve keeps an instrument louder up its range.
+fn leveled(loudness: &[(u8, u8, f64)]) -> Vec<f64> {
+    let median_near = |note: u8, velocity: u8| {
+        let near: Vec<f64> = loudness.iter().filter(|(n, v, _)| *v == velocity && n.abs_diff(note) <= 3).map(|(_, _, l)| *l).collect();
+        median(&near)
+    };
+    loudness
+        .iter()
+        .map(|(note, velocity, level)| {
+            let around: Vec<f64> = loudness.iter().filter(|(n, v, _)| v == velocity && n.abs_diff(*note) <= 2).map(|(n, v, _)| median_near(*n, *v)).collect();
+            let curve = around.iter().sum::<f64>() / around.len().max(1) as f64;
+            (curve - level).clamp(-15.0, 15.0)
+        })
+        .collect()
+}
+
+#[cfg(test)]
+mod leveling {
+    use super::leveled;
+
+    #[test]
+    fn a_recording_quieter_than_its_neighbours_moves_onto_their_curve_and_the_rise_with_pitch_stays() {
+        let mut loudness: Vec<(u8, u8, f64)> = (60..80).map(|n| (n, 80, -40.0 + (n - 60) as f64)).collect();
+        loudness[10].2 -= 12.0;
+        let offsets = leveled(&loudness);
+        let moved = loudness[10].2 + offsets[10];
+        assert!((moved - -30.0).abs() < 1.5, "{moved}");
+        assert!(offsets[3].abs() < 1.0 && offsets[16].abs() < 1.0, "{offsets:?}");
+    }
 }
 
 #[cfg(test)]

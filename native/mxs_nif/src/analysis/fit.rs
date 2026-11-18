@@ -582,9 +582,14 @@ pub fn frames(sound: &[f64], rate: f64, note: f64, seconds: f64, exact: bool, sy
 
 /// The bands one ERB wide from 50 Hz to 8 kHz.
 pub fn erb_bands() -> Vec<(f64, f64)> {
+    erb_bands_to(partials::TOP)
+}
+
+/// The bands one ERB wide from 50 Hz to `top`.
+pub fn erb_bands_to(top: f64) -> Vec<(f64, f64)> {
     let erb = |hz: f64| 21.4 * (1.0 + 0.00437 * hz).log10();
     let inverse = |e: f64| (10f64.powf(e / 21.4) - 1.0) / 0.00437;
-    let (low, high) = (erb(50.0), erb(partials::TOP));
+    let (low, high) = (erb(50.0), erb(top));
     let count = (high - low).round() as usize;
     (0..count).map(|k| (inverse(low + (high - low) * k as f64 / count as f64), inverse(low + (high - low) * (k + 1) as f64 / count as f64))).collect()
 }
