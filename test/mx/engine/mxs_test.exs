@@ -143,7 +143,7 @@ defmodule Mx.Engine.MxsTest do
       send(ticker, :stop)
       assert_receive {:latest, late_us}
 
-      # Building fifty piano voices takes tens of milliseconds, which the ticker must not wait for.
+      # Building fifty piano voices takes tens of milliseconds, and the ticker must not wait.
       assert call_us > 10_000
       assert late_us < call_us / 4
     end
