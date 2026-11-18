@@ -385,7 +385,7 @@ pub fn fit(sound: &[f64], rate: f64, note: f64, seconds: f64, steady: bool) -> (
     let bands = fit::erb_bands_to(NOISE_TOP);
     let noise = bands.iter().map(|(low, high)| Band { low: *low, high: *high, levels: vec![SILENT; TIMES.len()], tail: measured.fall }).collect();
     let mut held = Held {
-        figures: Figures { f0: recorded.f0, pitch: hz(note), partials, noise, reached: TIMES[TIMES.len() - 1] },
+        figures: Figures { f0: recorded.f0, pitch: hz(note), partials, noise, reached: TIMES[TIMES.len() - 1], rate },
         held: measured.held,
         release: measured.release,
         vibrato: measured.pitch.vibrato,
@@ -711,7 +711,7 @@ pub fn timing(sound: &[f64], rate: f64, note: f64, seconds: f64) -> (f64, f64, f
 /// The figures of held notes as mxs reads them, all numbers little-endian: "MXH1", then as the struck figures' header, the times and the noise bands, and the recordings as a u16 count.
 /// Each recording is its MIDI note and velocity as u8, the seconds it holds from, the seconds the recording let it go at, the vibrato's rate in Hz and depth in cents, all as f32, and its partials as a u16 count.
 /// Each partial is its frequency over the note's equal-tempered pitch as f32, its harmonic number as u16, its slope once let go, its swing with the vibrato, and its level at each time, in tenths of a dB as i16.
-/// Then each noise band's slope once let go, and its level at each time, in tenths of a dB as i16.
+/// Then each noise band's slope once let go, and its level at each time, in tenths of a dB as i16, as the struck figures' noise is.
 /// Each recording is moved as a whole onto its velocity's smooth curve of held loudness against pitch, see `leveled`.
 pub fn figures_bytes(recordings: &[(u8, u8, Held)]) -> Vec<u8> {
     let tenths = |value: f64| ((value * 10.0).round().clamp(-32000.0, 32000.0) as i16).to_le_bytes();
@@ -753,10 +753,11 @@ pub fn figures_bytes(recordings: &[(u8, u8, Held)]) -> Vec<u8> {
                 bytes.extend(tenths(moved(*level)));
             }
         }
-        for band in &figures.noise {
+        for (band, (low, high)) in figures.noise.iter().zip(&bands) {
+            let written = fit::noise_to_written(*low, *high, figures.rate);
             bytes.extend(tenths(band.tail));
             for level in &band.levels {
-                bytes.extend(tenths(moved(*level)));
+                bytes.extend(tenths(if *level <= SILENT { *level } else { moved(*level) + written }));
             }
         }
     }

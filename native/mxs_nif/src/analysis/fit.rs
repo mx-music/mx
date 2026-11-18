@@ -44,6 +44,8 @@ pub struct Figures {
     pub noise: Vec<Band>,
     /// The last time the recording reaches, after which every level falls on at its last slope.
     pub reached: f64,
+    /// The sample rate the figures were fitted at, as a band's noise gain carries less power the higher the rate.
+    pub rate: f64,
 }
 
 /// The level in dB at `t` seconds after the strike: straight lines between the times given, and the last slope after them.
@@ -85,6 +87,33 @@ pub fn rising(t: f64, rise: f64) -> f64 {
 }
 /// The seconds the noise runs through a band's filters before the strike.
 pub const WARM: f64 = 0.1;
+
+/// The sample rate the written figures' noise gains are for, which mxs moves to the rate it plays at.
+pub const NOISE_RATE: f64 = 48_000.0;
+
+/// The dB that moves a band's noise gain fitted at `rate` to the gain giving the same power at `NOISE_RATE`.
+pub fn noise_to_written(low: f64, high: f64, rate: f64) -> f64 {
+    if high >= rate / 2.0 {
+        return 0.0;
+    }
+    10.0 * (response_energy(&band_filter(low, high, rate), rate) / response_energy(&band_filter(low, high, NOISE_RATE), NOISE_RATE)).log10()
+}
+
+/// The sum of the squares of a filter's response to an impulse, over half a second.
+fn response_energy(filter: &[[f64; 5]; 4], rate: f64) -> f64 {
+    let mut state = [[0.0f64; 4]; 4];
+    (0..(0.5 * rate) as usize)
+        .map(|i| {
+            let mut x = if i == 0 { 1.0 } else { 0.0 };
+            for (s, [b0, b1, b2, a1, a2]) in state.iter_mut().zip(filter) {
+                let y = b0 * x + b1 * s[0] + b2 * s[1] - a1 * s[2] - a2 * s[3];
+                *s = [x, s[0], y, s[2]];
+                x = y;
+            }
+            x * x
+        })
+        .sum()
+}
 
 /// A band's filter as biquads `[b0, b1, b2, a1, a2]` in turn: four band-pass sections with a peak gain of 1 at the band's centre and its width as their bandwidth, so little of its noise reaches the next band.
 pub fn band_filter(low: f64, high: f64, rate: f64) -> [[f64; 5]; 4] {
@@ -181,7 +210,7 @@ pub fn fit(sound: &[f64], rate: f64, note: f64, seconds: f64, exact: bool) -> (F
     let recorded = partials::measure(sound, rate, note, seconds, exact);
     let bands = erb_bands();
     let noise = bands.iter().map(|(low, high)| Band { low: *low, high: *high, levels: vec![SILENT; TIMES.len()], tail: -60.0 }).collect();
-    let mut figures = Figures { f0: recorded.f0, pitch: hz(note), partials: recorded.partials.iter().map(|t| first_guess(t, recorded.f0, recorded.spectra.settled().start, reached(seconds, recorded.spectra.window))).collect(), noise, reached: TIMES[reached(seconds, recorded.spectra.window)] };
+    let mut figures = Figures { f0: recorded.f0, pitch: hz(note), partials: recorded.partials.iter().map(|t| first_guess(t, recorded.f0, recorded.spectra.settled().start, reached(seconds, recorded.spectra.window))).collect(), noise, reached: TIMES[reached(seconds, recorded.spectra.window)], rate };
     fall_on(&mut figures, seconds, recorded.spectra.window);
     let freqs: Vec<f64> = recorded.partials.iter().chain(&recorded.left_out).map(|t| t.freq).collect();
     // The frames whose windows take in the strike read its click as much as the partials, so the partials are first fitted without them, and the noise to what they leave.
@@ -658,7 +687,7 @@ pub fn loudest(note: &Note) -> f64 {
 /// The figures of struck notes as mxs reads them, all numbers little-endian.
 /// The header is "MXF1", the times as a u16 count and f32 seconds, the noise bands as a u16 count and f32 low and high edges, and the recordings as a u16 count.
 /// Each recording is its MIDI note and velocity as u8, and its partials as a u16 count, each its frequency over the note's equal-tempered pitch as f32, its harmonic number as u16 or 0 for a partial between harmonics, its last slope and its level at each time in tenths of a dB as i16.
-/// Then each noise band's last slope and its level at each time, in tenths of a dB as i16.
+/// Then each noise band's last slope and its level at each time, in tenths of a dB as i16, as the gain on white noise from -1 to 1 through the band's filters at `NOISE_RATE`.
 pub fn figures_bytes(recordings: &[(u8, u8, Figures)]) -> Vec<u8> {
     let tenths = |value: f64| ((value * 10.0).round().clamp(-32000.0, 32000.0) as i16).to_le_bytes();
     let mut bytes = b"MXF1".to_vec();
@@ -685,10 +714,11 @@ pub fn figures_bytes(recordings: &[(u8, u8, Figures)]) -> Vec<u8> {
                 bytes.extend(tenths(*level));
             }
         }
-        for band in &figures.noise {
+        for (band, (low, high)) in figures.noise.iter().zip(&bands) {
+            let written = noise_to_written(*low, *high, figures.rate);
             bytes.extend(tenths(band.tail));
             for level in &band.levels {
-                bytes.extend(tenths(*level));
+                bytes.extend(tenths(if *level <= SILENT { *level } else { level + written }));
             }
         }
     }
