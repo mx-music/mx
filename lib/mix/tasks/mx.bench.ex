@@ -8,7 +8,7 @@ defmodule Mix.Tasks.Mx.Bench do
       mix mx.bench saves examples/trap.exs --at 5,10,15
       mix mx.bench buffers examples/choro.exs examples/trap.exs examples/afrobeat.exs
 
-  `lead` plays the song under four loads and prints a row for each: the notes handed to the engine, how many were handed over after their beat, the shortest lead, which is the time between a note being handed over and its beat, the longest call into the engine, and the longest a process handing notes over kept a normal scheduler of the VM without a break, in milliseconds, 0 when under one.
+  `lead` plays the song under four loads and prints a row for each: the notes handed to the engine, how many were handed over after their beat, the shortest lead, which is the time between a note being handed over and its beat, the shortest lead from each part's second pass on, the longest call into the engine, and the longest a process handing notes over kept a normal scheduler of the VM without a break, in milliseconds, 0 when under one.
   The loads are `idle`, `vm_busy`, with every scheduler of the VM busy, `saves`, with the song loaded and laid out every 300 ms, and `os_busy`, with twice as many busy OS processes as schedulers.
 
   `saves` plays a copy of the song, saves a change to the copy at each second `--at` names, and prints a row for each second: the notes handed over, the late ones, the longest gap between two beat messages to a window, the VM's memory and its process count.
@@ -83,7 +83,7 @@ defmodule Mix.Tasks.Mx.Bench do
   end
 
   defp lead(rows) do
-    IO.puts("load,notes,late,least_lead_ms,longest_call_ms,held_ms")
+    IO.puts("load,notes,late,least_lead_ms,least_later_lead_ms,longest_call_ms,held_ms")
 
     for row <- rows do
       values = [
@@ -91,6 +91,7 @@ defmodule Mix.Tasks.Mx.Bench do
         row.calls,
         row.late,
         row.least_lead_ms,
+        row.least_later_lead_ms,
         row.longest_call_ms,
         row.held_ms
       ]
