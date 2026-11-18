@@ -26,6 +26,7 @@ defmodule Mix.Tasks.Mx.Fit do
   `--note` and `--vel` with `--check`, such as `--note C2 --vel 80`, print that one recording beside the synth and the fit's own render instead, frame by frame: each partial within 60 dB of the loudest and each ERB band, every 5 ms from 5 ms before the strike to 100 ms after, with the fit's sines and noise apart.
   `--until` with seconds carries the rows on to that time in 24 steps, and `--csv` with a file name also writes the figures as a table.
   `--tour` writes a WAV file of twelve recordings, or as many as `--count` gives, each followed by the synth.
+  `--option` with a synth's option and its value, such as `--option pedal=1`, renders the synth with it in `--check` and `--tour`; it can be given more than once.
   The guide on instruments, under "Fitting a struck instrument", describes the list and what the check prints.
   """
 
@@ -91,7 +92,8 @@ defmodule Mix.Tasks.Mx.Fit do
           until: :float,
           csv: :string,
           tour: :string,
-          count: :integer
+          count: :integer,
+          option: :keep
         ]
       )
 
@@ -115,6 +117,7 @@ defmodule Mix.Tasks.Mx.Fit do
       do: Mx.Command.fail("--until and --csv need --note and --vel")
 
     notes = opts[:notes] && notes!(opts[:notes])
+    options = opts |> Keyword.get_values(:option) |> Enum.map(&option!/1)
 
     recordings =
       opts
@@ -132,13 +135,13 @@ defmodule Mix.Tasks.Mx.Fit do
 
     cond do
       opts[:note] ->
-        print_frames(!opts[:own] && synth, recordings, opts)
+        print_frames(!opts[:own] && synth, recordings, opts, options)
 
       opts[:own] ->
         print_struck(Struck.own(recordings), "the fit's own render", "the fit")
 
       opts[:check] ->
-        checks = Struck.beside(Struck.check(synth, recordings), Struck.own(recordings))
+        checks = Struck.beside(Struck.check(synth, recordings, options), Struck.own(recordings))
         print_struck(checks, synth, "synth")
 
       true ->
@@ -146,10 +149,19 @@ defmodule Mix.Tasks.Mx.Fit do
     end
 
     if tour = opts[:tour] do
-      {data, rate} = Struck.tour(synth, recordings, opts[:count] || 12)
+      {data, rate} = Struck.tour(synth, recordings, opts[:count] || 12, options)
       Mx.Audio.write_floats(tour, data, rate)
       count = min(opts[:count] || 12, length(recordings))
       IO.puts("wrote a tour of #{count} recordings, each followed by #{synth}, to #{tour}")
+    end
+  end
+
+  defp option!(text) do
+    with [name, value] <- String.split(text, "="),
+         {number, ""} <- Float.parse(value) do
+      {String.to_atom(name), number}
+    else
+      _ -> Mx.Command.fail("give --option as a name and a number, such as pedal=1, not #{text}")
     end
   end
 
@@ -252,11 +264,11 @@ defmodule Mix.Tasks.Mx.Fit do
     end
   end
 
-  defp print_frames(synth, recordings, opts) do
+  defp print_frames(synth, recordings, opts, options) do
     note = note!(opts[:note])
     recording = recording!(recordings, note, opts[:vel])
     times = times(opts[:until])
-    frames = Struck.frames(synth || nil, recording, times)
+    frames = Struck.frames(synth || nil, recording, times, options)
 
     cents =
       :erlang.float_to_binary(1200 * :math.log2(frames.pitch / Signal.hz(note)), decimals: 1)

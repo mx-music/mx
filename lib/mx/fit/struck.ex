@@ -90,14 +90,14 @@ defmodule Mx.Fit.Struck do
   end
 
   @doc """
-  Renders `synth` at each recording's note and velocity and compares it with the recording.
+  Renders `synth` at each recording's note and velocity, with `options` such as `[pedal: 1]`, and compares it with the recording.
   Returns one check a recording, with its `note`, `velocity`, `kept`, `erb` gap, `levels` of the recording and the render over their first half second, and `partials`, each partial with its `ratio`, `harmonic`, `below` the loudest in dB, `strike` gap and `mean` gap.
   """
-  def check(synth, recordings) when is_list(recordings) do
+  def check(synth, recordings, options \\ []) when is_list(recordings) do
     recordings
     |> Task.async_stream(
       fn recording ->
-        rendered = render(synth, recording)
+        rendered = render(synth, recording, options)
         check = Native.check_struck(struck(recording, raws([recording])), rendered)
         Map.merge(check, Map.take(recording, [:note, :velocity, :kept]))
       end,
@@ -121,9 +121,9 @@ defmodule Mx.Fit.Struck do
   Returns its `pitch` in Hz, the second of its file the `strike` was found at, and `partials`, each within 60 dB of the loudest, lowest first, and ERB `bands`, each with its `at`, `floor` and `rows`: the recording, the synth, the fit's own render, and that render's sines and noise apart, in dB against the loudest partial.
   A partial's `at` is its ratio to the pitch and its harmonic, 0 between harmonics; a band's is its edges in Hz.
   """
-  def frames(synth, recording, times) when is_list(times) do
+  def frames(synth, recording, times, options \\ []) when is_list(times) do
     {{_data, _packing, rate}, {from, _to}, _note} = struck = struck(recording, raws([recording]))
-    rendered = synth && render(synth, recording)
+    rendered = synth && render(synth, recording, options)
     frames = Native.frames_struck(struck, rendered, times)
     %{frames | strike: from / rate + frames.strike}
   end
@@ -140,13 +140,13 @@ defmodule Mx.Fit.Struck do
   end
 
   @doc "A tour for listening of `count` recordings spread over the notes and velocities, each followed by `synth` at its note and velocity, as `{samples, rate}`, the samples as 32-bit floats."
-  def tour(synth, recordings, count) when is_list(recordings) and count > 0 do
+  def tour(synth, recordings, count, options \\ []) when is_list(recordings) and count > 0 do
     picked = spread(recordings, count)
     raws = raws(picked)
 
     pairs =
       picked
-      |> Task.async_stream(&{struck(&1, raws), render(synth, &1)}, timeout: :infinity)
+      |> Task.async_stream(&{struck(&1, raws), render(synth, &1, options)}, timeout: :infinity)
       |> Enum.map(fn {:ok, pair} -> pair end)
 
     {Native.tour_struck(pairs), Mxs.render_rate()}
@@ -410,10 +410,10 @@ defmodule Mx.Fit.Struck do
      {recording.pitch, recording.velocity, recording.seconds / 1, recording.exact}}
   end
 
-  defp render(synth, recording) do
+  defp render(synth, recording, options) do
     seconds = recording.seconds + 0.3
     vel = recording.velocity / 127
-    sound = Mxs.render_note(synth, [note: recording.note, vel: vel], seconds, nil, [])
+    sound = Mxs.render_note(synth, [note: recording.note, vel: vel] ++ options, seconds, nil, [])
     {rendered, packing} = Signal.packed(sound)
     {rendered, packing, Mxs.render_rate() / 1}
   end

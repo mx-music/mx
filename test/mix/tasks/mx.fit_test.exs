@@ -307,6 +307,24 @@ defmodule Mix.Tasks.Mx.FitTest do
                ~r/^  [cd]4 vel 127: [\d.]+ dB, the fit [\d.]+; \d+ of its partials within 30 dB of the loudest more than 2 dB off, the fit \d+$/m
     end
 
+    test "--option renders the synth with that option in the check, and refuses one that is not a name and a number",
+         ctx do
+      write_wav(ctx.tmp_dir, "c4.wav", struck_note(60, 2))
+      list = write_list(ctx, ["C4 127 kept c4.wav"])
+      erb = &Regex.run(~r/^ERB bands: .*$/m, &1)
+
+      run =
+        &capture_io(fn -> Mix.Tasks.Mx.Fit.run(["piano", "--struck", list, "--check"] ++ &1) end)
+
+      refute erb.(run.(["--option", "pedal=1"])) == erb.(run.([]))
+
+      assert_raise Mix.Error,
+                   "give --option as a name and a number, such as pedal=1, not pedal",
+                   fn ->
+                     run.(["--option", "pedal"])
+                   end
+    end
+
     test "--check --own prints the fit's figures alone, the same whichever synth is named, and twice as fast the second time",
          ctx do
       write_wav(ctx.tmp_dir, "c4.wav", struck_note(60, 2))
