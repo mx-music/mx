@@ -59,7 +59,7 @@ defmodule Mx.Bench do
     }
   end
 
-  # The lead and length of every call that hands notes over, and the longest a caller held a scheduler.
+  # Each call's lead and length in microseconds, and the longest a caller held a scheduler.
   defp played(song, seconds) do
     table = :ets.new(:bench, [:public, :duplicate_bag])
 
