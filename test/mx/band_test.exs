@@ -1479,6 +1479,116 @@ defmodule Mx.BandTest do
     end
   end
 
+  describe "trying a synth or options on a part" do
+    @describetag :tmp_dir
+
+    setup ctx do
+      test = self()
+
+      opts = [
+        hand: fn name, span, label, events, _opts ->
+          send(test, {:handed, name, span, label, events})
+        end,
+        cut: fn name, beat -> send(test, {:cut, name, beat}) end
+      ]
+
+      flute =
+        "part(:flute, loop(8, fn _, _ -> seq(for _ <- 1..8, do: seq([note(72, 0.5, amp: 0.5, vibrato: 0.3, pan: -0.5), rest(0.5)])) end), synth: :flute)"
+
+      {band, _start_us} = start(load(ctx, song(60, [flute])), ctx, opts)
+      assert_receive {:handed, :flute, {0, 8}, 0, _events}
+      Process.sleep(1200)
+      %{band: band, flute: flute, hand_opts: opts}
+    end
+
+    # The beat a trial is heard from, and the synth and options of the notes handed from there.
+    defp tried_notes do
+      assert_receive {:cut, :flute, beat}
+      assert_receive {:handed, :flute, _span, _label, events}
+      assert Enum.all?(events, fn {at, _event} -> at >= beat end)
+      for {_at, {:note, _, synth, _, params, _}} <- events, do: {synth, Map.new(params)}
+    end
+
+    test "another synth plays the part's next notes within a bar, then another, then the song's again",
+         %{band: band} do
+      assert Band.try_part(band, :flute, synth: :clarinet) == :ok
+      assert [{:clarinet, _} | _] = notes = tried_notes()
+      assert Enum.all?(notes, &match?({:clarinet, _}, &1))
+
+      assert Band.try_part(band, :flute, synth: :trumpet) == :ok
+      assert Enum.all?(tried_notes(), &match?({:trumpet, _}, &1))
+
+      assert Band.stop_trying(band, :flute) == :ok
+      assert Enum.all?(tried_notes(), &match?({:flute, _}, &1))
+    end
+
+    test "an option tried with another synth changes only itself", %{band: band} do
+      :ok = Band.try_part(band, :flute, synth: :clarinet)
+      tried_notes()
+      assert Band.try_part(band, :flute, vel: 0.8) == :ok
+
+      for {synth, params} <- tried_notes() do
+        assert synth == :clarinet
+        assert %{vel: 0.8, amp: 0.5, vibrato: 0.3, pan: -0.5} = params
+      end
+    end
+
+    test "an option the tried synth does not take is left out, and named once", %{band: band} do
+      warned =
+        capture_io(:stderr, fn ->
+          :ok = Band.try_part(band, :flute, synth: :tri)
+
+          assert Enum.all?(tried_notes(), fn {:tri, params} ->
+                   not is_map_key(params, :vibrato)
+                 end)
+
+          Process.sleep(100)
+        end)
+
+      assert warned == "loop flute: :tri takes no option vibrato, so it is left out\n"
+    end
+
+    test "a part, synth or option that does not exist is refused, naming it", %{band: band} do
+      assert Band.try_part(band, :no_such_part, synth: :clarinet) ==
+               {:error, "the song has no part named no_such_part"}
+
+      assert Band.try_part(band, :flute, synth: :kazoo) ==
+               {:error, "there is no synth named kazoo"}
+
+      assert Band.try_part(band, :flute, wobble: 1) == {:error, "flute takes no option wobble"}
+      refute_receive {:cut, _, _}, 100
+    end
+
+    test "clarinet tried on examples/choro.exs's flute plays its next notes within a bar, and leaves the file as it is",
+         ctx do
+      {:ok, song} = Song.load("examples/choro.exs")
+      before = File.read!("examples/choro.exs")
+
+      capture_io(:stderr, fn ->
+        {band, _} = start(song, ctx, ctx.hand_opts)
+        assert_receive {:handed, :flute, _span, _label, _events}, 2000
+        assert Band.try_part(band, :flute, synth: :clarinet) == :ok
+        assert_receive {:cut, :flute, beat}, 1000
+        assert_receive {:handed, :flute, _span, _label, events}, 1000
+        notes = for {at, {:note, _, synth, _, _, _}} <- events, do: {at, synth}
+        assert [{first, _} | _] = notes
+        assert first - beat < 4
+        assert Enum.all?(notes, &match?({_, :clarinet}, &1))
+        refute_received {:cut, :clarinet, _}
+      end)
+
+      assert File.read!("examples/choro.exs") == before
+    end
+
+    test "what is tried holds through a saved version with another tempo", ctx do
+      :ok = Band.try_part(ctx.band, :flute, synth: :clarinet)
+      tried_notes()
+      Band.switch(ctx.band, load(ctx, song(90, [ctx.flute])))
+      assert_receive {:handed, :flute, {8, 16}, 1, events}, 8000
+      assert Enum.all?(events, &match?({_, {:note, _, :clarinet, _, _, _}}, &1))
+    end
+  end
+
   describe "midi and osc" do
     @describetag :tmp_dir
 

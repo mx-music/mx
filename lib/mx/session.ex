@@ -69,6 +69,20 @@ defmodule Mx.Session do
   """
   def take_over_now(session) when is_pid(session), do: Band.take_over_now(band(session))
 
+  @doc """
+  Plays the part `name` with another synth, `synth: :clarinet`, or other options of its synth, such as `vel: 0.8`, heard from its next note within a bar, while the file stays as it is.
+
+  What is tried adds to what was tried on the part before, and lasts while the session plays, through every save of the song's file, until `stop_trying/2`.
+  The part keeps its notes, its other options and its effects; an option the song gives that the tried synth does not take is left out, and named on standard error.
+  A part, synth or option that does not exist is refused with `{:error, message}`.
+  """
+  def try_part(session, name, tried) when is_pid(session) and is_list(tried) do
+    Band.try_part(band(session), name, tried)
+  end
+
+  @doc "Plays the part `name` as the song gives it again, from its next note within a bar."
+  def stop_trying(session, name) when is_pid(session), do: Band.stop_trying(band(session), name)
+
   defp band(session) do
     {Band, pid, _type, _modules} = List.keyfind(Supervisor.which_children(session), Band, 0)
     pid

@@ -55,6 +55,21 @@ Every tempo of the song is played times the share, its own and those its music w
 A program that drives a session changes the share while the song plays with `Mx.Session.scale_tempo(session, 0.75)`, heard within 200 ms on every part at once, or `Mx.Session.scale_tempo(session, 0.75, 4)` to move there evenly over 4 beats.
 The share holds through every save of the file until another is given, 1 brings back the song's own tempo, and stopping the song clears it.
 
+## Try a sound on a part
+
+A program that drives a session can play a part with another synth, or with other options of its synth, while the file stays as it is:
+
+```elixir
+Mx.Session.try_part(session, :flute, synth: :clarinet)
+Mx.Session.try_part(session, :flute, vel: 0.8)
+Mx.Session.stop_trying(session, :flute)
+```
+
+The part plays what is tried from the first whole beat 150 ms away, so it is heard from its next note within a bar, and it keeps its place, its notes, its other options and its effects.
+What is tried adds to what was tried on the part before, and an option the song gives that the tried synth does not take is left out, and named once.
+A part, synth or option that does not exist is refused with a message that names it.
+What is tried lasts while the session plays, through every save of the file, until `stop_trying` plays the part as the song gives it again.
+
 ## Make a video of a render
 
 GitHub plays no sound in a README, only video, so a song is heard there as a video of its render.

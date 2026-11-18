@@ -93,6 +93,21 @@ defmodule Mx.Band do
     GenServer.call(band, :take_over_now)
   end
 
+  @doc """
+  Plays the part `name` with another synth, given as `synth:`, or with options of its synth other than the song's, from the first whole beat 150 ms away, or after every note already sent without `hand`.
+
+  What is tried adds to what was tried on the part before, holds through new versions of the song, and keeps the part's notes, its other options and its effects; an option the song gives that the tried synth does not take is left out, and named.
+  A part, synth or option that does not exist is refused with `{:error, message}`.
+  """
+  def try_part(band, name, tried) when (is_pid(band) or is_atom(band)) and is_list(tried) do
+    GenServer.call(band, {:try_part, name, tried})
+  end
+
+  @doc "Plays the part `name` as the song gives it again, from the first whole beat 150 ms away, or after every note already sent without `hand`."
+  def stop_trying(band, name) when is_pid(band) or is_atom(band) do
+    GenServer.call(band, {:stop_trying, name})
+  end
+
   @doc "The tempo timeline, the latest entry first."
   def timeline(band) when is_pid(band) or is_atom(band), do: GenServer.call(band, :timeline)
 
@@ -153,6 +168,7 @@ defmodule Mx.Band do
       soloed: [],
       followers: Keyword.get(opts, :follow, []),
       subscribers: [],
+      trials: %{},
       version: nil,
       told: []
     }
@@ -209,6 +225,29 @@ defmodule Mx.Band do
     with {:ok, [part]} <- parts(state, [name]) do
       state.mute.(part, muted)
       {:reply, :ok, state}
+    else
+      error -> {:reply, error, state}
+    end
+  end
+
+  def handle_call({:try_part, name, tried}, {_, _}, %{} = state) do
+    with {:ok, [part]} <- parts(state, [name]),
+         loop = Enum.find(state.song.loops, &(&1.name == part)),
+         trial = Map.get(state.trials, part, %{}),
+         {synth, opts} = Keyword.pop(tried, :synth, trial[:synth]),
+         :ok <- check_synth(synth),
+         :ok <- check_options(synth || loop.synth, opts) do
+      opts = Keyword.merge(Map.get(trial, :opts, []), opts)
+      trial = if synth, do: %{synth: synth, opts: opts}, else: %{opts: opts}
+      {:reply, :ok, put_trial(state, part, trial)}
+    else
+      error -> {:reply, error, state}
+    end
+  end
+
+  def handle_call({:stop_trying, name}, {_, _}, %{} = state) do
+    with {:ok, [part]} <- parts(state, [name]) do
+      {:reply, :ok, put_trial(state, part, %{})}
     else
       error -> {:reply, error, state}
     end
@@ -399,6 +438,31 @@ defmodule Mx.Band do
 
   defp report(state, message), do: Enum.each(state.subscribers, &send(&1, message))
 
+  defp put_trial(state, part, trial) do
+    beat = floor(beat_at(state.timeline, now() + state.tempo_lead_us)) + 1
+    if pid = state.loops[part], do: Loop.try_out(pid, trial, beat)
+    %{state | trials: Map.put(state.trials, part, trial)}
+  end
+
+  defp check_synth(nil), do: :ok
+
+  defp check_synth(synth) do
+    if is_atom(synth) and Mx.Synths.exists?(synth),
+      do: :ok,
+      else: {:error, "there is no synth named #{synth}"}
+  end
+
+  defp check_options(synth, opts) do
+    case Enum.find(opts, fn {key, _} -> not Mx.Synths.option?(synth, key) end) do
+      nil ->
+        :ok
+
+      {key, _} ->
+        name = if is_atom(synth), do: synth, else: "the part's sampled instrument"
+        {:error, "#{name} takes no option #{key}"}
+    end
+  end
+
   # A loop added back while its removed version finishes its pass takes over from that version.
   defp add_loop(state, loop) do
     case Map.pop(state.stopping, loop.name) do
@@ -465,7 +529,8 @@ defmodule Mx.Band do
         play: state.play,
         ahead_us: state.ahead_us,
         start: start,
-        load_sample: state.load_sample
+        load_sample: state.load_sample,
+        trial: Map.get(state.trials, loop.name, %{})
       ] ++ from ++ state.loop_opts
 
     {:ok, pid} = Loop.start_link(opts)
