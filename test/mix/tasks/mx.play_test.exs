@@ -115,6 +115,37 @@ defmodule Mix.Tasks.Mx.PlayTest do
     Supervisor.stop(session)
   end
 
+  @tag :engine
+  test "a session sends a follower where the beat is once, and again only when it stops", ctx do
+    path = Path.join(ctx.tmp_dir, "quiet.exs")
+
+    song =
+      "import Mx\nsong(tempo: 120, music: part(:a, loop(8, fn _, _ -> seq([note(60, 1, amp: 0)]) end)))\n"
+
+    File.write!(path, song)
+    {:ok, loaded} = Mx.Song.load(path)
+    {:ok, session} = Mx.Session.start_link(path: path, song: loaded)
+    {:ok, device} = StringIO.open("")
+
+    for {_id, pid, _type, _modules} <- Supervisor.which_children(session),
+        do: Process.group_leader(pid, device)
+
+    :ok = Mx.Session.follow_beat(session)
+    assert_receive {:mx_beat, %{beat: 0, tempo: 120, heard_us: heard_us} = message}
+    [{0, start_us, 120}] = Mx.Band.timeline(Mx.Band)
+    delay_us = heard_us - start_us
+    assert delay_us >= 0 and delay_us < 500_000
+
+    File.write!(path, String.replace(song, "60", "62"))
+    refute_receive {:mx_beat, _}, 3000
+    now = System.os_time(:microsecond)
+    asked = Mx.Band.beat_at(Mx.Band.timeline(Mx.Band), now - delay_us)
+    assert_in_delta Mx.Beat.at(message, now), asked, 1.0e-6
+
+    Supervisor.stop(session)
+    assert_receive {:mx_beat, :stopped}
+  end
+
   defp record(ctx, music, opts \\ []), do: ctx |> record_to(music, opts) |> elem(0)
 
   defp record_to(ctx, music, opts \\ []) do

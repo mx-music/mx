@@ -172,6 +172,14 @@ defmodule Mx.Engine.Mxs.Native do
   @doc "Values held to their ranges since the last call, once for each option, and how many notes were stolen to keep to the voice limit."
   def warnings(_engine), do: :erlang.nif_error(:nif_not_loaded)
 
+  @doc """
+  Sends `pid` the engine's reports of the kinds named, `"clock"` and `"output"`, each as `{:mxs_report, report}`, until the subscription returned is collected or `pid` is gone.
+
+  A clock report is `{:clock, seconds, unix_us, delay}`: the Unix time in microseconds at which the sound card plays the engine's seconds, and the output's delay in seconds.
+  An output report is `{:output, seconds, device, rate, delay_ms}`, with nil for what the device does not say.
+  """
+  def subscribe(_engine, _pid, _kinds), do: :erlang.nif_error(:nif_not_loaded)
+
   @doc "Panics on purpose, so a test can check that a panic raises in Elixir instead of stopping the BEAM."
   def panic_on_purpose, do: :erlang.nif_error(:nif_not_loaded)
 end

@@ -5,12 +5,14 @@ mod levels;
 mod spectrogram;
 
 use mxs::graph::{Clause, Graph};
-use mxs::{Effect, Engine, Event, Kind, Source, Spec, Synth, Target, Value, effects, synths};
+use mxs::{Effect, Engine, Event, Kind, Report, Source, Spec, Synth, Target, Topic, Value, effects, synths};
 use rustler::types::tuple::get_tuple;
-use rustler::{Atom, Binary, Encoder, Env, NifResult, OwnedBinary, ResourceArc, Term};
-use std::sync::Mutex;
+use rustler::{Atom, Binary, Encoder, Env, LocalPid, NifResult, OwnedBinary, OwnedEnv, ResourceArc, Term};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, SystemTime};
 
-rustler::atoms! { ok, error, note, sample, input, set, stop, sounds, part, effect, option, name, list, call }
+rustler::atoms! { ok, error, note, sample, input, set, stop, sounds, part, effect, option, name, list, call, mxs_report, clock, output }
 
 struct EngineResource {
     engine: Mutex<Engine>,
@@ -646,6 +648,57 @@ fn sounding(resource: ResourceArc<EngineResource>) -> bool {
 #[rustler::nif]
 fn warnings(resource: ResourceArc<EngineResource>) -> Vec<String> {
     lock(&resource).warnings()
+}
+
+/// A subscription to an engine's reports, which ends once Elixir holds it no longer.
+struct SubscriptionResource {
+    ended: Arc<AtomicBool>,
+}
+
+impl Drop for SubscriptionResource {
+    fn drop(&mut self) {
+        self.ended.store(true, Ordering::Release);
+    }
+}
+
+#[rustler::resource_impl]
+impl rustler::Resource for SubscriptionResource {}
+
+/// Sends `pid` the engine's reports of the kinds named, `"clock"` and `"output"`, each as `{:mxs_report, report}`, until what it returns is collected or `pid` is gone.
+/// A clock report is `{:clock, seconds, unix_us, delay}`: the Unix time in microseconds at which the sound card plays the engine's seconds, and the output's delay in seconds.
+/// An output report is `{:output, seconds, device, rate, delay_ms}`, with nil for what the device does not say.
+#[rustler::nif]
+fn subscribe(resource: ResourceArc<EngineResource>, pid: LocalPid, kinds: Vec<String>) -> NifResult<ResourceArc<SubscriptionResource>> {
+    let topic = |kind: &String| match kind.as_str() {
+        "clock" => Ok(Topic::Clock),
+        "output" => Ok(Topic::Output),
+        _ => Err(rustler::Error::BadArg),
+    };
+    let topics = kinds.iter().map(topic).collect::<NifResult<Vec<_>>>()?;
+    let reports = lock(&resource).subscribe(&topics);
+    let ended = Arc::new(AtomicBool::new(false));
+    let subscription = SubscriptionResource { ended: ended.clone() };
+    let forward = move || {
+        let mut env = OwnedEnv::new();
+        while !ended.load(Ordering::Acquire) {
+            let Some(report) = reports.wait(Duration::from_millis(100)) else { continue };
+            let sent = match report {
+                Report::Clock { seconds, system, delay } => {
+                    let unix_us = system.duration_since(SystemTime::UNIX_EPOCH).unwrap_or_default().as_micros() as i64;
+                    env.send_and_clear(&pid, |env| (mxs_report(), (clock(), seconds, unix_us, delay)).encode(env))
+                }
+                Report::Output { seconds, device, rate, delay_ms } => {
+                    env.send_and_clear(&pid, |env| (mxs_report(), (output(), seconds, device, rate, delay_ms)).encode(env))
+                }
+                _ => Ok(()),
+            };
+            if sent.is_err() {
+                break;
+            }
+        }
+    };
+    std::thread::Builder::new().name("mxs_nif reports".to_string()).spawn(forward).map_err(|_| rustler::Error::Term(Box::new("no thread for the reports")))?;
+    Ok(ResourceArc::new(subscription))
 }
 
 /// Panics on purpose, so a test can check that a panic raises in Elixir instead of stopping the BEAM.

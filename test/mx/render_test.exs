@@ -231,4 +231,23 @@ defmodule Mx.RenderTest do
     samples = for <<x::little-float-32 <- data>>, do: x
     {Enum.drop_while(samples, &(abs(&1) < 1.0e-4)), rate * channels}
   end
+
+  test "a render sends the same messages, in its own time", %{tmp_dir: dir} do
+    path = Path.join(dir, "moving.exs")
+
+    music =
+      "part(:a, seq([note(60, 2), tempo(60, over: 4), note(62, 4), tempo(90), note(64, 2)]))"
+
+    File.write!(path, "import Mx\nsong(tempo: 120, music: #{music})\n")
+    out = Path.join(dir, "moving.wav")
+
+    capture_io(fn -> assert :ok = Mx.Render.render(path, out, follow: self()) end)
+
+    assert_received {:mx_beat, %{beat: 0, tempo: 120, heard_us: 0}}
+    assert_received {:mx_beat, %{beat: 2, tempo: {:ramp, 120, 60, 4}, heard_us: 1_000_000}}
+    assert_received {:mx_beat, %{beat: 6, tempo: 90, heard_us: six}}
+    assert six == 1_000_000 + round(4 * :math.log(2) * 1_000_000)
+    assert_received {:mx_beat, :stopped}
+    refute_received {:mx_beat, _}
+  end
 end

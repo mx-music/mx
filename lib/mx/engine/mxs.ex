@@ -112,6 +112,7 @@ defmodule Mx.Engine.Mxs do
     with {:ok, engine} <- Native.start(live, input),
          :ok <- instruments(engine),
          :ok <- record(engine, opts[:record]) do
+      {reports, delay_us} = if live, do: reports(engine), else: {nil, 0}
       origin = Mx.Clock.now() - round(Native.now(engine) * 1_000_000)
       :persistent_term.put(__MODULE__, {engine, origin})
       :persistent_term.put({__MODULE__, :ids}, :atomics.new(1, []))
@@ -121,6 +122,9 @@ defmodule Mx.Engine.Mxs do
          engine: engine,
          samples: %{},
          live: %{},
+         reports: reports,
+         delay_us: delay_us,
+         delay_followers: [],
          inputs: Native.inputs(engine),
          recording: opts[:record] != nil,
          fade_ms: Keyword.get(opts, :fade_ms, 4000)
@@ -140,6 +144,18 @@ defmodule Mx.Engine.Mxs do
     end
   end
 
+  # The output's report comes at once, so the delay is known before anyone asks for it.
+  defp reports(engine) do
+    reports = Native.subscribe(engine, self(), ["clock", "output"])
+
+    receive do
+      {:mxs_report, {:output, _seconds, _device, _rate, delay_ms}} ->
+        {reports, round((delay_ms || 0) * 1000)}
+    after
+      1000 -> {reports, 0}
+    end
+  end
+
   defp record(_engine, nil), do: :ok
 
   defp record(engine, path) do
@@ -151,6 +167,9 @@ defmodule Mx.Engine.Mxs do
 
   @impl Mx.Engine
   def prepare(song), do: GenServer.call(__MODULE__, {:prepare, song}, 60_000)
+
+  @doc "The output's delay in microseconds, the time from the engine filling a frame to the sound card playing it; `pid` is then sent `{:mx_delay, delay_us}` whenever it has moved by more than 2 ms."
+  def delay(pid) when is_pid(pid), do: GenServer.call(__MODULE__, {:delay, pid})
 
   @doc "Renders an engine started with `live: false` on to the Unix time `at_us`, and returns whether a sound still plays."
   def render_to(at_us) when is_integer(at_us) do
@@ -300,6 +319,10 @@ defmodule Mx.Engine.Mxs do
     {:reply, %{song | loops: loops}, state}
   end
 
+  def handle_call({:delay, pid}, _from, state) do
+    {:reply, state.delay_us, %{state | delay_followers: [pid | state.delay_followers]}}
+  end
+
   def handle_call({:render_to, at_us}, _from, state) do
     {engine, origin} = :persistent_term.get(__MODULE__)
     seconds = (at_us - origin) / 1_000_000 - Native.now(engine)
@@ -367,6 +390,20 @@ defmodule Mx.Engine.Mxs do
 
     {:noreply, state}
   end
+
+  @impl GenServer
+  def handle_info({:mxs_report, {:clock, _seconds, _unix_us, delay}}, state) do
+    delay_us = round(delay * 1_000_000)
+
+    if abs(delay_us - state.delay_us) > 2000 do
+      for pid <- state.delay_followers, do: send(pid, {:mx_delay, delay_us})
+      {:noreply, %{state | delay_us: delay_us}}
+    else
+      {:noreply, state}
+    end
+  end
+
+  def handle_info({:mxs_report, _report}, state), do: {:noreply, state}
 
   @impl GenServer
   def terminate(_reason, state) do

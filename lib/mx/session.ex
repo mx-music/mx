@@ -21,6 +21,12 @@ defmodule Mx.Session do
   @doc "The version of the session's song loaded now, as `{number, description}`, without reading its file, as `Mx.Watcher.description/1` gives it."
   def description(session) when is_pid(session), do: Watcher.description(watcher(session))
 
+  @doc "Sends the calling process where the beat of the session's song is, as `{:mx_beat, message}`, now and whenever the tempo or the output's delay changes; `Mx.Beat` says what a message holds and how to work out the beat from it."
+  def follow_beat(session) when is_pid(session) do
+    {Band, pid, _type, _modules} = List.keyfind(Supervisor.which_children(session), Band, 0)
+    Band.follow(pid)
+  end
+
   defp watcher(session) do
     {Watcher, pid, _type, _modules} = List.keyfind(Supervisor.which_children(session), Watcher, 0)
     pid
@@ -50,6 +56,7 @@ defmodule Mx.Session do
        worked_out: &Inputs.worked_out/2,
        subscribe: &Inputs.subscribe/1,
        live: &Mxs.set_live/2,
+       delay: &Mxs.delay/1,
        on_end: Keyword.get(opts, :on_end, fn -> :ok end),
        from: Keyword.get(opts, :from, 0)},
       {Watcher, path: Keyword.fetch!(opts, :path), song: song, on_song: &switch/1}

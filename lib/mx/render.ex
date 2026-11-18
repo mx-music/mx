@@ -14,7 +14,7 @@ defmodule Mx.Render do
   @step_us 10_000
   @fade_us 4_000_000
 
-  @doc "Renders the song at `path` to the WAV file `out`, with `seconds:` and `force:`, and returns `:ok` once written, or `{:error, message}`."
+  @doc "Renders the song at `path` to the WAV file `out`, with `seconds:` and `force:`, and returns `:ok` once written, or `{:error, message}`; the process given as `follow:` is sent where the beat is, as `Mx.Beat` describes, in the render's own time."
   def render(path, out, opts) when is_binary(path) and is_binary(out) and is_list(opts) do
     seconds = opts[:seconds]
 
@@ -23,7 +23,8 @@ defmodule Mx.Render do
          {:ok, song} <- Song.load(path),
          :ok <- check(song, seconds) do
       Enum.each(left_out(song), &IO.puts/1)
-      run(%{song | loops: Enum.filter(song.loops, &(&1.on == nil))}, out, seconds)
+      follow = List.wrap(opts[:follow])
+      run(%{song | loops: Enum.filter(song.loops, &(&1.on == nil))}, out, seconds, follow)
       Enum.each(Recording.report(out), &IO.puts/1)
     end
   end
@@ -57,7 +58,7 @@ defmodule Mx.Render do
   # Every render starts at the same time, so each beat's time rounds the same way on every run.
   @start_us 0
 
-  defp run(song, out, seconds) do
+  defp run(song, out, seconds, follow) do
     start_us = @start_us
     Clock.start_render(start_us)
     Process.flag(:trap_exit, true)
@@ -71,6 +72,7 @@ defmodule Mx.Render do
         Band.start_link(
           song: song,
           start_us: start_us,
+          follow: follow,
           play: &Mxs.play/2,
           new_id: &Mxs.new_id/0,
           prepare: &Mxs.prepare/1,

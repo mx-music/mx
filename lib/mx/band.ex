@@ -35,6 +35,9 @@ defmodule Mx.Band do
   @doc "The processes of the loops playing, stopping or waiting to join."
   def loops(band) when is_pid(band) or is_atom(band), do: GenServer.call(band, :loops)
 
+  @doc "Sends the calling process where the beat is, as `{:mx_beat, message}`, now and whenever it changes, and `{:mx_beat, :stopped}` when the band stops; `Mx.Beat` says what a message holds."
+  def follow(band) when is_pid(band) or is_atom(band), do: GenServer.call(band, :follow)
+
   @doc "The tempo timeline, the latest entry first."
   def timeline(band) when is_pid(band) or is_atom(band), do: GenServer.call(band, :timeline)
 
@@ -75,18 +78,27 @@ defmodule Mx.Band do
       on_end: Keyword.get(opts, :on_end, fn -> :ok end),
       joining: %{},
       loops: %{},
-      stopping: %{}
+      stopping: %{},
+      delay_us: Keyword.get(opts, :delay, fn _band -> 0 end).(self()),
+      followers: Keyword.get(opts, :follow, []),
+      told: []
     }
 
     if subscribe = opts[:subscribe], do: subscribe.(self())
     state = Map.put(state, :live, Keyword.get(opts, :live, fn _lives, _tempo -> :ok end))
     state.live.(song.live, song.tempo)
     from = Keyword.get(opts, :from, 0)
-    {:ok, start_loops(state, Enum.flat_map(song.loops, &place(&1, from)))}
+    {:ok, tell(start_loops(state, Enum.flat_map(song.loops, &place(&1, from))))}
   end
 
   @impl true
   def handle_call(:timeline, {_, _}, %{} = state), do: {:reply, state.timeline, state}
+
+  def handle_call(:follow, {pid, _}, %{} = state) do
+    Process.monitor(pid)
+    for message <- messages(state), do: send(pid, {:mx_beat, message})
+    {:reply, :ok, %{state | followers: [pid | state.followers]}}
+  end
 
   def handle_call(:loops, {_, _}, %{} = state) do
     pids = Map.values(state.loops) ++ Map.values(state.stopping) ++ Map.values(state.joining)
@@ -100,7 +112,7 @@ defmodule Mx.Band do
 
       state =
         if pass > state.tempo_pass and sections?(state.song, name) do
-          put_changes(state, beat, pass)
+          tell(put_changes(state, beat, pass))
         else
           state
         end
@@ -114,7 +126,7 @@ defmodule Mx.Band do
   @impl true
   def handle_cast({:switch, song}, %{} = state) do
     song = state.prepare.(song)
-    state = if song.tempo != state.song.tempo, do: retempo(state, song.tempo), else: state
+    state = if song.tempo != state.song.tempo, do: tell(retempo(state, song.tempo)), else: state
     state.live.(song.live, song.tempo)
     names = Enum.map(song.loops, & &1.name)
 
@@ -148,6 +160,14 @@ defmodule Mx.Band do
     {:noreply, state}
   end
 
+  def handle_info({:mx_delay, delay_us}, %{} = state) do
+    {:noreply, tell(%{state | delay_us: delay_us})}
+  end
+
+  def handle_info({:DOWN, _ref, :process, pid, _reason}, %{} = state) do
+    {:noreply, %{state | followers: List.delete(state.followers, pid)}}
+  end
+
   def handle_info({:EXIT, pid, reason}, %{} = state) do
     stopping = Map.reject(state.stopping, fn {_, stopping_pid} -> stopping_pid == pid end)
     state = %{state | stopping: stopping}
@@ -171,6 +191,25 @@ defmodule Mx.Band do
       _ ->
         {:noreply, state}
     end
+  end
+
+  @impl true
+  def terminate(_reason, %{} = state) do
+    for pid <- state.followers, do: send(pid, {:mx_beat, :stopped})
+    :ok
+  end
+
+  defp messages(state), do: Mx.Beat.messages(state.timeline, state.delay_us, now())
+
+  # Sends the followers each message they were not sent yet.
+  defp tell(state) do
+    messages = messages(state)
+
+    for message <- messages -- state.told,
+        pid <- state.followers,
+        do: send(pid, {:mx_beat, message})
+
+    %{state | told: messages}
   end
 
   # A loop added back while its removed version finishes its pass takes over from that version.
