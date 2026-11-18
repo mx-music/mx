@@ -72,6 +72,7 @@ Saving the file loads it again, and a version that fails to load prints its erro
 A changed loop takes over at the end of its own pass, a new loop starts on the next beat, and a removed loop stops at the end of its pass.
 A new tempo starts on the first whole beat more than 150 ms away, so every loop changes on the same beat.
 Saving the file with the same `song(tempo:)` keeps the tempo the music has changed to.
+A program that drives a session hears, through `Mx.Session.subscribe/1`, the beat at which each part will take a saved version over, when it has, and a save that does not load; `Mx.Session.take_over_now/1` takes the version over from the next beat instead of waiting.
 `Mx.Band` has the full rules.
 
 ## The engine

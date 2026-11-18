@@ -87,6 +87,7 @@ defmodule Mx.Render do
           stop_fx: &Mxs.stop_fx/2,
           start_part: &Mxs.start_part(&1, &2, beats: true),
           hand: &Mxs.pass/5,
+          cut: &Mxs.cut/2,
           place_beats: &Mxs.place_beats/1,
           set_tempo: &Mxs.set_tempo/2,
           out: fn _at_us, message -> send(render, {:sent, self(), elem(message, 0)}) end,

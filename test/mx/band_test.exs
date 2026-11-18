@@ -693,7 +693,7 @@ defmodule Mx.BandTest do
 
         assert_receive {:tempo_set, 11, 90}
         assert [{11, _, 90}, {0, ^at_beat_10_2, 120}] = Band.timeline(band)
-        GenServer.stop(band)
+        stop_quietly(band)
       end)
     end
 
@@ -708,7 +708,7 @@ defmodule Mx.BandTest do
         Band.switch(band, second)
 
         assert [{12, _, 90}, {0, ^at_beat_10_2, 120}] = Band.timeline(band)
-        GenServer.stop(band)
+        stop_quietly(band)
       end)
     end
 
@@ -1312,7 +1312,7 @@ defmodule Mx.BandTest do
           press(band)
           assert_receive {:played, at, _events}, 200
           assert at == start_us + 4 * 500_000
-          GenServer.stop(band)
+          stop_quietly(band)
         end)
 
       assert warned =~ ~r/^loop keys is 1\d ms late$/m
@@ -1346,6 +1346,136 @@ defmodule Mx.BandTest do
 
       assert {:error, message} = Song.load(path)
       assert message =~ "loop pads takes grid: in beats above 0, not 0"
+    end
+  end
+
+  describe "what becomes of a saved version" do
+    @describetag :tmp_dir
+
+    setup do
+      test = self()
+
+      %{
+        hand_opts: [
+          hand: fn name, span, label, events, _opts ->
+            send(test, {:handed, name, span, label, events})
+          end,
+          cut: fn name, beat -> send(test, {:cut, name, beat}) end
+        ]
+      }
+    end
+
+    defp four(name, pitch),
+      do: "part(:#{name}, loop(4, fn _, _ -> seq([note(#{pitch}, 1), rest(3)]) end))"
+
+    test "examples/choro.exs saved 4 beats into a section waits 28 beats for every part", ctx do
+      {:ok, song} = Song.load("examples/choro.exs")
+      beat_us = round(60_000_000 / song.tempo)
+
+      capture_io(:stderr, fn ->
+        start_us = System.os_time(:microsecond) - 4 * beat_us
+        {band, _} = start(song, ctx, ctx.hand_opts ++ [start_us: start_us, ahead_ms: 500])
+        :ok = Band.subscribe(band)
+        Band.switch(band, song)
+
+        waits =
+          for _ <- song.loops do
+            assert_receive {:mx_waits, _name, wait}, 1000
+            wait
+          end
+
+        assert Enum.uniq(waits) == [32]
+        assert length(song.loops) == 8
+      end)
+    end
+
+    test "reports when each part takes the version over, a removed part stops and an added part joins, and then that it plays",
+         ctx do
+      first = load(ctx, song(600, [four(:a, 60), four(:b, 62), four(:c, 64)]))
+      second = load(ctx, song(600, [four(:a, 67), four(:b, 62), four(:d, 65)]))
+
+      {band, _} = start(first, ctx)
+      :ok = Band.subscribe(band)
+      assert_receive {:played, _, _}
+      Band.switch(band, second)
+
+      assert_receive {:mx_waits, :a, 4}
+      assert_receive {:mx_waits, :b, 4}
+      assert_receive {:mx_waits, :c, {:stops, 4}}
+      assert_receive {:mx_waits, :d, {:joins, 4}}
+      assert_receive {:mx_took_over, :a, 4}, 1000
+      assert_receive {:mx_took_over, :b, 4}
+      assert_receive {:mx_took_over, :d, 4}
+      assert_receive {:mx_took_over, :c, 4}, 1000
+      assert_receive :mx_version_plays
+    end
+
+    test "a second save before the first takes over reports the same beat", ctx do
+      first = load(ctx, song(60, [four(:a, 60)]))
+      second = load(ctx, song(60, [four(:a, 62)]))
+      third = load(ctx, song(60, [four(:a, 64)]))
+
+      {band, _} = start(first, ctx)
+      :ok = Band.subscribe(band)
+      Band.switch(band, second)
+      assert_receive {:mx_waits, :a, 4}
+      Process.sleep(100)
+      Band.switch(band, third)
+      assert_receive {:mx_waits, :a, 4}
+      refute_receive {:mx_took_over, _, _}, 100
+    end
+
+    test "a version saved during the song's last pass waits for a pass that will not come", ctx do
+      first =
+        load(ctx, "import Mx\nsong(tempo: 60, music: part(:a, seq([note(60, 1), rest(3)])))\n")
+
+      second =
+        load(ctx, "import Mx\nsong(tempo: 60, music: part(:a, seq([note(62, 1), rest(3)])))\n")
+
+      {band, _} = start(first, ctx)
+      :ok = Band.subscribe(band)
+      assert_receive {:played, _, _}
+      Band.switch(band, second)
+      assert_receive {:mx_waits, :a, :never}
+    end
+
+    test "taking a version over now cuts the pass that sounds at the next beat and plays the version from there",
+         ctx do
+      first =
+        load(
+          ctx,
+          song(60, [
+            "part(:a, loop(8, fn _, _ -> seq(for _ <- 1..8, do: seq([note(60, 0.5), rest(0.5)])) end))"
+          ])
+        )
+
+      second =
+        load(
+          ctx,
+          song(60, [
+            "part(:a, loop(8, fn _, _ -> seq(for _ <- 1..8, do: seq([note(67, 0.5), rest(0.5)])) end))"
+          ])
+        )
+
+      {band, _} = start(first, ctx, ctx.hand_opts)
+      :ok = Band.subscribe(band)
+      assert_receive {:handed, :a, {0, 8}, 0, _events}
+      Process.sleep(1200)
+      Band.switch(band, second)
+      assert_receive {:mx_waits, :a, 8}
+
+      assert {:ok, beat} = Band.take_over_now(band)
+      assert beat in [2, 3]
+      assert_receive {:cut, :a, ^beat}
+      assert_receive {:handed, :a, {0, 8}, 0, events}
+      assert [{first, _} | _] = events
+      assert first == beat
+
+      assert Enum.all?(events, fn {at, {:note, _, _, note, _, _}} -> at >= beat and note == 67 end)
+
+      assert length(events) == 8 - beat
+      assert_receive {:mx_took_over, :a, ^beat}
+      assert_receive :mx_version_plays
     end
   end
 
@@ -1935,6 +2065,12 @@ defmodule Mx.BandTest do
 
   defp click(pitch \\ 60),
     do: "part(:a, loop(1, fn _, _ -> seq([note(#{pitch}, 0), rest(1)]) end))"
+
+  # Ends a band and its loops at once, so no loop is left calling it.
+  defp stop_quietly(band) do
+    Process.unlink(band)
+    Process.exit(band, :kill)
+  end
 
   defp song(tempo, parts) do
     music = Enum.join(parts, ", ")

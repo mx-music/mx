@@ -11,6 +11,10 @@ defmodule Mx.Loop do
   A loop started with `pass` and `skip` plays that pass first, leaving out its notes before beat `skip` of it.
   A loop started with `start: :join` waits for the band to send `{:join, beat, pass}`, and plays that pass from that beat.
 
+  The loop sends the band `{:part_waits, name, wait}` when it is handed a new version or told to stop: the beat its next pass starts on, `:never` when it has no pass left, `:input` when it waits for input, or `{:stops, beat}`.
+  It sends `{:part_took_over, name, beat}` when the new version's first pass starts, when it stops, and, started with `announce: true`, when its own first pass starts.
+  `take_over_now/2` ends the pass that sounds at a beat, and plays the new version's pass from that beat, or stops there; given `hand`, `cut` is given that beat first, to drop what the engine holds from there on.
+
   A sample plays from the buffer the song loaded for it.
   A sample named while the pass runs has no buffer yet, so the loop asks for it with `load_sample`, leaves it out, and plays it from the next pass once it is loaded.
 
@@ -51,6 +55,11 @@ defmodule Mx.Loop do
   @doc "Stops the loop once its current pass ends."
   def stop(loop) when is_pid(loop), do: GenServer.cast(loop, :stop)
 
+  @doc "Ends the pass that sounds at `beat`, a beat not yet worked out, and plays the new version's pass from that beat, or stops there when stopping; a loop with neither carries on."
+  def take_over_now(loop, beat) when is_pid(loop) and is_number(beat) do
+    GenServer.cast(loop, {:take_over_now, beat})
+  end
+
   @impl true
   def init(opts) when is_list(opts) do
     start = Keyword.fetch!(opts, :start)
@@ -82,6 +91,10 @@ defmodule Mx.Loop do
       stop_fx: Keyword.get(opts, :stop_fx, fn _fx, _at_us -> :ok end),
       start_part: Keyword.get(opts, :start_part),
       hand: Keyword.get(opts, :hand),
+      cut: Keyword.get(opts, :cut, fn _name, _beat -> :ok end),
+      announce: Keyword.get(opts, :announce, false),
+      handed: [],
+      retaking: false,
       chain: [],
       fx: nil,
       loaded: %{},
@@ -96,11 +109,42 @@ defmodule Mx.Loop do
   def handle_cast({:switch, version}, %{} = state) do
     next_start = state.next_start || state.stopped_start
 
+    wait =
+      cond do
+        state.loop.on -> :input
+        next_start -> next_start
+        true -> :never
+      end
+
+    send(state.band, {:part_waits, state.loop.name, wait})
+
     {:noreply,
      %{state | pending: version, stopping: false, next_start: next_start, stopped_start: nil}}
   end
 
-  def handle_cast(:stop, %{} = state), do: {:noreply, %{state | stopping: true}}
+  def handle_cast(:stop, %{} = state) do
+    send(state.band, {:part_waits, state.loop.name, {:stops, state.next_start || state.pass_end}})
+    {:noreply, %{state | stopping: true}}
+  end
+
+  def handle_cast({:take_over_now, beat}, %{} = state) do
+    case Enum.find(state.handed, fn {_pass, start, ends} -> start <= beat and beat < ends end) do
+      {pass, start, _ends} when state.pending != nil or state.stopping ->
+        state.cut.(state.loop.name, beat)
+        queue = Enum.reject(state.queue, &(elem(&1, 0) >= beat))
+        state = %{state | queue: queue, handed: [], pass_end: beat}
+
+        if state.stopping do
+          {:noreply, %{state | next_start: nil, stopped_start: beat}}
+        else
+          state = %{state | pass: pass, next_start: start, skip: beat - start, retaking: true}
+          {:noreply, tick(state)}
+        end
+
+      _carries_on ->
+        {:noreply, state}
+    end
+  end
 
   @impl true
   def handle_info({:join, beat, pass}, %{next_start: nil, pass_end: nil} = state) do
@@ -146,6 +190,7 @@ defmodule Mx.Loop do
   defp stop_or_continue(state) do
     if state.stopping and state.queue == [] and state.next_start == nil do
       if state.fx, do: state.stop_fx.(state.fx, pass_end_us(state))
+      send(state.band, {:part_took_over, state.loop.name, state.stopped_start || state.pass_end})
       {:stop, :normal, state}
     else
       {:noreply, state}
@@ -201,7 +246,12 @@ defmodule Mx.Loop do
     {skip, state} = {state.skip, %{state | skip: 0}}
     events = Enum.reject(events, fn {beat, step, _} -> beat < skip and skipped?(step) end)
     name = state.loop.name
-    timeline = Band.cue(state.band, name, start, state.pass)
+
+    # A pass worked out again from a beat within it was cued when it was first worked out.
+    timeline =
+      if state.retaking, do: timeline, else: Band.cue(state.band, name, start, state.pass)
+
+    if state.announce, do: send(state.band, {:part_took_over, name, start})
 
     for {beat, {:set, set_name, value}, _} <- events do
       state.set.(set_name, value, start + beat, Band.time_at(timeline, start + beat))
@@ -231,7 +281,10 @@ defmodule Mx.Loop do
         pass: state.pass + 1,
         pass_end: pass_end,
         next_start: next_start,
-        ended: ended
+        ended: ended,
+        announce: false,
+        retaking: false,
+        handed: Enum.take([{state.pass, start, pass_end} | state.handed], 2)
     }
 
     {state, timeline}
@@ -390,6 +443,7 @@ defmodule Mx.Loop do
   defp next_pass(%{pending: version} = state, until_us) do
     case Pass.events(version, state.pass, pass_opts(state, until_us)) do
       {:ok, %{events: events, beats: beats}} ->
+        send(state.band, {:part_took_over, version.name, state.next_start + state.skip})
         {%{state | loop: version, pending: nil}, events, beats}
 
       {:error, message} ->

@@ -15,8 +15,15 @@ defmodule Mx.Session do
   @doc "Starts playing the song in `opts` through the engine, from the beat `:from` if given, watching its file for changes."
   def start_link(opts) when is_list(opts), do: Supervisor.start_link(__MODULE__, opts)
 
-  @doc "Subscribes the calling process to the saves of the session's song that load, as `Mx.Watcher.subscribe/1` does, and returns the version loaded now."
-  def subscribe(session) when is_pid(session), do: Watcher.subscribe(watcher(session))
+  @doc """
+  Subscribes the calling process to the saves of the session's song, and returns the version loaded now.
+
+  It is sent each save that loads and each that does not, as `Mx.Watcher.subscribe/1` describes, and when each part takes a version over, as `Mx.Band.subscribe/1` describes.
+  """
+  def subscribe(session) when is_pid(session) do
+    :ok = Band.subscribe(band(session))
+    Watcher.subscribe(watcher(session))
+  end
 
   @doc "The version of the session's song loaded now, as `{number, description}`, without reading its file, as `Mx.Watcher.description/1` gives it."
   def description(session) when is_pid(session), do: Watcher.description(watcher(session))
@@ -55,6 +62,13 @@ defmodule Mx.Session do
     Band.scale_tempo(band(session), share, over)
   end
 
+  @doc """
+  Takes the version of the song saved last over now, from the first whole beat 150 ms away, and returns `{:ok, beat}`.
+
+  Each part the version changes ends the pass that sounds then and plays the version's pass from that beat of its music, so the parts stay together, and each part it removes stops there.
+  """
+  def take_over_now(session) when is_pid(session), do: Band.take_over_now(band(session))
+
   defp band(session) do
     {Band, pid, _type, _modules} = List.keyfind(Supervisor.which_children(session), Band, 0)
     pid
@@ -85,6 +99,7 @@ defmodule Mx.Session do
        stop_fx: &Mxs.stop_fx/2,
        start_part: &Mxs.start_part(&1, &2, beats: true),
        hand: &Mxs.pass/5,
+       cut: &Mxs.cut/2,
        place_beats: &Mxs.place_beats/1,
        set_tempo: &Mxs.set_tempo/2,
        mute: &Mxs.mute/2,

@@ -75,6 +75,24 @@ defmodule Mx.Band do
     {:error, "a tempo share takes 0.25 to 4, not #{shown}"}
   end
 
+  @doc """
+  Sends the calling process what becomes of each version the band is handed, until it is gone.
+
+  For each part, `{:mx_waits, name, wait}` says when it takes the version over: the beat its next pass starts on, `{:stops, beat}` for a part the version removes, `{:joins, beat}` for one it adds, `:input` for a loop that waits for input, or `:never` when the part has no pass left.
+  `{:mx_took_over, name, beat}` says that a part has, at that beat, and `:mx_version_plays` that every part has.
+  A version handed over before the last one has taken over replaces it, and its parts are reported again.
+  """
+  def subscribe(band) when is_pid(band) or is_atom(band), do: GenServer.call(band, :subscribe)
+
+  @doc """
+  Takes the version the band was last handed over now, from the first whole beat 150 ms away, or after every note already sent without `hand`, and returns `{:ok, beat}`.
+
+  Each part the version changes ends the pass that sounds then and plays the version's pass from that beat of its music, so the band keeps its place, and each part it removes stops there; a part it adds joins as it would have.
+  """
+  def take_over_now(band) when is_pid(band) or is_atom(band) do
+    GenServer.call(band, :take_over_now)
+  end
+
   @doc "The tempo timeline, the latest entry first."
   def timeline(band) when is_pid(band) or is_atom(band), do: GenServer.call(band, :timeline)
 
@@ -115,6 +133,7 @@ defmodule Mx.Band do
           :stop_fx,
           :start_part,
           :hand,
+          :cut,
           :out,
           :inputs,
           :set,
@@ -133,6 +152,8 @@ defmodule Mx.Band do
       solo: Keyword.get(opts, :solo, fn _name, _soloed -> :ok end),
       soloed: [],
       followers: Keyword.get(opts, :follow, []),
+      subscribers: [],
+      version: nil,
       told: []
     }
 
@@ -148,6 +169,17 @@ defmodule Mx.Band do
 
   @impl true
   def handle_call(:timeline, {_, _}, %{} = state), do: {:reply, state.timeline, state}
+
+  def handle_call(:subscribe, {pid, _}, %{} = state) do
+    Process.monitor(pid)
+    {:reply, :ok, %{state | subscribers: [pid | state.subscribers]}}
+  end
+
+  def handle_call(:take_over_now, {_, _}, %{} = state) do
+    beat = floor(beat_at(state.timeline, now() + state.tempo_lead_us)) + 1
+    for {_, pid} <- Map.merge(state.loops, state.stopping), do: Loop.take_over_now(pid, beat)
+    {:reply, {:ok, beat}, state}
+  end
 
   # The tempos already on the timeline after the change are put on it again at the new share.
   def handle_call({:scale_tempo, share, over}, {_, _}, %{} = state) do
@@ -226,9 +258,17 @@ defmodule Mx.Band do
     Enum.each(removed, fn {_, pid} -> Loop.stop(pid) end)
     stopping = Map.merge(state.stopping, removed)
     state = %{state | song: song, loops: Map.take(state.loops, names), stopping: stopping}
+    told = Map.keys(removed) ++ Enum.filter(names, &is_map_key(state.loops, &1))
+
+    version = %{
+      waiting: MapSet.new(names ++ Map.keys(removed)),
+      due: MapSet.new(told),
+      joins: [],
+      beats: []
+    }
 
     state =
-      Enum.reduce(song.loops, state, fn loop, state ->
+      Enum.reduce(song.loops, %{state | version: version}, fn loop, state ->
         case Map.fetch(state.loops, loop.name) do
           {:ok, pid} ->
             Loop.switch(pid, loop)
@@ -257,7 +297,50 @@ defmodule Mx.Band do
   end
 
   def handle_info({:DOWN, _ref, :process, pid, _reason}, %{} = state) do
-    {:noreply, %{state | followers: List.delete(state.followers, pid)}}
+    followers = List.delete(state.followers, pid)
+    {:noreply, %{state | followers: followers, subscribers: List.delete(state.subscribers, pid)}}
+  end
+
+  # A part added at the next section joins at the next pass the parts that play then start.
+  def handle_info({:part_waits, name, wait}, %{version: %{} = version} = state) do
+    report(state, {:mx_waits, name, wait})
+    beats = if is_number(wait), do: [wait | version.beats], else: version.beats
+    version = %{version | due: MapSet.delete(version.due, name), beats: beats}
+
+    version =
+      if MapSet.size(version.due) == 0 and version.joins != [] do
+        joins = if beats == [], do: :never, else: {:joins, Enum.min(beats)}
+        for joining <- version.joins, do: report(state, {:mx_waits, joining, joins})
+        %{version | joins: []}
+      else
+        version
+      end
+
+    {:noreply, %{state | version: version}}
+  end
+
+  def handle_info({:part_waits, name, wait}, %{} = state) do
+    report(state, {:mx_waits, name, wait})
+    {:noreply, state}
+  end
+
+  def handle_info({:part_took_over, name, beat}, %{} = state) do
+    report(state, {:mx_took_over, name, beat})
+
+    case state.version do
+      %{waiting: waiting} = version ->
+        waiting = MapSet.delete(waiting, name)
+
+        if MapSet.size(waiting) == 0 do
+          report(state, :mx_version_plays)
+          {:noreply, %{state | version: nil}}
+        else
+          {:noreply, %{state | version: %{version | waiting: waiting}}}
+        end
+
+      nil ->
+        {:noreply, state}
+    end
   end
 
   def handle_info({:EXIT, pid, reason}, %{} = state) do
@@ -314,15 +397,36 @@ defmodule Mx.Band do
     %{state | told: messages}
   end
 
+  defp report(state, message), do: Enum.each(state.subscribers, &send(&1, message))
+
   # A loop added back while its removed version finishes its pass takes over from that version.
   defp add_loop(state, loop) do
     case Map.pop(state.stopping, loop.name) do
       {nil, _} ->
-        start_loops(state, [{loop, later_start(state, loop)}])
+        start = later_start(state, loop)
+
+        state =
+          case start do
+            :join ->
+              update_in(state.version.joins, &[loop.name | &1])
+
+            beat ->
+              report(state, {:mx_waits, loop.name, {:joins, beat}})
+              state
+          end
+
+        start_loops(state, [{loop, start, [announce: true]}])
 
       {pid, stopping} ->
         Loop.switch(pid, loop)
-        %{state | loops: Map.put(state.loops, loop.name, pid), stopping: stopping}
+        version = %{state.version | due: MapSet.put(state.version.due, loop.name)}
+
+        %{
+          state
+          | loops: Map.put(state.loops, loop.name, pid),
+            stopping: stopping,
+            version: version
+        }
     end
   end
 
