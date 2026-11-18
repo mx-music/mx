@@ -91,6 +91,30 @@ defmodule Mix.Tasks.Mx.PlayTest do
     assert line =~ ~r/peaking at -inf dB\.$/
   end
 
+  @tag :engine
+  test "a session sends a subscriber the description of each save it loads", ctx do
+    path = Path.join(ctx.tmp_dir, "quiet.exs")
+
+    song =
+      "import Mx\nsong(music: part(:a, loop(8, fn _, _ -> seq([note(60, 1, amp: 0)]) end)))\n"
+
+    File.write!(path, song)
+    {:ok, loaded} = Mx.Song.load(path)
+    {:ok, session} = Mx.Session.start_link(path: path, song: loaded)
+
+    {:ok, device} = StringIO.open("")
+
+    for {_id, pid, _type, _modules} <- Supervisor.which_children(session),
+        do: Process.group_leader(pid, device)
+
+    assert {0, {:ok, %{source: ^song}}} = Mx.Session.subscribe(session)
+    saved = String.replace(song, "60", "62")
+    File.write!(path, saved)
+    assert_receive {:mx_loaded, 1, {:ok, %{source: ^saved}}}, 2000
+    assert {1, {:ok, %{source: ^saved}}} = Mx.Session.description(session)
+    Supervisor.stop(session)
+  end
+
   defp record(ctx, music, opts \\ []), do: ctx |> record_to(music, opts) |> elem(0)
 
   defp record_to(ctx, music, opts \\ []) do

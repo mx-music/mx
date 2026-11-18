@@ -98,4 +98,29 @@ defmodule Mx.PageTest do
     assert sections == [[0.0, 2], [2.0, 2], [4.0, 2]]
     assert Enum.map(notes, &hd/1) == [0.0, 2.0, 4.0]
   end
+
+  describe "whole/3" do
+    test "shows all of a song that ends, and says that it ends", %{tmp_dir: dir} do
+      {song, path} =
+        load(dir, "song(tempo: 60, music: part(:a, seq(c4: 1, e4: 1, g4: 2), synth: :fm))\n")
+
+      assert {:ok, %{ends: true, seconds: 4.0, parts: [%{notes: notes}]}} = Page.whole(song, path)
+      assert Enum.map(notes, &hd/1) == [0.0, 1.0, 2.0]
+    end
+
+    test "shows a song that plays until stopped one time through", %{tmp_dir: dir} do
+      {song, path} =
+        load(dir, "song(tempo: 60, music: repeat(part(:a, seq(c4: 1, r: 1), synth: :fm)))\n")
+
+      assert {:ok, %{ends: false, sections: [[+0.0, 2]], parts: [%{notes: [_one]}]}} =
+               Page.whole(song, path)
+    end
+
+    test "given the file's text, reads no file", %{tmp_dir: dir} do
+      {song, path} = load(dir, "song(tempo: 60, music: part(:a, seq(c4: 1), synth: :fm))\n")
+      File.rm!(path)
+
+      assert {:ok, %{source: "the text"}} = Page.whole(song, path, "the text")
+    end
+  end
 end

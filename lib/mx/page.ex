@@ -37,8 +37,9 @@ defmodule Mx.Page do
     end
   end
 
-  @doc "What the page shows of a loaded song that renders to `seconds` of sound: its sections, the seconds of each beat, and each part's notes and hits in seconds."
-  def data(%Song{} = song, path, seconds) when is_binary(path) and is_number(seconds) do
+  @doc "What the page shows of a loaded song that renders to `seconds` of sound: its sections, the seconds of each beat, and each part's notes and hits in seconds; `source` is the file's text, read from `path` when not given."
+  def data(%Song{} = song, path, seconds, source \\ nil)
+      when is_binary(path) and is_number(seconds) do
     loops = Enum.filter(song.loops, &(&1.on == nil))
 
     with {:ok, played} <- map_ok(loops, &passes(&1, song, seconds)) do
@@ -49,7 +50,7 @@ defmodule Mx.Page do
       {:ok,
        %{
          file: Path.basename(path),
-         source: File.read!(path),
+         source: source || File.read!(path),
          tempo: song.tempo,
          seconds: seconds,
          beats: Enum.map(0..ceil(beats), &seconds_at(timeline, &1)),
@@ -59,6 +60,46 @@ defmodule Mx.Page do
            end,
          parts: Enum.zip_with(loops, played, &part(&1, &2, files))
        }}
+    end
+  end
+
+  @whole_seconds 36_000
+
+  @doc "What `data/4` gives of a loaded song without a render to measure: all of a song that ends, and one time through its sections of a song that plays until stopped, with `:ends` saying which; `source` is the file's text, read from `path` when nil."
+  def whole(%Song{} = song, path, source \\ nil) when is_binary(path) do
+    ends? = Enum.all?(song.loops, &(&1.passes != nil or &1.on != nil))
+    first = if ends?, do: @whole_seconds, else: 0.001
+
+    with {:ok, data} <- data(song, path, first, source),
+         {:ok, data} <- through(song, path, data),
+         {:ok, data} <- data(song, path, List.last(data.beats), data.source) do
+      {:ok, Map.put(data, :ends, ends?)}
+    end
+  end
+
+  # A part with more sections than the passes shown so far is shown a pass further.
+  defp through(song, path, data) do
+    sections =
+      song.loops
+      |> Enum.filter(&(&1.on == nil))
+      |> Enum.map(&tuple_size(&1.music.sections))
+      |> Enum.max(fn -> 1 end)
+
+    if length(data.sections) >= sections do
+      {:ok, data}
+    else
+      seconds = List.last(data.beats) + 0.001
+
+      case data(song, path, seconds, data.source) do
+        {:ok, more} when length(more.sections) > length(data.sections) ->
+          through(song, path, more)
+
+        {:ok, _same} ->
+          {:ok, data}
+
+        error ->
+          error
+      end
     end
   end
 

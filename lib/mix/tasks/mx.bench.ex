@@ -12,7 +12,7 @@ defmodule Mix.Tasks.Mx.Bench do
   The loads are `idle`, `vm_busy`, with every scheduler of the VM busy, `saves`, with the song loaded and laid out every 300 ms, and `os_busy`, with twice as many busy OS processes as schedulers.
 
   `saves` plays a copy of the song, saves a change to the copy at each second `--at` names, and prints a row for each second: the notes handed over, the late ones, the longest gap between two beat messages to a window, the VM's memory and its process count.
-  Under the rows it prints how many times each save was loaded and how long each load took.
+  Under the rows it prints how many times mx loaded the saves, and how long after each save its description reached the window.
   The song's own file is never changed.
 
   `buffers` renders each song a buffer of 512 frames at a time and prints, for each, the time filling a buffer took as a share of the time it lasts, on average and at worst, and how many buffers took longer than they last.
@@ -108,8 +108,8 @@ defmodule Mix.Tasks.Mx.Bench do
       )
     end
 
-    window = Enum.join(loads.by_the_window_ms, ", ")
-    IO.puts("loads by mx: #{loads.by_mx}; loads by the window, ms: #{window}")
+    waits = Enum.join(loads.described_after_ms, ", ")
+    IO.puts("loads by mx: #{loads.by_mx}; described to the window after, ms: #{waits}")
   end
 
   defp buffers(rows) do

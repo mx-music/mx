@@ -15,6 +15,17 @@ defmodule Mx.Session do
   @doc "Starts playing the song in `opts` through the engine, from the beat `:from` if given, watching its file for changes."
   def start_link(opts) when is_list(opts), do: Supervisor.start_link(__MODULE__, opts)
 
+  @doc "Subscribes the calling process to the saves of the session's song that load, as `Mx.Watcher.subscribe/1` does, and returns the version loaded now."
+  def subscribe(session) when is_pid(session), do: Watcher.subscribe(watcher(session))
+
+  @doc "The version of the session's song loaded now, as `{number, description}`, without reading its file, as `Mx.Watcher.description/1` gives it."
+  def description(session) when is_pid(session), do: Watcher.description(watcher(session))
+
+  defp watcher(session) do
+    {Watcher, pid, _type, _modules} = List.keyfind(Supervisor.which_children(session), Watcher, 0)
+    pid
+  end
+
   @impl true
   def init(opts) when is_list(opts) do
     song = Keyword.fetch!(opts, :song)
@@ -41,7 +52,7 @@ defmodule Mx.Session do
        live: &Mxs.set_live/2,
        on_end: Keyword.get(opts, :on_end, fn -> :ok end),
        from: Keyword.get(opts, :from, 0)},
-      {Watcher, path: Keyword.fetch!(opts, :path), on_song: &switch/1}
+      {Watcher, path: Keyword.fetch!(opts, :path), song: song, on_song: &switch/1}
     ]
 
     Supervisor.init(children, strategy: :rest_for_one)

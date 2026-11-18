@@ -94,6 +94,101 @@ defmodule Mx.WatcherTest do
     refute_received {:song, _}
   end
 
+  describe "a subscriber" do
+    setup ctx do
+      name = :"watcher_test_#{System.unique_integer([:positive])}"
+      Process.register(self(), name)
+      telling = "send(#{inspect(name)}, {:evaluated, System.monotonic_time(:millisecond)})\n"
+      File.write!(ctx.path, telling <> @song)
+      {:ok, song} = Song.load(ctx.path)
+      assert_receive {:evaluated, _}
+      opts = [path: ctx.path, song: song, on_song: ctx.on_song]
+      watcher = start_supervised!({Watcher, opts})
+      silence_stdout(watcher)
+      %{watcher: watcher, song: song, source: telling <> @song}
+    end
+
+    @tag :tmp_dir
+    test "is given the version loaded now, numbered 0, and the same without subscribing", ctx do
+      assert {0, {:ok, described}} = Watcher.subscribe(ctx.watcher)
+      assert described.source == ctx.source
+      assert [%{name: :melody, notes: [[+0.0, _held, 60 | _]]}] = described.parts
+      assert Watcher.description(ctx.watcher) == {0, {:ok, described}}
+    end
+
+    @tag :tmp_dir
+    test "is sent each save that loads, numbered, loaded once and within 20 ms", ctx do
+      Watcher.subscribe(ctx.watcher)
+      saved = String.replace(ctx.source, "60", "62")
+      File.write!(ctx.path, saved)
+      at = System.monotonic_time(:millisecond)
+
+      assert_receive {:mx_loaded, 1, {:ok, %{source: ^saved} = described}}, 1000
+      assert [%{name: :melody, notes: [[+0.0, _held, 62 | _]]}] = described.parts
+      assert_received {:song, %Song{loops: [loop]}}
+      assert {:ok, %{events: [{0, 62, []}]}} = Mx.Pass.events(loop, 0)
+      assert_received {:evaluated, started}
+      assert started - at <= 20
+      refute_receive {:evaluated, _}, 100
+      refute_received {:mx_loaded, _, _}
+      assert Watcher.description(ctx.watcher) == {1, {:ok, described}}
+
+      File.write!(ctx.path, String.replace(ctx.source, "60", "64"))
+      assert_receive {:mx_loaded, 2, {:ok, _described}}, 1000
+    end
+
+    @tag :tmp_dir
+    test "is sent the error of a save that does not load, once, and the version stays", ctx do
+      Watcher.subscribe(ctx.watcher)
+
+      capture_io(:stderr, fn ->
+        File.write!(
+          ctx.path,
+          String.duplicate("\n", 11) <> "song(music: part(:melody, seq(c4: 1))\n"
+        )
+
+        assert_receive {:mx_load_failed, message}, 1000
+        assert message =~ "song.exs:12:"
+        refute_receive {:mx_load_failed, _}, 100
+      end)
+
+      refute_received {:song, _}
+      assert {0, {:ok, %{source: source}}} = Watcher.description(ctx.watcher)
+      assert source == ctx.source
+    end
+
+    @tag :tmp_dir
+    test "asking for the loaded version reads no file", ctx do
+      File.rm!(ctx.path)
+      Process.sleep(50)
+      assert {0, {:ok, %{source: source}}} = Watcher.description(ctx.watcher)
+      assert source == ctx.source
+    end
+
+    @tag :tmp_dir
+    test "two saves 10 ms apart end with the second loaded", ctx do
+      Watcher.subscribe(ctx.watcher)
+      File.write!(ctx.path, String.replace(ctx.source, "60", "62"))
+      Process.sleep(10)
+      second = String.replace(ctx.source, "60", "64")
+      File.write!(ctx.path, second)
+      Process.sleep(300)
+      assert {number, {:ok, %{source: ^second} = described}} = Watcher.description(ctx.watcher)
+      assert number in [1, 2]
+      assert [%{notes: [[+0.0, _held, 64 | _]]}] = described.parts
+    end
+
+    @tag :tmp_dir
+    test "that ends is forgotten", ctx do
+      test = self()
+      subscriber = spawn(fn -> send(test, {:subscribed, Watcher.subscribe(ctx.watcher)}) end)
+      assert_receive {:subscribed, {0, {:ok, _described}}}
+      ref = Process.monitor(subscriber)
+      assert_receive {:DOWN, ^ref, :process, _pid, _reason}
+      assert :sys.get_state(ctx.watcher).subscribers == %{}
+    end
+  end
+
   # The watcher inherits the test supervisor's group leader, so capture_io in the test does not
   # reach it.
   defp silence_stdout(pid) do

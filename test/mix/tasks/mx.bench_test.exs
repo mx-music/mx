@@ -27,7 +27,7 @@ defmodule Mix.Tasks.Mx.BenchTest do
     end
   end
 
-  test "saves prints a row for each second and the loads of each save, and leaves the song as it was" do
+  test "saves prints a row for each second, one load for each save, and leaves the song as it was" do
     before = File.read!("examples/choro.exs")
 
     output =
@@ -41,10 +41,10 @@ defmodule Mix.Tasks.Mx.BenchTest do
     assert length(lines) == 1 + 8 + 1
     assert hd(lines) == "second,notes,late,longest_gap_ms,memory_mb,processes"
 
-    assert ["loads by mx: 3", " loads by the window, ms: " <> window] =
+    assert ["loads by mx: 3", " described to the window after, ms: " <> waits] =
              String.split(List.last(lines), ";")
 
-    assert length(String.split(window, ", ")) == 3
+    assert length(String.split(waits, ", ")) == 3
     assert File.read!("examples/choro.exs") == before
   end
 

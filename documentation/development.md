@@ -41,7 +41,7 @@ The lead is the time between a note being handed to the engine and its beat, and
 The longest call is the longest time one call that hands notes to the engine took.
 `held_ms` is the longest a process handing notes over kept one of the VM's normal schedulers without a break, as the VM reports it from a millisecond up, and 0 when it never did; on a busy machine it also counts the times the operating system held the scheduler's own thread back.
 
-`saves` prints a row for each second, with the longest gap between two beat messages to a window, and under them how many times mx loaded the saves and how long each load by the window took.
+`saves` prints a row for each second, with the longest gap between two beat messages to a window, and under them how many times mx loaded the saves and how long after each save its description reached the window.
 `buffers` prints, for each song, the time filling a buffer of 512 frames took as a share of the time it lasts, and `over` counts the buffers that took longer than they last, which a sound card would have played as a gap.
 
 `--write FILE` keeps a run's figures, and `--compare FILE` prints each figure that is worse than in such a file by more than a tenth.

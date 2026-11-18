@@ -12,7 +12,6 @@ defmodule Mx.Bench do
 
   @tick_ms 33
   @frames 512
-  @whole 36_000
 
   @doc """
   Plays the song at `path` for `seconds` under each of four loads: an idle machine, every scheduler of the VM busy, the song loaded and laid out every 300 ms, and twice as many busy OS processes as schedulers.
@@ -132,8 +131,8 @@ defmodule Mx.Bench do
   defp kill_os(pids), do: Enum.each(pids, &System.cmd("kill", ["-9", to_string(&1)]))
 
   @doc """
-  Plays a copy of the song at `path` for `seconds` as a session does, saves a change to the copy at each of `saves`, seconds from the start, and asks for the saved song as Mx Studio does, from the process that sends its beat every #{@tick_ms} ms.
-  Returns `{:ok, rows, loads, figures}`: a row for each second, a map with `:second`, `:notes`, `:late`, `:longest_gap_ms`, `:memory_mb` and `:processes`, and for each save the milliseconds each load of it took.
+  Plays a copy of the song at `path` for `seconds` as a session does, saves a change to the copy at each of `saves`, seconds from the start, and is sent each saved version mx loads as Mx Studio is, in the process that sends its beat every #{@tick_ms} ms.
+  Returns `{:ok, rows, loads, figures}`: a row for each second, a map with `:second`, `:notes`, `:late`, `:longest_gap_ms`, `:memory_mb` and `:processes`, how many times mx loaded the saves, and for each save the milliseconds until its description reached that process.
   The song's own file is not changed.
   """
   def saves(path, seconds, saves)
@@ -180,18 +179,18 @@ defmodule Mx.Bench do
        worked_out: &Inputs.worked_out/2,
        subscribe: &Inputs.subscribe/1,
        live: &Mxs.set_live/2},
-      {Watcher, path: path, on_song: switch}
+      {Watcher, path: path, song: song, on_song: switch}
     ]
 
     {:ok, session} = Supervisor.start_link(children, strategy: :rest_for_one)
     window = spawn_link(fn -> window(table, at, session, now()) end)
+    send(window, :subscribe)
     sampler = spawn_link(fn -> sample(table, at) end)
 
     for {save_at, index} <- Enum.with_index(saves) do
       wait_until(at, save_at)
       File.write!(path, File.read!(path) <> "\n# saved #{index}\n")
       :ets.insert(table, {:saved, at.()})
-      send(window, {:show, path})
     end
 
     wait_until(at, seconds)
@@ -207,46 +206,22 @@ defmodule Mx.Bench do
     Process.sleep(max(0, div(round(second * 1_000_000) - at.(), 1000)))
   end
 
-  # One process sends the beat and answers a request to show the saved song, as Mx Studio's does.
+  # One process sends the beat and is sent each saved version mx loads, as Mx Studio's is.
   defp window(table, at, session, due) do
     receive do
-      {:show, path} ->
-        settle(session, path)
-        {took, song} = :timer.tc(fn -> Song.load(path) end)
-        :ets.insert(table, {:load, at.(), took})
-        with {:ok, song} <- song, do: show(song, path)
+      :subscribe ->
+        {Watcher, watcher, _, _} = List.keyfind(Supervisor.which_children(session), Watcher, 0)
+        Watcher.subscribe(watcher)
+        window(table, at, session, due)
+
+      {:mx_loaded, _number, _description} ->
+        :ets.insert(table, {:described, at.()})
         window(table, at, session, due)
     after
       max(0, div(due - now(), 1000)) ->
         Band |> Band.timeline() |> Band.beat_at(Clock.now())
         :ets.insert(table, {:beat, at.()})
         window(table, at, session, max(due + @tick_ms * 1000, now()))
-    end
-  end
-
-  # Two loads of one song at once fail, so the saved version is asked for once mx has loaded it.
-  defp settle(session, path) do
-    with {_, watcher, _, _} when is_pid(watcher) <-
-           List.keyfind(Supervisor.which_children(session), Watcher, 0) do
-      settle(watcher, path, System.monotonic_time(:millisecond) + 10_000)
-    end
-  end
-
-  defp settle(watcher, path, deadline) do
-    state = :sys.get_state(watcher, 10_000)
-    digest = with {:ok, content} <- File.read(path), do: :erlang.md5(content)
-
-    if state.digest != digest and System.monotonic_time(:millisecond) < deadline do
-      Process.sleep(20)
-      settle(watcher, path, deadline)
-    end
-  end
-
-  defp show(song, path) do
-    ends? = Enum.all?(song.loops, &(&1.passes != nil or &1.on != nil))
-
-    with {:ok, first} <- Page.data(song, path, if(ends?, do: @whole, else: 0.001)) do
-      Page.data(song, path, List.last(first.beats))
     end
   end
 
@@ -268,8 +243,12 @@ defmodule Mx.Bench do
       |> Enum.map(fn {a, b} -> {a, b - a} end)
 
     sampled = for {:vm, _, _, _} = row <- rows, do: row
-    loads = for {:load, at, took} when took != nil <- Enum.sort(rows), do: {at, ms(took)}
-    watcher_loads = Enum.count(rows, &match?({:load, _, nil}, &1))
+    loads = Enum.count(rows, &match?({:load, _, nil}, &1))
+    saved = for {:saved, at} <- Enum.sort(rows), do: at
+    described = for {:described, at} <- Enum.sort(rows), do: at
+
+    waits =
+      for at <- saved, shown = Enum.find(described, &(&1 >= at)), shown != nil, do: ms(shown - at)
 
     table =
       for index <- 0..(seconds - 1) do
@@ -294,13 +273,11 @@ defmodule Mx.Bench do
     figures = %{
       "saves/late" => Enum.count(plays, &(elem(&1, 2) < 0)),
       "saves/longest_gap_ms" => table |> Enum.map(& &1.longest_gap_ms) |> Enum.max(fn -> 0 end),
-      "saves/loads_per_save" =>
-        if(saves == 0, do: 0, else: (watcher_loads + length(loads)) / saves),
-      "saves/longest_load_ms" => loads |> Enum.map(&elem(&1, 1)) |> Enum.max(fn -> 0 end)
+      "saves/loads_per_save" => if(saves == 0, do: 0, else: loads / saves),
+      "saves/longest_wait_ms" => Enum.max(waits, fn -> 0 end)
     }
 
-    {:ok, table, %{by_mx: watcher_loads, by_the_window_ms: Enum.map(loads, &elem(&1, 1))},
-     figures}
+    {:ok, table, %{by_mx: loads, described_after_ms: waits}, figures}
   end
 
   @doc """
