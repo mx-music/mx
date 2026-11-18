@@ -1266,6 +1266,89 @@ defmodule Mx.BandTest do
     end
   end
 
+  describe "a loop started by input on a grid" do
+    @describetag :tmp_dir
+
+    # A song at tempo 120 whose loop plays one note when a MIDI note comes, and the band started so
+    # that beat `beat` is now.
+    defp start_at_beat(ctx, beat, grid) do
+      on = if grid, do: "on: :midi_note, grid: #{grid}", else: "on: :midi_note"
+
+      song =
+        load(
+          ctx,
+          "import Mx\nsong(tempo: 120, music: part(:keys, loop(fn trigger, _ -> seq([note(trigger.note, 0), rest(1)]) end, #{on})))\n"
+        )
+
+      start(song, ctx, start_us: System.os_time(:microsecond) - round(beat * 500_000))
+    end
+
+    defp press(band), do: send(band, {:input, {:midi_note, %{note: 64, velocity: 100}}})
+
+    test "a grid of 1 starts the loop on the next beat", ctx do
+      {band, start_us} = start_at_beat(ctx, 3.4, 1)
+      press(band)
+      assert_receive {:played, at, [{:note, _, _, _, _, _}]}, 1000
+      assert at == start_us + 4 * 500_000
+    end
+
+    test "a grid of 4 starts the loop on the next beat that is a multiple of 4", ctx do
+      {band, start_us} = start_at_beat(ctx, 3.4, 4)
+      press(band)
+      assert_receive {:played, at, _events}, 1000
+      assert at == start_us + 4 * 500_000
+
+      {band, start_us} = start_at_beat(ctx, 4.5, 4)
+      press(band)
+      refute_receive {:played, _, _}, 1000
+      assert_receive {:played, at, _events}, 2000
+      assert at == start_us + 8 * 500_000
+    end
+
+    test "an input 10 ms after a grid beat starts the loop on that beat", ctx do
+      warned =
+        capture_io(:stderr, fn ->
+          {band, start_us} = start_at_beat(ctx, 4.02, 4)
+          press(band)
+          assert_receive {:played, at, _events}, 200
+          assert at == start_us + 4 * 500_000
+          GenServer.stop(band)
+        end)
+
+      assert warned =~ ~r/^loop keys is 1\d ms late$/m
+    end
+
+    test "a loop with no grid starts within 15 ms of its input", ctx do
+      {band, _start_us} = start_at_beat(ctx, 3.4, nil)
+      sent = System.os_time(:microsecond)
+      press(band)
+      assert_receive {:played, at, _events}, 200
+      assert at - sent < 15_000
+    end
+
+    test "a second input while the loop waits for its beat starts nothing more", ctx do
+      {band, start_us} = start_at_beat(ctx, 3.2, 1)
+      press(band)
+      Process.sleep(200)
+      press(band)
+      assert_receive {:played, at, _events}, 1000
+      assert at == start_us + 4 * 500_000
+      refute_receive {:played, _, _}, 1500
+    end
+
+    test "a grid not above 0 is refused, naming the loop", ctx do
+      path = Path.join(ctx.tmp_dir, "grid.exs")
+
+      File.write!(
+        path,
+        "import Mx\nsong(tempo: 120, music: part(:pads, loop(fn _, _ -> note(60, 1) end, on: :midi_note, grid: 0)))\n"
+      )
+
+      assert {:error, message} = Song.load(path)
+      assert message =~ "loop pads takes grid: in beats above 0, not 0"
+    end
+  end
+
   describe "midi and osc" do
     @describetag :tmp_dir
 

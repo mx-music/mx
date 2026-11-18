@@ -419,6 +419,7 @@ loop(fn trigger, _ -> note(trigger.note, 1) end, on: :midi_note)
 
 - `on: :midi_note` waits for notes, `on: :midi_cc` for controller changes, and `on: {:osc, "/hit"}` for messages to that address.
 - `trigger` is what arrived: `%{note: 60, velocity: 100}`, `%{number: 74, value: 64}`, or `%{address: "/hit", args: [1]}`.
+- `grid: 4` starts the pass on the next beat of the song that is a multiple of 4, the next bar of four, and `grid: 1` on the next beat; an input less than 20 ms after such a beat starts it on that beat, a little late. Another input while the pass waits for its beat starts nothing more.
 
 ## Recordings
 

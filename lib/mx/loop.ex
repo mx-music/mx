@@ -35,6 +35,7 @@ defmodule Mx.Loop do
   use GenServer
 
   @trigger_lead_us 10_000
+  @grid_grace_us 20_000
   @notice_beats 2
 
   alias Mx.{Band, OSC, Pass, Song, Synths}
@@ -109,8 +110,14 @@ defmodule Mx.Loop do
 
   def handle_info({:join, _beat, _pass}, %{} = state), do: {:noreply, state}
 
+  # An input that comes while a pass waits for its grid's beat starts nothing more.
+  def handle_info({:trigger, _input}, %{next_start: start} = state) when start != nil do
+    {:noreply, state}
+  end
+
   def handle_info({:trigger, input}, %{} = state) do
-    start = Band.beat_at(Band.timeline(state.band), now() + @trigger_lead_us)
+    timeline = Band.timeline(state.band)
+    start = trigger_start(timeline, state.loop.music[:grid])
     {:noreply, tick(%{state | next_start: start, trigger: input})}
   end
 
@@ -324,6 +331,14 @@ defmodule Mx.Loop do
   end
 
   defp triggered?(opts), do: Keyword.fetch!(opts, :loop).on != nil
+
+  defp trigger_start(timeline, nil), do: Band.beat_at(timeline, now() + @trigger_lead_us)
+
+  # A grid beat less than 20 ms gone still starts the pass, its first notes that much late.
+  defp trigger_start(timeline, grid) do
+    beat = Band.beat_at(timeline, now() - @grid_grace_us)
+    Float.ceil(beat / grid) * grid
+  end
 
   defp notes(1), do: "1 note"
   defp notes(count), do: "#{count} notes"

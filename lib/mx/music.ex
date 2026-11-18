@@ -78,7 +78,7 @@ defmodule Mx.Music do
 
   defmodule Loop do
     @moduledoc "Music that runs a function for each pass of some beats and plays the music it returns, a number of times or as long as the music beside it; or, with `on:`, a pass for each input it waits for."
-    defstruct [:beats, :fun, :times, :on, :line]
+    defstruct [:beats, :fun, :times, :on, :grid, :line]
   end
 
   defmodule LoopError do
@@ -502,7 +502,7 @@ defmodule Mx.Music do
               __STACKTRACE__
   end
 
-  @doc "Music that runs the function with the pass number and the inputs every `beats` beats, and plays the music it returns; `times:` plays a number of passes, and `on:`, given instead of beats, plays a pass on each input it waits for."
+  @doc "Music that runs the function with the pass number and the inputs every `beats` beats, and plays the music it returns; `times:` plays a number of passes, and `on:`, given instead of beats, plays a pass on each input it waits for, on the next beat that is a multiple of `grid:` beats when given."
   def loop(beats, fun, opts \\ [])
 
   def loop(beats, fun, opts) when is_number(beats) and is_function(fun, 2) and is_list(opts) do
@@ -540,7 +540,7 @@ defmodule Mx.Music do
             "a loop with no length takes on: :midi_note, :midi_cc or {:osc, address}, not #{on}"
     end
 
-    %Loop{fun: fun, on: on, line: fun_line(fun)}
+    %Loop{fun: fun, on: on, grid: opts[:grid], line: fun_line(fun)}
   end
 
   # The line of a function written at the top of the song, which keeps its line as it is
@@ -683,7 +683,14 @@ defmodule Mx.Music do
                     "part #{part.name} plays a loop started by on:, so it can play no other music"
             end
 
-            {part, {:triggered, loop.on, loop.fun, loop.line}}
+            grid = loop.grid
+
+            if grid != nil and not (is_number(grid) and grid > 0) do
+              grid = inspect(grid)
+              raise ArgumentError, "loop #{part.name} takes grid: in beats above 0, not #{grid}"
+            end
+
+            {part, {:triggered, loop.on, loop.fun, loop.line, grid}}
 
           _ ->
             raise ArgumentError, "part #{part.name} has more than one loop started by on:"
@@ -941,13 +948,13 @@ defmodule Mx.Music do
 
     for {part, music} <- song.parts do
       case music do
-        {:triggered, on, fun, line} ->
+        {:triggered, on, fun, line, grid} ->
           held =
             Synths.option?(part.synth, :sustain) and not Keyword.has_key?(part.defaults, :sustain)
 
           Mx.Song.put_music_loop(
             part,
-            %{name: part.name, held: held, triggered: fun, line: line},
+            %{name: part.name, held: held, triggered: fun, line: line, grid: grid},
             nil,
             on
           )
