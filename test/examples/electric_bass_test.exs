@@ -1,5 +1,6 @@
 defmodule Mx.Examples.ElectricBassTest do
-  use ExUnit.Case, async: true
+  # A render runs the one engine and the one render clock, so tests that render share a group.
+  use ExUnit.Case, async: true, group: :engine
 
   import ExUnit.CaptureIO
 
