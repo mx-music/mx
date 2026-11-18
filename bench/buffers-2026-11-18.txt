@@ -1,0 +1,9 @@
+buffers/afrobeat.exs/mean_percent 4.2
+buffers/afrobeat.exs/over 0
+buffers/afrobeat.exs/worst_percent 5.8
+buffers/choro.exs/mean_percent 7.1
+buffers/choro.exs/over 0
+buffers/choro.exs/worst_percent 13.5
+buffers/trap.exs/mean_percent 7.7
+buffers/trap.exs/over 0
+buffers/trap.exs/worst_percent 26.6
