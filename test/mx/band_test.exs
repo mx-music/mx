@@ -738,6 +738,89 @@ defmodule Mx.BandTest do
     end
   end
 
+  describe "a tempo share" do
+    @describetag :tmp_dir
+
+    setup do
+      test = self()
+
+      %{
+        tempo_opts: [
+          hand: fn _name, _span, _label, _events, _opts -> :ok end,
+          set_tempo: fn beat, tempo -> send(test, {:tempo_set, beat, tempo}) end
+        ]
+      }
+    end
+
+    test "plays the song at the share from 150 ms on, and 1 brings back the song's own tempo",
+         ctx do
+      {band, _start_us} = start(load(ctx, song(120, [click()])), ctx, ctx.tempo_opts)
+      assert_receive {:tempo_set, 0, 120}
+
+      asked_us = System.os_time(:microsecond)
+      assert Band.scale_tempo(band, 0.5) == :ok
+      assert [{beat, at_us, 60.0} | _] = Band.timeline(band)
+      assert_received {:tempo_set, ^beat, 60.0}
+      assert (at_us - asked_us) in 150_000..200_000
+      assert_in_delta Band.time_at(Band.timeline(band), beat + 1) - at_us, 1_000_000, 1
+
+      assert Band.scale_tempo(band, 1) == :ok
+      assert [{_beat, _us, 120.0} | _] = Band.timeline(band)
+    end
+
+    test "scales the tempo changes the music writes, those already on the timeline too", ctx do
+      music =
+        "part(:a, seq([repeat(seq([note(60, 0), rest(1)]), 16), tempo(90), repeat(seq([note(60, 0), rest(1)]), 16)]))"
+
+      {band, _start_us} =
+        start(load(ctx, song(120, [music])), ctx, ctx.tempo_opts ++ [share: 0.5])
+
+      assert_receive {:tempo_set, 0, 60.0}
+      assert_receive {:tempo_set, 16, 45.0}
+
+      assert Band.scale_tempo(band, 2) == :ok
+      assert_receive {:tempo_set, 16, 180.0}
+      assert [{16, _, 180.0}, {_beat, _, 240.0} | _] = Band.timeline(band)
+    end
+
+    test "a share kept through a saved version, which plays its own tempo at the share", ctx do
+      first = load(ctx, song(120, [click()]))
+      changed = load(ctx, song(120, [click(67)]))
+      faster = load(ctx, song(100, [click(67)]))
+
+      {band, _start_us} = start(first, ctx, ctx.tempo_opts)
+      :ok = Band.scale_tempo(band, 0.5)
+      Band.switch(band, changed)
+      assert [{_beat, _us, 60.0} | _] = Band.timeline(band)
+      Band.switch(band, faster)
+      assert [{_beat, _us, 50.0} | _] = Band.timeline(band)
+    end
+
+    test "a share given over beats makes each of those beats longer than the one before", ctx do
+      {band, _start_us} = start(load(ctx, song(120, [click()])), ctx, ctx.tempo_opts)
+      :ok = Band.scale_tempo(band, 0.5, 4)
+
+      assert [{ended, _, 60.0}, {beat, _, {:ramp, 120, 60.0, 4}} | _] =
+               timeline = Band.timeline(band)
+
+      assert ended == beat + 4
+
+      lengths =
+        for at <- 0..3,
+            do: Band.time_at(timeline, beat + at + 1) - Band.time_at(timeline, beat + at)
+
+      assert lengths == Enum.sort(lengths) and lengths == Enum.uniq(lengths)
+    end
+
+    test "a share outside 0.25 to 4 is refused, naming the limits", ctx do
+      {band, _start_us} = start(load(ctx, song(120, [click()])), ctx, ctx.tempo_opts)
+
+      assert Band.scale_tempo(band, 5) == {:error, "a tempo share takes 0.25 to 4, not 5"}
+      assert Band.scale_tempo(band, 0.2) == {:error, "a tempo share takes 0.25 to 4, not 0.2"}
+      assert [{0, _, 120}] = Band.timeline(band)
+    end
+  end
+
   describe "samples" do
     @describetag :tmp_dir
 
@@ -1766,6 +1849,9 @@ defmodule Mx.BandTest do
     |> Enum.chunk_every(3, 1, :discard)
     |> Enum.find_value(fn [a, b, c] -> if b - a == gap_before and c - b == gap_after, do: b end)
   end
+
+  defp click(pitch \\ 60),
+    do: "part(:a, loop(1, fn _, _ -> seq([note(#{pitch}, 0), rest(1)]) end))"
 
   defp song(tempo, parts) do
     music = Enum.join(parts, ", ")

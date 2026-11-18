@@ -13,6 +13,7 @@ defmodule Mx.Band do
   Each version's live audio goes to `live`, which starts, changes and stops it.
   Given `hand`, each loop hands the engine its passes whole, in beats, as `Mx.Loop` describes; `place_beats` is then given the real time of beat 0 as the band starts, and `set_tempo` each tempo that goes on the timeline with its beat, so the engine places the passes on the band's timeline.
   A saved version with a new tempo then starts it on the first whole beat more than 150 ms away.
+  Given `share`, or once `scale_tempo/3` is called, the band plays every tempo of the song, the song's own and those its music writes, times that share; `check_share/1` says which shares it takes.
   Given `start_part`, each loop plays into a part of the engine by its name, which `mute/3` and `solo/2` silence through the `mute` and `solo` functions; a muted part plays on in its place, and stays muted through new versions of the song.
   Each version of the song goes through `prepare` first, which loads its samples, so playing starts only once they are ready.
   When every loop has played its last pass, the band calls `on_end`.
@@ -53,6 +54,25 @@ defmodule Mx.Band do
   @doc "Solos the parts named and no others, through the band's `:solo` function, so only they are heard, and every part is with none named; refused with `{:error, message}` for a part the song does not have."
   def solo(band, names) when (is_pid(band) or is_atom(band)) and is_list(names) do
     GenServer.call(band, {:solo, names})
+  end
+
+  @doc """
+  Plays the song at `share` of its own tempo from the band's next 150 ms on, or ahead of every note already sent without `hand`, moving there evenly over `over` beats when `over` is above 0.
+
+  Every tempo the song gives, its own and those its music writes, is played times the share, until another share is given; 1 plays the song's own tempo.
+  A share `check_share/1` refuses is refused with `{:error, message}`.
+  """
+  def scale_tempo(band, share, over \\ 0)
+      when (is_pid(band) or is_atom(band)) and is_number(over) and over >= 0 do
+    with :ok <- check_share(share), do: GenServer.call(band, {:scale_tempo, share, over})
+  end
+
+  @doc "Whether the band plays a song at `share` of its tempo, which takes 0.25 to 4, as `:ok` or `{:error, message}`."
+  def check_share(share) when is_number(share) and share >= 0.25 and share <= 4, do: :ok
+
+  def check_share(share) do
+    shown = inspect(share)
+    {:error, "a tempo share takes 0.25 to 4, not #{shown}"}
   end
 
   @doc "The tempo timeline, the latest entry first."
@@ -100,7 +120,7 @@ defmodule Mx.Band do
           :set,
           :worked_out
         ]),
-      timeline: Mx.Tempo.new(song.tempo, start_us),
+      share: Keyword.get(opts, :share, 1),
       tempo_pass: -1,
       on_end: Keyword.get(opts, :on_end, fn -> :ok end),
       joining: %{},
@@ -116,8 +136,9 @@ defmodule Mx.Band do
       told: []
     }
 
+    state = Map.put(state, :timeline, Mx.Tempo.new(song.tempo * state.share, start_us))
     Keyword.get(opts, :place_beats, fn _start_us -> :ok end).(start_us)
-    state.set_tempo.(0, song.tempo)
+    state.set_tempo.(0, song.tempo * state.share)
     if subscribe = opts[:subscribe], do: subscribe.(self())
     state = Map.put(state, :live, Keyword.get(opts, :live, fn _lives, _tempo -> :ok end))
     state.live.(song.live, song.tempo)
@@ -127,6 +148,24 @@ defmodule Mx.Band do
 
   @impl true
   def handle_call(:timeline, {_, _}, %{} = state), do: {:reply, state.timeline, state}
+
+  # The tempos already on the timeline after the change are put on it again at the new share.
+  def handle_call({:scale_tempo, share, over}, {_, _}, %{} = state) do
+    beat = beat_at(state.timeline, now() + state.tempo_lead_us)
+    later = state.timeline |> Enum.filter(fn {at, _, _} -> at > beat end) |> Enum.reverse()
+    own = tempo_at(state.timeline, beat) / state.share
+
+    state =
+      Enum.reduce(later, put_tempo(%{state | share: share}, beat, own, over), fn
+        {at, _us, {:ramp, _from, to, beats}}, scaled ->
+          put_tempo(scaled, at, to / state.share, beats)
+
+        {at, _us, bpm}, scaled ->
+          put_tempo(scaled, at, bpm / state.share, 0)
+      end)
+
+    {:reply, :ok, tell(state)}
+  end
 
   def handle_call(:follow, {pid, _}, %{} = state) do
     Process.monitor(pid)
@@ -380,9 +419,10 @@ defmodule Mx.Band do
     %{state | tempo_pass: pass}
   end
 
-  # Puts a change on the timeline, and tells `set_tempo` the entry that starts it.
+  # Puts a change to the song's tempo `bpm` on the timeline at the share, and tells `set_tempo` the
+  # entry that starts it.
   defp put_tempo(state, beat, bpm, over) do
-    timeline = Mx.Tempo.put(state.timeline, beat, bpm, over)
+    timeline = Mx.Tempo.put(state.timeline, beat, bpm * state.share, over)
     {_beat, _us, tempo} = Enum.find(timeline, fn {entry, _, _} -> entry == beat end)
     state.set_tempo.(beat, tempo)
     %{state | timeline: timeline}

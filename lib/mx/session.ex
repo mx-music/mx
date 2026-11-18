@@ -45,6 +45,16 @@ defmodule Mx.Session do
     Band.solo(band(session), names)
   end
 
+  @doc """
+  Plays the session's song at `share` of its own tempo, heard within 200 ms on every part at once, or moving there evenly over `over` beats.
+
+  Every tempo the song gives is played times the share, its own and those its music writes, through every save of the song's file, and nothing is written to the file; 1 plays the song's own tempo.
+  A share outside 0.25 to 4 is refused with `{:error, message}`.
+  """
+  def scale_tempo(session, share, over \\ 0) when is_pid(session) do
+    Band.scale_tempo(band(session), share, over)
+  end
+
   defp band(session) do
     {Band, pid, _type, _modules} = List.keyfind(Supervisor.which_children(session), Band, 0)
     pid
@@ -87,7 +97,8 @@ defmodule Mx.Session do
        live: &Mxs.set_live/2,
        delay: &Mxs.delay/1,
        on_end: Keyword.get(opts, :on_end, fn -> :ok end),
-       from: Keyword.get(opts, :from, 0)},
+       from: Keyword.get(opts, :from, 0),
+       share: Keyword.get(opts, :share, 1)},
       {Watcher, path: Keyword.fetch!(opts, :path), song: song, on_song: &switch/1}
     ]
 

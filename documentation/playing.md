@@ -42,6 +42,19 @@ mx prints the same report as for a recording, and refuses a file that exists unl
 A render sends no MIDI or OSC and has no input, so mx names each part that sends MIDI or OSC, or waits for input, and leaves it out.
 `--render` cannot go with `--record`, nor with a song that has `live_audio`.
 
+## Change the tempo by hand
+
+To practise a song slower, or play it faster, give it a share of its own tempo, from 0.25 to 4:
+
+```sh
+mx play song.exs --share 0.5
+mx play song.exs --render slow.wav --share 0.5
+```
+
+Every tempo of the song is played times the share, its own and those its music writes, and the file is not changed.
+A program that drives a session changes the share while the song plays with `Mx.Session.scale_tempo(session, 0.75)`, heard within 200 ms on every part at once, or `Mx.Session.scale_tempo(session, 0.75, 4)` to move there evenly over 4 beats.
+The share holds through every save of the file until another is given, 1 brings back the song's own tempo, and stopping the song clears it.
+
 ## Make a video of a render
 
 GitHub plays no sound in a README, only video, so a song is heard there as a video of its render.

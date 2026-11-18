@@ -17,6 +17,43 @@ defmodule Mx.RenderTest do
 
   defp render(path, out, opts \\ []), do: with_io(fn -> Render.render(path, out, opts) end)
 
+  # The seconds from the first sound of a recording to the start of its last.
+  defp clicks(out) do
+    {:ok, %{samples: samples, rate: rate}} = Mx.Audio.read(out)
+    sounding = for {sample, frame} <- Enum.with_index(samples), abs(sample) > 0.001, do: frame
+
+    starts =
+      sounding
+      |> Enum.zip([nil | sounding])
+      |> Enum.filter(fn {frame, before} -> before == nil or frame - before > 4800 end)
+      |> Enum.map(&elem(&1, 0))
+
+    (List.last(starts) - hd(starts)) / rate
+  end
+
+  test "a render at a share of 0.5 of the tempo lasts twice as long as at 1, and a share of 5 is refused",
+       %{tmp_dir: dir} do
+    path =
+      write(
+        dir,
+        "song.exs",
+        "song(tempo: 120, music: part(:a, repeat(seq([note(:c4, 0.25, release: 0.05), rest(0.75)]), 8)))\n"
+      )
+
+    half = Path.join(dir, "half.wav")
+    whole = Path.join(dir, "whole.wav")
+
+    assert {:ok, _} = render(path, whole)
+    assert {:ok, _} = render(path, half, share: 0.5)
+
+    assert render(path, Path.join(dir, "five.wav"), share: 5) ==
+             {{:error, "a tempo share takes 0.25 to 4, not 5"}, ""}
+
+    # From the first click to the last, seven beats.
+    assert_in_delta clicks(half), 7.0, 0.001
+    assert_in_delta clicks(whole), 3.5, 0.001
+  end
+
   test "writes a song to a stereo WAV file faster than it plays, and reports it", %{tmp_dir: dir} do
     path =
       write(

@@ -224,6 +224,48 @@ defmodule Mix.Tasks.Mx.PlayTest do
     end
   end
 
+  @tag :engine
+  test "a share of 0.5 set by hand puts the clicks a second apart within 200 ms, and two parts stay together",
+       ctx do
+    path = Path.join(ctx.tmp_dir, "share.exs")
+    out = Path.join(ctx.tmp_dir, "share.wav")
+    click = "seq([note(72, 0.25, amp: 0.0001, release: 0.05, pan: PAN), rest(0.75)])"
+    left = String.replace(click, "PAN", "-1")
+    right = String.replace(click, "PAN", "1")
+
+    # At -80 dB the clicks are not heard, but the recording holds them.
+    File.write!(
+      path,
+      "import Mx\nsong(tempo: 120, music: together([part(:left, loop(1, fn _, _ -> #{left} end), synth: :saw), part(:right, loop(1, fn _, _ -> #{right} end), synth: :saw)]))\n"
+    )
+
+    {:ok, song} = Mx.Song.load(path)
+    {:ok, session} = Mx.Session.start_link(path: path, song: song, record: out)
+    Process.sleep(2200)
+    asked_us = System.os_time(:microsecond)
+    assert Mx.Session.scale_tempo(session, 0.5) == :ok
+    [{_beat, changed_us, 60.0} | _] = Mx.Band.timeline(Mx.Band)
+    [{0, start_us, 120} | _] = Enum.reverse(Mx.Band.timeline(Mx.Band))
+    Process.sleep(4500)
+    Supervisor.stop(session)
+
+    assert changed_us - asked_us < 200_000
+    {:ok, %{rate: rate, channels: 2, bits: 32}, data} = Mx.Audio.raw(out)
+    lefts = note_starts(for <<l::float-32-little, _r::float-32-little <- data>>, do: l)
+    rights = note_starts(for <<_l::float-32-little, r::float-32-little <- data>>, do: r)
+
+    assert length(lefts) == length(rights)
+    for {l, r} <- Enum.zip(lefts, rights), do: assert(abs(l - r) <= 1)
+
+    # Beat 0 is the first click, so the change falls this far into the recording.
+    changed = hd(lefts) + (changed_us - start_us) * rate / 1_000_000
+    after_change = Enum.filter(lefts, &(&1 > changed))
+    assert length(after_change) >= 4
+
+    for {earlier, later} <- Enum.zip(after_change, tl(after_change)),
+        do: assert_in_delta(later - earlier, rate, 2)
+  end
+
   # The frames of a recording at which a sound starts after a tenth of a second of silence.
   defp note_starts(samples) do
     sounding =
