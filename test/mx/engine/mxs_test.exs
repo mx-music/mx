@@ -208,6 +208,109 @@ defmodule Mx.Engine.MxsTest do
     end
   end
 
+  describe "an engine that renders offline" do
+    setup do
+      start_supervised!({Mxs, live: false})
+      :ok
+    end
+
+    test "says its rate, and has no device and no delay" do
+      assert Mxs.output(self()) == %{device: nil, rate: 48_000.0, delay_ms: nil}
+    end
+
+    test "tells whoever asked for its output when it reports another one" do
+      Mxs.output(self())
+
+      send(
+        Process.whereis(Mxs),
+        {:mxs_report, {:output, 1.0, "External Headphones", 44_100.0, 7.0}}
+      )
+
+      assert_receive {:mx_output, %{device: "External Headphones", rate: 44_100.0, delay_ms: 7.0}}
+      assert Mxs.output(self()).device == "External Headphones"
+    end
+
+    test "sends the notes that sound once for each second, 0 with nothing playing, until told to stop" do
+      at = System.os_time(:microsecond)
+      :ok = Mxs.voices(self())
+      Mxs.render_to(at + 1_500_000)
+      assert_receive {:mx_voices, 0}
+
+      :ok =
+        Mxs.play(
+          at + 2_000_000,
+          for(note <- [60, 64, 67], do: {:note, nil, :piano, note, [], nil})
+        )
+
+      Mxs.render_to(at + 3_500_000)
+      assert_receive {:mx_voices, 3}
+
+      :ok = Mxs.stop_voices(self())
+      Process.sleep(150)
+      flush_voices()
+      Mxs.render_to(at + 6_500_000)
+      refute_receive {:mx_voices, _}, 300
+      assert :sys.get_state(Mxs).voices == nil
+    end
+
+    test "stops counting voices once whoever asked is gone" do
+      asker = spawn(fn -> Process.sleep(:infinity) end)
+      :ok = Mxs.voices(asker)
+      assert :sys.get_state(Mxs).voices
+      Process.exit(asker, :kill)
+      Process.sleep(50)
+      assert :sys.get_state(Mxs).voices == nil
+    end
+  end
+
+  describe "a live engine" do
+    setup do
+      start_supervised!(Mxs)
+      :ok
+    end
+
+    @tag :engine
+    test "names the output it plays to, with its rate and a delay above 0" do
+      assert %{device: device, rate: rate, delay_ms: delay_ms} = Mxs.output(self())
+      assert is_binary(device) and device != ""
+      assert rate in [44_100.0, 48_000.0, 88_200.0, 96_000.0]
+      assert delay_ms > 0
+    end
+
+    @tag :engine
+    test "sends the notes that sound about once a second while it plays" do
+      at = System.os_time(:microsecond)
+      notes = for note <- [60, 64, 67], do: {:note, nil, :saw, note, [amp: 0, sustain: 30], nil}
+      :ok = Mxs.play(at, notes)
+      Process.sleep(300)
+      :ok = Mxs.voices(self())
+
+      # The first report comes as soon as it is asked for, and the rest on the engine's whole seconds.
+      assert_receive {:mx_voices, 3}, 1500
+
+      times =
+        for _ <- 1..3 do
+          assert_receive {:mx_voices, count}, 1500
+          assert count > 0
+          System.monotonic_time(:millisecond)
+        end
+
+      [first, second] =
+        times |> Enum.chunk_every(2, 1, :discard) |> Enum.map(fn [a, b] -> b - a end)
+
+      assert_in_delta first, 1000, 300
+      assert_in_delta second, 1000, 300
+    end
+  end
+
+  defp flush_voices do
+    receive do
+      {:mx_voices, _} -> flush_voices()
+    after
+      0 -> :ok
+    end
+  end
+
   # Wakes every millisecond, and says the longest it was woken late by, in microseconds.
   defp tick(test, last, latest) do
     receive do

@@ -11,6 +11,9 @@ defmodule Mx.Engine.Mxs do
   When the input and output run at different rates mxs cannot start, and the message ends with `input_advice:`, by default the advice to take live audio out of the song.
   A changed live audio changes in place, unless its input, channels or effects change; a removed one stops at once.
 
+  `output/1` gives the device it plays to, its sample rate and its delay, and tells the caller when the engine reports another output.
+  `voices/1` has the number of notes that sound sent to the caller about once a second, until `stop_voices/1`.
+
   Given `record:`, it writes the main output to that WAV file from when it starts.
   On stop it then waits for the notes already playing to fade, for `fade_ms` at most, before it closes the file.
   """
@@ -112,7 +115,7 @@ defmodule Mx.Engine.Mxs do
     with {:ok, engine} <- Native.start(live, input),
          :ok <- instruments(engine),
          :ok <- record(engine, opts[:record]) do
-      {reports, delay_us} = if live, do: reports(engine), else: {nil, 0}
+      {reports, output} = reports(engine, live)
       origin = Mx.Clock.now() - round(Native.now(engine) * 1_000_000)
       :persistent_term.put(__MODULE__, {engine, origin})
       :persistent_term.put({__MODULE__, :ids}, :atomics.new(1, []))
@@ -123,8 +126,12 @@ defmodule Mx.Engine.Mxs do
          samples: %{},
          live: %{},
          reports: reports,
-         delay_us: delay_us,
+         output: output,
+         output_followers: [],
+         delay_us: round((output.delay_ms || 0) * 1000),
          delay_followers: [],
+         voices: nil,
+         voices_followers: %{},
          inputs: Native.inputs(engine),
          recording: opts[:record] != nil,
          fade_ms: Keyword.get(opts, :fade_ms, 4000)
@@ -144,15 +151,16 @@ defmodule Mx.Engine.Mxs do
     end
   end
 
-  # The output's report comes at once, so the delay is known before anyone asks for it.
-  defp reports(engine) do
-    reports = Native.subscribe(engine, self(), ["clock", "output"])
+  # The output's report comes at once, so the output is known before anyone asks for it.
+  defp reports(engine, live) do
+    kinds = if live, do: ["clock", "output"], else: ["output"]
+    reports = Native.subscribe(engine, self(), kinds)
 
     receive do
-      {:mxs_report, {:output, _seconds, _device, _rate, delay_ms}} ->
-        {reports, round((delay_ms || 0) * 1000)}
+      {:mxs_report, {:output, _seconds, device, rate, delay_ms}} ->
+        {reports, %{device: device, rate: rate, delay_ms: delay_ms}}
     after
-      1000 -> {reports, 0}
+      1000 -> {reports, %{device: nil, rate: nil, delay_ms: nil}}
     end
   end
 
@@ -170,6 +178,20 @@ defmodule Mx.Engine.Mxs do
 
   @doc "The output's delay in microseconds, the time from the engine filling a frame to the sound card playing it; `pid` is then sent `{:mx_delay, delay_us}` whenever it has moved by more than 2 ms."
   def delay(pid) when is_pid(pid), do: GenServer.call(__MODULE__, {:delay, pid})
+
+  @doc """
+  The output the engine plays to, as `%{device: name, rate: hz, delay_ms: ms}`; `pid` is then sent `{:mx_output, output}` whenever the engine reports another output.
+
+  The delay is the time from the engine filling a frame to the sound card playing it, in milliseconds, as `delay/1` gives it in microseconds.
+  An engine that renders offline has no device and no delay, and gives nil for both.
+  """
+  def output(pid) when is_pid(pid), do: GenServer.call(__MODULE__, {:output, pid})
+
+  @doc "Sends `pid` `{:mx_voices, count}`, the number of notes that sound, about once a second, until `stop_voices/1` or until `pid` is gone."
+  def voices(pid) when is_pid(pid), do: GenServer.call(__MODULE__, {:voices, pid})
+
+  @doc "Stops what `voices/1` started for `pid`; the engine counts no voices while no one is sent them."
+  def stop_voices(pid) when is_pid(pid), do: GenServer.call(__MODULE__, {:stop_voices, pid})
 
   @doc "Renders an engine started with `live: false` on to the Unix time `at_us`, and returns whether a sound still plays."
   def render_to(at_us) when is_integer(at_us) do
@@ -323,6 +345,20 @@ defmodule Mx.Engine.Mxs do
     {:reply, state.delay_us, %{state | delay_followers: [pid | state.delay_followers]}}
   end
 
+  def handle_call({:output, pid}, _from, state) do
+    {:reply, current(state), %{state | output_followers: [pid | state.output_followers]}}
+  end
+
+  def handle_call({:voices, pid}, _from, state) do
+    voices = state.voices || Native.subscribe(state.engine, self(), ["voices"])
+    followers = Map.put_new_lazy(state.voices_followers, pid, fn -> Process.monitor(pid) end)
+    {:reply, :ok, %{state | voices: voices, voices_followers: followers}}
+  end
+
+  def handle_call({:stop_voices, pid}, _from, state) do
+    {:reply, :ok, stop_voices(state, pid)}
+  end
+
   def handle_call({:render_to, at_us}, _from, state) do
     {engine, origin} = :persistent_term.get(__MODULE__)
     seconds = (at_us - origin) / 1_000_000 - Native.now(engine)
@@ -403,7 +439,46 @@ defmodule Mx.Engine.Mxs do
     end
   end
 
+  def handle_info({:mxs_report, {:output, _seconds, device, rate, delay_ms}}, state) do
+    delay_us = if delay_ms, do: round(delay_ms * 1000), else: state.delay_us
+
+    state = %{
+      state
+      | output: %{device: device, rate: rate, delay_ms: delay_ms},
+        delay_us: delay_us
+    }
+
+    output = current(state)
+    for pid <- state.output_followers, do: send(pid, {:mx_output, output})
+    {:noreply, state}
+  end
+
+  def handle_info({:mxs_report, {:voices, _seconds, sounding}}, state) do
+    for pid <- Map.keys(state.voices_followers), do: send(pid, {:mx_voices, sounding})
+    {:noreply, state}
+  end
+
   def handle_info({:mxs_report, _report}, state), do: {:noreply, state}
+
+  def handle_info({:DOWN, _ref, :process, pid, _reason}, state) do
+    {:noreply, stop_voices(state, pid)}
+  end
+
+  # The clock's reports keep the delay current, which the output's report gives only as the device opens.
+  defp current(%{output: %{device: nil} = output}), do: output
+  defp current(state), do: %{state.output | delay_ms: state.delay_us / 1000}
+
+  defp stop_voices(state, pid) do
+    {ref, followers} = Map.pop(state.voices_followers, pid)
+    if ref, do: Process.demonitor(ref, [:flush])
+
+    if followers == %{} and state.voices do
+      Native.unsubscribe(state.voices)
+      %{state | voices: nil, voices_followers: followers}
+    else
+      %{state | voices_followers: followers}
+    end
+  end
 
   @impl GenServer
   def terminate(_reason, state) do

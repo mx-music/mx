@@ -12,7 +12,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime};
 
-rustler::atoms! { ok, error, note, sample, input, set, stop, sounds, part, effect, option, name, list, call, mxs_report, clock, output }
+rustler::atoms! { ok, error, note, sample, input, set, stop, sounds, part, effect, option, name, list, call, mxs_report, clock, output, voices }
 
 struct EngineResource {
     engine: Mutex<Engine>,
@@ -664,14 +664,16 @@ impl Drop for SubscriptionResource {
 #[rustler::resource_impl]
 impl rustler::Resource for SubscriptionResource {}
 
-/// Sends `pid` the engine's reports of the kinds named, `"clock"` and `"output"`, each as `{:mxs_report, report}`, until what it returns is collected or `pid` is gone.
+/// Sends `pid` the engine's reports of the kinds named, `"clock"`, `"output"` and `"voices"`, each as `{:mxs_report, report}`, until what it returns is given to `unsubscribe` or collected, or `pid` is gone.
 /// A clock report is `{:clock, seconds, unix_us, delay}`: the Unix time in microseconds at which the sound card plays the engine's seconds, and the output's delay in seconds.
 /// An output report is `{:output, seconds, device, rate, delay_ms}`, with nil for what the device does not say.
+/// A voices report is `{:voices, seconds, sounding}`, the notes that sound, about once a second.
 #[rustler::nif]
 fn subscribe(resource: ResourceArc<EngineResource>, pid: LocalPid, kinds: Vec<String>) -> NifResult<ResourceArc<SubscriptionResource>> {
     let topic = |kind: &String| match kind.as_str() {
         "clock" => Ok(Topic::Clock),
         "output" => Ok(Topic::Output),
+        "voices" => Ok(Topic::Voices),
         _ => Err(rustler::Error::BadArg),
     };
     let topics = kinds.iter().map(topic).collect::<NifResult<Vec<_>>>()?;
@@ -690,6 +692,7 @@ fn subscribe(resource: ResourceArc<EngineResource>, pid: LocalPid, kinds: Vec<St
                 Report::Output { seconds, device, rate, delay_ms } => {
                     env.send_and_clear(&pid, |env| (mxs_report(), (output(), seconds, device, rate, delay_ms)).encode(env))
                 }
+                Report::Voices { seconds, sounding } => env.send_and_clear(&pid, |env| (mxs_report(), (voices(), seconds, sounding)).encode(env)),
                 _ => Ok(()),
             };
             if sent.is_err() {
@@ -699,6 +702,13 @@ fn subscribe(resource: ResourceArc<EngineResource>, pid: LocalPid, kinds: Vec<St
     };
     std::thread::Builder::new().name("mxs_nif reports".to_string()).spawn(forward).map_err(|_| rustler::Error::Term(Box::new("no thread for the reports")))?;
     Ok(ResourceArc::new(subscription))
+}
+
+/// Ends a subscription now: no report is sent after the one being sent, and the engine stops making the reports no one else asked for.
+#[rustler::nif]
+fn unsubscribe(subscription: ResourceArc<SubscriptionResource>) -> Atom {
+    subscription.ended.store(true, Ordering::Release);
+    ok()
 }
 
 /// Panics on purpose, so a test can check that a panic raises in Elixir instead of stopping the BEAM.
