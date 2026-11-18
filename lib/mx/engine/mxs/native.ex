@@ -190,9 +190,12 @@ defmodule Mx.Engine.Mxs.Native do
   A clock report is `{:clock, seconds, unix_us, delay}`: the Unix time in microseconds at which the sound card plays the engine's seconds, and the output's delay in seconds.
   An output report is `{:output, seconds, device, rate, delay_ms}`, with nil for what the device does not say.
   A voices report is `{:voices, seconds, sounding}`, the notes that sound, about once a second.
-  A levels report is `{:levels, seconds, peak, rms, full_scale, wave, parts}`, twenty times a second: the output's peak and RMS level, each as `{left, right}`, whether it reached full scale, its wave as 64 points, and each named part as `{name, peak, rms}`.
+  A levels report is `{:levels, seconds, {peak, rms, full_scale}, wave, bands, parts}`, twenty times a second: the output's peak and RMS level, each as `{left, right}`, whether it reached full scale, its wave as 64 points, its level in dB in each of the bands `level_bands/0` gives, and each named part as `{name, peak, rms}`.
   """
   def subscribe(_engine, _pid, _kinds), do: :erlang.nif_error(:nif_not_loaded)
+
+  @doc "The lowest and the highest frequency in Hz of each band of a levels report, the lowest band first."
+  def level_bands, do: :erlang.nif_error(:nif_not_loaded)
 
   @doc "Ends a subscription now, so the engine stops making the reports no one else asked for."
   def unsubscribe(_subscription), do: :erlang.nif_error(:nif_not_loaded)

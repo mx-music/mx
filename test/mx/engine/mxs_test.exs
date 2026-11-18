@@ -407,6 +407,42 @@ defmodule Mx.Engine.MxsTest do
       end
     end
 
+    test "the bands run from 50 Hz to 16 kHz, each octave split alike" do
+      bands = Mxs.bands()
+      assert length(bands) == 25
+      assert_in_delta bands |> hd() |> elem(0), 50, 0.001
+      assert_in_delta bands |> List.last() |> elem(1), 16_000, 0.001
+
+      for [{low, high}, {next_low, next_high}] <- Enum.chunk_every(bands, 2, 1, :discard) do
+        assert high == next_low
+        assert_in_delta next_high / next_low, high / low, 1.0e-9
+      end
+    end
+
+    test "a sine at a4 is loudest in the band that holds 440 Hz, and 30 dB lower an octave away",
+         %{at: at} do
+      :ok = Mxs.play(at, [{:note, nil, :fm, 69, [depth: 0, sustain: 2], nil}])
+      Mxs.render_to(at + 1_000_000)
+      %{bands: levels} = List.last(levels())
+      assert length(levels) == 25
+
+      band = fn hz ->
+        Enum.find_index(Mxs.bands(), fn {low, high} -> low <= hz and hz < high end)
+      end
+
+      loudest = Enum.max(levels)
+      assert Enum.at(levels, band.(440)) == loudest
+      assert loudest > -40
+      assert Enum.at(levels, band.(220)) < loudest - 30
+      assert Enum.at(levels, band.(880)) < loudest - 30
+    end
+
+    test "silence has every band at -120 dB", %{at: at} do
+      Mxs.render_to(at + 500_000)
+      assert [_ | _] = reports = levels()
+      for report <- reports, do: assert(report.bands == List.duplicate(-120.0, 25))
+    end
+
     test "the loudest level sent is the loudest sample of the recording, within 0.5 dB", %{
       wav: wav,
       at: at

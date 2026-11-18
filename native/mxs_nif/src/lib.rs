@@ -5,7 +5,7 @@ mod levels;
 mod spectrogram;
 
 use mxs::graph::{Clause, Graph};
-use mxs::{Effect, Engine, Event, Kind, Report, Source, Spec, Synth, Target, Topic, Value, effects, synths};
+use mxs::{BANDS, Effect, Engine, Event, Kind, Levels, Report, Source, Spec, Synth, Target, Topic, Value, effects, synths};
 use rustler::types::tuple::get_tuple;
 use rustler::{Atom, Binary, Encoder, Env, LocalPid, NifResult, OwnedBinary, OwnedEnv, ResourceArc, Term};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -710,7 +710,7 @@ impl rustler::Resource for SubscriptionResource {}
 /// A clock report is `{:clock, seconds, unix_us, delay}`: the Unix time in microseconds at which the sound card plays the engine's seconds, and the output's delay in seconds.
 /// An output report is `{:output, seconds, device, rate, delay_ms}`, with nil for what the device does not say.
 /// A voices report is `{:voices, seconds, sounding}`, the notes that sound, about once a second.
-/// A levels report is `{:levels, seconds, peak, rms, full_scale, wave, parts}`, twenty times a second: the output's peak and RMS level, each as `{left, right}`, whether it reached full scale, its wave as 64 points, and each named part as `{name, peak, rms}`.
+/// A levels report is `{:levels, seconds, {peak, rms, full_scale}, wave, bands, parts}`, twenty times a second: the output's peak and RMS level, each as `{left, right}`, whether it reached full scale, its wave as 64 points, its level in dB in each of the bands `level_bands` gives, and each named part as `{name, peak, rms}`.
 #[rustler::nif]
 fn subscribe(resource: ResourceArc<EngineResource>, pid: LocalPid, kinds: Vec<String>) -> NifResult<ResourceArc<SubscriptionResource>> {
     let topic = |kind: &String| match kind.as_str() {
@@ -740,7 +740,7 @@ fn subscribe(resource: ResourceArc<EngineResource>, pid: LocalPid, kinds: Vec<St
                 Report::Levels(report) => {
                     let pair = |[left, right]: [f32; 2]| (left, right);
                     let parts: Vec<_> = report.parts.iter().map(|part| (part.name.clone(), pair(part.peak), pair(part.rms))).collect();
-                    env.send_and_clear(&pid, |env| (mxs_report(), (levels(), report.seconds, pair(report.peak), pair(report.rms), report.full_scale, report.wave.to_vec(), parts)).encode(env))
+                    env.send_and_clear(&pid, |env| (mxs_report(), (levels(), report.seconds, (pair(report.peak), pair(report.rms), report.full_scale), report.wave.to_vec(), report.bands.to_vec(), parts)).encode(env))
                 }
                 _ => Ok(()),
             };
@@ -751,6 +751,12 @@ fn subscribe(resource: ResourceArc<EngineResource>, pid: LocalPid, kinds: Vec<St
     };
     std::thread::Builder::new().name("mxs_nif reports".to_string()).spawn(forward).map_err(|_| rustler::Error::Term(Box::new("no thread for the reports")))?;
     Ok(ResourceArc::new(subscription))
+}
+
+/// The lowest and the highest frequency in Hz of each band of a levels report, the lowest band first.
+#[rustler::nif]
+fn level_bands() -> Vec<(f64, f64)> {
+    (0..BANDS).map(Levels::band).collect()
 }
 
 /// Ends a subscription now: no report is sent after the one being sent, and the engine stops making the reports no one else asked for.

@@ -208,10 +208,14 @@ defmodule Mx.Engine.Mxs do
     * `rms:` the RMS level of each, as `{left, right}`;
     * `full_scale:` whether a sample of either channel reached full scale;
     * `wave:` the wave of both channels mixed to one, as 64 points from -1 to 1, each the sample furthest from 0 in its stretch;
+    * `bands:` the level in dB of both channels mixed to one in each of the bands `bands/0` gives, over the last 8192 frames, where a band with no sound reads -120.0;
     * `parts:` the `peak:` and `rms:` of each part started with `start_part/2`, after its effects, by its name as a string; a sound that plays into no part is in the output's levels alone;
     * `seconds:` the engine's seconds at its end.
   """
   def levels(pid) when is_pid(pid), do: GenServer.call(__MODULE__, {:ask, "levels", pid})
+
+  @doc "The bands a levels report holds, the lowest first, each as its lowest and highest frequency in Hz: 25 bands from 50 Hz to 16 kHz, each as wide as the last on a log scale, about a third of an octave."
+  def bands, do: Native.level_bands()
 
   @doc "Stops what `levels/1` started for `pid`; the engine measures no levels while no one is sent them."
   def stop_levels(pid) when is_pid(pid), do: GenServer.call(__MODULE__, {:stop, "levels", pid})
@@ -537,13 +541,17 @@ defmodule Mx.Engine.Mxs do
     {:noreply, state}
   end
 
-  def handle_info({:mxs_report, {:levels, seconds, peak, rms, full_scale, wave, parts}}, state) do
+  def handle_info(
+        {:mxs_report, {:levels, seconds, {peak, rms, full_scale}, wave, bands, parts}},
+        state
+      ) do
     levels = %{
       seconds: seconds,
       peak: peak,
       rms: rms,
       full_scale: full_scale,
       wave: wave,
+      bands: bands,
       parts: Map.new(parts, fn {name, peak, rms} -> {name, %{peak: peak, rms: rms}} end)
     }
 
