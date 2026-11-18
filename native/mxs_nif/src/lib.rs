@@ -5,14 +5,14 @@ mod levels;
 mod spectrogram;
 
 use mxs::graph::{Clause, Graph};
-use mxs::{BANDS, Effect, Engine, Event, Kind, Levels, Report, Source, Spec, Synth, Target, Topic, Value, effects, synths};
+use mxs::{BANDS, Effect, Engine, Event, Kind, Levels, Pass, Report, Source, Spec, Synth, Target, Tempo, Topic, Value, effects, synths};
 use rustler::types::tuple::get_tuple;
 use rustler::{Atom, Binary, Encoder, Env, LocalPid, NifResult, OwnedBinary, OwnedEnv, ResourceArc, Term};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime};
 
-rustler::atoms! { ok, error, note, sample, input, set, stop, sounds, part, effect, option, name, list, call, mxs_report, clock, output, voices, levels }
+rustler::atoms! { ok, error, note, sample, input, set, stop, sounds, part, effect, option, name, list, call, mxs_report, clock, output, voices, levels, pass_ending, pass_started }
 
 struct EngineResource {
     engine: Mutex<Engine>,
@@ -597,8 +597,9 @@ fn stop_effects(env: Env, resource: ResourceArc<EngineResource>, chain: u64, at:
 
 /// Starts the part `name` with `effects`, as `start_effects` takes them, and returns the chain notes name to play into it.
 /// A part of that name already started is removed first, so its sounds end through it and the name is the new part's.
+/// With `in_beats`, the options the effects declare in beats are given in beats, and follow the engine's tempo as it changes.
 #[rustler::nif]
-fn start_part(resource: ResourceArc<EngineResource>, name: String, effects: Vec<(String, Term)>) -> NifResult<Result<u64, String>> {
+fn start_part(resource: ResourceArc<EngineResource>, name: String, effects: Vec<(String, Term)>, in_beats: bool) -> NifResult<Result<u64, String>> {
     let effects = effects.into_iter().map(|(name, opts)| Ok((name, options(opts)?))).collect::<NifResult<Vec<_>>>()?;
     let mut engine = lock(&resource);
     if engine.part(&name).is_ok() {
@@ -607,7 +608,53 @@ fn start_part(resource: ResourceArc<EngineResource>, name: String, effects: Vec<
             return Ok(Err(e.to_string()));
         }
     }
-    Ok(engine.start_part(&name, &effects).map_err(|e| e.to_string()))
+    let started = if in_beats { engine.start_part_in_beats(&name, &effects) } else { engine.start_part(&name, &effects) };
+    Ok(started.map_err(|e| e.to_string()))
+}
+
+/// Places beat 0 of the engine's tempo map at the Unix time `unix_us` in microseconds, which an offline engine takes as `unix_us` less `origin_us` into its own seconds.
+#[rustler::nif]
+fn place_beats(env: Env, resource: ResourceArc<EngineResource>, unix_us: i64, origin_us: i64) -> Term {
+    let mut engine = lock(&resource);
+    let at = SystemTime::UNIX_EPOCH + Duration::from_micros(unix_us.max(0) as u64);
+    let seconds = engine.seconds_at(at).unwrap_or((unix_us - origin_us) as f64 / 1_000_000.0);
+    reply(env, engine.place_beats(seconds))
+}
+
+/// Changes the engine's tempo from `beat` on to `bpm` beats a minute, held, or with `moving` as `{from, over}`, moving evenly from `from` to `bpm` over `over` beats.
+#[rustler::nif]
+fn set_tempo(env: Env, resource: ResourceArc<EngineResource>, beat: f64, bpm: f64, moving: Option<(f64, f64)>) -> Term {
+    let tempo = match moving {
+        Some((from, over)) => Tempo::Move { from, to: bpm, over },
+        None => Tempo::Hold(bpm),
+    };
+    reply(env, lock(&resource).set_tempo(beat, tempo))
+}
+
+/// The engine's seconds at which `beat` falls, by its tempo map as it is now.
+#[rustler::nif]
+fn beat_seconds(resource: ResourceArc<EngineResource>, beat: f64) -> f64 {
+    lock(&resource).beat_seconds(beat)
+}
+
+/// Hands the part `name` a pass from the beat `from` to the beat `to`: `events` as `play_at` takes them, each with its beat, and with the options in beats given in beats.
+/// `label` is a number of the caller's, and `notice` the beats before `to` at which a subscriber to `"passes"` is told the pass ends, unless another was handed over by then.
+/// Returns the reply with the warnings since the last call.
+// Checking a pass builds no voice, but a long pass holds hundreds of events.
+#[rustler::nif(schedule = "DirtyCpu")]
+fn pass<'a>(env: Env<'a>, resource: ResourceArc<EngineResource>, name: String, span: (f64, f64), label: u64, notice: Option<f64>, events: Vec<(f64, Term<'a>)>) -> NifResult<Term<'a>> {
+    let events = events.into_iter().map(|(beat, term)| Ok((beat, event(term)?))).collect::<NifResult<Vec<_>>>()?;
+    let pass = Pass { from: span.0, to: span.1, label, notice, events };
+    let mut engine = lock(&resource);
+    let result = engine.pass(&name, &pass);
+    let warnings = engine.warnings();
+    Ok((reply(env, result), warnings).encode(env))
+}
+
+/// Drops every event in beats handed to the part `name` for `beat` or after that has not started.
+#[rustler::nif]
+fn cut(env: Env, resource: ResourceArc<EngineResource>, name: String, beat: f64) -> Term {
+    reply(env, lock(&resource).cut(&name, beat))
 }
 
 /// Removes the part `name` at `at` seconds, once its notes and its effects' tails have ended, if `chain` is still what it plays into; a chain another part took the name of is removed alone.
@@ -706,10 +753,11 @@ impl Drop for SubscriptionResource {
 #[rustler::resource_impl]
 impl rustler::Resource for SubscriptionResource {}
 
-/// Sends `pid` the engine's reports of the kinds named, `"clock"`, `"output"`, `"voices"` and `"levels"`, each as `{:mxs_report, report}`, until what it returns is given to `unsubscribe` or collected, or `pid` is gone.
+/// Sends `pid` the engine's reports of the kinds named, `"clock"`, `"output"`, `"voices"`, `"levels"` and `"passes"`, each as `{:mxs_report, report}`, until what it returns is given to `unsubscribe` or collected, or `pid` is gone.
 /// A clock report is `{:clock, seconds, unix_us, delay}`: the Unix time in microseconds at which the sound card plays the engine's seconds, and the output's delay in seconds.
 /// An output report is `{:output, seconds, device, rate, delay_ms}`, with nil for what the device does not say.
 /// A voices report is `{:voices, seconds, sounding}`, the notes that sound, about once a second.
+/// A passes report is `{:pass_ending, seconds, part, beat}`, when the part's last pass ends within the notice it was handed with, at `beat`, or `{:pass_started, seconds, part, label, beat}`, when the first event of a pass with another label starts.
 /// A levels report is `{:levels, seconds, {peak, rms, full_scale}, wave, bands, parts}`, twenty times a second: the output's peak and RMS level, each as `{left, right}`, whether it reached full scale, its wave as 64 points, its level in dB in each of the bands `level_bands` gives, and each named part as `{name, peak, rms}`.
 #[rustler::nif]
 fn subscribe(resource: ResourceArc<EngineResource>, pid: LocalPid, kinds: Vec<String>) -> NifResult<ResourceArc<SubscriptionResource>> {
@@ -718,6 +766,7 @@ fn subscribe(resource: ResourceArc<EngineResource>, pid: LocalPid, kinds: Vec<St
         "output" => Ok(Topic::Output),
         "voices" => Ok(Topic::Voices),
         "levels" => Ok(Topic::Levels),
+        "passes" => Ok(Topic::Passes),
         _ => Err(rustler::Error::BadArg),
     };
     let topics = kinds.iter().map(topic).collect::<NifResult<Vec<_>>>()?;
@@ -742,6 +791,8 @@ fn subscribe(resource: ResourceArc<EngineResource>, pid: LocalPid, kinds: Vec<St
                     let parts: Vec<_> = report.parts.iter().map(|part| (part.name.clone(), pair(part.peak), pair(part.rms))).collect();
                     env.send_and_clear(&pid, |env| (mxs_report(), (levels(), report.seconds, (pair(report.peak), pair(report.rms), report.full_scale), report.wave.to_vec(), report.bands.to_vec(), parts)).encode(env))
                 }
+                Report::PassEnding { seconds, part, beat } => env.send_and_clear(&pid, |env| (mxs_report(), (pass_ending(), seconds, part, beat)).encode(env)),
+                Report::PassStarted { seconds, part, label, beat } => env.send_and_clear(&pid, |env| (mxs_report(), (pass_started(), seconds, part, label, beat)).encode(env)),
                 _ => Ok(()),
             };
             if sent.is_err() {

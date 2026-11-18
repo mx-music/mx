@@ -332,6 +332,75 @@ defmodule Mx.Engine.MxsTest do
     end
   end
 
+  describe "passes" do
+    @describetag :tmp_dir
+
+    setup %{tmp_dir: dir} do
+      wav = Path.join(dir, "passes.wav")
+      start_supervised!({Mxs, live: false, record: wav, fade_ms: 0})
+      at = System.os_time(:microsecond)
+      :ok = Mxs.place_beats(at)
+      %{wav: wav, at: at}
+    end
+
+    test "a pass handed over in beats plays each note at its beat, at the tempo set", %{
+      wav: wav,
+      at: at
+    } do
+      Mxs.start_part(:lead, [])
+      :ok = Mxs.set_tempo(0, 120)
+      :ok = Mxs.pass(:lead, {0, 4}, 0, for(beat <- 0..3, do: {beat, blip()}))
+      Mxs.render_to(at + 2_500_000)
+
+      assert starts(wav) == [0, 24_000, 48_000, 72_000]
+    end
+
+    test "a tempo change moves the notes not yet played to where their beats now fall, a ramp too",
+         %{wav: wav, at: at} do
+      Mxs.start_part(:lead, [])
+      :ok = Mxs.set_tempo(0, 120)
+      :ok = Mxs.pass(:lead, {0, 8}, 0, for(beat <- 0..5, do: {beat, blip()}))
+      Mxs.render_to(at + 700_000)
+      :ok = Mxs.set_tempo(2, 60)
+      :ok = Mxs.set_tempo(4, {:ramp, 60, 120, 1})
+      Mxs.render_to(at + 5_000_000)
+
+      # Beat 5 ends a ramp from 60 to 120 over one beat, which lasts 60 / (120 - 60) * ln 2 seconds.
+      ramp = round(:math.log(2) * 48_000)
+      assert starts(wav) == [0, 24_000, 48_000, 96_000, 144_000, 144_000 + ramp]
+    end
+
+    test "tells the process that started the part when its pass ends within the notice, and nothing once the next is handed over",
+         %{at: at} do
+      Mxs.start_part(:lead, [])
+      :ok = Mxs.set_tempo(0, 120)
+      :ok = Mxs.pass(:lead, {0, 4}, 0, [{0, blip()}], notice: 2)
+      Mxs.render_to(at + 900_000)
+      refute_receive {:mx_pass_ending, _, _}, 200
+      Mxs.render_to(at + 1_100_000)
+      assert_receive {:mx_pass_ending, :lead, 4.0}
+
+      :ok = Mxs.pass(:lead, {4, 8}, 1, [{4, blip()}], notice: 2)
+      :ok = Mxs.pass(:lead, {8, 12}, 2, [{8, blip()}])
+      Mxs.render_to(at + 7_000_000)
+      refute_receive {:mx_pass_ending, _, _}, 200
+    end
+
+    test "a cut drops what a pass holds from a beat on, and an effect's time in beats follows the tempo",
+         %{wav: wav, at: at} do
+      Mxs.start_part(:lead, [echo: [phase: 1, decay: 0.01, mix: 0.5]], beats: true)
+      :ok = Mxs.set_tempo(0, 120)
+      :ok = Mxs.pass(:lead, {0, 16}, 0, for(beat <- [0, 8, 12], do: {beat, blip()}))
+      :ok = Mxs.cut(:lead, 10)
+      Mxs.render_to(at + 8_000_000)
+
+      # Each note is followed by its echo one beat later, half a second at this tempo.
+      assert [0, first_echo, 192_000, second_echo] = starts(wav)
+      assert_in_delta first_echo, 24_000, 2
+      assert_in_delta second_echo, 216_000, 2
+    end
+  end
+
   describe "levels" do
     @describetag :tmp_dir
 
@@ -526,6 +595,29 @@ defmodule Mx.Engine.MxsTest do
       count = round(to * rate) - first
       samples |> Enum.slice(first, count) |> Enum.map(&abs/1) |> Enum.max()
     end
+  end
+
+  defp blip, do: {:note, nil, :saw, 72, [sustain: 0.05, release: 0.01], nil}
+
+  # Stops the engine, and gives the frame each sound of its recording starts at, counted from the
+  # first: the first sample above a thousandth of full scale after a twentieth of a second without
+  # one. The first starts where the test placed beat 0, a millisecond or two after the engine started.
+  defp starts(wav) do
+    stop_supervised!(Mxs)
+    {:ok, %{samples: samples, rate: 48_000}} = Mx.Audio.read(wav)
+
+    samples
+    |> Enum.with_index()
+    |> Enum.filter(fn {sample, _frame} -> abs(sample) > 0.001 end)
+    |> Enum.map(&elem(&1, 1))
+    |> Enum.reduce([], fn
+      frame, [{_first, last} | _] = starts when frame - last > 2400 -> [{frame, frame} | starts]
+      frame, [{first, _last} | starts] -> [{first, frame} | starts]
+      frame, [] -> [{frame, frame}]
+    end)
+    |> Enum.map(&elem(&1, 0))
+    |> Enum.reverse()
+    |> then(fn [first | _] = starts when first < 480 -> Enum.map(starts, &(&1 - first)) end)
   end
 
   # The levels sent until none comes for a fifth of a second, the earliest first.

@@ -28,7 +28,8 @@ defmodule Mx.Engine.Mxs do
   alias Mx.Engine.Mxs.Native
   alias Mx.Synths
 
-  # Whether each part named is muted and soloed, for a part started after it was asked.
+  # Whether each part named is muted and soloed, for a part started after it was asked, and the
+  # process that started it.
   @parts __MODULE__.Parts
 
   @impl Mx.Engine
@@ -159,7 +160,7 @@ defmodule Mx.Engine.Mxs do
 
   # The output's report comes at once, so the output is known before anyone asks for it.
   defp reports(engine, live) do
-    kinds = if live, do: ["clock", "output"], else: ["output"]
+    kinds = if live, do: ["clock", "output", "passes"], else: ["output", "passes"]
     reports = Native.subscribe(engine, self(), kinds)
 
     receive do
@@ -245,21 +246,23 @@ defmodule Mx.Engine.Mxs do
   Starts the part `name` with a part's effects, none for a part without any, and returns the chain its notes play into, as `start_fx/1` does.
 
   The part starts muted or soloed if `mute/2` or `solo/2` left its name so, and a part of that name already started is removed first.
+  With `beats: true`, the options the effects declare in beats are given in beats, and follow the tempo `set_tempo/2` gives the engine.
+  The calling process is the one `pass/5` has told when the part's last pass ends.
   """
-  def start_part(name, effects) when is_atom(name) do
+  def start_part(name, effects, opts \\ []) when is_atom(name) and is_list(opts) do
     {engine, _} = :persistent_term.get(__MODULE__)
     part = Atom.to_string(name)
 
     effects =
       for {effect, opts} <- effects, do: {Atom.to_string(effect), options(opts)}
 
-    case Native.start_part(engine, part, effects) do
+    case Native.start_part(engine, part, effects, Keyword.get(opts, :beats, false)) do
       {:ok, key} ->
-        with [{_part, muted, soloed}] <- :ets.lookup(@parts, part) do
-          if muted, do: Native.mute_part(engine, part, true)
-          if soloed, do: Native.solo_part(engine, part, true)
-        end
-
+        :ets.insert_new(@parts, {part, false, false, nil})
+        :ets.update_element(@parts, part, {4, self()})
+        [{_part, muted, soloed, _pid}] = :ets.lookup(@parts, part)
+        if muted, do: Native.mute_part(engine, part, true)
+        if soloed, do: Native.solo_part(engine, part, true)
         %{key: key, part: part}
 
       {:error, message} ->
@@ -271,7 +274,7 @@ defmodule Mx.Engine.Mxs do
   def mute(name, muted) when is_boolean(muted) do
     {engine, _} = :persistent_term.get(__MODULE__)
     part = to_string(name)
-    :ets.insert_new(@parts, {part, false, false})
+    :ets.insert_new(@parts, {part, false, false, nil})
     :ets.update_element(@parts, part, {2, muted})
     Native.mute_part(engine, part, muted)
     :ok
@@ -281,10 +284,51 @@ defmodule Mx.Engine.Mxs do
   def solo(name, soloed) when is_boolean(soloed) do
     {engine, _} = :persistent_term.get(__MODULE__)
     part = to_string(name)
-    :ets.insert_new(@parts, {part, false, false})
+    :ets.insert_new(@parts, {part, false, false, nil})
     :ets.update_element(@parts, part, {3, soloed})
     Native.solo_part(engine, part, soloed)
     :ok
+  end
+
+  @doc "Places beat 0 of the engine's tempo map at the Unix time `at_us` in microseconds; it is at the engine's start until placed."
+  def place_beats(at_us) when is_integer(at_us) do
+    {engine, origin} = :persistent_term.get(__MODULE__)
+    Native.place_beats(engine, at_us, origin)
+  end
+
+  @doc "Changes the engine's tempo from `beat` on, to beats a minute or to `{:ramp, from, to, beats}`, as a timeline of `Mx.Tempo` holds them; the tempo is 120 until changed, and the events handed over in beats move with it."
+  def set_tempo(beat, {:ramp, from, to, over}) when is_number(beat) do
+    {engine, _} = :persistent_term.get(__MODULE__)
+    Native.set_tempo(engine, beat / 1, to / 1, {from / 1, over / 1})
+  end
+
+  def set_tempo(beat, bpm) when is_number(beat) and is_number(bpm) do
+    {engine, _} = :persistent_term.get(__MODULE__)
+    Native.set_tempo(engine, beat / 1, bpm / 1, nil)
+  end
+
+  @doc """
+  Hands the part `name`, started with `start_part/3`, a pass over the beats `{from, to}`: each event as `play/2` takes it, with its beat, as `{beat, event}`.
+
+  The engine places every event from its beat by its tempo map, so an event moves with a tempo change made before it sounds.
+  An option a synth declares in beats, and every slide, is given in beats.
+  `label` is a number of the caller's, such as the pass's number.
+  With `notice:`, a number of beats, the process that started the part is sent `{:mx_pass_ending, name, to}` that many beats before the pass ends, unless another pass was handed to the part by then.
+  """
+  def pass(name, {from, to}, label, events, opts \\ []) when is_atom(name) and is_list(events) do
+    {engine, _} = :persistent_term.get(__MODULE__)
+    events = for {beat, event} <- events, do: {beat / 1, event(event)}
+    notice = if notice = opts[:notice], do: notice / 1
+    span = {from / 1, to / 1}
+    {reply, warnings} = Native.pass(engine, Atom.to_string(name), span, label, notice, events)
+    with {:error, message} <- reply, do: IO.puts(:stderr, "mxs: #{message}")
+    Enum.each(warnings, &IO.puts(:stderr, &1))
+  end
+
+  @doc "Drops every event handed to the part `name` in a pass for `beat` or after that has not started, so another pass can take its place."
+  def cut(name, beat) when is_atom(name) and is_number(beat) do
+    {engine, _} = :persistent_term.get(__MODULE__)
+    Native.cut(engine, Atom.to_string(name), beat / 1)
   end
 
   @impl Mx.Engine
@@ -556,6 +600,14 @@ defmodule Mx.Engine.Mxs do
     }
 
     for pid <- asked(state, "levels"), do: send(pid, {:mx_levels, levels})
+    {:noreply, state}
+  end
+
+  def handle_info({:mxs_report, {:pass_ending, _seconds, part, beat}}, state) do
+    with [{_part, _muted, _soloed, pid}] when is_pid(pid) <- :ets.lookup(@parts, part) do
+      send(pid, {:mx_pass_ending, String.to_existing_atom(part), beat})
+    end
+
     {:noreply, state}
   end
 

@@ -151,8 +151,29 @@ defmodule Mx.Engine.Mxs.Native do
   @doc "Removes an effect chain at `at` seconds, once its notes and its effects' tails have ended."
   def stop_effects(_engine, _chain, _at), do: :erlang.nif_error(:nif_not_loaded)
 
-  @doc "Starts the part `name` with effects as `start_effects/2` takes them, and returns the chain notes name to play into it; a part of that name already started is removed first."
-  def start_part(_engine, _name, _effects), do: :erlang.nif_error(:nif_not_loaded)
+  @doc "Starts the part `name` with effects as `start_effects/2` takes them, and returns the chain notes name to play into it; a part of that name already started is removed first. With `in_beats`, the options the effects declare in beats are given in beats, and follow the engine's tempo as it changes."
+  def start_part(_engine, _name, _effects, _in_beats), do: :erlang.nif_error(:nif_not_loaded)
+
+  @doc "Places beat 0 of the engine's tempo map at the Unix time `unix_us` in microseconds, which an offline engine takes as `unix_us` less `origin_us` into its own seconds."
+  def place_beats(_engine, _unix_us, _origin_us), do: :erlang.nif_error(:nif_not_loaded)
+
+  @doc "Changes the engine's tempo from `beat` on to `bpm` beats a minute, held with `moving` nil, or with `moving` as `{from, over}`, moving evenly from `from` to `bpm` over `over` beats."
+  def set_tempo(_engine, _beat, _bpm, _moving), do: :erlang.nif_error(:nif_not_loaded)
+
+  @doc "The engine's seconds at which `beat` falls, by its tempo map as it is now."
+  def beat_seconds(_engine, _beat), do: :erlang.nif_error(:nif_not_loaded)
+
+  @doc """
+  Hands the part `name` a pass over the beats `{from, to}`: `events` as `play_at/4` takes them, each as `{beat, event}`, with the options in beats given in beats.
+
+  `label` is a number of the caller's, and `notice` the beats before `to` at which a subscriber to `"passes"` is told the pass ends, unless another was handed over by then, or nil for no report.
+  Returns the reply with the warnings since the last call.
+  """
+  def pass(_engine, _name, _span, _label, _notice, _events),
+    do: :erlang.nif_error(:nif_not_loaded)
+
+  @doc "Drops every event in beats handed to the part `name` for `beat` or after that has not started."
+  def cut(_engine, _name, _beat), do: :erlang.nif_error(:nif_not_loaded)
 
   @doc "Removes the part `name` at `at` seconds, once its notes and its effects' tails have ended, if `chain` is still what it plays into; otherwise removes the chain alone."
   def stop_part(_engine, _name, _chain, _at), do: :erlang.nif_error(:nif_not_loaded)
@@ -185,11 +206,12 @@ defmodule Mx.Engine.Mxs.Native do
   def warnings(_engine), do: :erlang.nif_error(:nif_not_loaded)
 
   @doc """
-  Sends `pid` the engine's reports of the kinds named, `"clock"`, `"output"`, `"voices"` and `"levels"`, each as `{:mxs_report, report}`, until the subscription returned is given to `unsubscribe/1` or collected, or `pid` is gone.
+  Sends `pid` the engine's reports of the kinds named, `"clock"`, `"output"`, `"voices"`, `"levels"` and `"passes"`, each as `{:mxs_report, report}`, until the subscription returned is given to `unsubscribe/1` or collected, or `pid` is gone.
 
   A clock report is `{:clock, seconds, unix_us, delay}`: the Unix time in microseconds at which the sound card plays the engine's seconds, and the output's delay in seconds.
   An output report is `{:output, seconds, device, rate, delay_ms}`, with nil for what the device does not say.
   A voices report is `{:voices, seconds, sounding}`, the notes that sound, about once a second.
+  A passes report is `{:pass_ending, seconds, part, beat}`, when the part's last pass ends within the notice it was handed with, at `beat`, or `{:pass_started, seconds, part, label, beat}`, when the first event of a pass with another label starts.
   A levels report is `{:levels, seconds, {peak, rms, full_scale}, wave, bands, parts}`, twenty times a second: the output's peak and RMS level, each as `{left, right}`, whether it reached full scale, its wave as 64 points, its level in dB in each of the bands `level_bands/0` gives, and each named part as `{name, peak, rms}`.
   """
   def subscribe(_engine, _pid, _kinds), do: :erlang.nif_error(:nif_not_loaded)
