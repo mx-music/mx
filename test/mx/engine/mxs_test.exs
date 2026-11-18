@@ -250,16 +250,16 @@ defmodule Mx.Engine.MxsTest do
       flush_voices()
       Mxs.render_to(at + 6_500_000)
       refute_receive {:mx_voices, _}, 300
-      assert :sys.get_state(Mxs).voices == nil
+      assert :sys.get_state(Mxs).asked == %{}
     end
 
     test "stops counting voices once whoever asked is gone" do
       asker = spawn(fn -> Process.sleep(:infinity) end)
       :ok = Mxs.voices(asker)
-      assert :sys.get_state(Mxs).voices
+      assert %{"voices" => _} = :sys.get_state(Mxs).asked
       Process.exit(asker, :kill)
       Process.sleep(50)
-      assert :sys.get_state(Mxs).voices == nil
+      assert :sys.get_state(Mxs).asked == %{}
     end
   end
 
@@ -332,10 +332,118 @@ defmodule Mx.Engine.MxsTest do
     end
   end
 
+  describe "levels" do
+    @describetag :tmp_dir
+
+    setup %{tmp_dir: dir} do
+      wav = Path.join(dir, "levels.wav")
+      start_supervised!({Mxs, live: false, record: wav, fade_ms: 0})
+      :ok = Mxs.levels(self())
+      %{wav: wav, at: System.os_time(:microsecond)}
+    end
+
+    test "come twenty times for a second of sound, with each channel's level and the wave, until told to stop",
+         %{at: at} do
+      :ok = Mxs.play(at, [{:note, nil, :saw, 60, [sustain: 3], nil}])
+      Mxs.render_to(at + 1_000_000)
+      reports = levels()
+
+      assert length(reports) in 19..21
+      assert %{peak: {left, right}, rms: {left_rms, right_rms}} = List.last(reports)
+      assert left > 0.05 and right > 0.05
+      assert left_rms > 0 and left_rms < left and right_rms > 0 and right_rms < right
+
+      assert %{wave: wave, full_scale: false, parts: parts} = List.last(reports)
+      assert length(wave) == 64
+      assert Enum.all?(wave, &(&1 >= -1 and &1 <= 1))
+      assert_in_delta wave |> Enum.map(&abs/1) |> Enum.max(), (left + right) / 2, 0.02
+      assert parts == %{}
+
+      :ok = Mxs.stop_levels(self())
+      levels()
+      Mxs.render_to(at + 2_000_000)
+      refute_receive {:mx_levels, _}, 300
+      assert :sys.get_state(Mxs).asked == %{}
+    end
+
+    test "say that the output reached full scale with two notes at amp: 4", %{at: at} do
+      :ok = Mxs.play(at, [{:note, nil, :saw, 60, [sustain: 1], nil}])
+      Mxs.render_to(at + 500_000)
+      assert Enum.all?(levels(), &(not &1.full_scale))
+
+      loud = for note <- [48, 60], do: {:note, nil, :saw, note, [sustain: 1, amp: 4], nil}
+      :ok = Mxs.play(at + 500_000, loud)
+      Mxs.render_to(at + 1_000_000)
+      assert Enum.any?(levels(), & &1.full_scale)
+    end
+
+    test "give each part's level by its name, lower at amp 0.2 than at 0.9, and 0 for notes at amp: 0",
+         %{at: at} do
+      flute = Mxs.start_part(:flute, [])
+      silent = Mxs.start_part(:silent, [])
+
+      :ok =
+        Mxs.play(at, [
+          {:note, nil, :saw, 72, [sustain: 1, release: 0.01, amp: 0.9], flute},
+          {:note, nil, :saw, 48, [sustain: 2, amp: 0], silent}
+        ])
+
+      Mxs.render_to(at + 1_000_000)
+      loud = levels()
+      :ok = Mxs.play(at + 1_100_000, [{:note, nil, :saw, 72, [sustain: 1, amp: 0.2], flute}])
+      Mxs.render_to(at + 2_000_000)
+      quiet = levels()
+
+      level = fn reports, part ->
+        reports |> Enum.slice(5, 10) |> Enum.map(&elem(&1.parts[part].rms, 0)) |> Enum.max()
+      end
+
+      assert level.(loud, "flute") > 0.05
+      assert_in_delta level.(quiet, "flute"), level.(loud, "flute") * 0.2 / 0.9, 0.01
+
+      for report <- loud ++ quiet do
+        assert report.parts["silent"] == %{peak: {0.0, 0.0}, rms: {0.0, 0.0}}
+        assert Map.keys(report.parts) == ["flute", "silent"]
+      end
+    end
+
+    test "the loudest level sent is the loudest sample of the recording, within 0.5 dB", %{
+      wav: wav,
+      at: at
+    } do
+      for {note, beat} <- Enum.with_index([48, 55, 60, 64, 67]) do
+        events = [{:note, nil, :piano, note, [vel: 0.9], nil}]
+        :ok = Mxs.play(at + beat * 300_000, events)
+      end
+
+      Mxs.render_to(at + 2_500_000)
+      sent = levels() |> Enum.flat_map(&Tuple.to_list(&1.peak)) |> Enum.max()
+      [recorded] = peaks(wav, [{0.0, 2.5}])
+
+      assert recorded > 0.05
+      assert_in_delta 20 * :math.log10(sent / recorded), 0, 0.5
+    end
+  end
+
   describe "a live engine" do
     setup do
       start_supervised!(Mxs)
       :ok
+    end
+
+    @tag :engine
+    test "sends levels about twenty times a second, and none a tenth of a second after it stops" do
+      :ok = Mxs.levels(self())
+      assert_receive {:mx_levels, _}, 500
+      started = System.monotonic_time(:millisecond)
+      Process.sleep(2000)
+      stop_supervised!(Mxs)
+      stopped = System.monotonic_time(:millisecond)
+      Process.sleep(100)
+      sent = length(levels())
+
+      assert_in_delta sent / (stopped - started) * 1000, 20, 2
+      refute_receive {:mx_levels, _}, 300
     end
 
     @tag :engine
@@ -381,6 +489,15 @@ defmodule Mx.Engine.MxsTest do
       first = round(from * rate)
       count = round(to * rate) - first
       samples |> Enum.slice(first, count) |> Enum.map(&abs/1) |> Enum.max()
+    end
+  end
+
+  # The levels sent until none comes for a fifth of a second, the earliest first.
+  defp levels do
+    receive do
+      {:mx_levels, levels} -> [levels | levels()]
+    after
+      200 -> []
     end
   end
 

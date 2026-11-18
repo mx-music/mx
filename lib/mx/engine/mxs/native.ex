@@ -185,11 +185,12 @@ defmodule Mx.Engine.Mxs.Native do
   def warnings(_engine), do: :erlang.nif_error(:nif_not_loaded)
 
   @doc """
-  Sends `pid` the engine's reports of the kinds named, `"clock"`, `"output"` and `"voices"`, each as `{:mxs_report, report}`, until the subscription returned is given to `unsubscribe/1` or collected, or `pid` is gone.
+  Sends `pid` the engine's reports of the kinds named, `"clock"`, `"output"`, `"voices"` and `"levels"`, each as `{:mxs_report, report}`, until the subscription returned is given to `unsubscribe/1` or collected, or `pid` is gone.
 
   A clock report is `{:clock, seconds, unix_us, delay}`: the Unix time in microseconds at which the sound card plays the engine's seconds, and the output's delay in seconds.
   An output report is `{:output, seconds, device, rate, delay_ms}`, with nil for what the device does not say.
   A voices report is `{:voices, seconds, sounding}`, the notes that sound, about once a second.
+  A levels report is `{:levels, seconds, peak, rms, full_scale, wave, parts}`, twenty times a second: the output's peak and RMS level, each as `{left, right}`, whether it reached full scale, its wave as 64 points, and each named part as `{name, peak, rms}`.
   """
   def subscribe(_engine, _pid, _kinds), do: :erlang.nif_error(:nif_not_loaded)
 

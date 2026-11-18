@@ -15,6 +15,7 @@ defmodule Mx.Engine.Mxs do
 
   `output/1` gives the device it plays to, its sample rate and its delay, and tells the caller when the engine reports another output.
   `voices/1` has the number of notes that sound sent to the caller about once a second, until `stop_voices/1`.
+  `levels/1` has the levels of what it plays sent to the caller twenty times a second, the output's and each part's, until `stop_levels/1`.
 
   Given `record:`, it writes the main output to that WAV file from when it starts.
   On stop it then waits for the notes already playing to fade, for `fade_ms` at most, before it closes the file.
@@ -136,8 +137,7 @@ defmodule Mx.Engine.Mxs do
          output_followers: [],
          delay_us: round((output.delay_ms || 0) * 1000),
          delay_followers: [],
-         voices: nil,
-         voices_followers: %{},
+         asked: %{},
          inputs: Native.inputs(engine),
          recording: opts[:record] != nil,
          fade_ms: Keyword.get(opts, :fade_ms, 4000)
@@ -194,10 +194,27 @@ defmodule Mx.Engine.Mxs do
   def output(pid) when is_pid(pid), do: GenServer.call(__MODULE__, {:output, pid})
 
   @doc "Sends `pid` `{:mx_voices, count}`, the number of notes that sound, about once a second, until `stop_voices/1` or until `pid` is gone."
-  def voices(pid) when is_pid(pid), do: GenServer.call(__MODULE__, {:voices, pid})
+  def voices(pid) when is_pid(pid), do: GenServer.call(__MODULE__, {:ask, "voices", pid})
 
   @doc "Stops what `voices/1` started for `pid`; the engine counts no voices while no one is sent them."
-  def stop_voices(pid) when is_pid(pid), do: GenServer.call(__MODULE__, {:stop_voices, pid})
+  def stop_voices(pid) when is_pid(pid), do: GenServer.call(__MODULE__, {:stop, "voices", pid})
+
+  @doc """
+  Sends `pid` `{:mx_levels, levels}`, the levels of what the engine plays, twenty times a second, until `stop_levels/1` or until `pid` is gone.
+
+  Each holds the twentieth of a second before it, of the sound as it reaches the output, so it matches a recording made at the same time:
+
+    * `peak:` the loudest sample of the left and the right channel, as `{left, right}`, where 1 is full scale;
+    * `rms:` the RMS level of each, as `{left, right}`;
+    * `full_scale:` whether a sample of either channel reached full scale;
+    * `wave:` the wave of both channels mixed to one, as 64 points from -1 to 1, each the sample furthest from 0 in its stretch;
+    * `parts:` the `peak:` and `rms:` of each part started with `start_part/2`, after its effects, by its name as a string; a sound that plays into no part is in the output's levels alone;
+    * `seconds:` the engine's seconds at its end.
+  """
+  def levels(pid) when is_pid(pid), do: GenServer.call(__MODULE__, {:ask, "levels", pid})
+
+  @doc "Stops what `levels/1` started for `pid`; the engine measures no levels while no one is sent them."
+  def stop_levels(pid) when is_pid(pid), do: GenServer.call(__MODULE__, {:stop, "levels", pid})
 
   @doc "Renders an engine started with `live: false` on to the Unix time `at_us`, and returns whether a sound still plays."
   def render_to(at_us) when is_integer(at_us) do
@@ -407,14 +424,18 @@ defmodule Mx.Engine.Mxs do
     {:reply, current(state), %{state | output_followers: [pid | state.output_followers]}}
   end
 
-  def handle_call({:voices, pid}, _from, state) do
-    voices = state.voices || Native.subscribe(state.engine, self(), ["voices"])
-    followers = Map.put_new_lazy(state.voices_followers, pid, fn -> Process.monitor(pid) end)
-    {:reply, :ok, %{state | voices: voices, voices_followers: followers}}
+  def handle_call({:ask, kind, pid}, _from, state) do
+    {reports, followers} =
+      Map.get_lazy(state.asked, kind, fn ->
+        {Native.subscribe(state.engine, self(), [kind]), %{}}
+      end)
+
+    followers = Map.put_new_lazy(followers, pid, fn -> Process.monitor(pid) end)
+    {:reply, :ok, put_in(state.asked[kind], {reports, followers})}
   end
 
-  def handle_call({:stop_voices, pid}, _from, state) do
-    {:reply, :ok, stop_voices(state, pid)}
+  def handle_call({:stop, kind, pid}, _from, state) do
+    {:reply, :ok, stop_sending(state, kind, pid)}
   end
 
   def handle_call({:render_to, at_us}, _from, state) do
@@ -512,29 +533,55 @@ defmodule Mx.Engine.Mxs do
   end
 
   def handle_info({:mxs_report, {:voices, _seconds, sounding}}, state) do
-    for pid <- Map.keys(state.voices_followers), do: send(pid, {:mx_voices, sounding})
+    for pid <- asked(state, "voices"), do: send(pid, {:mx_voices, sounding})
+    {:noreply, state}
+  end
+
+  def handle_info({:mxs_report, {:levels, seconds, peak, rms, full_scale, wave, parts}}, state) do
+    levels = %{
+      seconds: seconds,
+      peak: peak,
+      rms: rms,
+      full_scale: full_scale,
+      wave: wave,
+      parts: Map.new(parts, fn {name, peak, rms} -> {name, %{peak: peak, rms: rms}} end)
+    }
+
+    for pid <- asked(state, "levels"), do: send(pid, {:mx_levels, levels})
     {:noreply, state}
   end
 
   def handle_info({:mxs_report, _report}, state), do: {:noreply, state}
 
   def handle_info({:DOWN, _ref, :process, pid, _reason}, state) do
-    {:noreply, stop_voices(state, pid)}
+    {:noreply, Enum.reduce(Map.keys(state.asked), state, &stop_sending(&2, &1, pid))}
   end
 
   # The clock's reports keep the delay current, which the output's report gives only as the device opens.
   defp current(%{output: %{device: nil} = output}), do: output
   defp current(state), do: %{state.output | delay_ms: state.delay_us / 1000}
 
-  defp stop_voices(state, pid) do
-    {ref, followers} = Map.pop(state.voices_followers, pid)
-    if ref, do: Process.demonitor(ref, [:flush])
+  defp asked(state, kind) do
+    case state.asked do
+      %{^kind => {_reports, followers}} -> Map.keys(followers)
+      _none -> []
+    end
+  end
 
-    if followers == %{} and state.voices do
-      Native.unsubscribe(state.voices)
-      %{state | voices: nil, voices_followers: followers}
+  # Ends the engine's reports of a kind with the last process sent them.
+  defp stop_sending(state, kind, pid) do
+    with %{^kind => {reports, followers}} <- state.asked,
+         {ref, followers} when ref != nil <- Map.pop(followers, pid) do
+      Process.demonitor(ref, [:flush])
+
+      if followers == %{} do
+        Native.unsubscribe(reports)
+        %{state | asked: Map.delete(state.asked, kind)}
+      else
+        put_in(state.asked[kind], {reports, followers})
+      end
     else
-      %{state | voices_followers: followers}
+      _not_sent -> state
     end
   end
 

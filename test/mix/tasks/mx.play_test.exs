@@ -170,12 +170,18 @@ defmodule Mix.Tasks.Mx.PlayTest do
   end
 
   @tag :engine
-  test "with another part soloed in a session, a part is not heard", ctx do
+  test "with another part soloed in a session, a part is not heard, and the levels name both parts",
+       ctx do
     {session, _path, _song, out} = lead_and_silent_bass(ctx)
 
     assert Mx.Session.solo(session, ["bass"]) == :ok
     assert Mx.Session.solo(session, [:bass, :nope]) == {:error, "the song has no part named nope"}
-    Process.sleep(2500)
+    Process.sleep(2000)
+    :ok = Mx.Engine.Mxs.levels(self())
+    assert_receive {:mx_levels, %{peak: {+0.0, +0.0}, parts: parts}}, 500
+    assert %{"bass" => %{peak: {+0.0, +0.0}}, "lead" => %{peak: {+0.0, +0.0}}} = parts
+    assert map_size(parts) == 2
+    Process.sleep(500)
     Supervisor.stop(session)
 
     assert [line] = Mx.Recording.report(out)
