@@ -218,6 +218,9 @@ defmodule Mx.Engine.Mxs.Native do
   @doc "Values held to their ranges since the last call, once for each option, and how many notes were stolen to keep to the voice limit."
   def warnings(_engine), do: :erlang.nif_error(:nif_not_loaded)
 
+  @doc "How filling audio went since the last call, as `{buffers, mean, worst, late}`: how many buffers were filled, the time filling took as a share of the time they last, over all of them and at worst, and how many of a live engine's reached the sound card late."
+  def buffer_load(_engine), do: :erlang.nif_error(:nif_not_loaded)
+
   @doc """
   Sends `pid` the engine's reports of the kinds named, `"clock"`, `"output"`, `"voices"`, `"levels"` and `"passes"`, each as `{:mxs_report, report}`, until the subscription returned is given to `unsubscribe/1` or collected, or `pid` is gone.
 

@@ -194,6 +194,12 @@ defmodule Mx.Engine.Mxs do
   """
   def output(pid) when is_pid(pid), do: GenServer.call(__MODULE__, {:output, pid})
 
+  @doc """
+  How filling audio went since the last call, as `%{buffers: n, mean_percent: p, worst_percent: p, late: n}`: how many buffers the engine filled, the time filling took as a share of the time they last, over all of them and at worst, and how many reached the sound card too late to be heard on time.
+  An engine that renders offline counts each stretch it renders as a buffer, and none late.
+  """
+  def buffer_load, do: GenServer.call(__MODULE__, :buffer_load)
+
   @doc "Sends `pid` `{:mx_voices, count}`, the number of notes that sound, about once a second, until `stop_voices/1` or until `pid` is gone."
   def voices(pid) when is_pid(pid), do: GenServer.call(__MODULE__, {:ask, "voices", pid})
 
@@ -466,6 +472,20 @@ defmodule Mx.Engine.Mxs do
 
   def handle_call({:delay, pid}, _from, state) do
     {:reply, state.delay_us, %{state | delay_followers: [pid | state.delay_followers]}}
+  end
+
+  def handle_call(:buffer_load, _from, state) do
+    {buffers, mean, worst, late} = Native.buffer_load(state.engine)
+    percent = fn share -> Float.round(share * 100, 1) end
+
+    load = %{
+      buffers: buffers,
+      mean_percent: percent.(mean),
+      worst_percent: percent.(worst),
+      late: late
+    }
+
+    {:reply, load, state}
   end
 
   def handle_call({:output, pid}, _from, state) do

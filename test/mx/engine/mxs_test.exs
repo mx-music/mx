@@ -218,6 +218,14 @@ defmodule Mx.Engine.MxsTest do
       assert Mxs.output(self()) == %{device: nil, rate: 48_000.0, delay_ms: nil}
     end
 
+    test "says how many buffers it filled since it was last asked, and none late" do
+      Mxs.buffer_load()
+      Mxs.render_to(System.os_time(:microsecond) + 1_000_000)
+      assert %{buffers: buffers, late: 0, mean_percent: mean} = Mxs.buffer_load()
+      assert buffers > 0 and mean >= 0
+      assert %{buffers: 0} = Mxs.buffer_load()
+    end
+
     test "tells whoever asked for its output when it reports another one" do
       Mxs.output(self())
 

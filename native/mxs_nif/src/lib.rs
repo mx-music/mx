@@ -739,6 +739,13 @@ fn warnings(resource: ResourceArc<EngineResource>) -> Vec<String> {
     lock(&resource).warnings()
 }
 
+/// How filling audio went since the last call, as `{buffers, mean, worst, late}`: how many buffers were filled, the time filling took as a share of the time they last, over all of them and at worst, and how many of a live engine's reached the sound card late.
+#[rustler::nif]
+fn buffer_load(resource: ResourceArc<EngineResource>) -> (u64, f64, f64, u64) {
+    let load = lock(&resource).load();
+    (load.buffers, load.mean, load.worst, load.late)
+}
+
 /// A subscription to an engine's reports, which ends once Elixir holds it no longer.
 struct SubscriptionResource {
     ended: Arc<AtomicBool>,

@@ -18,6 +18,7 @@ defmodule Mix.Tasks.Mx.Bench do
   `buffers` renders each song a buffer of 512 frames at a time and prints, for each, the time filling a buffer took as a share of the time it lasts, on average and at worst, and how many buffers took longer than they last.
 
   `--seconds` is how long each measurement plays, 20 unless given.
+  `--live` plays through the default output instead of an offline engine, so the song is heard, and adds a last column with the buffers that reached the sound card late, as the engine counts them; with it, `buffers` plays each song and gives the engine's own timing of the sound card's buffers.
   `--write FILE` writes the figures to a file, and `--compare FILE` prints each figure that is worse than in such a file by more than a tenth, and nothing when none is.
   The figures measured on 18 November 2026 on a MacBook Pro are in `bench/`, one file for each command.
   """
@@ -28,27 +29,28 @@ defmodule Mix.Tasks.Mx.Bench do
 
   @impl true
   def run(args) when is_list(args) do
-    strict = [seconds: :integer, at: :string, write: :string, compare: :string]
+    strict = [seconds: :integer, at: :string, write: :string, compare: :string, live: :boolean]
     {:ok, _apps} = Application.ensure_all_started(:mx)
 
     case OptionParser.parse!(args, strict: strict) do
       {opts, ["lead", path]} ->
-        report(Bench.lead(path, seconds(opts)), &lead/1, opts)
+        report(Bench.lead(path, seconds(opts), live(opts)), &lead/1, opts)
 
       {opts, ["saves", path]} ->
         report(saves(path, opts), &saved/1, opts)
 
       {opts, ["buffers" | [_ | _] = paths]} ->
-        report(Bench.buffers(paths, seconds(opts)), &buffers/1, opts)
+        report(Bench.buffers(paths, seconds(opts), live(opts)), &buffers/1, opts)
 
       _other ->
         Mx.Command.fail(
-          "usage: mix mx.bench lead|saves|buffers SONG [--seconds 20] [--at 5,10,15] [--write FILE] [--compare FILE]"
+          "usage: mix mx.bench lead|saves|buffers SONG [--seconds 20] [--at 5,10,15] [--live] [--write FILE] [--compare FILE]"
         )
     end
   end
 
   defp seconds(opts), do: Keyword.get(opts, :seconds, 20)
+  defp live(opts), do: [live: Keyword.get(opts, :live, false)]
 
   defp saves(path, opts) do
     at =
@@ -57,7 +59,7 @@ defmodule Mix.Tasks.Mx.Bench do
       |> String.split(",", trim: true)
       |> Enum.map(&String.to_integer/1)
 
-    with {:ok, rows, loads, figures} <- Bench.saves(path, seconds(opts), at) do
+    with {:ok, rows, loads, figures} <- Bench.saves(path, seconds(opts), at, live(opts)) do
       {:ok, {rows, loads}, figures}
     end
   end
@@ -83,31 +85,34 @@ defmodule Mix.Tasks.Mx.Bench do
   end
 
   defp lead(rows) do
-    IO.puts("load,notes,late,least_lead_ms,least_later_lead_ms,longest_call_ms,held_ms")
+    keys = [
+      :load,
+      :calls,
+      :late,
+      :least_lead_ms,
+      :least_later_lead_ms,
+      :longest_call_ms,
+      :held_ms
+    ]
 
-    for row <- rows do
-      values = [
-        row.load,
-        row.calls,
-        row.late,
-        row.least_lead_ms,
-        row.least_later_lead_ms,
-        row.longest_call_ms,
-        row.held_ms
-      ]
-
-      IO.puts(Enum.join(values, ","))
-    end
+    header = "load,notes,late,least_lead_ms,least_later_lead_ms,longest_call_ms,held_ms"
+    {keys, header} = with_late_buffers(rows, keys, header)
+    IO.puts(header)
+    for row <- rows, do: IO.puts(Enum.map_join(keys, ",", &row[&1]))
   end
 
-  defp saved({rows, loads}) do
-    IO.puts("second,notes,late,longest_gap_ms,memory_mb,processes")
+  defp with_late_buffers([%{late_buffers: _} | _], keys, header) do
+    {keys ++ [:late_buffers], header <> ",late_buffers"}
+  end
 
-    for row <- rows do
-      IO.puts(
-        "#{row.second},#{row.notes},#{row.late},#{row.longest_gap_ms},#{row.memory_mb},#{row.processes}"
-      )
-    end
+  defp with_late_buffers(_rows, keys, header), do: {keys, header}
+
+  defp saved({rows, loads}) do
+    keys = [:second, :notes, :late, :longest_gap_ms, :memory_mb, :processes]
+    header = "second,notes,late,longest_gap_ms,memory_mb,processes"
+    {keys, header} = with_late_buffers(rows, keys, header)
+    IO.puts(header)
+    for row <- rows, do: IO.puts(Enum.map_join(keys, ",", &row[&1]))
 
     waits = Enum.join(loads.described_after_ms, ", ")
     IO.puts("loads by mx: #{loads.by_mx}; described to the window after, ms: #{waits}")

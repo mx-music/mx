@@ -30,19 +30,22 @@ mix mx.bench buffers examples/choro.exs examples/trap.exs examples/afrobeat.exs
 `lead` prints a row for each of four loads, such as:
 
 ```
-load,notes,late,least_lead_ms,longest_call_ms,held_ms
-idle,682,0,495.7,3.4,4
-vm_busy,682,0,496.6,1.7,2
-saves,682,0,497.3,2.3,3
-os_busy,682,0,459.9,1.9,2
+load,notes,late,least_lead_ms,least_later_lead_ms,longest_call_ms,held_ms
+idle,1257,0,496.9,1145.1,0.3,0
+vm_busy,1257,0,498.6,1143.1,0.4,6
+saves,1257,0,499.0,1150.7,0.2,0
+os_busy,1257,0,497.4,1119.8,0.7,6
 ```
 
-The lead is the time between a note being handed to the engine and its beat, and mx hands each note over 500 ms ahead, so a least lead near 500 says nothing held the note up, and a late note is one handed over after its beat.
+The lead is the time between a note being handed to the engine and its beat, and a late note is one handed over after its beat.
+mx hands a part's first pass over 500 ms ahead, so a least lead near 500 says nothing held it up, and each later pass when the engine says the one before ends in two beats, so `least_later_lead_ms` stays near two beats, 1154 ms in choro.exs.
 The longest call is the longest time one call that hands notes to the engine took.
 `held_ms` is the longest a process handing notes over kept one of the VM's normal schedulers without a break, as the VM reports it from a millisecond up, and 0 when it never did; on a busy machine it also counts the times the operating system held the scheduler's own thread back.
 
 `saves` prints a row for each second, with the longest gap between two beat messages to a window, and under them how many times mx loaded the saves and how long after each save its description reached the window.
 `buffers` prints, for each song, the time filling a buffer of 512 frames took as a share of the time it lasts, and `over` counts the buffers that took longer than they last, which a sound card would have played as a gap.
+
+`--live` plays through the default output instead, so the song is heard, and adds a last column, `late_buffers`, with the buffers that reached the sound card too late, as the engine counts them; with it, `buffers` plays each song for `--seconds` and gives the engine's own timing of the sound card's buffers, and `over` is then the buffers that were late.
 
 `--write FILE` keeps a run's figures, and `--compare FILE` prints each figure that is worse than in such a file by more than a tenth.
 The figures of 18 November 2026, measured on a MacBook Pro, are in `bench/`:

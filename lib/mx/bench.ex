@@ -2,7 +2,7 @@ defmodule Mx.Bench do
   @moduledoc """
   Measures how a song plays, for `mix mx.bench`: whether its notes reach the engine in time, what a save costs while it plays, and how much of each buffer filling it takes.
 
-  Every measurement plays against an offline engine, so nothing sounds and no sound card is needed.
+  Every measurement plays against an offline engine, so nothing sounds and no sound card is needed, unless it is given `live: true`: it then plays through the default output, and adds how many buffers reached the sound card late.
   A measurement returns its rows, to print, and its figures, a map from a name such as `"lead/idle/least_lead_ms"` to a number, to keep in a file and compare a later run with.
   The lead of a note is the time between its being handed to the engine and its beat.
   """
@@ -16,9 +16,11 @@ defmodule Mx.Bench do
 
   @doc """
   Plays the song at `path` for `seconds` under each of four loads: an idle machine, every scheduler of the VM busy, the song loaded and laid out every 300 ms, and twice as many busy OS processes as schedulers.
-  Returns `{:ok, rows, figures}`, each row a map with `:load`, `:calls`, `:late`, `:least_lead_ms`, `:least_later_lead_ms`, the least lead of the notes of a part's second pass on, `:longest_call_ms` and `:held_ms`, the longest a process handing notes over kept a normal scheduler of the VM without a break, 0 when under a millisecond, or `{:error, message}`.
+  Returns `{:ok, rows, figures}`, each row a map with `:load`, `:calls`, `:late`, `:least_lead_ms`, `:least_later_lead_ms`, the least lead of the notes of a part's second pass on, `:longest_call_ms` and `:held_ms`, the longest a process handing notes over kept a normal scheduler of the VM without a break, 0 when under a millisecond, and, played live, `:late_buffers`, or `{:error, message}`.
   """
-  def lead(path, seconds) when is_binary(path) and is_number(seconds) do
+  def lead(path, seconds, opts \\ []) when is_binary(path) and is_number(seconds) do
+    live = Keyword.get(opts, :live, false)
+
     with {:ok, song} <- Song.load(path) do
       cores = System.schedulers_online()
 
@@ -33,16 +35,17 @@ defmodule Mx.Bench do
         for {name, load, unload} <- loads do
           loaded = load.()
           Process.sleep(500)
-          calls = played(song, seconds)
+          calls = played(song, seconds, live)
           unload.(loaded)
           Process.sleep(500)
           lead_row(name, calls)
         end
 
+      keys = [:late, :least_lead_ms, :least_later_lead_ms, :longest_call_ms, :held_ms]
+      keys = if live, do: keys ++ [:late_buffers], else: keys
+
       figures =
-        for row <- rows,
-            key <- [:late, :least_lead_ms, :least_later_lead_ms, :longest_call_ms, :held_ms],
-            into: %{} do
+        for row <- rows, key <- keys, into: %{} do
           {"lead/#{row.load}/#{key}", row[key]}
         end
 
@@ -50,8 +53,8 @@ defmodule Mx.Bench do
     end
   end
 
-  defp lead_row(name, {calls, later, held_ms}) do
-    %{
+  defp lead_row(name, {calls, later, held_ms, late_buffers}) do
+    row = %{
       load: name,
       held_ms: held_ms,
       calls: length(calls),
@@ -60,14 +63,17 @@ defmodule Mx.Bench do
       least_later_lead_ms: later |> Enum.min(fn -> 0 end) |> ms(),
       longest_call_ms: calls |> Enum.map(&elem(&1, 1)) |> Enum.max(fn -> 0 end) |> ms()
     }
+
+    if late_buffers, do: Map.put(row, :late_buffers, late_buffers), else: row
   end
 
-  # Each call's lead and length in microseconds, and the longest a caller held a scheduler.
-  defp played(song, seconds) do
+  # Each call's lead and length in microseconds, the longest a caller held a scheduler, and
+  # the buffers that reached the sound card late, nil offline.
+  defp played(song, seconds, live) do
     table = :ets.new(:bench, [:public, :duplicate_bag])
 
     children = [
-      Supervisor.child_spec({Mxs, [live: false]}, shutdown: 10_000),
+      Supervisor.child_spec({Mxs, [live: live]}, shutdown: 10_000),
       {Inputs, name: nil, midi: false},
       {Band,
        name: @band,
@@ -85,11 +91,12 @@ defmodule Mx.Bench do
     monitor = spawn(fn -> held(table) end)
     before = :erlang.system_monitor(monitor, [{:long_schedule, 1}])
     {:ok, session} = Supervisor.start_link(children, strategy: :rest_for_one)
-    # The engine renders, unheard, as the sound card would, so it says when each pass ends.
-    renderer = spawn_link(&render/0)
+
+    # Offline, the engine renders, unheard, as the sound card would, so it says when each pass
+    # ends.
+    renderer = if live, do: Mxs.buffer_load(), else: spawn_link(&render/0)
     Process.sleep(round(seconds * 1000))
-    Process.unlink(renderer)
-    Process.exit(renderer, :kill)
+    late_buffers = if live, do: Mxs.buffer_load().late, else: stop_renderer(renderer)
     Supervisor.stop(session)
     :erlang.system_monitor(before)
     Process.exit(monitor, :kill)
@@ -99,7 +106,13 @@ defmodule Mx.Bench do
     held = for {:held, pid, held_ms} <- rows, pid in callers, do: held_ms
     calls = for {:play, _at, lead, took} <- rows, do: {lead, took}
     later = for {:later, lead} <- rows, do: lead
-    {calls, later, Enum.max(held, fn -> 0 end)}
+    {calls, later, Enum.max(held, fn -> 0 end), late_buffers}
+  end
+
+  defp stop_renderer(renderer) do
+    Process.unlink(renderer)
+    Process.exit(renderer, :kill)
+    nil
   end
 
   # The VM says when a process kept a normal scheduler for a millisecond or more without a break.
@@ -176,24 +189,25 @@ defmodule Mx.Bench do
 
   @doc """
   Plays a copy of the song at `path` for `seconds` as a session does, saves a change to the copy at each of `saves`, seconds from the start, and is sent each saved version mx loads as Mx Studio is, in the process that sends its beat every #{@tick_ms} ms.
-  Returns `{:ok, rows, loads, figures}`: a row for each second, a map with `:second`, `:notes`, `:late`, `:longest_gap_ms`, `:memory_mb` and `:processes`, how many times mx loaded the saves, and for each save the milliseconds until its description reached that process.
+  Returns `{:ok, rows, loads, figures}`: a row for each second, a map with `:second`, `:notes`, `:late`, `:longest_gap_ms`, `:memory_mb`, `:processes` and, played live, `:late_buffers`, how many times mx loaded the saves, and for each save the milliseconds until its description reached that process.
   The song's own file is not changed.
   """
-  def saves(path, seconds, saves)
+  def saves(path, seconds, saves, opts \\ [])
       when is_binary(path) and is_integer(seconds) and is_list(saves) do
+    live = Keyword.get(opts, :live, false)
     dir = Path.join(System.tmp_dir!(), "mx-bench-#{System.unique_integer([:positive])}")
     File.mkdir_p!(dir)
     copy = Path.join(dir, Path.basename(path))
     File.cp!(path, copy)
 
     try do
-      with {:ok, song} <- Song.load(copy), do: saved(song, copy, seconds, saves)
+      with {:ok, song} <- Song.load(copy), do: saved(song, copy, seconds, saves, live)
     after
       File.rm_rf!(dir)
     end
   end
 
-  defp saved(song, path, seconds, saves) do
+  defp saved(song, path, seconds, saves, live) do
     table = :ets.new(:bench, [:public, :duplicate_bag])
     started = now()
     at = fn -> now() - started end
@@ -205,7 +219,7 @@ defmodule Mx.Bench do
     end
 
     children = [
-      Supervisor.child_spec({Mxs, [live: false]}, shutdown: 10_000),
+      Supervisor.child_spec({Mxs, [live: live]}, shutdown: 10_000),
       Out,
       {Inputs, osc_port: song.osc_from, midi: false},
       {Band,
@@ -229,7 +243,8 @@ defmodule Mx.Bench do
     {:ok, session} = Supervisor.start_link(children, strategy: :rest_for_one)
     window = spawn_link(fn -> window(table, at, session, now()) end)
     send(window, :subscribe)
-    sampler = spawn_link(fn -> sample(table, at) end)
+    if live, do: Mxs.buffer_load()
+    sampler = spawn_link(fn -> sample(table, at, live) end)
 
     for {save_at, index} <- Enum.with_index(saves) do
       wait_until(at, save_at)
@@ -243,7 +258,7 @@ defmodule Mx.Bench do
     rows = :ets.tab2list(table)
     :ets.delete(table)
     Supervisor.stop(session)
-    save_report(rows, seconds, length(saves))
+    save_report(rows, seconds, length(saves), live)
   end
 
   defp wait_until(at, second) do
@@ -269,14 +284,15 @@ defmodule Mx.Bench do
     end
   end
 
-  defp sample(table, at) do
+  defp sample(table, at, live) do
     memory = :erlang.memory(:total) / 1_048_576
     :ets.insert(table, {:vm, at.(), memory, :erlang.system_info(:process_count)})
+    if live, do: :ets.insert(table, {:late_buffers, at.(), Mxs.buffer_load().late})
     Process.sleep(250)
-    sample(table, at)
+    sample(table, at, live)
   end
 
-  defp save_report(rows, seconds, saves) do
+  defp save_report(rows, seconds, saves, live) do
     second = fn row -> div(elem(row, 1), 1_000_000) end
     plays = for {:play, _, _, _} = row <- rows, do: row
     beats = rows |> Enum.filter(&match?({:beat, _}, &1)) |> Enum.map(&elem(&1, 1)) |> Enum.sort()
@@ -287,6 +303,7 @@ defmodule Mx.Bench do
       |> Enum.map(fn {a, b} -> {a, b - a} end)
 
     sampled = for {:vm, _, _, _} = row <- rows, do: row
+    late_buffers = for {:late_buffers, _, _} = row <- rows, do: row
     loads = Enum.count(rows, &match?({:load, _, nil}, &1))
     saved = for {:saved, at} <- Enum.sort(rows), do: at
     described = for {:described, at} <- Enum.sort(rows), do: at
@@ -312,6 +329,7 @@ defmodule Mx.Bench do
           memory_mb: seen |> Enum.map(&elem(&1, 2)) |> Enum.max(fn -> 0.0 end) |> Float.round(1),
           processes: seen |> Enum.map(&elem(&1, 3)) |> Enum.max(fn -> 0 end)
         }
+        |> late_in(live, late_buffers, &(second.(&1) == index))
       end
 
     figures = %{
@@ -321,15 +339,31 @@ defmodule Mx.Bench do
       "saves/longest_wait_ms" => Enum.max(waits, fn -> 0 end)
     }
 
+    figures =
+      if live do
+        Map.put(figures, "saves/late_buffers", Enum.sum_by(table, & &1.late_buffers))
+      else
+        figures
+      end
+
     {:ok, table, %{by_mx: loads, described_after_ms: waits}, figures}
+  end
+
+  defp late_in(row, false, _late_buffers, _here), do: row
+
+  defp late_in(row, true, late_buffers, here) do
+    counted = late_buffers |> Enum.filter(here) |> Enum.sum_by(&elem(&1, 2))
+    Map.put(row, :late_buffers, counted)
   end
 
   @doc """
   Renders `seconds` of each song in `paths`, a buffer of #{@frames} frames at a time, and times the engine filling each buffer.
   Returns `{:ok, rows, figures}`, each row a map with `:song`, `:buffers`, `:mean_percent` and `:worst_percent`, the time filling took as a share of the time a buffer lasts, and `:over`, how many took longer than they last.
+  Played live, each song plays through the default output for `seconds` instead, the buffers are the sound card's, as the engine times them, and `:over` is how many reached the sound card late.
   """
-  def buffers(paths, seconds) when is_list(paths) and is_number(seconds) do
-    rows = Enum.map(paths, &filled(&1, seconds))
+  def buffers(paths, seconds, opts \\ []) when is_list(paths) and is_number(seconds) do
+    fill = if Keyword.get(opts, :live, false), do: &filled_live/2, else: &filled/2
+    rows = Enum.map(paths, &fill.(&1, seconds))
 
     case Enum.find(rows, &match?({:error, _}, &1)) do
       nil ->
@@ -387,6 +421,41 @@ defmodule Mx.Bench do
         mean_percent: percent.(Enum.sum(costs) / steps),
         worst_percent: percent.(Enum.max(costs)),
         over: Enum.count(costs, &(&1 > step_us))
+      }
+    end
+  end
+
+  defp filled_live(path, seconds) do
+    with {:ok, song} <- Song.load(path) do
+      song = %{song | loops: Enum.filter(song.loops, &(&1.on == nil))}
+      {:ok, engine} = Mxs.start_link(live: true, fade_ms: 0)
+      {:ok, inputs} = Inputs.start_link(name: nil, midi: false)
+
+      {:ok, band} =
+        Band.start_link(
+          song: song,
+          play: &Mxs.play/2,
+          new_id: &Mxs.new_id/0,
+          prepare: &Mxs.prepare/1,
+          load_sample: &Mxs.load_sample/2,
+          start_fx: &Mxs.start_fx/1,
+          stop_fx: &Mxs.stop_fx/2,
+          inputs: &Inputs.snapshot_at(inputs, &1, &2),
+          set: &Inputs.put(inputs, &1, &2, &3, &4),
+          worked_out: &Inputs.worked_out(inputs, &1, &2)
+        )
+
+      Mxs.buffer_load()
+      Process.sleep(round(seconds * 1000))
+      load = Mxs.buffer_load()
+      Enum.each([band, inputs, engine], &GenServer.stop/1)
+
+      %{
+        song: Path.basename(path),
+        buffers: load.buffers,
+        mean_percent: load.mean_percent,
+        worst_percent: load.worst_percent,
+        over: load.late
       }
     end
   end
