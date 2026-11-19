@@ -95,6 +95,38 @@ defmodule Mx.MIDITest do
     assert Mx.Score.about(path) == {:error, "#{path} is cut short inside a track"}
   end
 
+  test "gives a note as it was played, its beat and length unmoved by any grid", %{tmp_dir: dir} do
+    path = write(dir, "late.mid", [[tempo(100) | note(0, 60, 490, 720, 127)]])
+
+    assert {:ok, %{ticks: 480, parts: [%{name: "track 1", notes: [played]}]}} =
+             Mx.MIDI.played(path)
+
+    assert played.midi == 60 and played.vel == 1.0
+    assert_in_delta played.beat, 1.0208333, 1.0e-6
+    assert_in_delta played.length, 0.4791667, 1.0e-6
+  end
+
+  test "gives the parts as played named as reading the file names them, and leaves drums out", %{
+    tmp_dir: dir
+  } do
+    right = [name("Right") | note(0, 72, 5, 480) ++ note(9, 36, 0, 120)]
+    path = write(dir, "hands.mid", [[tempo(100)], right, [name("Left") | note(1, 48, 0, 960)]])
+
+    {:ok, score} = Mx.Score.read(path)
+    {:ok, played} = Mx.MIDI.played(path)
+    assert Enum.map(played.parts, & &1.name) == Enum.map(score.parts, & &1.name)
+    assert Enum.map(played.parts, fn part -> Enum.map(part.notes, & &1.midi) end) == [[72], [48]]
+  end
+
+  test "a file cut short inside a track says so when asked for its notes as played", %{
+    tmp_dir: dir
+  } do
+    path = Path.join(dir, "take_4.mid")
+    data = smf([[tempo(100)], note(0, 60, 0, 480)])
+    File.write!(path, binary_part(data, 0, byte_size(data) - 6))
+    assert Mx.MIDI.played(path) == {:error, "#{path} is cut short inside a track"}
+  end
+
   test "a file of two tracks named Right and Left imports as parts right and left that play its pitches",
        %{tmp_dir: dir} do
     right = Enum.concat([note(0, 72, 0, 480), note(0, 74, 480, 960), note(0, 76, 960, 1440)])

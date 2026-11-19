@@ -39,6 +39,43 @@ defmodule Mx.MIDI do
   end
 
   @doc """
+  The notes of the MIDI file at `path` as they were played, part by part as `score/2` names the parts, none moved to a grid.
+  Returns `{:ok, %{ticks: ticks, parts: [%{name: name, notes: notes}]}}`, a note as `%{beat: beat, length: beats, midi: key, vel: velocity}` with its beat and length in quarter notes and its velocity from 0 to 1, or `{:error, message}`.
+  """
+  def played(path) when is_binary(path) do
+    with {:ok, data} <- read_file(path),
+         :ok <- whole(data, path),
+         {:ok, midi} <- parse(data, path) do
+      case parts(midi) do
+        {[], counts} ->
+          {:error, sentence_error(path, counts)}
+
+        {parts, _counts} ->
+          beats = fn tick -> tick / midi.division end
+
+          parts =
+            for {name, notes} <- parts do
+              notes =
+                notes
+                |> Enum.sort()
+                |> Enum.map(fn {start, stop, key, velocity} ->
+                  %{
+                    beat: beats.(start),
+                    length: beats.(stop - start),
+                    midi: key,
+                    vel: velocity / 127
+                  }
+                end)
+
+              %{name: name, notes: notes}
+            end
+
+          {:ok, %{ticks: midi.division, parts: parts}}
+      end
+    end
+  end
+
+  @doc """
   What the MIDI file at `path` holds besides its notes, as `Mx.Score.about/1` gives it, or `{:error, message}`.
   """
   def about(path) when is_binary(path) do
