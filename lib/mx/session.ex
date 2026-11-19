@@ -12,7 +12,11 @@ defmodule Mx.Session do
   alias Mx.{Band, Inputs, Out, Watcher}
   alias Mx.Engine.Mxs
 
-  @doc "Starts playing the song in `opts` through the engine, from the beat `:from` if given, watching its file for changes."
+  @doc """
+  Starts playing the song in `opts` through the engine, from the beat `:from` if given, watching its file for changes.
+
+  With `watch: false` and `source:` the song's text, it plays a song that has no file, such as one `Mx.Import.load/2` gives, and reads and watches no file.
+  """
   def start_link(opts) when is_list(opts), do: Supervisor.start_link(__MODULE__, opts)
 
   @doc """
@@ -128,7 +132,9 @@ defmodule Mx.Session do
        on_end: Keyword.get(opts, :on_end, fn -> :ok end),
        from: Keyword.get(opts, :from, 0),
        share: Keyword.get(opts, :share, 1)},
-      {Watcher, path: Keyword.fetch!(opts, :path), song: song, on_song: &switch/1}
+      {Watcher,
+       [path: Keyword.fetch!(opts, :path), song: song, on_song: &switch/1] ++
+         Keyword.take(opts, [:watch, :source])}
     ]
 
     Supervisor.init(children, strategy: :rest_for_one)

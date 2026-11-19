@@ -11,17 +11,31 @@ defmodule Mx.Player do
     seconds: :float,
     force: :boolean,
     share: :float,
-    ring_out: :boolean
+    ring_out: :boolean,
+    part: :keep,
+    tempo: :string,
+    grid: :string,
+    tune: :integer
   ]
+
+  @import [:part, :tempo, :grid, :tune]
 
   @doc "The options `play/2` takes, parsed from command line arguments, and the arguments left."
   def parse(args) when is_list(args), do: OptionParser.parse!(args, strict: @switches)
 
   @doc "Plays a song file with `record:` and `force:`, or renders it offline with `render:`, `seconds:`, `ring_out:` and `force:`, either at `share:` of its tempo, and returns `:ok` once it stops, or `{:error, message}`."
   def play(path, opts) when is_binary(path) and is_list(opts) do
-    with :ok <- Mx.Band.check_share(Keyword.get(opts, :share, 1)) do
+    with :ok <- Mx.Band.check_share(Keyword.get(opts, :share, 1)),
+         :ok <- check_import(path, opts) do
       play_or_render(path, opts)
     end
+  end
+
+  defp check_import(path, opts) do
+    if Mx.Import.score?(path) or Keyword.take(opts, @import) == [],
+      do: :ok,
+      else:
+        {:error, "--part, --tempo, --grid and --tune go with a score, a MIDI file or an ABC tune"}
   end
 
   defp play_or_render(path, opts) do
@@ -31,7 +45,11 @@ defmodule Mx.Player do
          "--render and --record cannot go together: a render writes its file without playing"}
 
       out = opts[:render] ->
-        Mx.Render.render(path, out, Keyword.take(opts, [:seconds, :force, :share, :ring_out]))
+        Mx.Render.render(
+          path,
+          out,
+          Keyword.take(opts, [:seconds, :force, :share, :ring_out | @import])
+        )
 
       Keyword.has_key?(opts, :ring_out) ->
         {:error, "--ring-out goes with --render"}
@@ -46,20 +64,24 @@ defmodule Mx.Player do
 
     with :ok <- check_record(record, Keyword.get(opts, :force, false)),
          {:ok, _apps} <- Application.ensure_all_started(:mx),
-         {:ok, song} <- Song.load(path) do
+         {:ok, song, session_opts} <- load(path, opts) do
       Process.flag(:trap_exit, true)
       player = self()
       on_end = fn -> send(player, :song_ended) end
 
       session_opts =
-        [path: path, song: song, on_end: on_end] ++ Keyword.take(opts, [:record, :share])
+        session_opts ++ [song: song, on_end: on_end] ++ Keyword.take(opts, [:record, :share])
 
       case Session.start_link(session_opts) do
         {:ok, session} ->
           parts = describe(song.loops, "part") ++ describe(song.live, "live audio")
           playing = Enum.join(parts, " and ")
           IO.puts("Playing #{playing} from #{path} at #{song.tempo} bpm.")
-          IO.puts("Save the file to change it, and press Enter to stop.")
+
+          if session_opts[:watch] == false,
+            do: IO.puts("Press Enter to stop."),
+            else: IO.puts("Save the file to change it, and press Enter to stop.")
+
           wait_for_end()
           Supervisor.stop(session)
           if record, do: Enum.each(Mx.Recording.report(record), &IO.puts/1)
@@ -68,6 +90,19 @@ defmodule Mx.Player do
         {:error, {:shutdown, {:failed_to_start_child, _, message}}} when is_binary(message) ->
           {:error, message}
       end
+    end
+  end
+
+  # A score plays as the song mx import would write from it, which is not written, and so not
+  # watched.
+  defp load(path, opts) do
+    if Mx.Import.score?(path) do
+      with {:ok, song, imported} <- Mx.Import.load(path, Keyword.take(opts, @import)) do
+        Enum.each(imported.parts ++ imported.left_out, &IO.puts/1)
+        {:ok, song, [path: imported.out, source: imported.source, watch: false]}
+      end
+    else
+      with {:ok, song} <- Song.load(path), do: {:ok, song, [path: path]}
     end
   end
 

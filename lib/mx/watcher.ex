@@ -22,7 +22,7 @@ defmodule Mx.Watcher do
 
   alias Mx.Song
 
-  @doc "Starts watching the song file at `:path`, handing each version that loads to `:on_song`; `:song` is the version already loaded from it, if any."
+  @doc "Starts watching the song file at `:path`, handing each version that loads to `:on_song`; `:song` is the version already loaded from it, if any, and `:source` its text; with `watch: false` it never reads the file, and only describes `:song`."
   def start_link(opts) when is_list(opts), do: GenServer.start_link(__MODULE__, opts)
 
   @doc "Subscribes the calling process to the saves the watcher loads, and returns the version loaded now, as `description/1` does."
@@ -34,7 +34,8 @@ defmodule Mx.Watcher do
   @impl true
   def init(opts) when is_list(opts) do
     path = Keyword.fetch!(opts, :path)
-    source = read(path)
+    watch = Keyword.get(opts, :watch, true)
+    source = opts[:source] || if(watch, do: read(path))
 
     state = %{
       path: path,
@@ -48,7 +49,7 @@ defmodule Mx.Watcher do
       subscribers: %{}
     }
 
-    schedule(state)
+    if watch, do: schedule(state)
     {:ok, state}
   end
 

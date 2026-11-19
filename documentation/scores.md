@@ -58,6 +58,16 @@ mx play examples/erbarme_dich/aria.exs
 
 Its D.S. al Fine is not taken, so the aria ends at bar 46 without going back to the opening ritornello.
 
+To hear a score before writing a song from it, play the score itself, with the options `mx import` takes:
+
+```sh
+mx play examples/erbarme_dich/bwv244.39.mxl --part "Violin=violin" --part "Alto=oboe" --part "Organo a canne=organ"
+```
+
+mx plays the song `mx import` would write from those choices, without writing it, and prints what it leaves out, as `mx import` does; `--render` writes the same sound to a WAV file.
+Nothing is watched, so changing the score on disk does not change what plays.
+A program plays it in a session with `Mx.Import.load/2`, and tries another synth on a part or solos one as it would in a song.
+
 `examples/erbarme_dich/dub.exs` turns the aria into a roots dub: a dub siren and the hand drums open it and the horns state its opening sigh, then the ritornello is the riddim, the drum kit leading with the one drop, ghost strokes and rolls over the congas playing Nyabinghi drums, the shaker and the güiro, the harp's skank and the organ's bubble over the continuo's bass; a trombone leads with the ritornello, slurring its runs, the harmonium and the horns sing the alto's phrase, and in the dubs the parts drop out into echo and filter sweeps, the tabla's bayan and the tanpura's drone:
 
 ```sh

@@ -131,8 +131,8 @@ defmodule Mx.Song do
 
   @chain_error "fx: takes an effect or a list of effects, such as fx: [echo: [phase: 0.5], reverb: []]"
 
-  @doc "Loads a song file, and returns `{:ok, song}` or `{:error, message}` naming the file and line."
-  def load(path) when is_binary(path) do
+  @doc "Loads a song file, or with `source:` that text as though it were the file at `path`, which need not exist, and returns `{:ok, song}` or `{:error, message}` naming the file and line."
+  def load(path, opts \\ []) when is_binary(path) and is_list(opts) do
     Process.put(@key, %__MODULE__{})
 
     try do
@@ -140,7 +140,7 @@ defmodule Mx.Song do
       # every load.
       :rand.seed(:exsss, {:erlang.phash2(Path.expand(path)), 0, 0})
 
-      case eval_file(path) do
+      case eval_file(path, opts[:source]) do
         %Mx.Music.Song{} = song -> Mx.Music.load(song)
         _ -> :ok
       end
@@ -167,7 +167,7 @@ defmodule Mx.Song do
 
   # Elixir logs why a module did not compile and raises without the line, so the first error it
   # logged names it.
-  defp eval_file(path) do
+  defp eval_file(path, source) do
     {result, diagnostics} =
       Code.with_diagnostics([log: true], fn ->
         # A module the song file defines is compiled again on every load, which is no conflict to
@@ -176,7 +176,11 @@ defmodule Mx.Song do
         Code.put_compiler_option(:ignore_module_conflict, true)
 
         try do
-          {value, _binding} = Code.eval_file(path)
+          {value, _binding} =
+            if source,
+              do: Code.eval_string(source, [], file: path),
+              else: Code.eval_file(path)
+
           {:ok, written(value, path)}
         rescue
           error -> {:error, error, __STACKTRACE__}

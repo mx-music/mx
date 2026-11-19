@@ -229,6 +229,35 @@ defmodule Mx.MIDITest do
     assert abs(ends_us - file_us) < 0.25 * 60_000_000 / 46
   end
 
+  test "a file that slows from 48 to 46 plays unwritten as the song an import writes, and with a tempo given names the later one as left out",
+       %{tmp_dir: dir} do
+    path = slowing(dir)
+    {:ok, song, imported} = Mx.Import.load(path)
+    assert song.tempo == 48
+    assert imported.left_out == []
+    assert Path.wildcard(Path.join(dir, "*")) == [path]
+
+    {:ok, song, imported} = Mx.Import.load(path, tempo: "48")
+    assert song.tempo == 48
+    assert song.tempos == nil
+    assert imported.left_out == ["the tempo 46 from bar 4 is left out"]
+  end
+
+  test "a file played unwritten keeps its notes on the grid it is given", %{tmp_dir: dir} do
+    notes = Enum.concat([note(0, 60, 0, 180), note(0, 62, 180, 240), note(0, 64, 240, 480)])
+    path = write(dir, "fast.mid", [[tempo(120)], [name("Melody") | notes]])
+
+    starts = fn grid ->
+      {:ok, song, _imported} = Mx.Import.load(path, grid: grid)
+      {:ok, %{events: events}} = Mx.Pass.events(hd(song.loops), 0)
+      events |> Enum.map(&elem(&1, 0)) |> Enum.uniq()
+    end
+
+    assert starts.("1/16") == [0, 0.5]
+    assert starts.("1/32") == [0, 0.375, 0.5]
+    assert Path.wildcard(Path.join(dir, "*")) == [path]
+  end
+
   test "a tempo change inside a bar is written at its beat on the grid", %{tmp_dir: dir} do
     notes = Enum.flat_map(0..7, &note(0, 60, &1 * 480, &1 * 480 + 480))
 

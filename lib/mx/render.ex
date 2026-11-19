@@ -29,7 +29,7 @@ defmodule Mx.Render do
          :ok <- check_ring_out(ring_out),
          :ok <- Recording.check(out, Keyword.get(opts, :force, false)),
          {:ok, _apps} <- Application.ensure_all_started(:mx),
-         {:ok, song} <- Song.load(path),
+         {:ok, song} <- load(path, opts),
          :ok <- check(song, seconds),
          playing = %{song | loops: Enum.filter(song.loops, &(&1.on == nil))},
          {:ok, total} <- total(playing, seconds, share) do
@@ -37,6 +37,19 @@ defmodule Mx.Render do
       follow = List.wrap(opts[:follow])
       run(playing, out, seconds, follow, share, total, ring_out)
       Enum.each(Recording.report(out), &IO.puts/1)
+    end
+  end
+
+  # A score renders as the song mx import would write from it, without writing it.
+  defp load(path, opts) do
+    if Mx.Import.score?(path) do
+      with {:ok, song, imported} <-
+             Mx.Import.load(path, Keyword.take(opts, [:part, :tempo, :grid, :tune])) do
+        Enum.each(imported.left_out, &IO.puts/1)
+        {:ok, song}
+      end
+    else
+      Song.load(path)
     end
   end
 
