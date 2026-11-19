@@ -198,6 +198,9 @@ defmodule Mx.MIDITest do
 
     assert File.read!(song) =~ "at([{6, tempo(80)}], 8)"
     assert [%{beat: 0, tempo: 100}, %{beat: 6, tempo: 80}] = followed(song)
+
+    {_song, output} = import!(path, ["--tempo", "100", "--force"])
+    assert output =~ "the tempo 80 from beat 3 of bar 2 is left out\n"
   end
 
   test "with --tempo 60 the song plays at 60 throughout and the import names the tempo 46 as left out",
