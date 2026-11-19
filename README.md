@@ -162,3 +162,9 @@ A checkout of mx always compiles mxs with Rust, and `mix mx.play path/to/song.ex
 mx is under the MIT License, in [LICENSE](https://github.com/mx-music/mx/blob/main/LICENSE).
 [LICENSE-designs.md](https://github.com/mx-music/mx/blob/main/LICENSE-designs.md) names the recordings each synth was measured from, the two effects that follow Airwindows, and the recordings the examples play, with their terms.
 Sample packs are not part of mx: Sonic Pi's samples, under Creative Commons 0, and the others are downloaded from their own sources, under their own licenses.
+
+## Acknowledgements
+
+Mx's early design was inspired by [Sonic Pi](https://sonic-pi.net) by Sam Aaron and contributors.
+Mx's API has since evolved in its own direction, but the debt is real — thank you.
+The recordings mx's synths are measured from are credited in [LICENSE-designs.md](https://github.com/mx-music/mx/blob/main/LICENSE-designs.md).
