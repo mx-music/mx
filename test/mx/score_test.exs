@@ -82,7 +82,7 @@ defmodule Mx.ScoreTest do
     {:ok, imported} = Mx.Import.song("examples/erbarme_dich/bwv244.39.mxl")
 
     assert :crypto.hash(:sha256, imported.source) |> Base.encode16(case: :lower) ==
-             "d348a45ecbcb560d6702a981efa421995d8a0868a1993855704536878aeefe4b"
+             "f3d418223a9130350e0b128c09159196066fd3371d7fd594bf1364e391295aa2"
   end
 
   test "a file that is not a score says so when asked what it holds", %{tmp_dir: dir} do

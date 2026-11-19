@@ -11,8 +11,8 @@ defmodule Aria do
 
   use Mx.Song, tempo: 48
 
-  part :violin, synth: :violin, defaults: [vel: 0.6]
-  part :alto, synth: :oboe, defaults: [vel: 0.6]
+  part :violin, synth: :violin
+  part :alto, synth: :oboe
   part :organo_a_canne, synth: :organ
 
   def song do
@@ -1517,48 +1517,48 @@ defmodule Aria do
 
   defp bar(:organo_a_canne, 8) do
     together([
-      seq(
-        fs5: 0.5,
-        e5: 0.5,
-        d5: 0.5,
-        e5: 0.5,
-        d5: 0.5,
-        cs5: 0.5,
-        b4: 0.5,
-        cs5: 0.5,
-        d5: 0.5,
-        cs5: 0.5,
-        d5: 0.5,
-        e5: 0.5
-      ),
-      seq(
-        d5: 0.5,
-        as4: 0.5,
-        b4: 0.5,
-        b4: 0.5,
-        b4: 0.5,
-        as4: 0.5,
-        fs4: 0.5,
-        as4: 0.5,
-        b4: 0.5,
-        as4: 0.5,
-        b4: 0.5,
-        cs5: 0.5
-      ),
-      seq(
-        b4: 0.5,
-        as4: 0.5,
-        fs4: 0.5,
-        cs4: 0.5,
-        d4: 0.5,
-        e4: 0.5,
-        d4: 0.5,
-        e4: 0.5,
-        fs4: 0.5,
-        e4: 0.5,
-        fs4: 0.5,
-        as4: 0.5
-      ),
+      seq([
+        note(:fs5, 0.5),
+        note(:e5, 0.5),
+        note(:d5, 0.5),
+        note(:e5, 0.5),
+        note(:d5, 0.5),
+        note(:cs5, 0.5),
+        note(:b4, 0.5),
+        note(:cs5, 0.5),
+        note(:d5, 0.5),
+        note(:cs5, 0.5),
+        note(:d5, 0.5),
+        note(:e5, 0.5, vel: 0.3)
+      ]),
+      seq([
+        note(:d5, 0.5),
+        note(:as4, 0.5),
+        note(:b4, 0.5),
+        note(:b4, 0.5),
+        note(:b4, 0.5),
+        note(:as4, 0.5),
+        note(:fs4, 0.5),
+        note(:as4, 0.5),
+        note(:b4, 0.5),
+        note(:as4, 0.5),
+        note(:b4, 0.5),
+        note(:cs5, 0.5, vel: 0.3)
+      ]),
+      seq([
+        note(:b4, 0.5),
+        note(:as4, 0.5),
+        note(:fs4, 0.5),
+        note(:cs4, 0.5),
+        note(:d4, 0.5),
+        note(:e4, 0.5),
+        note(:d4, 0.5),
+        note(:e4, 0.5),
+        note(:fs4, 0.5),
+        note(:e4, 0.5),
+        note(:fs4, 0.5),
+        note(:as4, 0.5, vel: 0.3)
+      ]),
       seq([
         note(:d3, 0.5),
         note(:cs3, 0.5),
@@ -1568,463 +1568,617 @@ defmodule Aria do
         note(:fs2, 0.5),
         note(:b2, 1.5, sustain: 2.5),
         rest(1),
-        note(:b2, 0.5)
+        note(:b2, 0.5, vel: 0.3)
       ])
     ])
   end
 
   defp bar(:organo_a_canne, 9) do
     together([
-      seq([note(:d5, 3, sustain: 4.5), rest(1.5), note(:ds5, 1.5)]),
-      seq(b4: 3, b4: 1.5, a4: 1.5),
-      seq(fs4: 3, g4: 1.5, a4: 1.5),
-      seq(
-        b3: 0.5,
-        b3: 0.5,
-        b3: 0.5,
-        a3: 0.5,
-        a3: 0.5,
-        a3: 0.5,
-        g3: 0.5,
-        g3: 0.5,
-        g3: 0.5,
-        fs3: 0.5,
-        fs3: 0.5,
-        fs3: 0.5
-      )
+      seq([note(:d5, 3, vel: 0.3, sustain: 4.5), rest(1.5), note(:ds5, 1.5, vel: 0.3)]),
+      seq([note(:b4, 3, vel: 0.3), note(:b4, 1.5, vel: 0.3), note(:a4, 1.5, vel: 0.3)]),
+      seq([note(:fs4, 3, vel: 0.3), note(:g4, 1.5, vel: 0.3), note(:a4, 1.5, vel: 0.3)]),
+      seq([
+        note(:b3, 0.5, vel: 0.3),
+        note(:b3, 0.5, vel: 0.3),
+        note(:b3, 0.5, vel: 0.3),
+        note(:a3, 0.5, vel: 0.3),
+        note(:a3, 0.5, vel: 0.3),
+        note(:a3, 0.5, vel: 0.3),
+        note(:g3, 0.5, vel: 0.3),
+        note(:g3, 0.5, vel: 0.3),
+        note(:g3, 0.5, vel: 0.3),
+        note(:fs3, 0.5, vel: 0.3),
+        note(:fs3, 0.5, vel: 0.3),
+        note(:fs3, 0.5, vel: 0.3)
+      ])
     ])
   end
 
   defp bar(:organo_a_canne, 10) do
     together([
-      seq(e5: 1.5, c5: 1.5, b4: 1.5, e5: 1.5),
-      seq(b4: 1.5, a4: 1.5, b4: 3),
-      seq(g4: 1.5, fs4: 1.5, g4: 3),
-      seq(
-        e3: 0.5,
-        e3: 0.5,
-        e3: 0.5,
-        e3: 0.5,
-        e3: 0.5,
-        e3: 0.5,
-        e3: 0.5,
-        e3: 0.5,
-        e3: 0.5,
-        e3: 0.5,
-        e3: 0.5,
-        e3: 0.5
-      )
+      seq([
+        note(:e5, 1.5, vel: 0.3),
+        note(:c5, 1.5, vel: 0.3),
+        note(:b4, 1.5, vel: 0.3),
+        note(:e5, 1.5, vel: 0.3)
+      ]),
+      seq([note(:b4, 1.5, vel: 0.3), note(:a4, 1.5, vel: 0.3), note(:b4, 3, vel: 0.3)]),
+      seq([note(:g4, 1.5, vel: 0.3), note(:fs4, 1.5, vel: 0.3), note(:g4, 3, vel: 0.3)]),
+      seq([
+        note(:e3, 0.5, vel: 0.3),
+        note(:e3, 0.5, vel: 0.3),
+        note(:e3, 0.5, vel: 0.3),
+        note(:e3, 0.5, vel: 0.3),
+        note(:e3, 0.5, vel: 0.3),
+        note(:e3, 0.5, vel: 0.3),
+        note(:e3, 0.5, vel: 0.3),
+        note(:e3, 0.5, vel: 0.3),
+        note(:e3, 0.5, vel: 0.3),
+        note(:e3, 0.5, vel: 0.3),
+        note(:e3, 0.5, vel: 0.3),
+        note(:e3, 0.5, vel: 0.3)
+      ])
     ])
   end
 
   defp bar(:organo_a_canne, 11) do
     together([
-      seq([note(:g5, 3, sustain: 4.5), rest(1.5), note(:cs5, 1.5)]),
-      seq(e5: 3, e5: 1.5, e5: 1.5),
-      seq(e4: 3, e3: 1.5, as3: 1.5),
-      seq(
-        e3: 0.5,
-        e3: 0.5,
-        e3: 0.5,
-        d3: 0.5,
-        d3: 0.5,
-        d3: 0.5,
-        cs3: 0.5,
-        cs3: 0.5,
-        cs3: 0.5,
-        as2: 0.5,
-        as2: 0.5,
-        as2: 0.5
-      )
+      seq([note(:g5, 3, vel: 0.3, sustain: 4.5), rest(1.5), note(:cs5, 1.5, vel: 0.3)]),
+      seq([note(:e5, 3, vel: 0.3), note(:e5, 1.5, vel: 0.3), note(:e5, 1.5, vel: 0.3)]),
+      seq([note(:e4, 3, vel: 0.3), note(:e3, 1.5, vel: 0.3), note(:as3, 1.5, vel: 0.3)]),
+      seq([
+        note(:e3, 0.5, vel: 0.3),
+        note(:e3, 0.5, vel: 0.3),
+        note(:e3, 0.5, vel: 0.3),
+        note(:d3, 0.5, vel: 0.3),
+        note(:d3, 0.5, vel: 0.3),
+        note(:d3, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3),
+        note(:as2, 0.5, vel: 0.3),
+        note(:as2, 0.5, vel: 0.3),
+        note(:as2, 0.5, vel: 0.3)
+      ])
     ])
   end
 
   defp bar(:organo_a_canne, 12) do
     together([
-      seq(d5: 1.5, e5: 1.5, fs5: 1.5, fs5: 1, r: 0.5),
-      seq(d5: 1.5, b4: 1.5, as4: 0.5, b4: 0.5, cs5: 0.5, cs4: 0.5, d4: 0.5, e4: 0.5),
-      seq(fs4: 1.5, g4: 1.5, cs4: 0.5, d4: 0.5, e4: 0.5, as3: 0.5, b3: 0.5, cs4: 0.5),
-      seq(b2: 0.5, b2: 0.5, b2: 0.5, g2: 0.5, g2: 0.5, g2: 0.5, fs3: 1, r: 2)
+      seq([
+        note(:d5, 1.5, vel: 0.3),
+        note(:e5, 1.5, vel: 0.3),
+        note(:fs5, 1.5, vel: 0.3),
+        note(:fs5, 1, vel: 0.3),
+        rest(0.5)
+      ]),
+      seq([
+        note(:d5, 1.5, vel: 0.3),
+        note(:b4, 1.5, vel: 0.3),
+        note(:as4, 0.5, vel: 0.3),
+        note(:b4, 0.5, vel: 0.3),
+        note(:cs5, 0.5, vel: 0.3),
+        note(:cs4, 0.5, vel: 0.3),
+        note(:d4, 0.5, vel: 0.3),
+        note(:e4, 0.5, vel: 0.3)
+      ]),
+      seq([
+        note(:fs4, 1.5, vel: 0.3),
+        note(:g4, 1.5, vel: 0.3),
+        note(:cs4, 0.5, vel: 0.3),
+        note(:d4, 0.5, vel: 0.3),
+        note(:e4, 0.5, vel: 0.3),
+        note(:as3, 0.5, vel: 0.3),
+        note(:b3, 0.5, vel: 0.3),
+        note(:cs4, 0.5, vel: 0.3)
+      ]),
+      seq([
+        note(:b2, 0.5, vel: 0.3),
+        note(:b2, 0.5, vel: 0.3),
+        note(:b2, 0.5, vel: 0.3),
+        note(:g2, 0.5, vel: 0.3),
+        note(:g2, 0.5, vel: 0.3),
+        note(:g2, 0.5, vel: 0.3),
+        note(:fs3, 1, vel: 0.3),
+        rest(2)
+      ])
     ])
   end
 
   defp bar(:organo_a_canne, 13) do
     together([
-      seq(
-        c5: 0.75,
-        b4: 0.25,
-        a4: 0.5,
-        ds5: 0.75,
-        e5: 0.25,
-        fs5: 0.5,
-        fs5: 0.5,
-        e5: 1,
-        e5: 1,
-        b4: 0.5
-      ),
-      seq(
-        fs4: 0.5,
-        fs4: 0.5,
-        fs4: 0.5,
-        fs4: 0.5,
-        fs4: 0.5,
-        fs4: 0.5,
-        g4: 0.5,
-        g4: 0.5,
-        fs4: 0.5,
-        g4: 0.5,
-        as4: 0.5,
-        b4: 0.5
-      ),
-      seq(
-        b3: 0.5,
-        b3: 0.5,
-        b3: 0.5,
-        b3: 0.5,
-        b3: 0.5,
-        b3: 0.5,
-        b3: 0.5,
-        b3: 0.5,
-        a3: 0.5,
-        b3: 0.5,
-        cs4: 0.5,
-        d4: 0.5
-      ),
-      seq(b2: 1, r: 1, r: 1, e3: 1, r: 2)
+      seq([
+        note(:c5, 0.75, vel: 0.3),
+        note(:b4, 0.25, vel: 0.3),
+        note(:a4, 0.5, vel: 0.3),
+        note(:ds5, 0.75, vel: 0.3),
+        note(:e5, 0.25, vel: 0.3),
+        note(:fs5, 0.5, vel: 0.3),
+        note(:fs5, 0.5, vel: 0.3),
+        note(:e5, 1, vel: 0.3),
+        note(:e5, 1, vel: 0.3),
+        note(:b4, 0.5, vel: 0.3)
+      ]),
+      seq([
+        note(:fs4, 0.5, vel: 0.3),
+        note(:fs4, 0.5, vel: 0.3),
+        note(:fs4, 0.5, vel: 0.3),
+        note(:fs4, 0.5, vel: 0.3),
+        note(:fs4, 0.5, vel: 0.3),
+        note(:fs4, 0.5, vel: 0.3),
+        note(:g4, 0.5, vel: 0.3),
+        note(:g4, 0.5, vel: 0.3),
+        note(:fs4, 0.5, vel: 0.3),
+        note(:g4, 0.5, vel: 0.3),
+        note(:as4, 0.5, vel: 0.3),
+        note(:b4, 0.5, vel: 0.3)
+      ]),
+      seq([
+        note(:b3, 0.5, vel: 0.3),
+        note(:b3, 0.5, vel: 0.3),
+        note(:b3, 0.5, vel: 0.3),
+        note(:b3, 0.5, vel: 0.3),
+        note(:b3, 0.5, vel: 0.3),
+        note(:b3, 0.5, vel: 0.3),
+        note(:b3, 0.5, vel: 0.3),
+        note(:b3, 0.5, vel: 0.3),
+        note(:a3, 0.5, vel: 0.3),
+        note(:b3, 0.5, vel: 0.3),
+        note(:cs4, 0.5, vel: 0.3),
+        note(:d4, 0.5, vel: 0.3)
+      ]),
+      seq([note(:b2, 1, vel: 0.3), rest(1), rest(1), note(:e3, 1, vel: 0.3), rest(2)])
     ])
   end
 
   defp bar(:organo_a_canne, 14) do
     together([
-      seq(
-        d5: 0.75,
-        cs5: 0.25,
-        b4: 0.5,
-        es5: 0.75,
-        fs5: 0.25,
-        gs5: 0.5,
-        gs5: 0.5,
-        fs5: 1,
-        fs5: 1,
-        r: 0.5
-      ),
-      seq(
-        gs4: 0.5,
-        gs4: 0.5,
-        gs4: 0.5,
-        gs4: 0.5,
-        gs4: 0.5,
-        gs4: 0.5,
-        a4: 0.5,
-        fs4: 0.5,
-        es4: 0.5,
-        fs4: 0.5,
-        fs5: 0.5,
-        es5: 0.5
-      ),
-      seq(
-        cs4: 0.5,
-        cs4: 0.5,
-        cs4: 0.5,
-        cs4: 0.5,
-        cs4: 0.5,
-        cs4: 0.5,
-        cs4: 0.5,
-        a3: 0.5,
-        b3: 0.5,
-        cs4: 0.5,
-        a4: 0.5,
-        gs4: 0.5
-      ),
-      seq(cs3: 1, r: 1, r: 1, fs3: 1, r: 2)
+      seq([
+        note(:d5, 0.75, vel: 0.3),
+        note(:cs5, 0.25, vel: 0.3),
+        note(:b4, 0.5, vel: 0.3),
+        note(:es5, 0.75, vel: 0.3),
+        note(:fs5, 0.25, vel: 0.3),
+        note(:gs5, 0.5, vel: 0.3),
+        note(:gs5, 0.5, vel: 0.3),
+        note(:fs5, 1, vel: 0.3),
+        note(:fs5, 1, vel: 0.3),
+        rest(0.5)
+      ]),
+      seq([
+        note(:gs4, 0.5, vel: 0.3),
+        note(:gs4, 0.5, vel: 0.3),
+        note(:gs4, 0.5, vel: 0.3),
+        note(:gs4, 0.5, vel: 0.3),
+        note(:gs4, 0.5, vel: 0.3),
+        note(:gs4, 0.5, vel: 0.3),
+        note(:a4, 0.5, vel: 0.3),
+        note(:fs4, 0.5, vel: 0.3),
+        note(:es4, 0.5, vel: 0.3),
+        note(:fs4, 0.5, vel: 0.3),
+        note(:fs5, 0.5, vel: 0.3),
+        note(:es5, 0.5, vel: 0.3)
+      ]),
+      seq([
+        note(:cs4, 0.5, vel: 0.3),
+        note(:cs4, 0.5, vel: 0.3),
+        note(:cs4, 0.5, vel: 0.3),
+        note(:cs4, 0.5, vel: 0.3),
+        note(:cs4, 0.5, vel: 0.3),
+        note(:cs4, 0.5, vel: 0.3),
+        note(:cs4, 0.5, vel: 0.3),
+        note(:a3, 0.5, vel: 0.3),
+        note(:b3, 0.5, vel: 0.3),
+        note(:cs4, 0.5, vel: 0.3),
+        note(:a4, 0.5, vel: 0.3),
+        note(:gs4, 0.5, vel: 0.3)
+      ]),
+      seq([note(:cs3, 1, vel: 0.3), rest(1), rest(1), note(:fs3, 1, vel: 0.3), rest(2)])
     ])
   end
 
   defp bar(:organo_a_canne, 15) do
     together([
-      seq(cs5: 3, d5: 1.5, e5: 1.5),
-      seq(fs5: 3, fs5: 1.5, as4: 1.5),
+      seq([note(:cs5, 3, vel: 0.3), note(:d5, 1.5, vel: 0.3), note(:e5, 1.5, vel: 0.3)]),
+      seq([note(:fs5, 3, vel: 0.3), note(:fs5, 1.5, vel: 0.3), note(:as4, 1.5, vel: 0.3)]),
       seq([
-        note(:a4, 3, sustain: 3.5),
+        note(:a4, 3, vel: 0.3, sustain: 3.5),
         rest(0.5),
-        note(:gs4, 0.5),
-        note(:fs4, 0.5),
-        note(:e4, 0.5),
-        note(:d4, 0.5),
-        note(:cs4, 0.5)
+        note(:gs4, 0.5, vel: 0.3),
+        note(:fs4, 0.5, vel: 0.3),
+        note(:e4, 0.5, vel: 0.3),
+        note(:d4, 0.5, vel: 0.3),
+        note(:cs4, 0.5, vel: 0.3)
       ]),
-      seq(
-        fs3: 0.5,
-        fs3: 0.5,
-        fs3: 0.5,
-        e3: 0.5,
-        e3: 0.5,
-        e3: 0.5,
-        d3: 0.5,
-        d3: 0.5,
-        d3: 0.5,
-        cs3: 0.5,
-        cs3: 0.5,
-        cs3: 0.5
-      )
+      seq([
+        note(:fs3, 0.5, vel: 0.3),
+        note(:fs3, 0.5, vel: 0.3),
+        note(:fs3, 0.5, vel: 0.3),
+        note(:e3, 0.5, vel: 0.3),
+        note(:e3, 0.5, vel: 0.3),
+        note(:e3, 0.5, vel: 0.3),
+        note(:d3, 0.5, vel: 0.3),
+        note(:d3, 0.5, vel: 0.3),
+        note(:d3, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3)
+      ])
     ])
   end
 
   defp bar(:organo_a_canne, 16) do
     together([
-      seq(d5: 1.5, cs5: 1.5, b4: 3),
-      seq(b4: 1.5, e5: 1, as4: 0.5, b4: 1.5, fs4: 1.5),
-      seq([note(:fs4, 3, sustain: 4.5), rest(1.5), note(:d4, 1.5)]),
-      seq(
-        b2: 0.5,
-        b2: 0.5,
-        b2: 0.5,
-        cs3: 0.5,
-        cs3: 0.5,
-        cs3: 0.5,
-        d3: 0.5,
-        b2: 0.5,
-        d3: 0.5,
-        fs3: 0.5,
-        d3: 0.5,
-        fs3: 0.5
-      )
+      seq([note(:d5, 1.5, vel: 0.3), note(:cs5, 1.5, vel: 0.3), note(:b4, 3, vel: 0.3)]),
+      seq([
+        note(:b4, 1.5, vel: 0.3),
+        note(:e5, 1, vel: 0.3),
+        note(:as4, 0.5, vel: 0.3),
+        note(:b4, 1.5, vel: 0.3),
+        note(:fs4, 1.5, vel: 0.3)
+      ]),
+      seq([note(:fs4, 3, vel: 0.3, sustain: 4.5), rest(1.5), note(:d4, 1.5, vel: 0.3)]),
+      seq([
+        note(:b2, 0.5, vel: 0.3),
+        note(:b2, 0.5, vel: 0.3),
+        note(:b2, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3),
+        note(:d3, 0.5, vel: 0.3),
+        note(:b2, 0.5, vel: 0.3),
+        note(:d3, 0.5, vel: 0.3),
+        note(:fs3, 0.5, vel: 0.3),
+        note(:d3, 0.5, vel: 0.3),
+        note(:fs3, 0.5, vel: 0.3)
+      ])
     ])
   end
 
   defp bar(:organo_a_canne, 17) do
     together([
-      seq([note(:b4, 3, sustain: 4.5), rest(1.5), note(:b4, 1.5)]),
-      seq(d5: 3, d5: 1.5, gs4: 1.5),
-      seq(r: 1.5, fs4: 1.5, gs4: 1.5, gs4: 1.5),
-      seq(
-        b3: 0.5,
-        b3: 0.5,
-        b3: 0.5,
-        a3: 0.5,
-        a3: 0.5,
-        a3: 0.5,
-        gs3: 0.5,
-        gs3: 0.5,
-        gs3: 0.5,
-        es3: 0.5,
-        es3: 0.5,
-        es3: 0.5
-      )
+      seq([note(:b4, 3, vel: 0.3, sustain: 4.5), rest(1.5), note(:b4, 1.5, vel: 0.3)]),
+      seq([note(:d5, 3, vel: 0.3), note(:d5, 1.5, vel: 0.3), note(:gs4, 1.5, vel: 0.3)]),
+      seq([
+        rest(1.5),
+        note(:fs4, 1.5, vel: 0.3),
+        note(:gs4, 1.5, vel: 0.3),
+        note(:gs4, 1.5, vel: 0.3)
+      ]),
+      seq([
+        note(:b3, 0.5, vel: 0.3),
+        note(:b3, 0.5, vel: 0.3),
+        note(:b3, 0.5, vel: 0.3),
+        note(:a3, 0.5, vel: 0.3),
+        note(:a3, 0.5, vel: 0.3),
+        note(:a3, 0.5, vel: 0.3),
+        note(:gs3, 0.5, vel: 0.3),
+        note(:gs3, 0.5, vel: 0.3),
+        note(:gs3, 0.5, vel: 0.3),
+        note(:es3, 0.5, vel: 0.3),
+        note(:es3, 0.5, vel: 0.3),
+        note(:es3, 0.5, vel: 0.3)
+      ])
     ])
   end
 
   defp bar(:organo_a_canne, 18) do
     together([
-      seq([note(:a4, 1.5), note(:b4, 1.5), note(:cs5, 1.5, sustain: 2.5), rest(1), rest(0.5)]),
-      seq([note(:a4, 1.5), note(:fs4, 1.5), note(:gs4, 1.5, sustain: 2.5), rest(1), rest(0.5)]),
-      seq([note(:cs4, 1.5), note(:d4, 1.5), note(:gs3, 1.5, sustain: 2.5), rest(1), rest(0.5)]),
-      seq(
-        fs3: 0.5,
-        fs3: 0.5,
-        fs3: 0.5,
-        d3: 0.5,
-        d3: 0.5,
-        d3: 0.5,
-        cs3: 0.5,
-        gs2: 0.5,
-        b2: 0.5,
-        b2: 0.5,
-        es2: 0.5,
-        gs2: 0.5
-      )
+      seq([
+        note(:a4, 1.5, vel: 0.3),
+        note(:b4, 1.5, vel: 0.3),
+        note(:cs5, 1.5, vel: 0.3, sustain: 2.5),
+        rest(1),
+        rest(0.5)
+      ]),
+      seq([
+        note(:a4, 1.5, vel: 0.3),
+        note(:fs4, 1.5, vel: 0.3),
+        note(:gs4, 1.5, vel: 0.3, sustain: 2.5),
+        rest(1),
+        rest(0.5)
+      ]),
+      seq([
+        note(:cs4, 1.5, vel: 0.3),
+        note(:d4, 1.5, vel: 0.3),
+        note(:gs3, 1.5, vel: 0.3, sustain: 2.5),
+        rest(1),
+        rest(0.5)
+      ]),
+      seq([
+        note(:fs3, 0.5, vel: 0.3),
+        note(:fs3, 0.5, vel: 0.3),
+        note(:fs3, 0.5, vel: 0.3),
+        note(:d3, 0.5, vel: 0.3),
+        note(:d3, 0.5, vel: 0.3),
+        note(:d3, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3),
+        note(:gs2, 0.5, vel: 0.3),
+        note(:b2, 0.5, vel: 0.3),
+        note(:b2, 0.5, vel: 0.3),
+        note(:es2, 0.5, vel: 0.3),
+        note(:gs2, 0.5, vel: 0.3)
+      ])
     ])
   end
 
   defp bar(:organo_a_canne, 19) do
     together([
-      seq(es5: 0.5, fs5: 0.5, gs5: 0.5, gs5: 0.5, a5: 0.5, b5: 0.5, es5: 1.5, es5: 1, r: 0.5),
       seq([
-        note(:cs5, 0.5),
-        note(:ds5, 0.5),
-        note(:es5, 0.5),
-        note(:es5, 0.5),
-        note(:fs5, 0.5),
-        note(:gs5, 0.5),
-        note(:gs4, 1.5, sustain: 2.5),
+        note(:es5, 0.5, vel: 0.3),
+        note(:fs5, 0.5, vel: 0.3),
+        note(:gs5, 0.5, vel: 0.3),
+        note(:gs5, 0.5, vel: 0.3),
+        note(:a5, 0.5, vel: 0.3),
+        note(:b5, 0.5, vel: 0.3),
+        note(:es5, 1.5, vel: 0.3),
+        note(:es5, 1, vel: 0.3),
+        rest(0.5)
+      ]),
+      seq([
+        note(:cs5, 0.5, vel: 0.3),
+        note(:ds5, 0.5, vel: 0.3),
+        note(:es5, 0.5, vel: 0.3),
+        note(:es5, 0.5, vel: 0.3),
+        note(:fs5, 0.5, vel: 0.3),
+        note(:gs5, 0.5, vel: 0.3),
+        note(:gs4, 1.5, vel: 0.3, sustain: 2.5),
         rest(1),
         rest(0.5)
       ]),
       seq([
-        note(:gs4, 0.5),
-        note(:a4, 0.5),
-        note(:b4, 0.5),
-        note(:cs4, 0.5),
-        note(:cs4, 0.5),
-        note(:cs4, 0.5),
-        note(:cs4, 1.5, sustain: 2.5),
+        note(:gs4, 0.5, vel: 0.3),
+        note(:a4, 0.5, vel: 0.3),
+        note(:b4, 0.5, vel: 0.3),
+        note(:cs4, 0.5, vel: 0.3),
+        note(:cs4, 0.5, vel: 0.3),
+        note(:cs4, 0.5, vel: 0.3),
+        note(:cs4, 1.5, vel: 0.3, sustain: 2.5),
         rest(1),
         rest(0.5)
       ]),
-      seq(cs2: 1, r: 1, r: 1, cs3: 0.5, cs3: 0.5, cs3: 0.5, cs3: 0.5, cs3: 0.5, cs3: 0.5)
+      seq([
+        note(:cs2, 1, vel: 0.3),
+        rest(1),
+        rest(1),
+        note(:cs3, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3)
+      ])
     ])
   end
 
   defp bar(:organo_a_canne, 20) do
     together([
       seq([
-        note(:cs5, 0.5),
-        note(:d5, 0.5),
-        note(:e5, 0.5),
-        note(:cs5, 0.5),
-        note(:d5, 0.5),
-        note(:e5, 0.5),
-        note(:as4, 1.5, sustain: 2.5),
+        note(:cs5, 0.5, vel: 0.3),
+        note(:d5, 0.5, vel: 0.3),
+        note(:e5, 0.5, vel: 0.3),
+        note(:cs5, 0.5, vel: 0.3),
+        note(:d5, 0.5, vel: 0.3),
+        note(:e5, 0.5, vel: 0.3),
+        note(:as4, 1.5, vel: 0.3, sustain: 2.5),
         rest(1),
         rest(0.5)
       ]),
       seq([
-        note(:as4, 0.5),
-        note(:b4, 0.5),
-        note(:cs5, 0.5),
-        note(:as4, 0.5),
-        note(:b4, 0.5),
-        note(:cs5, 0.5),
-        note(:cs4, 1.5, sustain: 2.5),
+        note(:as4, 0.5, vel: 0.3),
+        note(:b4, 0.5, vel: 0.3),
+        note(:cs5, 0.5, vel: 0.3),
+        note(:as4, 0.5, vel: 0.3),
+        note(:b4, 0.5, vel: 0.3),
+        note(:cs5, 0.5, vel: 0.3),
+        note(:cs4, 1.5, vel: 0.3, sustain: 2.5),
         rest(1),
         rest(0.5)
       ]),
       seq([
-        note(:fs4, 0.5),
-        note(:fs4, 0.5),
-        note(:fs4, 0.5),
-        note(:fs4, 0.5),
-        note(:fs4, 0.5),
-        note(:fs4, 0.5),
-        note(:fs4, 1.5, sustain: 2.5),
+        note(:fs4, 0.5, vel: 0.3),
+        note(:fs4, 0.5, vel: 0.3),
+        note(:fs4, 0.5, vel: 0.3),
+        note(:fs4, 0.5, vel: 0.3),
+        note(:fs4, 0.5, vel: 0.3),
+        note(:fs4, 0.5, vel: 0.3),
+        note(:fs4, 1.5, vel: 0.3, sustain: 2.5),
         rest(1),
         rest(0.5)
       ]),
-      seq(fs2: 1, r: 1, r: 1, fs2: 0.5, fs2: 0.5, fs2: 0.5, fs2: 0.5, fs2: 0.5, fs2: 0.5)
+      seq([
+        note(:fs2, 1, vel: 0.3),
+        rest(1),
+        rest(1),
+        note(:fs2, 0.5, vel: 0.3),
+        note(:fs2, 0.5, vel: 0.3),
+        note(:fs2, 0.5, vel: 0.3),
+        note(:fs2, 0.5, vel: 0.3),
+        note(:fs2, 0.5, vel: 0.3),
+        note(:fs2, 0.5, vel: 0.3)
+      ])
     ])
   end
 
   defp bar(:organo_a_canne, 21) do
     together([
-      seq(d4: 1.5, fs4: 1.5, b4: 1.5, d5: 0.5, cs5: 1),
-      seq(b3: 1.5, d4: 1.5, g4: 1.5, b4: 0.5, gs4: 1),
-      seq(fs3: 1.5, b3: 1.5, d4: 1.5, gs3: 0.5, es4: 1),
-      seq(
-        b2: 0.5,
-        b2: 0.5,
-        b2: 0.5,
-        b2: 0.5,
-        b2: 0.5,
-        b2: 0.5,
-        b2: 0.5,
-        b2: 0.5,
-        b2: 0.5,
-        b2: 0.5,
-        b2: 0.5,
-        b2: 0.5
-      )
+      seq([
+        note(:d4, 1.5, vel: 0.3),
+        note(:fs4, 1.5, vel: 0.3),
+        note(:b4, 1.5, vel: 0.3),
+        note(:d5, 0.5, vel: 0.3),
+        note(:cs5, 1, vel: 0.3)
+      ]),
+      seq([
+        note(:b3, 1.5, vel: 0.3),
+        note(:d4, 1.5, vel: 0.3),
+        note(:g4, 1.5, vel: 0.3),
+        note(:b4, 0.5, vel: 0.3),
+        note(:gs4, 1, vel: 0.3)
+      ]),
+      seq([
+        note(:fs3, 1.5, vel: 0.3),
+        note(:b3, 1.5, vel: 0.3),
+        note(:d4, 1.5, vel: 0.3),
+        note(:gs3, 0.5, vel: 0.3),
+        note(:es4, 1, vel: 0.3)
+      ]),
+      seq([
+        note(:b2, 0.5, vel: 0.3),
+        note(:b2, 0.5, vel: 0.3),
+        note(:b2, 0.5, vel: 0.3),
+        note(:b2, 0.5, vel: 0.3),
+        note(:b2, 0.5, vel: 0.3),
+        note(:b2, 0.5, vel: 0.3),
+        note(:b2, 0.5, vel: 0.3),
+        note(:b2, 0.5, vel: 0.3),
+        note(:b2, 0.5, vel: 0.3),
+        note(:b2, 0.5, vel: 0.3),
+        note(:b2, 0.5, vel: 0.3),
+        note(:b2, 0.5, vel: 0.3)
+      ])
     ])
   end
 
   defp bar(:organo_a_canne, 22) do
     together([
-      seq(cs5: 1, r: 1, a4: 0.5, b4: 0.5, a4: 1.5, r: 1, r: 0.5),
-      seq(a4: 1, r: 1, fs4: 0.5, es4: 0.5, fs4: 1.5, r: 1, r: 0.5),
-      seq(fs4: 1, r: 1, cs4: 2, r: 0.5, r: 1, r: 0.5),
-      seq(
-        a2: 0.5,
-        gs2: 0.5,
-        fs2: 0.5,
-        cs3: 0.5,
-        cs3: 0.5,
-        cs3: 0.5,
-        fs3: 0.5,
-        fs2: 0.5,
-        a2: 0.5,
-        cs3: 0.5,
-        a2: 0.5,
-        cs3: 0.5
-      )
+      seq([
+        note(:cs5, 1, vel: 0.3),
+        rest(1),
+        note(:a4, 0.5, vel: 0.3),
+        note(:b4, 0.5, vel: 0.3),
+        note(:a4, 1.5, vel: 0.3),
+        rest(1),
+        rest(0.5)
+      ]),
+      seq([
+        note(:a4, 1, vel: 0.3),
+        rest(1),
+        note(:fs4, 0.5, vel: 0.3),
+        note(:es4, 0.5, vel: 0.3),
+        note(:fs4, 1.5, vel: 0.3),
+        rest(1),
+        rest(0.5)
+      ]),
+      seq([
+        note(:fs4, 1, vel: 0.3),
+        rest(1),
+        note(:cs4, 2, vel: 0.3),
+        rest(0.5),
+        rest(1),
+        rest(0.5)
+      ]),
+      seq([
+        note(:a2, 0.5, vel: 0.3),
+        note(:gs2, 0.5, vel: 0.3),
+        note(:fs2, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3),
+        note(:fs3, 0.5, vel: 0.3),
+        note(:fs2, 0.5, vel: 0.3),
+        note(:a2, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3),
+        note(:a2, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3)
+      ])
     ])
   end
 
   defp bar(:organo_a_canne, 23) do
     together([
-      seq([note(:cs5, 3, sustain: 4), rest(1), note(:b4, 0.5), note(:b4, 1), note(:as4, 0.5)]),
       seq([
-        note(:a4, 3, sustain: 4),
+        note(:cs5, 3, vel: 0.3, sustain: 4),
         rest(1),
-        note(:b4, 0.5),
-        note(:e5, 0.5),
-        note(:d5, 0.5),
-        note(:cs5, 0.5)
+        note(:b4, 0.5, vel: 0.3),
+        note(:b4, 1, vel: 0.3),
+        note(:as4, 0.5, vel: 0.3)
       ]),
-      seq([note(:fs4, 3, sustain: 4), rest(1), note(:b3, 0.5), note(:cs4, 1.5)]),
-      seq(
-        fs3: 0.5,
-        fs3: 0.5,
-        fs3: 0.5,
-        e3: 0.5,
-        e3: 0.5,
-        e3: 0.5,
-        d3: 0.5,
-        d3: 0.5,
-        d3: 0.5,
-        cs3: 0.5,
-        cs3: 0.5,
-        cs3: 0.5
-      )
+      seq([
+        note(:a4, 3, vel: 0.3, sustain: 4),
+        rest(1),
+        note(:b4, 0.5, vel: 0.3),
+        note(:e5, 0.5, vel: 0.3),
+        note(:d5, 0.5, vel: 0.3),
+        note(:cs5, 0.5, vel: 0.3)
+      ]),
+      seq([
+        note(:fs4, 3, vel: 0.3, sustain: 4),
+        rest(1),
+        note(:b3, 0.5, vel: 0.3),
+        note(:cs4, 1.5, vel: 0.3)
+      ]),
+      seq([
+        note(:fs3, 0.5, vel: 0.3),
+        note(:fs3, 0.5, vel: 0.3),
+        note(:fs3, 0.5, vel: 0.3),
+        note(:e3, 0.5, vel: 0.3),
+        note(:e3, 0.5, vel: 0.3),
+        note(:e3, 0.5, vel: 0.3),
+        note(:d3, 0.5, vel: 0.3),
+        note(:d3, 0.5, vel: 0.3),
+        note(:d3, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3)
+      ])
     ])
   end
 
   defp bar(:organo_a_canne, 24) do
     together([
       seq([
-        note(:b4, 1.5),
-        note(:g4, 1.5, sustain: 2.5),
+        note(:b4, 1.5, vel: 0.3),
+        note(:g4, 1.5, vel: 0.3, sustain: 2.5),
         rest(1),
-        note(:fs4, 0.5),
-        note(:b4, 1),
-        note(:d5, 0.5)
+        note(:fs4, 0.5, vel: 0.3),
+        note(:b4, 1, vel: 0.3),
+        note(:d5, 0.5, vel: 0.3)
       ]),
-      seq(d5: 1.5, as4: 1.5, b4: 3),
-      seq(fs4: 1.5, e4: 1.5, d4: 3),
-      seq(
-        b2: 0.5,
-        b2: 0.5,
-        b2: 0.5,
-        cs3: 0.5,
-        cs3: 0.5,
-        cs3: 0.5,
-        d3: 0.5,
-        b2: 0.5,
-        d3: 0.5,
-        fs3: 0.5,
-        d3: 0.5,
-        fs3: 0.5
-      )
+      seq([note(:d5, 1.5, vel: 0.3), note(:as4, 1.5, vel: 0.3), note(:b4, 3, vel: 0.3)]),
+      seq([note(:fs4, 1.5, vel: 0.3), note(:e4, 1.5, vel: 0.3), note(:d4, 3, vel: 0.3)]),
+      seq([
+        note(:b2, 0.5, vel: 0.3),
+        note(:b2, 0.5, vel: 0.3),
+        note(:b2, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3),
+        note(:d3, 0.5, vel: 0.3),
+        note(:b2, 0.5, vel: 0.3),
+        note(:d3, 0.5, vel: 0.3),
+        note(:fs3, 0.5, vel: 0.3),
+        note(:d3, 0.5, vel: 0.3),
+        note(:fs3, 0.5, vel: 0.3)
+      ])
     ])
   end
 
   defp bar(:organo_a_canne, 25) do
     together([
-      seq([note(:g5, 1.5), note(:fs5, 1.5), note(:es5, 1.5), note(:gs5, 1.5, sustain: 2)]),
-      seq(b4: 6),
-      seq([note(:d4, 3, sustain: 4.5), rest(1.5), note(:gs3, 1.5)]),
-      seq(
-        b3: 0.5,
-        b3: 0.5,
-        b3: 0.5,
-        a3: 0.5,
-        a3: 0.5,
-        a3: 0.5,
-        gs3: 0.5,
-        gs3: 0.5,
-        gs3: 0.5,
-        es3: 0.5,
-        es3: 0.5,
-        es3: 0.5
-      )
+      seq([
+        note(:g5, 1.5, vel: 0.3),
+        note(:fs5, 1.5, vel: 0.3),
+        note(:es5, 1.5, vel: 0.3),
+        note(:gs5, 1.5, vel: 0.3, sustain: 2)
+      ]),
+      seq([note(:b4, 6, vel: 0.3)]),
+      seq([note(:d4, 3, vel: 0.3, sustain: 4.5), rest(1.5), note(:gs3, 1.5, vel: 0.3)]),
+      seq([
+        note(:b3, 0.5, vel: 0.3),
+        note(:b3, 0.5, vel: 0.3),
+        note(:b3, 0.5, vel: 0.3),
+        note(:a3, 0.5, vel: 0.3),
+        note(:a3, 0.5, vel: 0.3),
+        note(:a3, 0.5, vel: 0.3),
+        note(:gs3, 0.5, vel: 0.3),
+        note(:gs3, 0.5, vel: 0.3),
+        note(:gs3, 0.5, vel: 0.3),
+        note(:es3, 0.5, vel: 0.3),
+        note(:es3, 0.5, vel: 0.3),
+        note(:es3, 0.5, vel: 0.3)
+      ])
     ])
   end
 
@@ -2032,653 +2186,865 @@ defmodule Aria do
     together([
       seq([
         rest(0.5),
-        note(:es5, 0.5),
-        note(:fs5, 0.5),
-        note(:gs5, 0.125),
-        note(:a5, 0.125),
-        note(:b5, 0.25),
-        note(:a5, 0.5),
-        note(:gs5, 0.5),
-        note(:fs5, 1.5, sustain: 2.5),
+        note(:es5, 0.5, vel: 0.3),
+        note(:fs5, 0.5, vel: 0.3),
+        note(:gs5, 0.125, vel: 0.3),
+        note(:a5, 0.125, vel: 0.3),
+        note(:b5, 0.25, vel: 0.3),
+        note(:a5, 0.5, vel: 0.3),
+        note(:gs5, 0.5, vel: 0.3),
+        note(:fs5, 1.5, vel: 0.3, sustain: 2.5),
         rest(1),
         rest(0.5)
       ]),
       seq([
-        note(:a4, 0.5),
-        note(:b4, 0.5),
-        note(:cs5, 0.5),
-        note(:cs5, 0.5),
-        note(:fs5, 0.5),
-        note(:es5, 0.5),
-        note(:cs5, 1.5, sustain: 2.5),
+        note(:a4, 0.5, vel: 0.3),
+        note(:b4, 0.5, vel: 0.3),
+        note(:cs5, 0.5, vel: 0.3),
+        note(:cs5, 0.5, vel: 0.3),
+        note(:fs5, 0.5, vel: 0.3),
+        note(:es5, 0.5, vel: 0.3),
+        note(:cs5, 1.5, vel: 0.3, sustain: 2.5),
         rest(1),
         rest(0.5)
       ]),
       seq([
-        note(:cs4, 0.5),
-        note(:gs4, 0.5),
-        note(:a4, 0.5),
-        note(:gs4, 0.5),
-        note(:a4, 0.5),
-        note(:b4, 0.5),
-        note(:a4, 1.5, sustain: 2.5),
+        note(:cs4, 0.5, vel: 0.3),
+        note(:gs4, 0.5, vel: 0.3),
+        note(:a4, 0.5, vel: 0.3),
+        note(:gs4, 0.5, vel: 0.3),
+        note(:a4, 0.5, vel: 0.3),
+        note(:b4, 0.5, vel: 0.3),
+        note(:a4, 1.5, vel: 0.3, sustain: 2.5),
         rest(1),
         rest(0.5)
       ]),
-      seq(
-        a3: 0.5,
-        gs3: 0.5,
-        fs3: 0.5,
-        cs4: 0.5,
-        cs4: 0.5,
-        cs3: 0.5,
-        fs3: 0.5,
-        a3: 0.5,
-        cs3: 0.5,
-        fs3: 0.5,
-        a2: 0.5,
-        cs3: 0.5
-      )
+      seq([
+        note(:a3, 0.5, vel: 0.3),
+        note(:gs3, 0.5, vel: 0.3),
+        note(:fs3, 0.5, vel: 0.3),
+        note(:cs4, 0.5, vel: 0.3),
+        note(:cs4, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3),
+        note(:fs3, 0.5, vel: 0.3),
+        note(:a3, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3),
+        note(:fs3, 0.5, vel: 0.3),
+        note(:a2, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3)
+      ])
     ])
   end
 
   defp bar(:organo_a_canne, 27) do
     together([
       seq([
-        note(:fs5, 3, sustain: 3.75),
+        note(:fs5, 3, vel: 0.3, sustain: 3.75),
         rest(0.75),
-        note(:fs5, 0.125),
-        note(:g5, 0.125),
-        note(:a5, 0.5),
-        note(:a5, 0.75),
-        note(:g5, 0.25),
-        note(:fs5, 0.5)
+        note(:fs5, 0.125, vel: 0.3),
+        note(:g5, 0.125, vel: 0.3),
+        note(:a5, 0.5, vel: 0.3),
+        note(:a5, 0.75, vel: 0.3),
+        note(:g5, 0.25, vel: 0.3),
+        note(:fs5, 0.5, vel: 0.3)
       ]),
-      seq(
-        a4: 0.5,
-        b4: 0.5,
-        c5: 0.5,
-        c5: 0.5,
-        b4: 0.5,
-        c5: 0.5,
-        b4: 0.5,
-        cs5: 0.5,
-        ds5: 0.5,
-        ds5: 1,
-        r: 0.5
-      ),
-      seq(
-        fs4: 0.5,
-        gs4: 0.5,
-        a4: 0.5,
-        a4: 0.5,
-        g4: 0.5,
-        a4: 0.5,
-        fs4: 0.5,
-        e4: 0.5,
-        fs4: 0.5,
-        fs4: 1,
-        r: 0.5
-      ),
-      seq(fs2: 1, r: 1, r: 1, b3: 0.5, b3: 0.5, b3: 0.5, b3: 0.5, b3: 0.5, b2: 0.5)
+      seq([
+        note(:a4, 0.5, vel: 0.3),
+        note(:b4, 0.5, vel: 0.3),
+        note(:c5, 0.5, vel: 0.3),
+        note(:c5, 0.5, vel: 0.3),
+        note(:b4, 0.5, vel: 0.3),
+        note(:c5, 0.5, vel: 0.3),
+        note(:b4, 0.5, vel: 0.3),
+        note(:cs5, 0.5, vel: 0.3),
+        note(:ds5, 0.5, vel: 0.3),
+        note(:ds5, 1, vel: 0.3),
+        rest(0.5)
+      ]),
+      seq([
+        note(:fs4, 0.5, vel: 0.3),
+        note(:gs4, 0.5, vel: 0.3),
+        note(:a4, 0.5, vel: 0.3),
+        note(:a4, 0.5, vel: 0.3),
+        note(:g4, 0.5, vel: 0.3),
+        note(:a4, 0.5, vel: 0.3),
+        note(:fs4, 0.5, vel: 0.3),
+        note(:e4, 0.5, vel: 0.3),
+        note(:fs4, 0.5, vel: 0.3),
+        note(:fs4, 1, vel: 0.3),
+        rest(0.5)
+      ]),
+      seq([
+        note(:fs2, 1, vel: 0.3),
+        rest(1),
+        rest(1),
+        note(:b3, 0.5, vel: 0.3),
+        note(:b3, 0.5, vel: 0.3),
+        note(:b3, 0.5, vel: 0.3),
+        note(:b3, 0.5, vel: 0.3),
+        note(:b3, 0.5, vel: 0.3),
+        note(:b2, 0.5, vel: 0.3)
+      ])
     ])
   end
 
   defp bar(:organo_a_canne, 28) do
     together([
       seq([
-        note(:e5, 3, sustain: 3.5),
+        note(:e5, 3, vel: 0.3, sustain: 3.5),
         rest(0.5),
-        note(:as4, 0.5),
-        note(:b4, 0.5, sustain: 1.5),
-        note(:cs5, 0.25),
-        note(:d5, 0.25),
-        note(:e5, 0.5),
-        note(:as4, 0.5)
+        note(:as4, 0.5, vel: 0.3),
+        note(:b4, 0.5, vel: 0.3, sustain: 1.5),
+        note(:cs5, 0.25, vel: 0.3),
+        note(:d5, 0.25, vel: 0.3),
+        note(:e5, 0.5, vel: 0.3),
+        note(:as4, 0.5, vel: 0.3)
       ]),
-      seq(
-        e4: 0.5,
-        fs4: 0.5,
-        g4: 0.5,
-        g4: 0.5,
-        fs4: 0.5,
-        g4: 0.5,
-        cs5: 0.5,
-        cs4: 0.5,
-        d4: 0.5,
-        e4: 1,
-        r: 0.5
-      ),
-      seq(
-        b3: 0.5,
-        ds4: 0.5,
-        e4: 0.5,
-        e4: 0.5,
-        ds4: 0.5,
-        e4: 0.5,
-        fs3: 0.5,
-        e4: 0.5,
-        d4: 0.5,
-        r: 1,
-        r: 0.5
-      ),
-      seq(e3: 1, r: 1, r: 1, fs2: 0.5, fs2: 0.5, fs2: 0.5, fs2: 0.5, fs2: 0.5, fs2: 0.5)
+      seq([
+        note(:e4, 0.5, vel: 0.3),
+        note(:fs4, 0.5, vel: 0.3),
+        note(:g4, 0.5, vel: 0.3),
+        note(:g4, 0.5, vel: 0.3),
+        note(:fs4, 0.5, vel: 0.3),
+        note(:g4, 0.5, vel: 0.3),
+        note(:cs5, 0.5, vel: 0.3),
+        note(:cs4, 0.5, vel: 0.3),
+        note(:d4, 0.5, vel: 0.3),
+        note(:e4, 1, vel: 0.3),
+        rest(0.5)
+      ]),
+      seq([
+        note(:b3, 0.5, vel: 0.3),
+        note(:ds4, 0.5, vel: 0.3),
+        note(:e4, 0.5, vel: 0.3),
+        note(:e4, 0.5, vel: 0.3),
+        note(:ds4, 0.5, vel: 0.3),
+        note(:e4, 0.5, vel: 0.3),
+        note(:fs3, 0.5, vel: 0.3),
+        note(:e4, 0.5, vel: 0.3),
+        note(:d4, 0.5, vel: 0.3),
+        rest(1),
+        rest(0.5)
+      ]),
+      seq([
+        note(:e3, 1, vel: 0.3),
+        rest(1),
+        rest(1),
+        note(:fs2, 0.5, vel: 0.3),
+        note(:fs2, 0.5, vel: 0.3),
+        note(:fs2, 0.5, vel: 0.3),
+        note(:fs2, 0.5, vel: 0.3),
+        note(:fs2, 0.5, vel: 0.3),
+        note(:fs2, 0.5, vel: 0.3)
+      ])
     ])
   end
 
   defp bar(:organo_a_canne, 29) do
     together([
       seq([
-        note(:b4, 3, sustain: 3.75),
+        note(:b4, 3, vel: 0.3, sustain: 3.75),
         rest(0.75),
-        note(:a4, 0.25),
-        note(:gs4, 0.5),
-        note(:b4, 0.75),
-        note(:a4, 0.25),
-        note(:gs4, 0.5)
+        note(:a4, 0.25, vel: 0.3),
+        note(:gs4, 0.5, vel: 0.3),
+        note(:b4, 0.75, vel: 0.3),
+        note(:a4, 0.25, vel: 0.3),
+        note(:gs4, 0.5, vel: 0.3)
       ]),
-      seq(
-        fs4: 0.5,
-        as4: 0.5,
-        b4: 0.5,
-        b4: 0.5,
-        as4: 0.5,
-        b4: 0.5,
-        cs4: 0.5,
-        ds4: 0.5,
-        es4: 0.5,
-        es4: 1,
-        r: 0.5
-      ),
-      seq(d4: 0.5, e4: 0.5, fs4: 0.5, g4: 0.5, e4: 0.5, fs4: 0.5, gs3: 1, r: 0.5, gs4: 1, r: 0.5),
-      seq(b2: 1, r: 1, r: 1, cs3: 0.5, cs3: 0.5, cs3: 0.5, cs3: 0.5, cs3: 0.5, cs3: 0.5)
+      seq([
+        note(:fs4, 0.5, vel: 0.3),
+        note(:as4, 0.5, vel: 0.3),
+        note(:b4, 0.5, vel: 0.3),
+        note(:b4, 0.5, vel: 0.3),
+        note(:as4, 0.5, vel: 0.3),
+        note(:b4, 0.5, vel: 0.3),
+        note(:cs4, 0.5, vel: 0.3),
+        note(:ds4, 0.5, vel: 0.3),
+        note(:es4, 0.5, vel: 0.3),
+        note(:es4, 1, vel: 0.3),
+        rest(0.5)
+      ]),
+      seq([
+        note(:d4, 0.5, vel: 0.3),
+        note(:e4, 0.5, vel: 0.3),
+        note(:fs4, 0.5, vel: 0.3),
+        note(:g4, 0.5, vel: 0.3),
+        note(:e4, 0.5, vel: 0.3),
+        note(:fs4, 0.5, vel: 0.3),
+        note(:gs3, 1, vel: 0.3),
+        rest(0.5),
+        note(:gs4, 1, vel: 0.3),
+        rest(0.5)
+      ]),
+      seq([
+        note(:b2, 1, vel: 0.3),
+        rest(1),
+        rest(1),
+        note(:cs3, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3)
+      ])
     ])
   end
 
   defp bar(:organo_a_canne, 30) do
     together([
-      seq(fs4: 1.5, a4: 1.5, d5: 1, cs5: 0.5, gs5: 0.5, r: 0.5, ds5: 0.5),
-      seq(cs4: 1.5, fs4: 1.5, a4: 1.5, gs4: 0.5, r: 0.5, gs4: 0.5),
-      seq(a3: 1.5, cs4: 1.5, fs4: 1.5, bs3: 0.5, r: 0.5, r: 0.5),
-      seq(
-        fs2: 0.5,
-        fs2: 0.5,
-        fs2: 0.5,
-        fs2: 0.5,
-        fs2: 0.5,
-        fs2: 0.5,
-        fs2: 0.5,
-        fs2: 0.5,
-        fs2: 0.5,
-        fs3: 0.5,
-        ds3: 0.5,
-        bs2: 0.5
-      )
+      seq([
+        note(:fs4, 1.5, vel: 0.3),
+        note(:a4, 1.5, vel: 0.3),
+        note(:d5, 1, vel: 0.3),
+        note(:cs5, 0.5, vel: 0.3),
+        note(:gs5, 0.5, vel: 0.3),
+        rest(0.5),
+        note(:ds5, 0.5, vel: 0.3)
+      ]),
+      seq([
+        note(:cs4, 1.5, vel: 0.3),
+        note(:fs4, 1.5, vel: 0.3),
+        note(:a4, 1.5, vel: 0.3),
+        note(:gs4, 0.5, vel: 0.3),
+        rest(0.5),
+        note(:gs4, 0.5, vel: 0.3)
+      ]),
+      seq([
+        note(:a3, 1.5, vel: 0.3),
+        note(:cs4, 1.5, vel: 0.3),
+        note(:fs4, 1.5, vel: 0.3),
+        note(:bs3, 0.5, vel: 0.3),
+        rest(0.5),
+        rest(0.5)
+      ]),
+      seq([
+        note(:fs2, 0.5, vel: 0.3),
+        note(:fs2, 0.5, vel: 0.3),
+        note(:fs2, 0.5, vel: 0.3),
+        note(:fs2, 0.5, vel: 0.3),
+        note(:fs2, 0.5, vel: 0.3),
+        note(:fs2, 0.5, vel: 0.3),
+        note(:fs2, 0.5, vel: 0.3),
+        note(:fs2, 0.5, vel: 0.3),
+        note(:fs2, 0.5, vel: 0.3),
+        note(:fs3, 0.5, vel: 0.3),
+        note(:ds3, 0.5, vel: 0.3),
+        note(:bs2, 0.5, vel: 0.3)
+      ])
     ])
   end
 
   defp bar(:organo_a_canne, 31) do
     together([
-      seq(cs5: 1, r: 0.5, cs5: 1.5, d5: 1.5, cs5: 1.5),
-      seq(gs4: 1, r: 0.5, a4: 3, a4: 1.5),
-      seq([rest(1), rest(0.5), note(:fs4, 3, sustain: 4.5), rest(1.5)]),
-      seq(
-        e3: 0.5,
-        e3: 0.5,
-        e3: 0.5,
-        a3: 0.5,
-        a3: 0.5,
-        a3: 0.5,
-        fs3: 0.5,
-        fs3: 0.5,
-        fs3: 0.5,
-        e3: 0.5,
-        e3: 0.5,
-        e3: 0.5
-      )
+      seq([
+        note(:cs5, 1, vel: 0.3),
+        rest(0.5),
+        note(:cs5, 1.5, vel: 0.3),
+        note(:d5, 1.5, vel: 0.3),
+        note(:cs5, 1.5, vel: 0.3)
+      ]),
+      seq([note(:gs4, 1, vel: 0.3), rest(0.5), note(:a4, 3, vel: 0.3), note(:a4, 1.5, vel: 0.3)]),
+      seq([rest(1), rest(0.5), note(:fs4, 3, vel: 0.3, sustain: 4.5), rest(1.5)]),
+      seq([
+        note(:e3, 0.5, vel: 0.3),
+        note(:e3, 0.5, vel: 0.3),
+        note(:e3, 0.5, vel: 0.3),
+        note(:a3, 0.5, vel: 0.3),
+        note(:a3, 0.5, vel: 0.3),
+        note(:a3, 0.5, vel: 0.3),
+        note(:fs3, 0.5, vel: 0.3),
+        note(:fs3, 0.5, vel: 0.3),
+        note(:fs3, 0.5, vel: 0.3),
+        note(:e3, 0.5, vel: 0.3),
+        note(:e3, 0.5, vel: 0.3),
+        note(:e3, 0.5, vel: 0.3)
+      ])
     ])
   end
 
   defp bar(:organo_a_canne, 32) do
     together([
-      seq(bs4: 1, bs4: 0.5, cs5: 1, bs4: 0.5, r: 1.5, cs5: 1.5),
       seq([
-        note(:a4, 1),
-        note(:ds4, 0.5),
-        note(:gs4, 1.5),
-        note(:gs4, 0.5),
-        note(:gs4, 0.5),
-        note(:b4, 0.5, sustain: 1),
-        rest(0.5),
-        note(:a4, 0.5),
-        note(:gs4, 0.5)
+        note(:bs4, 1, vel: 0.3),
+        note(:bs4, 0.5, vel: 0.3),
+        note(:cs5, 1, vel: 0.3),
+        note(:bs4, 0.5, vel: 0.3),
+        rest(1.5),
+        note(:cs5, 1.5, vel: 0.3)
       ]),
-      seq(fs4: 1, r: 0.5, r: 1, r: 0.5, es4: 3),
-      seq(
-        ds3: 0.5,
-        e3: 0.5,
-        fs3: 0.5,
-        e3: 0.5,
-        fs3: 0.5,
-        gs3: 0.5,
-        cs3: 0.5,
-        cs3: 0.5,
-        cs3: 0.5,
-        es3: 0.5,
-        es3: 0.5,
-        es3: 0.5
-      )
+      seq([
+        note(:a4, 1, vel: 0.3),
+        note(:ds4, 0.5, vel: 0.3),
+        note(:gs4, 1.5, vel: 0.3),
+        note(:gs4, 0.5, vel: 0.3),
+        note(:gs4, 0.5, vel: 0.3),
+        note(:b4, 0.5, vel: 0.3, sustain: 1),
+        rest(0.5),
+        note(:a4, 0.5, vel: 0.3),
+        note(:gs4, 0.5, vel: 0.3)
+      ]),
+      seq([note(:fs4, 1, vel: 0.3), rest(0.5), rest(1), rest(0.5), note(:es4, 3, vel: 0.3)]),
+      seq([
+        note(:ds3, 0.5, vel: 0.3),
+        note(:e3, 0.5, vel: 0.3),
+        note(:fs3, 0.5, vel: 0.3),
+        note(:e3, 0.5, vel: 0.3),
+        note(:fs3, 0.5, vel: 0.3),
+        note(:gs3, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3),
+        note(:es3, 0.5, vel: 0.3),
+        note(:es3, 0.5, vel: 0.3),
+        note(:es3, 0.5, vel: 0.3)
+      ])
     ])
   end
 
   defp bar(:organo_a_canne, 33) do
     together([
-      seq(cs5: 1.5, es5: 1.5, fs5: 1.5, e5: 1.5),
-      seq(fs4: 1.5, gs4: 0.5, a4: 0.5, b4: 0.5, a4: 1, b4: 0.5, cs5: 1.5),
-      seq(a4: 1.5, cs5: 1, cs4: 0.5, fs4: 3),
-      seq(
-        fs3: 0.5,
-        fs3: 0.5,
-        fs3: 0.5,
-        cs3: 0.5,
-        cs3: 0.5,
-        cs3: 0.5,
-        d3: 0.5,
-        d3: 0.5,
-        d3: 0.5,
-        as2: 0.5,
-        as2: 0.5,
-        as2: 0.5
-      )
+      seq([
+        note(:cs5, 1.5, vel: 0.3),
+        note(:es5, 1.5, vel: 0.3),
+        note(:fs5, 1.5, vel: 0.3),
+        note(:e5, 1.5, vel: 0.3)
+      ]),
+      seq([
+        note(:fs4, 1.5, vel: 0.3),
+        note(:gs4, 0.5, vel: 0.3),
+        note(:a4, 0.5, vel: 0.3),
+        note(:b4, 0.5, vel: 0.3),
+        note(:a4, 1, vel: 0.3),
+        note(:b4, 0.5, vel: 0.3),
+        note(:cs5, 1.5, vel: 0.3)
+      ]),
+      seq([
+        note(:a4, 1.5, vel: 0.3),
+        note(:cs5, 1, vel: 0.3),
+        note(:cs4, 0.5, vel: 0.3),
+        note(:fs4, 3, vel: 0.3)
+      ]),
+      seq([
+        note(:fs3, 0.5, vel: 0.3),
+        note(:fs3, 0.5, vel: 0.3),
+        note(:fs3, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3),
+        note(:d3, 0.5, vel: 0.3),
+        note(:d3, 0.5, vel: 0.3),
+        note(:d3, 0.5, vel: 0.3),
+        note(:as2, 0.5, vel: 0.3),
+        note(:as2, 0.5, vel: 0.3),
+        note(:as2, 0.5, vel: 0.3)
+      ])
     ])
   end
 
   defp bar(:organo_a_canne, 34) do
     together([
-      seq(d5: 1.5, cs5: 1.5, b4: 1.5, fs5: 1.5),
-      seq(b4: 1.5, as4: 1.5, b4: 1.5, b4: 1, ds5: 0.5),
       seq([
-        note(:fs4, 1.5, sustain: 2.5),
-        rest(1),
-        note(:e4, 0.5),
-        note(:d4, 1),
-        note(:e4, 0.5),
-        note(:fs4, 1.5)
+        note(:d5, 1.5, vel: 0.3),
+        note(:cs5, 1.5, vel: 0.3),
+        note(:b4, 1.5, vel: 0.3),
+        note(:fs5, 1.5, vel: 0.3)
       ]),
-      seq(
-        b2: 0.5,
-        b2: 0.5,
-        b2: 0.5,
-        fs2: 0.5,
-        fs2: 0.5,
-        fs2: 0.5,
-        g2: 0.5,
-        g2: 0.5,
-        g2: 0.5,
-        b2: 0.5,
-        b2: 0.5,
-        b2: 0.5
-      )
+      seq([
+        note(:b4, 1.5, vel: 0.3),
+        note(:as4, 1.5, vel: 0.3),
+        note(:b4, 1.5, vel: 0.3),
+        note(:b4, 1, vel: 0.3),
+        note(:ds5, 0.5, vel: 0.3)
+      ]),
+      seq([
+        note(:fs4, 1.5, vel: 0.3, sustain: 2.5),
+        rest(1),
+        note(:e4, 0.5, vel: 0.3),
+        note(:d4, 1, vel: 0.3),
+        note(:e4, 0.5, vel: 0.3),
+        note(:fs4, 1.5, vel: 0.3)
+      ]),
+      seq([
+        note(:b2, 0.5, vel: 0.3),
+        note(:b2, 0.5, vel: 0.3),
+        note(:b2, 0.5, vel: 0.3),
+        note(:fs2, 0.5, vel: 0.3),
+        note(:fs2, 0.5, vel: 0.3),
+        note(:fs2, 0.5, vel: 0.3),
+        note(:g2, 0.5, vel: 0.3),
+        note(:g2, 0.5, vel: 0.3),
+        note(:g2, 0.5, vel: 0.3),
+        note(:b2, 0.5, vel: 0.3),
+        note(:b2, 0.5, vel: 0.3),
+        note(:b2, 0.5, vel: 0.3)
+      ])
     ])
   end
 
   defp bar(:organo_a_canne, 35) do
     together([
-      seq([note(:g5, 3, sustain: 4.5), rest(1.5), note(:cs5, 1.5)]),
-      seq(e5: 3, e5: 3),
-      seq(e4: 3, e3: 1.5, as3: 1.5),
-      seq(
-        e3: 0.5,
-        e3: 0.5,
-        e3: 0.5,
-        d3: 0.5,
-        d3: 0.5,
-        d3: 0.5,
-        cs3: 0.5,
-        cs3: 0.5,
-        cs3: 0.5,
-        as2: 0.5,
-        as2: 0.5,
-        as2: 0.5
-      )
+      seq([note(:g5, 3, vel: 0.3, sustain: 4.5), rest(1.5), note(:cs5, 1.5, vel: 0.3)]),
+      seq([note(:e5, 3, vel: 0.3), note(:e5, 3, vel: 0.3)]),
+      seq([note(:e4, 3, vel: 0.3), note(:e3, 1.5, vel: 0.3), note(:as3, 1.5, vel: 0.3)]),
+      seq([
+        note(:e3, 0.5, vel: 0.3),
+        note(:e3, 0.5, vel: 0.3),
+        note(:e3, 0.5, vel: 0.3),
+        note(:d3, 0.5, vel: 0.3),
+        note(:d3, 0.5, vel: 0.3),
+        note(:d3, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3),
+        note(:as2, 0.5, vel: 0.3),
+        note(:as2, 0.5, vel: 0.3),
+        note(:as2, 0.5, vel: 0.3)
+      ])
     ])
   end
 
   defp bar(:organo_a_canne, 36) do
     together([
       seq([
-        note(:d5, 1.5),
-        note(:e5, 1.5),
-        note(:fs5, 1.5, sustain: 2.5),
+        note(:d5, 1.5, vel: 0.3),
+        note(:e5, 1.5, vel: 0.3),
+        note(:fs5, 1.5, vel: 0.3, sustain: 2.5),
         rest(1),
-        note(:as4, 0.5)
+        note(:as4, 0.5, vel: 0.3)
       ]),
-      seq(d5: 1.5, b4: 1.5, as4: 0.5, b4: 0.5, cs5: 0.5, cs4: 0.5, d4: 0.5, e4: 0.5),
-      seq(fs4: 1.5, g4: 1.5, cs4: 0.5, d4: 0.5, e4: 0.5, as3: 0.5, b3: 0.5, cs4: 0.5),
-      seq(b2: 0.5, b2: 0.5, b2: 0.5, g2: 0.5, g2: 0.5, g2: 0.5, fs3: 1, r: 2)
+      seq([
+        note(:d5, 1.5, vel: 0.3),
+        note(:b4, 1.5, vel: 0.3),
+        note(:as4, 0.5, vel: 0.3),
+        note(:b4, 0.5, vel: 0.3),
+        note(:cs5, 0.5, vel: 0.3),
+        note(:cs4, 0.5, vel: 0.3),
+        note(:d4, 0.5, vel: 0.3),
+        note(:e4, 0.5, vel: 0.3)
+      ]),
+      seq([
+        note(:fs4, 1.5, vel: 0.3),
+        note(:g4, 1.5, vel: 0.3),
+        note(:cs4, 0.5, vel: 0.3),
+        note(:d4, 0.5, vel: 0.3),
+        note(:e4, 0.5, vel: 0.3),
+        note(:as3, 0.5, vel: 0.3),
+        note(:b3, 0.5, vel: 0.3),
+        note(:cs4, 0.5, vel: 0.3)
+      ]),
+      seq([
+        note(:b2, 0.5, vel: 0.3),
+        note(:b2, 0.5, vel: 0.3),
+        note(:b2, 0.5, vel: 0.3),
+        note(:g2, 0.5, vel: 0.3),
+        note(:g2, 0.5, vel: 0.3),
+        note(:g2, 0.5, vel: 0.3),
+        note(:fs3, 1, vel: 0.3),
+        rest(2)
+      ])
     ])
   end
 
   defp bar(:organo_a_canne, 37) do
     together([
       seq([
-        note(:c5, 0.75),
-        note(:b4, 0.25),
-        note(:a4, 0.5),
-        note(:ds5, 0.75),
-        note(:e5, 0.25),
-        note(:fs5, 0.5),
-        note(:fs5, 0.5),
-        note(:e5, 1, sustain: 2),
+        note(:c5, 0.75, vel: 0.3),
+        note(:b4, 0.25, vel: 0.3),
+        note(:a4, 0.5, vel: 0.3),
+        note(:ds5, 0.75, vel: 0.3),
+        note(:e5, 0.25, vel: 0.3),
+        note(:fs5, 0.5, vel: 0.3),
+        note(:fs5, 0.5, vel: 0.3),
+        note(:e5, 1, vel: 0.3, sustain: 2),
         rest(1),
-        note(:g4, 0.5)
+        note(:g4, 0.5, vel: 0.3)
       ]),
-      seq(
-        fs4: 0.5,
-        fs4: 0.5,
-        fs4: 0.5,
-        fs4: 0.5,
-        fs4: 0.5,
-        fs4: 0.5,
-        g4: 0.5,
-        e4: 0.5,
-        fs4: 0.5,
-        g4: 0.5,
-        e4: 0.5,
-        d4: 0.5
-      ),
-      seq(
-        b3: 0.5,
-        b3: 0.5,
-        b3: 0.5,
-        b3: 0.5,
-        b3: 0.5,
-        b3: 0.5,
-        b3: 0.5,
-        g3: 0.5,
-        a3: 0.5,
-        b3: 0.5,
-        cs4: 0.5,
-        b3: 0.5
-      ),
-      seq(b2: 1, r: 1, r: 1, e3: 1, r: 2)
+      seq([
+        note(:fs4, 0.5, vel: 0.3),
+        note(:fs4, 0.5, vel: 0.3),
+        note(:fs4, 0.5, vel: 0.3),
+        note(:fs4, 0.5, vel: 0.3),
+        note(:fs4, 0.5, vel: 0.3),
+        note(:fs4, 0.5, vel: 0.3),
+        note(:g4, 0.5, vel: 0.3),
+        note(:e4, 0.5, vel: 0.3),
+        note(:fs4, 0.5, vel: 0.3),
+        note(:g4, 0.5, vel: 0.3),
+        note(:e4, 0.5, vel: 0.3),
+        note(:d4, 0.5, vel: 0.3)
+      ]),
+      seq([
+        note(:b3, 0.5, vel: 0.3),
+        note(:b3, 0.5, vel: 0.3),
+        note(:b3, 0.5, vel: 0.3),
+        note(:b3, 0.5, vel: 0.3),
+        note(:b3, 0.5, vel: 0.3),
+        note(:b3, 0.5, vel: 0.3),
+        note(:b3, 0.5, vel: 0.3),
+        note(:g3, 0.5, vel: 0.3),
+        note(:a3, 0.5, vel: 0.3),
+        note(:b3, 0.5, vel: 0.3),
+        note(:cs4, 0.5, vel: 0.3),
+        note(:b3, 0.5, vel: 0.3)
+      ]),
+      seq([note(:b2, 1, vel: 0.3), rest(1), rest(1), note(:e3, 1, vel: 0.3), rest(2)])
     ])
   end
 
   defp bar(:organo_a_canne, 38) do
     together([
       seq([
-        note(:g4, 0.75),
-        note(:fs4, 0.25),
-        note(:e4, 0.5),
-        note(:as4, 0.75),
-        note(:b4, 0.25),
-        note(:cs5, 0.5),
-        note(:cs5, 0.5),
-        note(:b4, 1, sustain: 2),
+        note(:g4, 0.75, vel: 0.3),
+        note(:fs4, 0.25, vel: 0.3),
+        note(:e4, 0.5, vel: 0.3),
+        note(:as4, 0.75, vel: 0.3),
+        note(:b4, 0.25, vel: 0.3),
+        note(:cs5, 0.5, vel: 0.3),
+        note(:cs5, 0.5, vel: 0.3),
+        note(:b4, 1, vel: 0.3, sustain: 2),
         rest(1),
-        note(:cs5, 0.5)
+        note(:cs5, 0.5, vel: 0.3)
       ]),
-      seq(
-        cs4: 0.5,
-        d4: 0.5,
-        e4: 0.5,
-        e4: 0.5,
-        d4: 0.5,
-        cs4: 0.5,
-        d4: 0.5,
-        b3: 0.5,
-        as3: 0.5,
-        b3: 0.5,
-        b4: 0.5,
-        as4: 0.5
-      ),
-      seq(
-        as3: 0.5,
-        b3: 0.5,
-        cs4: 0.5,
-        fs3: 0.5,
-        fs3: 0.5,
-        fs3: 0.5,
-        fs3: 0.5,
-        d3: 0.5,
-        e3: 0.5,
-        fs3: 0.5,
-        d4: 0.5,
-        cs4: 0.5
-      ),
-      seq(fs3: 1, r: 1, r: 1, b2: 1, r: 2)
+      seq([
+        note(:cs4, 0.5, vel: 0.3),
+        note(:d4, 0.5, vel: 0.3),
+        note(:e4, 0.5, vel: 0.3),
+        note(:e4, 0.5, vel: 0.3),
+        note(:d4, 0.5, vel: 0.3),
+        note(:cs4, 0.5, vel: 0.3),
+        note(:d4, 0.5, vel: 0.3),
+        note(:b3, 0.5, vel: 0.3),
+        note(:as3, 0.5, vel: 0.3),
+        note(:b3, 0.5, vel: 0.3),
+        note(:b4, 0.5, vel: 0.3),
+        note(:as4, 0.5, vel: 0.3)
+      ]),
+      seq([
+        note(:as3, 0.5, vel: 0.3),
+        note(:b3, 0.5, vel: 0.3),
+        note(:cs4, 0.5, vel: 0.3),
+        note(:fs3, 0.5, vel: 0.3),
+        note(:fs3, 0.5, vel: 0.3),
+        note(:fs3, 0.5, vel: 0.3),
+        note(:fs3, 0.5, vel: 0.3),
+        note(:d3, 0.5, vel: 0.3),
+        note(:e3, 0.5, vel: 0.3),
+        note(:fs3, 0.5, vel: 0.3),
+        note(:d4, 0.5, vel: 0.3),
+        note(:cs4, 0.5, vel: 0.3)
+      ]),
+      seq([note(:fs3, 1, vel: 0.3), rest(1), rest(1), note(:b2, 1, vel: 0.3), rest(2)])
     ])
   end
 
   defp bar(:organo_a_canne, 39) do
     together([
       seq([
-        note(:d5, 3, sustain: 3.5),
+        note(:d5, 3, vel: 0.3, sustain: 3.5),
         rest(0.5),
-        note(:cs5, 0.5),
-        note(:b4, 0.5),
-        note(:a4, 0.5),
-        note(:g4, 0.5),
-        note(:a4, 0.5)
+        note(:cs5, 0.5, vel: 0.3),
+        note(:b4, 0.5, vel: 0.3),
+        note(:a4, 0.5, vel: 0.3),
+        note(:g4, 0.5, vel: 0.3),
+        note(:a4, 0.5, vel: 0.3)
       ]),
-      seq([note(:b4, 3, sustain: 4.5), rest(1.5), note(:ds5, 1.5)]),
+      seq([note(:b4, 3, vel: 0.3, sustain: 4.5), rest(1.5), note(:ds5, 1.5, vel: 0.3)]),
       seq([
-        note(:b3, 3, sustain: 4.5),
+        note(:b3, 3, vel: 0.3, sustain: 4.5),
         rest(1.5),
-        note(:fs4, 0.5),
-        note(:g4, 0.5),
-        note(:fs4, 0.5)
+        note(:fs4, 0.5, vel: 0.3),
+        note(:g4, 0.5, vel: 0.3),
+        note(:fs4, 0.5, vel: 0.3)
       ]),
-      seq(
-        b3: 0.5,
-        b3: 0.5,
-        b3: 0.5,
-        a3: 0.5,
-        a3: 0.5,
-        a3: 0.5,
-        g3: 0.5,
-        g3: 0.5,
-        g3: 0.5,
-        fs3: 0.5,
-        fs3: 0.5,
-        fs3: 0.5
-      )
+      seq([
+        note(:b3, 0.5, vel: 0.3),
+        note(:b3, 0.5, vel: 0.3),
+        note(:b3, 0.5, vel: 0.3),
+        note(:a3, 0.5, vel: 0.3),
+        note(:a3, 0.5, vel: 0.3),
+        note(:a3, 0.5, vel: 0.3),
+        note(:g3, 0.5, vel: 0.3),
+        note(:g3, 0.5, vel: 0.3),
+        note(:g3, 0.5, vel: 0.3),
+        note(:fs3, 0.5, vel: 0.3),
+        note(:fs3, 0.5, vel: 0.3),
+        note(:fs3, 0.5, vel: 0.3)
+      ])
     ])
   end
 
   defp bar(:organo_a_canne, 40) do
     together([
-      seq(b4: 3, b4: 3),
-      seq(e5: 1.5, a5: 1, ds5: 0.5, e5: 1.5, b4: 1.5),
-      seq(g4: 1.5, fs4: 1.5, e4: 3),
-      seq(
-        e3: 0.5,
-        e3: 0.5,
-        e3: 0.5,
-        fs3: 0.5,
-        fs3: 0.5,
-        fs3: 0.5,
-        g3: 0.5,
-        e3: 0.5,
-        g3: 0.5,
-        b3: 0.5,
-        g3: 0.5,
-        b3: 0.5
-      )
+      seq([note(:b4, 3, vel: 0.3), note(:b4, 3, vel: 0.3)]),
+      seq([
+        note(:e5, 1.5, vel: 0.3),
+        note(:a5, 1, vel: 0.3),
+        note(:ds5, 0.5, vel: 0.3),
+        note(:e5, 1.5, vel: 0.3),
+        note(:b4, 1.5, vel: 0.3)
+      ]),
+      seq([note(:g4, 1.5, vel: 0.3), note(:fs4, 1.5, vel: 0.3), note(:e4, 3, vel: 0.3)]),
+      seq([
+        note(:e3, 0.5, vel: 0.3),
+        note(:e3, 0.5, vel: 0.3),
+        note(:e3, 0.5, vel: 0.3),
+        note(:fs3, 0.5, vel: 0.3),
+        note(:fs3, 0.5, vel: 0.3),
+        note(:fs3, 0.5, vel: 0.3),
+        note(:g3, 0.5, vel: 0.3),
+        note(:e3, 0.5, vel: 0.3),
+        note(:g3, 0.5, vel: 0.3),
+        note(:b3, 0.5, vel: 0.3),
+        note(:g3, 0.5, vel: 0.3),
+        note(:b3, 0.5, vel: 0.3)
+      ])
     ])
   end
 
   defp bar(:organo_a_canne, 41) do
     together([
-      seq([note(:g4, 3, sustain: 4.5), rest(1.5), note(:cs5, 1.5)]),
+      seq([note(:g4, 3, vel: 0.3, sustain: 4.5), rest(1.5), note(:cs5, 1.5, vel: 0.3)]),
       seq([
-        note(:c5, 1.5),
-        note(:e5, 1.5, sustain: 3),
+        note(:c5, 1.5, vel: 0.3),
+        note(:e5, 1.5, vel: 0.3, sustain: 3),
         rest(1.5),
-        note(:e5, 0.5),
-        note(:d5, 0.5),
-        note(:cs5, 0.5)
+        note(:e5, 0.5, vel: 0.3),
+        note(:d5, 0.5, vel: 0.3),
+        note(:cs5, 0.5, vel: 0.3)
       ]),
-      seq([note(:e4, 3, sustain: 4.5), rest(1.5), note(:e4, 1), note(:fs4, 0.5)]),
-      seq(
-        e4: 0.5,
-        e4: 0.5,
-        e4: 0.5,
-        d4: 0.5,
-        d4: 0.5,
-        d4: 0.5,
-        cs4: 0.5,
-        cs4: 0.5,
-        cs4: 0.5,
-        as3: 0.5,
-        as3: 0.5,
-        as3: 0.5
-      )
+      seq([
+        note(:e4, 3, vel: 0.3, sustain: 4.5),
+        rest(1.5),
+        note(:e4, 1, vel: 0.3),
+        note(:fs4, 0.5, vel: 0.3)
+      ]),
+      seq([
+        note(:e4, 0.5, vel: 0.3),
+        note(:e4, 0.5, vel: 0.3),
+        note(:e4, 0.5, vel: 0.3),
+        note(:d4, 0.5, vel: 0.3),
+        note(:d4, 0.5, vel: 0.3),
+        note(:d4, 0.5, vel: 0.3),
+        note(:cs4, 0.5, vel: 0.3),
+        note(:cs4, 0.5, vel: 0.3),
+        note(:cs4, 0.5, vel: 0.3),
+        note(:as3, 0.5, vel: 0.3),
+        note(:as3, 0.5, vel: 0.3),
+        note(:as3, 0.5, vel: 0.3)
+      ])
     ])
   end
 
   defp bar(:organo_a_canne, 42) do
     together([
-      seq([note(:fs5, 1.5), note(:e5, 1.5), note(:fs5, 1.5, sustain: 2.5), rest(1), rest(0.5)]),
-      seq([note(:b4, 3), note(:cs5, 1.5, sustain: 2.5), rest(1), rest(0.5)]),
-      seq([note(:b3, 3), note(:fs4, 1.5, sustain: 2.5), rest(1), rest(0.5)]),
-      seq(
-        b3: 0.5,
-        b3: 0.5,
-        b3: 0.5,
-        g3: 0.5,
-        g3: 0.5,
-        g3: 0.5,
-        fs3: 0.5,
-        cs3: 0.5,
-        e3: 0.5,
-        e3: 0.5,
-        as2: 0.5,
-        cs3: 0.5
-      )
+      seq([
+        note(:fs5, 1.5, vel: 0.3),
+        note(:e5, 1.5, vel: 0.3),
+        note(:fs5, 1.5, vel: 0.3, sustain: 2.5),
+        rest(1),
+        rest(0.5)
+      ]),
+      seq([note(:b4, 3, vel: 0.3), note(:cs5, 1.5, vel: 0.3, sustain: 2.5), rest(1), rest(0.5)]),
+      seq([note(:b3, 3, vel: 0.3), note(:fs4, 1.5, vel: 0.3, sustain: 2.5), rest(1), rest(0.5)]),
+      seq([
+        note(:b3, 0.5, vel: 0.3),
+        note(:b3, 0.5, vel: 0.3),
+        note(:b3, 0.5, vel: 0.3),
+        note(:g3, 0.5, vel: 0.3),
+        note(:g3, 0.5, vel: 0.3),
+        note(:g3, 0.5, vel: 0.3),
+        note(:fs3, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3),
+        note(:e3, 0.5, vel: 0.3),
+        note(:e3, 0.5, vel: 0.3),
+        note(:as2, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3)
+      ])
     ])
   end
 
   defp bar(:organo_a_canne, 43) do
     together([
       seq([
-        note(:as4, 0.5),
-        note(:b4, 0.5),
-        note(:cs5, 0.5),
-        note(:cs5, 0.5),
-        note(:d5, 0.5),
-        note(:e5, 0.5),
-        note(:as4, 1.5, sustain: 2.5),
+        note(:as4, 0.5, vel: 0.3),
+        note(:b4, 0.5, vel: 0.3),
+        note(:cs5, 0.5, vel: 0.3),
+        note(:cs5, 0.5, vel: 0.3),
+        note(:d5, 0.5, vel: 0.3),
+        note(:e5, 0.5, vel: 0.3),
+        note(:as4, 1.5, vel: 0.3, sustain: 2.5),
         rest(1),
         rest(0.5)
       ]),
       seq([
-        note(:fs4, 0.5),
-        note(:gs4, 0.5),
-        note(:as4, 0.5),
-        note(:as4, 0.5),
-        note(:b4, 0.5),
-        note(:cs5, 0.5),
-        note(:cs4, 1.5, sustain: 2.5),
+        note(:fs4, 0.5, vel: 0.3),
+        note(:gs4, 0.5, vel: 0.3),
+        note(:as4, 0.5, vel: 0.3),
+        note(:as4, 0.5, vel: 0.3),
+        note(:b4, 0.5, vel: 0.3),
+        note(:cs5, 0.5, vel: 0.3),
+        note(:cs4, 1.5, vel: 0.3, sustain: 2.5),
         rest(1),
         rest(0.5)
       ]),
       seq([
-        note(:cs4, 0.5),
-        note(:d4, 0.5),
-        note(:e4, 0.5),
-        note(:fs3, 0.5),
-        note(:fs3, 0.5),
-        note(:fs3, 0.5),
-        note(:fs3, 1.5, sustain: 2.5),
+        note(:cs4, 0.5, vel: 0.3),
+        note(:d4, 0.5, vel: 0.3),
+        note(:e4, 0.5, vel: 0.3),
+        note(:fs3, 0.5, vel: 0.3),
+        note(:fs3, 0.5, vel: 0.3),
+        note(:fs3, 0.5, vel: 0.3),
+        note(:fs3, 1.5, vel: 0.3, sustain: 2.5),
         rest(1),
         rest(0.5)
       ]),
-      seq(fs2: 1, r: 1, r: 1, fs2: 0.5, fs2: 0.5, fs2: 0.5, fs2: 0.5, fs2: 0.5, fs2: 0.5)
+      seq([
+        note(:fs2, 1, vel: 0.3),
+        rest(1),
+        rest(1),
+        note(:fs2, 0.5, vel: 0.3),
+        note(:fs2, 0.5, vel: 0.3),
+        note(:fs2, 0.5, vel: 0.3),
+        note(:fs2, 0.5, vel: 0.3),
+        note(:fs2, 0.5, vel: 0.3),
+        note(:fs2, 0.5, vel: 0.3)
+      ])
     ])
   end
 
   defp bar(:organo_a_canne, 44) do
     together([
       seq([
-        note(:fs4, 0.5),
-        note(:g4, 0.5),
-        note(:a4, 0.5),
-        note(:fs4, 0.5),
-        note(:g4, 0.5),
-        note(:a4, 0.5),
-        note(:a4, 1.5, sustain: 2.5),
+        note(:fs4, 0.5, vel: 0.3),
+        note(:g4, 0.5, vel: 0.3),
+        note(:a4, 0.5, vel: 0.3),
+        note(:fs4, 0.5, vel: 0.3),
+        note(:g4, 0.5, vel: 0.3),
+        note(:a4, 0.5, vel: 0.3),
+        note(:a4, 1.5, vel: 0.3, sustain: 2.5),
         rest(1),
         rest(0.5)
       ]),
       seq([
-        note(:ds4, 0.5),
-        note(:e4, 0.5),
-        note(:fs4, 0.5),
-        note(:ds4, 0.5),
-        note(:e4, 0.5),
-        note(:fs4, 0.5),
-        note(:fs4, 1.5, sustain: 2.5),
+        note(:ds4, 0.5, vel: 0.3),
+        note(:e4, 0.5, vel: 0.3),
+        note(:fs4, 0.5, vel: 0.3),
+        note(:ds4, 0.5, vel: 0.3),
+        note(:e4, 0.5, vel: 0.3),
+        note(:fs4, 0.5, vel: 0.3),
+        note(:fs4, 1.5, vel: 0.3, sustain: 2.5),
         rest(1),
         rest(0.5)
       ]),
       seq([
-        note(:fs3, 0.5),
-        note(:b3, 0.5),
-        note(:b3, 0.5),
-        note(:b3, 0.5),
-        note(:b3, 0.5),
-        note(:b3, 0.5),
-        note(:b3, 1.5, sustain: 2.5),
+        note(:fs3, 0.5, vel: 0.3),
+        note(:b3, 0.5, vel: 0.3),
+        note(:b3, 0.5, vel: 0.3),
+        note(:b3, 0.5, vel: 0.3),
+        note(:b3, 0.5, vel: 0.3),
+        note(:b3, 0.5, vel: 0.3),
+        note(:b3, 1.5, vel: 0.3, sustain: 2.5),
         rest(1),
         rest(0.5)
       ]),
-      seq(b2: 1, r: 1, r: 1, b2: 0.5, b2: 0.5, b2: 0.5, b2: 0.5, b2: 0.5, b2: 0.5)
+      seq([
+        note(:b2, 1, vel: 0.3),
+        rest(1),
+        rest(1),
+        note(:b2, 0.5, vel: 0.3),
+        note(:b2, 0.5, vel: 0.3),
+        note(:b2, 0.5, vel: 0.3),
+        note(:b2, 0.5, vel: 0.3),
+        note(:b2, 0.5, vel: 0.3),
+        note(:b2, 0.5, vel: 0.3)
+      ])
     ])
   end
 
   defp bar(:organo_a_canne, 45) do
     together([
-      seq([note(:g4, 1.5), note(:b4, 1.5), note([:c5, :e5], 1.5), note(:e5, 0.5), note(:cs5, 1)]),
-      seq(e4: 1.5, g4: 1.5, r: 1.5, cs5: 0.5, as4: 1),
-      seq(b3: 1.5, e4: 1.5, g4: 1.5, g4: 0.5, fs4: 1),
-      seq(
-        e2: 0.5,
-        e2: 0.5,
-        e2: 0.5,
-        e2: 0.5,
-        e2: 0.5,
-        e2: 0.5,
-        e2: 0.5,
-        e2: 0.5,
-        e2: 0.5,
-        e2: 0.5,
-        e2: 0.5,
-        e3: 0.5
-      )
+      seq([
+        note(:g4, 1.5, vel: 0.3),
+        note(:b4, 1.5, vel: 0.3),
+        note([:c5, :e5], 1.5, vel: 0.3),
+        note(:e5, 0.5, vel: 0.3),
+        note(:cs5, 1, vel: 0.3)
+      ]),
+      seq([
+        note(:e4, 1.5, vel: 0.3),
+        note(:g4, 1.5, vel: 0.3),
+        rest(1.5),
+        note(:cs5, 0.5, vel: 0.3),
+        note(:as4, 1, vel: 0.3)
+      ]),
+      seq([
+        note(:b3, 1.5, vel: 0.3),
+        note(:e4, 1.5, vel: 0.3),
+        note(:g4, 1.5, vel: 0.3),
+        note(:g4, 0.5, vel: 0.3),
+        note(:fs4, 1, vel: 0.3)
+      ]),
+      seq([
+        note(:e2, 0.5, vel: 0.3),
+        note(:e2, 0.5, vel: 0.3),
+        note(:e2, 0.5, vel: 0.3),
+        note(:e2, 0.5, vel: 0.3),
+        note(:e2, 0.5, vel: 0.3),
+        note(:e2, 0.5, vel: 0.3),
+        note(:e2, 0.5, vel: 0.3),
+        note(:e2, 0.5, vel: 0.3),
+        note(:e2, 0.5, vel: 0.3),
+        note(:e2, 0.5, vel: 0.3),
+        note(:e2, 0.5, vel: 0.3),
+        note(:e3, 0.5, vel: 0.3)
+      ])
     ])
   end
 
   defp bar(:organo_a_canne, 46) do
     together([
-      seq(b4: 0.5, as4: 0.5, b4: 0.5, b4: 1, as4: 0.5, b4: 1.5, fs4: 1, r: 0.5),
-      seq(fs4: 0.5, fs4: 0.5, d4: 0.5, fs4: 1.5, fs4: 1.5, d4: 1, r: 0.5),
-      seq(r: 0.5, r: 0.5, r: 0.5, cs4: 1.5, d4: 1.5, r: 0.5, r: 1),
-      seq(
-        d3: 0.5,
-        cs3: 0.5,
-        b2: 0.5,
-        fs3: 0.5,
-        fs3: 0.5,
-        fs2: 0.5,
-        b2: 0.5,
-        d2: 0.5,
-        fs2: 0.5,
-        b2: 0.5,
-        d3: 0.5,
-        fs3: 0.5
-      )
+      seq([
+        note(:b4, 0.5, vel: 0.3),
+        note(:as4, 0.5, vel: 0.3),
+        note(:b4, 0.5, vel: 0.3),
+        note(:b4, 1, vel: 0.3),
+        note(:as4, 0.5, vel: 0.3),
+        note(:b4, 1.5, vel: 0.3),
+        note(:fs4, 1, vel: 0.3),
+        rest(0.5)
+      ]),
+      seq([
+        note(:fs4, 0.5, vel: 0.3),
+        note(:fs4, 0.5, vel: 0.3),
+        note(:d4, 0.5, vel: 0.3),
+        note(:fs4, 1.5, vel: 0.3),
+        note(:fs4, 1.5, vel: 0.3),
+        note(:d4, 1, vel: 0.3),
+        rest(0.5)
+      ]),
+      seq([
+        rest(0.5),
+        rest(0.5),
+        rest(0.5),
+        note(:cs4, 1.5, vel: 0.3),
+        note(:d4, 1.5, vel: 0.3),
+        rest(0.5),
+        rest(1)
+      ]),
+      seq([
+        note(:d3, 0.5, vel: 0.3),
+        note(:cs3, 0.5, vel: 0.3),
+        note(:b2, 0.5, vel: 0.3),
+        note(:fs3, 0.5, vel: 0.3),
+        note(:fs3, 0.5, vel: 0.3),
+        note(:fs2, 0.5, vel: 0.3),
+        note(:b2, 0.5, vel: 0.3),
+        note(:d2, 0.5, vel: 0.3),
+        note(:fs2, 0.5, vel: 0.3),
+        note(:b2, 0.5, vel: 0.3),
+        note(:d3, 0.5, vel: 0.3),
+        note(:fs3, 0.5, vel: 0.3)
+      ])
     ])
   end
 end

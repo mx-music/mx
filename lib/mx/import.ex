@@ -216,8 +216,7 @@ defmodule Mx.Import do
 
     declarations =
       Enum.map_join(Enum.zip(parts, names), "\n", fn {{_part, synth}, name} ->
-        defaults = if Mx.Synths.option?(synth, :vel), do: ", defaults: [vel: 0.6]", else: ""
-        "  part :#{name}, synth: :#{synth}#{defaults}"
+        "  part :#{name}, synth: :#{synth}"
       end)
 
     title = title(score.title)
@@ -336,7 +335,7 @@ defmodule Mx.Import do
     keys = times(order)
     {sustains, continued} = ties(bars, keys)
     sustain? = Mx.Synths.option?(synth, :sustain)
-    vel? = Mx.Synths.option?(synth, :vel)
+    default_vel = Mx.Synths.default(synth, :vel)
 
     for {number, time} = key <- keys do
       voices =
@@ -351,7 +350,8 @@ defmodule Mx.Import do
                   {key, voice, index, head_index} not in continued,
                   do: {head.name, Map.fetch!(sustains, {key, voice, index, head_index})}
 
-            {heads, group.length, if(vel?, do: group_vel(group), else: 0.6), sustain?}
+            vel = default_vel && group_vel(group, default_vel)
+            {heads, group.length, if(vel != default_vel, do: vel), sustain?}
           end)
           |> voice_music()
         end)
@@ -434,28 +434,29 @@ defmodule Mx.Import do
 
   # A note read from a MIDI file plays at the vel it was struck with, a chord at the mean of the
   # notes that start in it.
-  defp group_vel(group) do
+  defp group_vel(group, default) do
     vels = for note <- group.notes, note.vel != nil and not note.continues, do: note.vel
 
     case vels do
-      [] -> vel(group.mark)
+      [] -> vel(group.mark, default)
       vels -> Float.round(Enum.sum(vels) / length(vels), 2)
     end
   end
 
-  defp vel(mark) when mark in ["pppp", "ppp", "pp"], do: 0.3
-  defp vel("p"), do: 0.45
-  defp vel("mp"), do: 0.5
-  defp vel(mark) when mark in ["mf", nil], do: 0.6
-  defp vel("f"), do: 0.8
-  defp vel(mark) when mark in ["ff", "fff", "ffff"], do: 1
+  defp vel(nil, default), do: default
+  defp vel(mark, _default) when mark in ["pppp", "ppp", "pp"], do: 0.3
+  defp vel("p", _default), do: 0.45
+  defp vel("mp", _default), do: 0.5
+  defp vel("mf", _default), do: 0.6
+  defp vel("f", _default), do: 0.8
+  defp vel(mark, _default) when mark in ["ff", "fff", "ffff"], do: 1
 
   # A voice of plain notes and rests is a keyword seq; one with chords, dynamics or ties writes
   # each note.
   defp voice_music(items) do
     plain? =
       Enum.all?(items, fn {heads, beats, vel, _sustain?} ->
-        vel == 0.6 and length(heads) <= 1 and
+        is_nil(vel) and length(heads) <= 1 and
           Enum.all?(heads, fn {_name, sustain} -> sustain == beats end)
       end)
 
@@ -490,7 +491,7 @@ defmodule Mx.Import do
         true -> ["sustain: [" <> Enum.map_join(sustains, ", ", &format_length/1) <> "]"]
       end
 
-    vel = if vel == 0.6, do: [], else: ["vel: #{vel}"]
+    vel = if is_nil(vel), do: [], else: ["vel: #{vel}"]
     opts = Enum.map_join(vel ++ sustain, &(", " <> &1))
     "note(#{pitch}, #{format_length(beats)}#{opts})"
   end

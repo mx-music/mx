@@ -45,13 +45,13 @@ defmodule Mix.Tasks.Mx.ImportTest do
 
     song = File.read!(ctx.song)
 
-    assert song =~ "\n  part :soprano, synth: :oboe, defaults: [vel: 0.6]\n"
+    assert song =~ "\n  part :soprano, synth: :oboe\n"
     assert song =~ "\n  part :alto, synth: :tri\n"
     assert song =~ "\n  part :tenor, synth: :tri\n"
-    assert song =~ "\n  part :bass, synth: :cello, defaults: [vel: 0.6]\n"
+    assert song =~ "\n  part :bass, synth: :cello\n"
     assert song =~ "\n      part(:soprano, seq(Enum.map(order(), &bar(:soprano, &1)))),\n"
 
-    assert print(ctx.song, "soprano") =~ ~r/^beat 0 +play 63 sustain: 1, vel: 0.6$/m
+    assert print(ctx.song, "soprano") =~ ~r/^beat 0 +play 63 sustain: 1$/m
     assert output =~ "Soprano on oboe: 62 notes from :eb4 to :g5\n"
   end
 
@@ -142,9 +142,9 @@ defmodule Mix.Tasks.Mx.ImportTest do
     song = Path.join(dir, "bwv244.39.exs")
 
     organ = print(song, "organo_a_canne")
-    assert organ =~ ~r/^beat 166\.5 +play 71 sustain: 1\.5$/m
+    assert organ =~ ~r/^beat 166\.5 +play 71 vel: 0\.3, sustain: 1\.5$/m
     refute organ =~ ~r/^beat 167 +play 71 /m
-    assert organ =~ ~r/^beat 168\.5 +play 71 sustain: 3\.75$/m
+    assert organ =~ ~r/^beat 168\.5 +play 71 vel: 0\.3, sustain: 3\.75$/m
 
     {:ok, original} = Mx.Score.read(score)
     assert Mx.ScoreNotes.played(song) == Mx.ScoreNotes.written(original)
@@ -325,7 +325,7 @@ defmodule Mix.Tasks.Mx.ImportTest do
     assert violin =~ ~r/^beat 0 +play 60 vel: 0.45, sustain: 2$/m
     assert violin =~ ~r/^beat 4 +play 64 vel: 0.45, sustain: 2$/m
     assert violin =~ ~r/^beat 6 +play 65 vel: 0.8, sustain: 2$/m
-    assert print(song, "viola") =~ ~r/^beat 4 +play 60 sustain: 4, vel: 0.6$/m
+    assert print(song, "viola") =~ ~r/^beat 4 +play 60 sustain: 4$/m
   end
 
   test "first and second endings play on their time through", %{tmp_dir: dir} do

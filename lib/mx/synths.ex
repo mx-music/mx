@@ -38,6 +38,11 @@ defmodule Mx.Synths do
     Map.has_key?(Map.fetch!(catalog(), to_string(synth)), Atom.to_string(option))
   end
 
+  @doc "The default of a synth's option, or nil when it has none or the synth takes no such option."
+  def default(synth, option) when (is_atom(synth) or is_binary(synth)) and is_atom(option) do
+    catalog() |> Map.fetch!(to_string(synth)) |> Map.get(Atom.to_string(option))
+  end
+
   @doc "The option of `synth` named `name`, a string such as one given on the command line, or nil when the synth takes no such option."
   def option(synth, name) when (is_atom(synth) or is_binary(synth)) and is_binary(name) do
     if Map.has_key?(Map.get(catalog(), to_string(synth), %{}), name), do: String.to_atom(name)
