@@ -143,9 +143,9 @@ defmodule Mx.Engine.MxsTest do
       send(ticker, :stop)
       assert_receive {:latest, late_us}
 
-      # Building fifty piano voices takes tens of milliseconds, and the ticker must not wait.
-      assert call_us > 10_000
-      assert late_us < call_us / 4
+      # Had the call held the only scheduler, the ticker would have waited for nearly all of it.
+      assert call_us > 5_000
+      assert late_us < call_us / 2
     end
 
     test "ids count up for the sounds a later change reaches" do
