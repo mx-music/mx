@@ -16,6 +16,7 @@
   * [mix mx.import] Count what an import leaves out: a score's syllables of text, slurs, trills and other ornaments, fermatas, grace notes and articulations, and a MIDI file's drum notes, presses of the sustain pedal and other controller messages; `Mx.Score` gives the same as `left_out_counts`
   * [mix mx.play] `--render` prints its progress about four times a second, as the seconds of music rendered and the seconds it renders in all
   * [mx] `song/1` takes `meter:`, the whole beats to a bar, 4 unless given; the page data holds it and `mix mx.export` writes it as the time signature when `--time` is not given
+  * [mx] `mx play --render` takes `--no-ring-out`, which ends the file where the music ends
   * [mx] `mix mx.measure --hits` splits a file of several hits given its first note into the notes of its run, as `mix mx.fit` does, names each hit by its note, and with `--synth` renders the synth at each of them
   * [mx] A sampled instrument of a list of files is named by the folder its files share, and the page data names a part that plays only samples by its samples
 

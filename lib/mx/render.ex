@@ -5,6 +5,7 @@ defmodule Mx.Render do
   The band, its loops and an offline engine work out the song as they do when it plays, against `Mx.Clock`'s time, which the render moves on to the next time a loop needs to work something out, 10 ms at least.
   At each step every loop is ticked in turn by name and waited for, so its passes reach the engine in the same order on every run, and the engine renders up to that time.
   The render starts at the song's first beat, and ends once its music has ended or `seconds:` have passed, and the notes still sounding have faded, for four seconds at most.
+  With `ring_out: false` it leaves that ring out, so the file ends where the music ends.
   MIDI and OSC are not sent, and a loop that waits for input plays nothing; each part left out is named once, a part that sends MIDI or OSC the first time it does.
 
   While it renders it prints a line such as `rendered 37.5 of 148.2 seconds` about four times a second, and once more when the music has rendered, giving the seconds of music rendered and the seconds it renders in all, until the music ends or for `seconds:`, the fade after it left out.
@@ -18,12 +19,14 @@ defmodule Mx.Render do
   @fade_us 4_000_000
   @progress_ms 250
 
-  @doc "Renders the song at `path` to the WAV file `out`, with `seconds:`, `force:` and `share:`, the share of its tempo to play it at, 1 unless given, and returns `:ok` once written, or `{:error, message}`; the process given as `follow:` is sent where the beat is, as `Mx.Beat` describes, in the render's own time."
+  @doc "Renders the song at `path` to the WAV file `out`, with `seconds:`, `force:`, `ring_out:` and `share:`, the share of its tempo to play it at, 1 unless given, and returns `:ok` once written, or `{:error, message}`; the process given as `follow:` is sent where the beat is, as `Mx.Beat` describes, in the render's own time."
   def render(path, out, opts) when is_binary(path) and is_binary(out) and is_list(opts) do
     seconds = opts[:seconds]
     share = Keyword.get(opts, :share, 1)
+    ring_out = Keyword.get(opts, :ring_out, true)
 
     with :ok <- Band.check_share(share),
+         :ok <- check_ring_out(ring_out),
          :ok <- Recording.check(out, Keyword.get(opts, :force, false)),
          {:ok, _apps} <- Application.ensure_all_started(:mx),
          {:ok, song} <- Song.load(path),
@@ -32,7 +35,7 @@ defmodule Mx.Render do
          {:ok, total} <- total(playing, seconds, share) do
       Enum.each(left_out(song), &IO.puts/1)
       follow = List.wrap(opts[:follow])
-      run(playing, out, seconds, follow, share, total)
+      run(playing, out, seconds, follow, share, total, ring_out)
       Enum.each(Recording.report(out), &IO.puts/1)
     end
   end
@@ -49,6 +52,11 @@ defmodule Mx.Render do
       :ok
     end
   end
+
+  defp check_ring_out(ring_out) when is_boolean(ring_out), do: :ok
+
+  defp check_ring_out(ring_out),
+    do: {:error, "--ring-out takes true or false, not #{inspect(ring_out)}"}
 
   defp check(_song, seconds) when is_number(seconds) and seconds > 0, do: :ok
   defp check(_song, seconds), do: {:error, "--seconds takes a length above 0, not #{seconds}"}
@@ -106,7 +114,7 @@ defmodule Mx.Render do
   # Every render starts at the same time, so each beat's time rounds the same way on every run.
   @start_us 0
 
-  defp run(song, out, seconds, follow, share, total) do
+  defp run(song, out, seconds, follow, share, total, ring_out) do
     start_us = @start_us
     Clock.start_render(start_us)
     Process.flag(:trap_exit, true)
@@ -147,7 +155,11 @@ defmodule Mx.Render do
       print_progress(total, total)
       cut(band, last_us - @step_us + @ahead_us)
       GenServer.stop(band)
-      fade(last_us, last_us + @fade_us)
+
+      if ring_out,
+        do: fade(last_us, last_us + @fade_us),
+        else: Mxs.render_to(start_us + round(total * 1_000_000))
+
       GenServer.stop(inputs)
       GenServer.stop(engine)
     after

@@ -5,12 +5,19 @@ defmodule Mx.Player do
 
   alias Mx.{Session, Song}
 
-  @switches [record: :string, render: :string, seconds: :float, force: :boolean, share: :float]
+  @switches [
+    record: :string,
+    render: :string,
+    seconds: :float,
+    force: :boolean,
+    share: :float,
+    ring_out: :boolean
+  ]
 
   @doc "The options `play/2` takes, parsed from command line arguments, and the arguments left."
   def parse(args) when is_list(args), do: OptionParser.parse!(args, strict: @switches)
 
-  @doc "Plays a song file with `record:` and `force:`, or renders it offline with `render:`, `seconds:` and `force:`, either at `share:` of its tempo, and returns `:ok` once it stops, or `{:error, message}`."
+  @doc "Plays a song file with `record:` and `force:`, or renders it offline with `render:`, `seconds:`, `ring_out:` and `force:`, either at `share:` of its tempo, and returns `:ok` once it stops, or `{:error, message}`."
   def play(path, opts) when is_binary(path) and is_list(opts) do
     with :ok <- Mx.Band.check_share(Keyword.get(opts, :share, 1)) do
       play_or_render(path, opts)
@@ -24,7 +31,10 @@ defmodule Mx.Player do
          "--render and --record cannot go together: a render writes its file without playing"}
 
       out = opts[:render] ->
-        Mx.Render.render(path, out, Keyword.take(opts, [:seconds, :force, :share]))
+        Mx.Render.render(path, out, Keyword.take(opts, [:seconds, :force, :share, :ring_out]))
+
+      Keyword.has_key?(opts, :ring_out) ->
+        {:error, "--ring-out goes with --render"}
 
       true ->
         play_aloud(path, opts)

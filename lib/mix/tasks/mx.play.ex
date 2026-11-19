@@ -15,6 +15,7 @@ defmodule Mix.Tasks.Mx.Play do
   `--record` writes everything mx plays to a stereo WAV file, and `--force` records over a file that exists.
   After recording it prints the recording's length and peak, and warns when the recording clipped.
   `--render` writes the song to a stereo WAV file offline instead of playing it, for `--seconds` when its music does not end, printing its progress as it goes, such as `rendered 37.5 of 148.0 seconds`, and then the same report.
+  `--no-ring-out` with `--render` leaves out the notes still sounding when the music ends, which a render otherwise lets fade for up to four seconds, so the file ends where the music ends.
   `--share` plays or renders the song at that share of its tempo, from 0.25 to 4, so `--share 0.5` plays it at half speed.
   """
 

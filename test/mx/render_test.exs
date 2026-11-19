@@ -162,6 +162,31 @@ defmodule Mx.RenderTest do
     assert progress(output) == [{1.5, 1.5}]
   end
 
+  test "a render with the ring out left out ends where the music ends, and one that keeps it rings on",
+       %{tmp_dir: dir} do
+    path =
+      write(dir, "song.exs", """
+      song(tempo: 120, music: part(:a, seq(c4: 2, e4: 2, g4: 4), synth: :fm, fx: [reverb: [room: 0.45]]))
+      """)
+
+    left_out = Path.join(dir, "left_out.wav")
+    {:ok, _output} = render(path, left_out, ring_out: false)
+    assert_in_delta Recording.seconds(left_out), 4.0, 0.001
+
+    kept = Path.join(dir, "kept.wav")
+    {:ok, _output} = render(path, kept)
+    assert Recording.seconds(kept) > 4.25
+
+    assert {{:error, "--ring-out takes true or false, not 1"}, ""} =
+             render(path, Path.join(dir, "bad.wav"), ring_out: 1)
+
+    {opts, [^path]} = Player.parse([path, "--render", left_out, "--no-ring-out", "--force"])
+    {:ok, _output} = with_io(fn -> Player.play(path, opts) end)
+    assert_in_delta Recording.seconds(left_out), 4.0, 0.001
+
+    assert Player.play(path, ring_out: false) == {:error, "--ring-out goes with --render"}
+  end
+
   test "a file that exists is refused unless forced", %{tmp_dir: dir} do
     path = write(dir, "song.exs", "song(tempo: 120, music: part(:a, seq(c4: 1), synth: :fm))\n")
     out = Path.join(dir, "song.wav")
