@@ -70,7 +70,7 @@ defmodule Mx.MIDITest do
 
     assert output =~ "Right on tri: 3 notes from :c5 to :e5\n"
     assert output =~ "Left on tri: 1 notes from :c3 to :c3\n"
-    assert output =~ "Right: the sustain pedal is left out\n"
+    assert output =~ "Right: 1 press of the sustain pedal is left out\n"
     assert File.read!(song) =~ "use Mx.Song, tempo: 100"
     assert File.read!(song) =~ "part :right, synth: :tri"
 
@@ -128,12 +128,53 @@ defmodule Mx.MIDITest do
     {song, output} = import!(path)
 
     assert output =~
-             "Kit is left out: it plays only on channel 10, which General MIDI keeps for drums\n"
+             "Kit is left out: its 2 notes are on channel 10, which General MIDI keeps for drums\n"
 
     assert output =~
-             "Bass: its notes on channel 10, which General MIDI keeps for drums, are left out\n"
+             "Bass: 1 note on channel 10, which General MIDI keeps for drums, is left out\n"
 
     assert ScoreNotes.played(song) == [[{0.0, 40, 2.0}]]
+  end
+
+  test "the import counts the drum notes, the presses of the pedal and the controller messages it leaves out, and names the tempo",
+       %{tmp_dir: dir} do
+    drums = Enum.flat_map(0..15, &note(9, 36, &1 * 480, &1 * 480 + 60))
+
+    presses =
+      Enum.flat_map(0..7, fn press ->
+        [
+          {press * 960, <<0xB0, 64, 127>>},
+          {press * 960 + 120, <<0xB0, 64, 100>>},
+          {press * 960 + 480, <<0xB0, 64, 0>>}
+        ]
+      end)
+
+    modulation = for step <- 0..4, do: {step * 100, <<0xB0, 1, step * 20>>}
+    right = Enum.flat_map(0..15, &note(0, 72, &1 * 480, &1 * 480 + 480))
+
+    path =
+      write(dir, "counted.mid", [
+        [tempo(90), tempo(46, 3 * 1920)],
+        [name("Kit") | note(0, 40, 0, 480) ++ drums],
+        [name("Right") | right ++ presses ++ modulation]
+      ])
+
+    {_song, output} = import!(path, ["--tempo", "90"])
+
+    assert output =~
+             "Kit: 16 notes on channel 10, which General MIDI keeps for drums, are left out\n"
+
+    assert output =~ "Right: 8 presses of the sustain pedal are left out\n"
+    assert output =~ "Right: 5 other controller messages are left out\n"
+    assert output =~ "the tempo 46 from bar 4 is left out\n"
+
+    {:ok, score} = Mx.Score.read(path)
+
+    assert score.left_out_counts == [
+             {"Kit", :drum_notes, 16},
+             {"Right", :pedal_presses, 8},
+             {"Right", :other_controls, 5}
+           ]
   end
 
   test "a single track with a melody on channel 1 and chords on channel 2 imports as two parts",

@@ -5,7 +5,7 @@ defmodule Mx.MIDI do
   A file read becomes a `Mx.Score`: each track that plays notes is a part, named after the track or numbered among the tracks that play notes, and a file whose notes all lie in one track gives a part for each channel instead.
   Note starts and ends move to the nearest step of the grid, and notes of a part that start and end together are a chord, while notes that overlap otherwise go to as few voices as the overlaps need.
   The first tempo is the score's, each later change is kept at the nearest step of the grid, and its time signatures cut the bars, 4/4 when it has none.
-  Notes on channel 10, which General MIDI keeps for drums, the sustain pedal and other controllers are left out, and the score names them in `left_out`.
+  Notes on channel 10, which General MIDI keeps for drums, the sustain pedal and other controllers are left out, and the score counts them in `left_out` and `left_out_counts` as `:drum_notes`, `:pedal_presses` and `:controls`, part by part, or for the file when its notes lie in one track.
 
   A file written holds a first track with the song's tempo and each change its music makes at once, its time signature and key, then one track per part that plays notes with a pitch, named after the part, each on its own channel, without channel 10.
   A change made evenly over some beats is written as a change at once where it starts, and named in `left_out`.
@@ -29,11 +29,11 @@ defmodule Mx.MIDI do
     with {:ok, data} <- read_file(path),
          {:ok, midi} <- parse(data, path) do
       case parts(midi) do
-        {[], left_out} ->
-          {:error, sentence_error(path, left_out)}
+        {[], counts} ->
+          {:error, sentence_error(path, counts)}
 
-        {parts, left_out} ->
-          to_score(midi, parts, left_out, grid)
+        {parts, counts} ->
+          to_score(midi, parts, counts, grid)
       end
     end
   end
@@ -129,7 +129,7 @@ defmodule Mx.MIDI do
   defp read_vlq(<<byte, rest::binary>>, value), do: {(value <<< 7) + byte, rest}
 
   # Each part as {name, notes, controls}, a note as {start, end, key, velocity} in ticks, and
-  # what is left out of the parts.
+  # what is left out of the parts, counted as {part, kind, count}.
   defp parts(midi) do
     tracks =
       midi.tracks
@@ -151,13 +151,8 @@ defmodule Mx.MIDI do
             {part_name, on, Enum.filter(controls, &(elem(&1, 0) == channel))}
           end
 
-        drums_left_out =
-          if @drums in channels do
-            ["the notes on channel 10, which General MIDI keeps for drums, are left out"]
-          else
-            []
-          end
-
+        drums = Enum.count(notes, &(elem(&1, 0) == @drums))
+        drums_left_out = if drums > 0, do: [{nil, :drum_notes, drums}], else: []
         left_out = Enum.flat_map(parts, &controls_left_out/1) ++ drums_left_out
 
         {Enum.map(parts, &strip/1), left_out}
@@ -170,21 +165,15 @@ defmodule Mx.MIDI do
             name = name || "track #{index}"
             pitched = Enum.reject(notes, &(elem(&1, 0) == @drums))
 
+            drums = length(notes) - length(pitched)
+
             cond do
               pitched == [] ->
-                {nil,
-                 left_out ++
-                   [
-                     "#{name} is left out: it plays only on channel 10, which General MIDI keeps for drums"
-                   ]}
+                {nil, left_out ++ [{name, :drum_part, drums}]}
 
               pitched != notes ->
                 part = {name, pitched, controls}
-
-                drums =
-                  "#{name}: its notes on channel 10, which General MIDI keeps for drums, are left out"
-
-                {part, left_out ++ [drums | controls_left_out(part)]}
+                {part, left_out ++ [{name, :drum_notes, drums} | controls_left_out(part)]}
 
               true ->
                 part = {name, notes, controls}
@@ -201,15 +190,40 @@ defmodule Mx.MIDI do
      Enum.map(notes, fn {_channel, start, stop, key, velocity} -> {start, stop, key, velocity} end)}
   end
 
+  # A press of the sustain pedal is a message that puts it down, at 64 or above, from up.
   defp controls_left_out({name, _notes, controls}) do
-    numbers = controls |> Enum.map(&elem(&1, 1)) |> Enum.uniq()
+    {pedal, others} = Enum.split_with(controls, &(elem(&1, 1) == @pedal))
 
-    case {@pedal in numbers, Enum.any?(numbers, &(&1 != @pedal))} do
-      {true, true} -> ["#{name}: the sustain pedal and other controllers are left out"]
-      {true, false} -> ["#{name}: the sustain pedal is left out"]
-      {false, true} -> ["#{name}: its controllers are left out"]
-      {false, false} -> []
-    end
+    {presses, _down} =
+      Enum.reduce(pedal, {0, false}, fn {_channel, _number, value}, {presses, down} ->
+        if value >= 64 and not down, do: {presses + 1, true}, else: {presses, value >= 64}
+      end)
+
+    kind = if pedal == [], do: :controls, else: :other_controls
+
+    [{name, :pedal_presses, presses}, {name, kind, length(others)}]
+    |> Enum.filter(&(elem(&1, 2) > 0))
+  end
+
+  @kinds [
+    drum_notes:
+      {"note on channel 10, which General MIDI keeps for drums,",
+       "notes on channel 10, which General MIDI keeps for drums,"},
+    pedal_presses: {"press of the sustain pedal", "presses of the sustain pedal"},
+    other_controls: {"other controller message", "other controller messages"},
+    controls: {"controller message", "controller messages"}
+  ]
+
+  # The lines naming what is left out, in the order the parts come, a part's kinds in turn.
+  defp left_out_lines(counts) do
+    Enum.flat_map(counts, fn
+      {part, :drum_part, count} ->
+        notes = if count == 1, do: "its 1 note is", else: "its #{count} notes are"
+        ["#{part} is left out: #{notes} on channel 10, which General MIDI keeps for drums"]
+
+      count ->
+        Score.left_out_lines([count], @kinds)
+    end)
   end
 
   defp name(events) do
@@ -220,7 +234,7 @@ defmodule Mx.MIDI do
   end
 
   defp controls(events) do
-    for {_tick, {:control, channel, number, _value}} <- events, do: {channel, number}
+    for {_tick, {:control, channel, number, value}} <- events, do: {channel, number, value}
   end
 
   # Each note-on paired with the next note-off of its key and channel, or with the track's end.
@@ -257,7 +271,7 @@ defmodule Mx.MIDI do
     Enum.sort_by(notes ++ unended, fn {channel, start, _, key, _} -> {start, key, channel} end)
   end
 
-  defp to_score(midi, parts, left_out, {count, division}) do
+  defp to_score(midi, parts, counts, {count, division}) do
     tpq = midi.division
     events = Enum.concat(midi.tracks)
     step = div(4 * count * unit(division), division)
@@ -327,7 +341,8 @@ defmodule Mx.MIDI do
         [] -> nil
       end
 
-    {:ok, %{Score.build(parts, title) | tempos: tempos, left_out: left_out}}
+    score = Score.build(parts, title)
+    {:ok, %{score | tempos: tempos, left_out: left_out_lines(counts), left_out_counts: counts}}
   end
 
   # The first tempo, and the changes after it as {beat, bpm}, each at the nearest step of the grid,

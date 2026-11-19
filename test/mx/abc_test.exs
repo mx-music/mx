@@ -38,6 +38,7 @@ defmodule Mx.ABCTest do
     assert score.title == "The Test Reel"
     assert score.order == [1, 2, 3, 4, 5, 2, 3, 4, 6, 7, 8, 9, 10, 7, 8, 9, 11]
     assert score.left_out == ["2 decorations are left out"]
+    assert score.left_out_counts == [{nil, :decorations, 2}]
 
     {song, output} = import!(path)
 

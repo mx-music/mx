@@ -65,6 +65,19 @@ defmodule Mx.ScoreTest do
     assert staves == MapSet.new([1])
   end
 
+  test "the aria read without writing a song counts what a song of it leaves out" do
+    {:ok, score} = Mx.Score.read("examples/erbarme_dich/bwv244.39.mxl")
+
+    assert score.left_out_counts == [
+             {nil, :syllables, 151},
+             {nil, :slurs, 275},
+             {nil, :trills, 3},
+             {nil, :fermatas, 3},
+             {nil, :grace_notes, 84},
+             {nil, :articulations, 22}
+           ]
+  end
+
   test "a note tied into keeps the staff of the note the tie starts on", %{tmp_dir: dir} do
     path =
       score!(dir, [

@@ -13,6 +13,7 @@
   * [mix mx.fit] Add `--tour`, which writes each of a spread of recordings followed by the synth, for listening, and `--check` prints each velocity's loudness for recordings that keep their levels
   * [mix mx.import] A MIDI file's tempo changes play in the song at their beats, instead of being left out; `--tempo` still keeps one tempo, naming each change left out
   * [mix mx.export] A MIDI file written holds the song's tempo changes
+  * [mix mx.import] Count what an import leaves out: a score's syllables of text, slurs, trills and other ornaments, fermatas, grace notes and articulations, and a MIDI file's drum notes, presses of the sustain pedal and other controller messages; `Mx.Score` gives the same as `left_out_counts`
 
 ## v0.2.2 (2026-11-16)
 

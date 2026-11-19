@@ -7,7 +7,7 @@ defmodule Mx.ABC do
   Without `L:` the unit is an eighth note, or a sixteenth in a meter under 3/4, as ABC has it, and without `Q:` the tempo is 120 quarter notes a minute.
   Each voice a `V:` field names is a part named after the voice, and a tune without voices is one part named after its title.
   Repeats, first and second endings, ties, chords, broken rhythms and tuplets play as written, and grace notes are kept with the note they lead into.
-  Chord symbols, decorations, lyrics and other text are left out, and the score counts them in `left_out`.
+  Chord symbols, decorations, lyrics and other text are left out, and the score counts them in `left_out` and `left_out_counts` as `:chords`, `:decorations`, `:lyrics` and `:text`.
 
   A song written as ABC is one tune, each part that plays notes with a pitch a voice named after the part, and a part whose notes overlap without forming chords a further voice for each overlap, named after the part and numbered.
   Lengths are written as plain and dotted note values, tied where one value does not write a note, and triplets as fractions of the unit note.
@@ -15,6 +15,13 @@ defmodule Mx.ABC do
   """
 
   alias Mx.{MusicXML, Page, Score, Song}
+
+  @kinds [
+    chords: {"chord symbol", "chord symbols"},
+    decorations: {"decoration", "decorations"},
+    lyrics: {"line of lyrics", "lines of lyrics"},
+    text: {"piece of text", "pieces of text"}
+  ]
 
   @whole 241_920
   @steps %{"C" => 0, "D" => 2, "E" => 4, "F" => 5, "G" => 7, "A" => 9, "B" => 11}
@@ -755,27 +762,20 @@ defmodule Mx.ABC do
         %{name: name, measures: measures, fifths: voice.fifths, tempo: acc.state.tempo || 120}
       end
 
-    %{Score.build(parts, title) | left_out: left_out(acc.counts)}
+    counts =
+      for {kind, _words} <- @kinds,
+          (count = Map.get(acc.counts, kind, 0)) > 0,
+          do: {nil, kind, count}
+
+    %{
+      Score.build(parts, title)
+      | left_out: Score.left_out_lines(counts, @kinds),
+        left_out_counts: counts
+    }
   end
 
   defp empty(voice) do
     %{measure(%{voice | items: [], cursor: 0}, nil) | forward: false, ending: nil}
-  end
-
-  defp left_out(counts) do
-    [
-      {:chords, "chord symbol", "chord symbols"},
-      {:decorations, "decoration", "decorations"},
-      {:lyrics, "line of lyrics", "lines of lyrics"},
-      {:text, "piece of text", "pieces of text"}
-    ]
-    |> Enum.flat_map(fn {kind, one, many} ->
-      case Map.get(counts, kind, 0) do
-        0 -> []
-        1 -> ["1 #{one} is left out"]
-        count -> ["#{count} #{many} are left out"]
-      end
-    end)
   end
 
   @doc """

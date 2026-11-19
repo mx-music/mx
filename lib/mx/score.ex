@@ -6,7 +6,9 @@ defmodule Mx.Score do
   A note led into by grace notes keeps them in order as `graces`, each with its `midi`, its `name` and whether it is `slash`ed, taking no time of its own.
   `order` lists the bars by number in the order the score plays them, its repeats and endings taken.
   `runs` is the same order cut wherever the score jumps or crosses a repeat or an ending, so it can be written as ranges.
-  A score read from a MIDI file by `Mx.MIDI` gives each note the `vel` it was struck with, holds the file's tempo changes after its first tempo in `tempos`, each as `{beat, bpm}` from the start, and names in `left_out` what the file held that the score does not.
+  A score read from a MIDI file by `Mx.MIDI` gives each note the `vel` it was struck with, and holds the file's tempo changes after its first tempo in `tempos`, each as `{beat, bpm}` from the start.
+  `left_out` names, a line each, what a song written from the score leaves out, and `left_out_counts` gives the same as `{part, kind, count}`, `part` being nil for the whole score.
+  A MusicXML score counts its `:syllables` of text, `:slurs`, `:trills`, `:ornaments` besides trills, `:fermatas`, `:grace_notes` and `:articulations`, such as staccato.
   """
 
   require Record
@@ -34,7 +36,24 @@ defmodule Mx.Score do
   @flats ~w(c db d eb e f gb g ab a bb b)
   @dynamics ~w(pppp ppp pp p mp mf f ff fff ffff)
 
-  defstruct title: nil, tempo: nil, tempos: [], parts: [], order: [], runs: [], left_out: []
+  @musicxml_kinds [
+    syllables: {"syllable of text", "syllables of text"},
+    slurs: {"slur", "slurs"},
+    trills: {"trill", "trills"},
+    ornaments: {"other ornament", "other ornaments"},
+    fermatas: {"fermata", "fermatas"},
+    grace_notes: {"grace note", "grace notes"},
+    articulations: {"articulation, such as staccato,", "articulations, such as staccato,"}
+  ]
+
+  defstruct title: nil,
+            tempo: nil,
+            tempos: [],
+            parts: [],
+            order: [],
+            runs: [],
+            left_out: [],
+            left_out_counts: []
 
   @doc """
   Reads a compressed .mxl or an uncompressed MusicXML file, a MIDI file ending in .mid or .midi, or an ABC file, and returns `{:ok, score}` or `{:error, message}`.
@@ -133,7 +152,41 @@ defmodule Mx.Score do
           text(root, "movement-title") ||
             Enum.find_value(path(root, ["work"]), &text(&1, "work-title"))
 
-        {:ok, build(parts, title)}
+        counts = musicxml_left_out(root)
+        left_out = left_out_lines(counts, @musicxml_kinds)
+        {:ok, %{build(parts, title) | left_out: left_out, left_out_counts: counts}}
+    end
+  end
+
+  # What a song written from the score leaves out, counted over the whole score; a trill's wavy
+  # line belongs to its trill.
+  defp musicxml_left_out(root) do
+    all = descendants(root)
+    count = fn keep -> Enum.count(all, keep) end
+    marks = fn name -> all |> Enum.filter(&(name(&1) == name)) |> Enum.flat_map(&elements/1) end
+
+    counts = [
+      syllables: count.(&(name(&1) == "lyric" and child(&1, "text") != nil)),
+      slurs: count.(&(name(&1) == "slur" and attr(&1, "type") == "start")),
+      trills: count.(&(name(&1) == "trill-mark")),
+      ornaments: Enum.count(marks.("ornaments"), &(name(&1) not in ["trill-mark", "wavy-line"])),
+      fermatas: count.(&(name(&1) == "fermata")),
+      grace_notes: count.(&(name(&1) == "note" and child(&1, "grace") != nil)),
+      articulations: length(marks.("articulations"))
+    ]
+
+    for {kind, count} <- counts, count > 0, do: {nil, kind, count}
+  end
+
+  defp descendants(node), do: Enum.flat_map(elements(node), &[&1 | descendants(&1)])
+
+  @doc false
+  # A line for each count, its kind named in words, in the order the kinds are given.
+  def left_out_lines(counts, kinds) do
+    for {kind, {one, many}} <- kinds,
+        {part, ^kind, count} <- counts do
+      line = if count == 1, do: "1 #{one} is left out", else: "#{count} #{many} are left out"
+      if part, do: "#{part}: #{line}", else: line
     end
   end
 

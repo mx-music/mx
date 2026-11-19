@@ -150,6 +150,23 @@ defmodule Mix.Tasks.Mx.ImportTest do
     assert Mx.ScoreNotes.played(song) == Mx.ScoreNotes.written(original)
   end
 
+  test "the aria's import counts the text, slurs, trills and fermatas it leaves out, after the parts",
+       %{tmp_dir: dir} do
+    score = Path.join(dir, "bwv244.39.mxl")
+    File.cp!("examples/erbarme_dich/bwv244.39.mxl", score)
+
+    output = import!([score])
+
+    assert output =~
+             ~r/Organo a canne on tri: .*\n151 syllables of text are left out\n275 slurs are left out\n3 trills are left out\n3 fermatas are left out\n84 grace notes are left out\n22 articulations, such as staccato, are left out\n/
+  end
+
+  test "a score of notes only says nothing is left out", %{tmp_dir: dir} do
+    path = score!(dir, "plain.musicxml", [{"Flute", [attributes(1) <> note("C", 4, 4)]}])
+
+    refute import!([path, "--tempo", "60"]) =~ "left out"
+  end
+
   test "the chorale's notes play as the score writes them", ctx do
     import!([ctx.score, "--tempo", "100"])
 

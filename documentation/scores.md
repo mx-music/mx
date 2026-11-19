@@ -45,7 +45,7 @@ Notes play at vel 0.6, and a dynamic such as f sets how hard the notes after it 
 `order` lists the bars in the order the score plays them, its repeats and first and second endings taken, so the chorale plays bars 1 to 8 twice and then bars 9 to 18, and a bar that differs between its times through is written once for each.
 Notes sound at the pitch they sound in the score, so a clarinet in Bb written on D5 plays C5.
 A part whose bar is written shorter than the others' rests to the end of it, and notes written past the end of the time signature's bar are cut there, so the parts stay in time.
-Grace notes, ornaments, articulations, fermatas, lyrics and tempo changes after the first are left out.
+Lyrics, slurs, trills and other ornaments, fermatas, grace notes, articulations and tempo changes after the first are left out, and mx counts each kind it leaves out after the parts, such as "275 slurs are left out".
 
 The song is ordinary mx code, so it is a place to start: give the bass a second part an octave down, add reverb, or hand it to an agent to arrange.
 
@@ -126,7 +126,7 @@ A MIDI file holds when each key goes down and up and how hard, and nothing of ho
 It names no note as C sharp or D flat, so notes are spelled from the key signature, in sharps or in flats; it marks no repeat, so the song plays the file through; and a file recorded from playing has notes off the beat.
 So starts and ends move to the nearest sixteenth note, and `--grid` names another division of a whole note, such as `--grid 1/32`, or `--grid 1/12` for eighth-note triplets.
 So do the tempo changes.
-Notes on channel 10, which General MIDI keeps for drums, the sustain pedal and other controllers are left out, and mx says what it left out, part by part.
+Notes on channel 10, which General MIDI keeps for drums, the presses of the sustain pedal and other controller messages are left out, and mx counts what it left out, part by part, such as "Right: 8 presses of the sustain pedal are left out".
 
 ## Import a tune from ABC
 
