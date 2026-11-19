@@ -6,7 +6,7 @@ defmodule Mx.Score do
   A note led into by grace notes keeps them in order as `graces`, each with its `midi`, its `name` and whether it is `slash`ed, taking no time of its own.
   `order` lists the bars by number in the order the score plays them, its repeats and endings taken.
   `runs` is the same order cut wherever the score jumps or crosses a repeat or an ending, so it can be written as ranges.
-  A score read from a MIDI file by `Mx.MIDI` gives each note the `vel` it was struck with, and names in `left_out` what the file held that the score does not.
+  A score read from a MIDI file by `Mx.MIDI` gives each note the `vel` it was struck with, holds the file's tempo changes after its first tempo in `tempos`, each as `{beat, bpm}` from the start, and names in `left_out` what the file held that the score does not.
   """
 
   require Record
@@ -34,7 +34,7 @@ defmodule Mx.Score do
   @flats ~w(c db d eb e f gb g ab a bb b)
   @dynamics ~w(pppp ppp pp p mp mf f ff fff ffff)
 
-  defstruct title: nil, tempo: nil, parts: [], order: [], runs: [], left_out: []
+  defstruct title: nil, tempo: nil, tempos: [], parts: [], order: [], runs: [], left_out: []
 
   @doc """
   Reads a compressed .mxl or an uncompressed MusicXML file, a MIDI file ending in .mid or .midi, or an ABC file, and returns `{:ok, score}` or `{:error, message}`.

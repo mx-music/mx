@@ -4,10 +4,11 @@ defmodule Mx.MIDI do
 
   A file read becomes a `Mx.Score`: each track that plays notes is a part, named after the track or numbered among the tracks that play notes, and a file whose notes all lie in one track gives a part for each channel instead.
   Note starts and ends move to the nearest step of the grid, and notes of a part that start and end together are a chord, while notes that overlap otherwise go to as few voices as the overlaps need.
-  The first tempo is the score's, and its time signatures cut the bars, 4/4 when it has none.
-  Notes on channel 10, which General MIDI keeps for drums, the sustain pedal, other controllers and later tempo changes are left out, and the score names them in `left_out`.
+  The first tempo is the score's, each later change is kept at the nearest step of the grid, and its time signatures cut the bars, 4/4 when it has none.
+  Notes on channel 10, which General MIDI keeps for drums, the sustain pedal and other controllers are left out, and the score names them in `left_out`.
 
-  A file written holds a first track with the song's tempo, time signature and key, then one track per part that plays notes with a pitch, named after the part, each on its own channel, without channel 10.
+  A file written holds a first track with the song's tempo and each change its music makes at once, its time signature and key, then one track per part that plays notes with a pitch, named after the part, each on its own channel, without channel 10.
+  A change made evenly over some beats is written as a change at once where it starts, and named in `left_out`.
   Each note keeps its vel as its velocity, 0.6 when it has none, the default of every synth that takes one, and the tracks name no instrument, since mx's synths have no General MIDI number.
   """
 
@@ -159,7 +160,7 @@ defmodule Mx.MIDI do
 
         left_out = Enum.flat_map(parts, &controls_left_out/1) ++ drums_left_out
 
-        {Enum.map(parts, &strip/1), left_out ++ tempo_left_out(midi)}
+        {Enum.map(parts, &strip/1), left_out}
 
       playing ->
         {parts, left_out} =
@@ -191,7 +192,7 @@ defmodule Mx.MIDI do
             end
           end)
 
-        {parts |> Enum.reject(&is_nil/1) |> Enum.map(&strip/1), left_out ++ tempo_left_out(midi)}
+        {parts |> Enum.reject(&is_nil/1) |> Enum.map(&strip/1), left_out}
     end
   end
 
@@ -208,21 +209,6 @@ defmodule Mx.MIDI do
       {true, false} -> ["#{name}: the sustain pedal is left out"]
       {false, true} -> ["#{name}: its controllers are left out"]
       {false, false} -> []
-    end
-  end
-
-  defp tempo_left_out(midi) do
-    changes =
-      midi.tracks
-      |> Enum.flat_map(&tempos/1)
-      |> Enum.sort_by(&elem(&1, 0))
-      |> Enum.uniq_by(&elem(&1, 0))
-      |> Enum.map(&elem(&1, 1))
-      |> Enum.dedup()
-
-    case changes do
-      [_first, _second | _] -> ["the tempo changes after the first are left out"]
-      _one -> []
     end
   end
 
@@ -271,10 +257,6 @@ defmodule Mx.MIDI do
     Enum.sort_by(notes ++ unended, fn {channel, start, _, key, _} -> {start, key, channel} end)
   end
 
-  defp tempos(events) do
-    for {tick, {:meta, 0x51, <<us::24>>}} <- events, do: {tick, us}
-  end
-
   defp to_score(midi, parts, left_out, {count, division}) do
     tpq = midi.division
     events = Enum.concat(midi.tracks)
@@ -282,10 +264,10 @@ defmodule Mx.MIDI do
     units = unit(division)
     at = fn tick -> round(tick * units / tpq / step) * step end
 
-    tempo =
+    {tempo, tempos} =
       case events |> Enum.flat_map(&tempo_event/1) |> Enum.sort_by(&elem(&1, 0)) do
-        [] -> 120
-        [{_tick, us} | _] -> bpm(us)
+        [] -> {120, []}
+        changes -> tempos(changes, at, units)
       end
 
     fifths =
@@ -311,6 +293,8 @@ defmodule Mx.MIDI do
       parts |> Enum.flat_map(fn {_name, notes} -> Enum.map(notes, &elem(&1, 1)) end) |> Enum.max()
 
     bars = bars(meters(events, tpq, units), last, units)
+    {ends, length} = List.last(bars)
+    tempos = Enum.filter(tempos, fn {beat, _bpm} -> beat < (ends + length) / units end)
 
     parts =
       for {name, notes} <- parts do
@@ -343,8 +327,30 @@ defmodule Mx.MIDI do
         [] -> nil
       end
 
-    {:ok, %{Score.build(parts, title) | left_out: left_out}}
+    {:ok, %{Score.build(parts, title) | tempos: tempos, left_out: left_out}}
   end
+
+  # The first tempo, and the changes after it as {beat, bpm}, each at the nearest step of the grid,
+  # the last of those at one step, leaving out those that keep the tempo already held.
+  defp tempos(changes, at, units) do
+    [{_at, first} | later] =
+      changes
+      |> Enum.map(fn {tick, us} -> {at.(tick), us} end)
+      |> Enum.reverse()
+      |> Enum.uniq_by(&elem(&1, 0))
+      |> Enum.reverse()
+
+    {kept, _held} =
+      Enum.reduce(later, {[], first}, fn
+        {_at, us}, {kept, us} -> {kept, us}
+        {at, us}, {kept, _held} -> {[{beats(at / units), bpm(us)} | kept], us}
+      end)
+
+    {bpm(first), Enum.reverse(kept)}
+  end
+
+  defp beats(beats) when beats == trunc(beats), do: trunc(beats)
+  defp beats(beats), do: beats
 
   # Units in a beat, enough that a step of the grid and every bar is a whole number of them.
   defp unit(division), do: div(@unit * division, Integer.gcd(@unit, division))
@@ -449,7 +455,7 @@ defmodule Mx.MIDI do
 
   @doc """
   Writes the song at `path` as a MIDI file to `out`, with `time:`, `key:`, `title:` and `force:` as `Mx.MusicXML.write/3` takes them.
-  Returns `{:ok, %{parts: parts, left_out: left_out}}` as `Mx.MusicXML.write/3` does, or `{:error, message}`.
+  Returns `{:ok, %{parts: parts, left_out: left_out, notes: notes}}`, the parts and what is left out as `Mx.MusicXML.write/3` gives them and `notes` a line for each tempo change written otherwise than the song makes it, or `{:error, message}`.
   """
   def write(path, out, opts \\ []) when is_binary(path) and is_binary(out) and is_list(opts) do
     with {:ok, {beats, type}} <- MusicXML.time(Keyword.get(opts, :time, "4/4")),
@@ -463,6 +469,16 @@ defmodule Mx.MIDI do
       power = type |> :math.log2() |> round()
       minor = if mode == "minor", do: 1, else: 0
       ending = ticks(length)
+      changes = tempo_changes(song)
+
+      tempos =
+        for {beat, bpm, _over} <- changes,
+            do: {ticks(beat), 0, meta(0x51, <<round(60_000_000 / bpm)::24>>)}
+
+      ramps =
+        for {beat, bpm, over} <- changes, over > 0 do
+          "the tempo's move to #{bpm} over #{over} beats from beat #{beat} is written as a change at once"
+        end
 
       conductor =
         track(
@@ -471,6 +487,7 @@ defmodule Mx.MIDI do
             {0, 0, meta(0x51, <<us::24>>)},
             {0, 0, meta(0x58, <<beats, power, 24, 8>>)},
             {0, 0, meta(0x59, <<fifths::signed-8, minor>>)}
+            | tempos
           ],
           ending
         )
@@ -507,9 +524,30 @@ defmodule Mx.MIDI do
       {:ok,
        %{
          parts: Enum.map(parts, fn {name, notes, _, _} -> MusicXML.summary(name, notes, key) end),
-         left_out: left_out
+         left_out: left_out,
+         notes: ramps
        }}
     end
+  end
+
+  # The tempo changes of the song's music once through, as {beat, bpm, over} from its start.
+  defp tempo_changes(%Song{tempos: nil}), do: []
+
+  defp tempo_changes(%Song{tempos: %{sections: sections, lengths: lengths}}) do
+    {changes, _start} =
+      sections
+      |> Tuple.to_list()
+      |> Enum.zip(Tuple.to_list(lengths))
+      |> Enum.flat_map_reduce(0, fn
+        {_changes, _length}, :infinity ->
+          {[], :infinity}
+
+        {changes, length}, start ->
+          next = if length == :infinity, do: :infinity, else: start + length
+          {for({beat, bpm, over} <- changes, do: {start + beat, bpm, over}), next}
+      end)
+
+    changes
   end
 
   defp ticks(beats), do: round(beats * @ticks)

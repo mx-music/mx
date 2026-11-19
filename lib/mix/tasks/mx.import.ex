@@ -13,6 +13,7 @@ defmodule Mix.Tasks.Mx.Import do
 
   A file ending in .mid or .midi is read as a MIDI file, one part per track that plays notes, or per channel when a single track holds them all, each note at the vel it was struck with.
   Its notes move to the nearest sixteenth note, and `--grid` names another division of a whole note, such as 1/32, or 1/12 for eighth-note triplets.
+  The song plays each tempo change of the file at its beat, moved to the nearest step of the grid as a note is, unless `--tempo` is given, when the task names each change as left out.
   Notes on channel 10, which General MIDI keeps for drums, the sustain pedal and other controllers are left out, and the task says so part by part.
 
   A file ending in .abc is read as ABC notation, and `--tune` picks a tune by its X: number from a file of several, the first unless given; the task then lists the file's tunes.
@@ -47,6 +48,7 @@ defmodule Mix.Tasks.Mx.Import do
 
     synths = synths(opts, score, path)
     tempo = tempo(opts[:tempo], score.tempo)
+    {score, tempos_left_out} = tempos(score, opts[:tempo])
 
     if File.exists?(out) and not Keyword.get(opts, :force, false) do
       Mx.Command.fail("#{out} already exists; give --force to write over it")
@@ -62,7 +64,7 @@ defmodule Mix.Tasks.Mx.Import do
       Mx.Command.info(summary(part, synth))
     end
 
-    Enum.each(score.left_out, &Mx.Command.info/1)
+    Enum.each(score.left_out ++ tempos_left_out, &Mx.Command.info/1)
     list_tunes(path)
   end
 
@@ -134,6 +136,33 @@ defmodule Mix.Tasks.Mx.Import do
     end
   end
 
+  # A tempo given over the score's own leaves its changes out, each named with where it falls.
+  defp tempos(score, nil), do: {score, []}
+
+  defp tempos(score, _given) do
+    left_out =
+      for {beat, bpm} <- score.tempos do
+        "the tempo #{format_beats(bpm)} from #{where(score, beat)} is left out"
+      end
+
+    {%{score | tempos: []}, left_out}
+  end
+
+  defp where(score, beat) do
+    part = hd(score.parts)
+    lengths = Map.new(part.bars, &{&1.number, bar_length(&1)})
+
+    Enum.reduce_while(score.order, 0, fn number, start ->
+      ends = start + Map.fetch!(lengths, number)
+
+      cond do
+        beat == start -> {:halt, "bar #{number}"}
+        beat < ends -> {:halt, "beat #{format_beats(beat - start + 1)} of bar #{number}"}
+        true -> {:cont, ends}
+      end
+    end)
+  end
+
   defp sentence([one]), do: one
   defp sentence(names), do: Enum.join(Enum.drop(names, -1), ", ") <> " and " <> List.last(names)
 
@@ -199,13 +228,16 @@ defmodule Mix.Tasks.Mx.Import do
         "  part :#{name}, synth: :#{synth}#{defaults}"
       end)
 
+    title = title(score.title)
+    beats = format_beats(beats(score))
+
     players =
-      Enum.map_join(names, ",\n", fn name ->
+      Enum.map(names, fn name ->
         "      part(:#{name}, seq(Enum.map(order(), &bar(:#{name}, &1))))"
       end)
 
-    title = title(score.title)
-    beats = format_beats(beats(score))
+    players =
+      Enum.join(players ++ tempo_changes(score.tempos, beats), ",\n")
 
     moduledoc =
       [
@@ -213,8 +245,10 @@ defmodule Mix.Tasks.Mx.Import do
         "Each part's bars are written one to a line where they fit, as the bar's number and its music; a bar of several voices plays them together.",
         "A note's length is in beats, a quarter note being a beat; a note tied over a bar line sounds for the whole tie, given as its sustain, and the note it ties into is a rest.",
         vels(file),
+        tempos_line(score.tempos),
         "The whole score plays once, #{beats} beats."
       ]
+      |> Enum.reject(&is_nil/1)
       |> Enum.map_join("\n", &doc_line/1)
 
     """
@@ -240,6 +274,22 @@ defmodule Mix.Tasks.Mx.Import do
     end
     """
   end
+
+  defp tempo_changes([], _beats), do: []
+
+  defp tempo_changes(tempos, beats) do
+    changes =
+      Enum.map_join(tempos, ", ", fn {beat, bpm} ->
+        "{#{format_beats(beat)}, tempo(#{format_beats(bpm)})}"
+      end)
+
+    ["      at([#{changes}], #{beats})"]
+  end
+
+  defp tempos_line([]), do: nil
+
+  defp tempos_line(_tempos),
+    do: "The tempo changes where the file's does, at the beat of each change."
 
   defp vels(file) do
     if Path.extname(file) in [".mid", ".midi"] do

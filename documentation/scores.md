@@ -107,7 +107,8 @@ A Standard MIDI File is what digital audio workstations such as Logic and Ableto
 mx export examples/erbarme_dich/aria.exs --time 12/8 --key bm --out aria.mid
 ```
 
-The file holds the whole of the song's music once, one track per part that plays notes with a pitch, named after the part, with the song's tempo and the time signature and key given; parts are left out as for a score, and mx says so.
+The file holds the whole of the song's music once, one track per part that plays notes with a pitch, named after the part, with the song's tempo and its changes, and the time signature and key given; parts are left out as for a score, and mx says so.
+A tempo change made evenly over some beats is written as a change at once where it starts, and mx says so.
 Each note keeps its vel as its velocity, 0.6 when it has none, and the tracks name no instrument, since mx's synths have no General MIDI number.
 
 `mx import` reads a file ending in `.mid` or `.midi` as it reads a score, with `--part`, `--tempo`, `--out` and `--force` working the same way:
@@ -118,12 +119,14 @@ mx import piece.mid --part "Right=piano" --part "Left=piano"
 
 Each track that plays notes becomes a part named after the track, or track 1, track 2 and so on where it has none, and a file whose notes all lie in one track gives a part for each channel instead.
 Each note keeps how hard it was struck as its vel, a velocity of 64 being vel 0.5, on a synth that takes vel.
-The file's first tempo is the song's, its time signatures cut the bars, 4/4 when it has none, and its key signature spells the notes.
+The file's first tempo is the song's, and each later change plays at its beat, so the song plays for as long as the file; with `--tempo` the song keeps that one tempo and mx names each change it left out.
+Its time signatures cut the bars, 4/4 when it has none, and its key signature spells the notes.
 
 A MIDI file holds when each key goes down and up and how hard, and nothing of how the music is written.
 It names no note as C sharp or D flat, so notes are spelled from the key signature, in sharps or in flats; it marks no repeat, so the song plays the file through; and a file recorded from playing has notes off the beat.
 So starts and ends move to the nearest sixteenth note, and `--grid` names another division of a whole note, such as `--grid 1/32`, or `--grid 1/12` for eighth-note triplets.
-Notes on channel 10, which General MIDI keeps for drums, the sustain pedal, other controllers and tempo changes after the first are left out, and mx says what it left out, part by part.
+So do the tempo changes.
+Notes on channel 10, which General MIDI keeps for drums, the sustain pedal and other controllers are left out, and mx says what it left out, part by part.
 
 ## Import a tune from ABC
 

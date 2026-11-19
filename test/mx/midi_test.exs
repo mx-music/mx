@@ -35,7 +35,8 @@ defmodule Mx.MIDITest do
   defp high(value), do: high(value >>> 7) <> <<(value &&& 0x7F) ||| 0x80>>
 
   defp name(text), do: {0, <<0xFF, 0x03, byte_size(text)>> <> text}
-  defp tempo(bpm), do: {0, <<0xFF, 0x51, 3, round(60_000_000 / bpm)::24>>}
+  defp tempo(bpm, tick \\ 0), do: {tick, <<0xFF, 0x51, 3, round(60_000_000 / bpm)::24>>}
+  defp meter(beats, power), do: {0, <<0xFF, 0x58, 4, beats, power, 24, 8>>}
 
   defp note(channel, key, from, to, velocity \\ 80) do
     [{from, <<0x90 + channel, key, velocity>>}, {to, <<0x80 + channel, key, 0>>}]
@@ -153,6 +154,95 @@ defmodule Mx.MIDITest do
            ]
   end
 
+  # Four bars of 12/8, a dotted quarter note at a time, at 48 and then 46 from bar 4.
+  defp slowing(dir) do
+    notes = Enum.flat_map(0..15, &note(0, 60 + rem(&1, 8), &1 * 720, &1 * 720 + 720))
+
+    write(dir, "slowing.mid", [
+      [meter(12, 3), tempo(48), tempo(46, 3 * 2880)],
+      [name("Melody") | notes]
+    ])
+  end
+
+  defp followed(song) do
+    out = Path.rootname(song) <> ".wav"
+    capture_io(fn -> assert :ok = Mx.Render.render(song, out, follow: self(), force: true) end)
+
+    Stream.repeatedly(fn -> receive do: ({:mx_beat, %{} = beat} -> beat), after: (0 -> nil) end)
+    |> Enum.take_while(& &1)
+  end
+
+  test "a file that slows from 48 to 46 at bar 4 imports to a song that plays bars 1 to 3 at 48 and bar 4 at 46, as long as the file plays",
+       %{tmp_dir: dir} do
+    {song, output} = import!(slowing(dir))
+
+    refute output =~ "the tempo"
+    assert File.read!(song) =~ "use Mx.Song, tempo: 48"
+
+    assert [%{beat: 0, tempo: 48, heard_us: 0}, %{beat: 18, tempo: 46, heard_us: bar_4}] =
+             followed(song)
+
+    assert bar_4 == 22_500_000
+    ends_us = bar_4 + 6 * 60_000_000 / 46
+    file_us = 18 * 60_000_000 / 48 + 6 * 60_000_000 / 46
+    assert abs(ends_us - file_us) < 0.25 * 60_000_000 / 46
+  end
+
+  test "a tempo change inside a bar is written at its beat on the grid", %{tmp_dir: dir} do
+    notes = Enum.flat_map(0..7, &note(0, 60, &1 * 480, &1 * 480 + 480))
+
+    path =
+      write(dir, "inside.mid", [[tempo(100), tempo(80, 6 * 480 + 10)], [name("Melody") | notes]])
+
+    {song, _output} = import!(path)
+
+    assert File.read!(song) =~ "at([{6, tempo(80)}], 8)"
+    assert [%{beat: 0, tempo: 100}, %{beat: 6, tempo: 80}] = followed(song)
+  end
+
+  test "with --tempo 60 the song plays at 60 throughout and the import names the tempo 46 as left out",
+       %{tmp_dir: dir} do
+    {song, output} = import!(slowing(dir), ["--tempo", "60"])
+
+    assert output =~ "the tempo 46 from bar 4 is left out\n"
+    assert File.read!(song) =~ "use Mx.Song, tempo: 60"
+    refute File.read!(song) =~ "tempo("
+    assert [%{beat: 0, tempo: 60}] = followed(song)
+  end
+
+  test "a file with one tempo imports with no tempo change in its song", %{tmp_dir: dir} do
+    path =
+      write(dir, "steady.mid", [
+        [tempo(100), tempo(100, 960)],
+        [name("Melody") | note(0, 60, 0, 1920)]
+      ])
+
+    {song, output} = import!(path)
+
+    refute output =~ "the tempo"
+    refute File.read!(song) =~ "tempo("
+  end
+
+  test "a file that slows at bar 4, imported, exported and imported again, gives the same song",
+       %{tmp_dir: dir} do
+    {song, _output} = import!(slowing(dir))
+    out = Path.join(dir, "again.mid")
+    capture_io(fn -> Export.run([song, "--out", out, "--time", "12/8"]) end)
+    [conductor | _parts] = tracks(out)
+
+    assert metas(conductor, 0x51) == [
+             <<round(60_000_000 / 48)::24>>,
+             <<round(60_000_000 / 46)::24>>
+           ]
+
+    assert [{8640, _}] = for({tick, {:meta, 0x51, _}} = event <- conductor, tick > 0, do: event)
+
+    {again, _output} = import!(out)
+    # The export titles the file after the song, so only the song's first line differs.
+    module = &String.replace(&1, ~r/\A.*\n.*\n.*\n/, "")
+    assert module.(File.read!(again)) == module.(File.read!(song))
+  end
+
   test "a file that is not a MIDI file is refused", %{tmp_dir: dir} do
     path = Path.join(dir, "noise.mid")
     File.write!(path, "not a midi file")
@@ -218,6 +308,29 @@ defmodule Mx.MIDITest do
     {again, _output} = import!(out)
 
     assert ScoreNotes.played(again) == ScoreNotes.played(song)
+  end
+
+  test "a tempo change over some beats exports as a change at once where it starts, and the export says so",
+       %{tmp_dir: dir} do
+    song = Path.join(dir, "easing.exs")
+
+    File.write!(song, """
+    import Mx
+    song(tempo: 90, music: together([
+      part(:melody, seq(c4: 4, d4: 4), synth: :piano),
+      at([{2, tempo(60, over: 4)}], 8)
+    ]))
+    """)
+
+    out = Path.join(dir, "easing.mid")
+    output = capture_io(fn -> Export.run([song, "--out", out]) end)
+
+    assert output =~
+             "the tempo's move to 60 over 4 beats from beat 2 is written as a change at once\n"
+
+    [conductor | _parts] = tracks(out)
+    tempos = for {tick, {:meta, 0x51, <<us::24>>}} <- conductor, do: {tick, us}
+    assert tempos == [{0, round(60_000_000 / 90)}, {960, 1_000_000}]
   end
 
   test "the README's Gymnopédie exports with the time signature and key given", %{tmp_dir: dir} do
