@@ -38,7 +38,10 @@ mx play song.exs --render song.wav
 The render holds what `--record` would, as fast as the machine renders it and with no sound: it starts at the song's first beat and ends once the music has ended and the notes still sounding have faded, or after four seconds at most.
 Music that plays until mx stops needs `--seconds`, the length to render, such as `--seconds 60`.
 Rendering a song twice writes the same file.
-mx prints the same report as for a recording, and refuses a file that exists unless you add `--force`.
+While it renders, mx prints its progress about four times a second, as a line such as `rendered 37.5 of 148.0 seconds`: the seconds of music rendered, and the seconds it renders in all, until the music ends or for `--seconds`, the fade after it left out.
+A last line gives all of them once the music has rendered, such as `rendered 148.0 of 148.0 seconds`, and a render that fails prints none.
+A program that runs the render reads each line as it is printed, and tells them from the report by their start.
+mx then prints the same report as for a recording, and refuses a file that exists unless you add `--force`.
 A render sends no MIDI or OSC and has no input, so mx names each part that sends MIDI or OSC, or waits for input, and leaves it out.
 `--render` cannot go with `--record`, nor with a song that has `live_audio`.
 

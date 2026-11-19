@@ -6,14 +6,17 @@ defmodule Mx.Render do
   At each step every loop is ticked in turn by name and waited for, so its passes reach the engine in the same order on every run, and the engine renders up to that time.
   The render starts at the song's first beat, and ends once its music has ended or `seconds:` have passed, and the notes still sounding have faded, for four seconds at most.
   MIDI and OSC are not sent, and a loop that waits for input plays nothing; each part left out is named once, a part that sends MIDI or OSC the first time it does.
+
+  While it renders it prints a line such as `rendered 37.5 of 148.2 seconds` about four times a second, and once more when the music has rendered, giving the seconds of music rendered and the seconds it renders in all, until the music ends or for `seconds:`, the fade after it left out.
   """
 
-  alias Mx.{Band, Clock, Inputs, Recording, Song}
+  alias Mx.{Band, Clock, Inputs, Pass, Recording, Song, Tempo}
   alias Mx.Engine.Mxs
 
   @ahead_us 500_000
   @step_us 10_000
   @fade_us 4_000_000
+  @progress_ms 250
 
   @doc "Renders the song at `path` to the WAV file `out`, with `seconds:`, `force:` and `share:`, the share of its tempo to play it at, 1 unless given, and returns `:ok` once written, or `{:error, message}`; the process given as `follow:` is sent where the beat is, as `Mx.Beat` describes, in the render's own time."
   def render(path, out, opts) when is_binary(path) and is_binary(out) and is_list(opts) do
@@ -24,11 +27,12 @@ defmodule Mx.Render do
          :ok <- Recording.check(out, Keyword.get(opts, :force, false)),
          {:ok, _apps} <- Application.ensure_all_started(:mx),
          {:ok, song} <- Song.load(path),
-         :ok <- check(song, seconds) do
+         :ok <- check(song, seconds),
+         playing = %{song | loops: Enum.filter(song.loops, &(&1.on == nil))},
+         {:ok, total} <- total(playing, seconds, share) do
       Enum.each(left_out(song), &IO.puts/1)
       follow = List.wrap(opts[:follow])
-      song = %{song | loops: Enum.filter(song.loops, &(&1.on == nil))}
-      run(song, out, seconds, follow, share)
+      run(playing, out, seconds, follow, share, total)
       Enum.each(Recording.report(out), &IO.puts/1)
     end
   end
@@ -49,6 +53,46 @@ defmodule Mx.Render do
   defp check(_song, seconds) when is_number(seconds) and seconds > 0, do: :ok
   defp check(_song, seconds), do: {:error, "--seconds takes a length above 0, not #{seconds}"}
 
+  # The seconds of music the render plays: until its music ends, or for `seconds` when that is
+  # sooner or the music does not end.
+  defp total(song, seconds, share) do
+    ending = Enum.filter(song.loops, &(&1.passes != nil))
+    endless? = length(ending) < length(song.loops)
+
+    with {:ok, ends} <- map_ok(ending, &ends(&1, song)) do
+      music = Enum.max(ends, fn -> 0 end) / share
+      {:ok, if(endless?, do: seconds, else: min(music, seconds || music))}
+    end
+  end
+
+  # The seconds at which a loop's last pass ends, at the song's own tempo.
+  defp ends(loop, song) do
+    sections = loop.music.sections
+    window = elem(sections, tuple_size(sections) - 1).beats
+
+    played =
+      Enum.reduce_while(0..(loop.passes - 1)//1, {:ok, 0}, fn pass, {:ok, start} ->
+        case Pass.events(loop, pass) do
+          {:ok, %{beats: beats}} -> {:cont, {:ok, start + beats}}
+          error -> {:halt, error}
+        end
+      end)
+
+    with {:ok, beats} <- played do
+      {timeline, _start} = Tempo.through(song.tempos, song.tempo, max(loop.passes - 1, 0), window)
+      {:ok, Tempo.time_at(timeline, beats) / 1_000_000}
+    end
+  end
+
+  defp map_ok(items, fun) do
+    Enum.reduce_while(items, {:ok, []}, fn item, {:ok, done} ->
+      case fun.(item) do
+        {:ok, value} -> {:cont, {:ok, done ++ [value]}}
+        error -> {:halt, error}
+      end
+    end)
+  end
+
   defp left_out(song) do
     for loop <- song.loops, line = left_out_line(loop), do: line
   end
@@ -62,7 +106,7 @@ defmodule Mx.Render do
   # Every render starts at the same time, so each beat's time rounds the same way on every run.
   @start_us 0
 
-  defp run(song, out, seconds, follow, share) do
+  defp run(song, out, seconds, follow, share, total) do
     start_us = @start_us
     Clock.start_render(start_us)
     Process.flag(:trap_exit, true)
@@ -98,7 +142,9 @@ defmodule Mx.Render do
         )
 
       stop_us = if seconds, do: start_us + round(seconds * 1_000_000)
-      last_us = play(band, start_us, stop_us, MapSet.new())
+      progress = %{start_us: start_us, total: total, printed_ms: now_ms()}
+      last_us = play(band, start_us, stop_us, MapSet.new(), progress)
+      print_progress(total, total)
       cut(band, last_us - @step_us + @ahead_us)
       GenServer.stop(band)
       fade(last_us, last_us + @fade_us)
@@ -116,7 +162,7 @@ defmodule Mx.Render do
     for pid <- Band.loops(band), name = name(pid), do: Mxs.cut(name, beat)
   end
 
-  defp play(band, now_us, stop_us, told) do
+  defp play(band, now_us, stop_us, told, progress) do
     receive do
       :song_ended -> now_us
     after
@@ -135,10 +181,28 @@ defmodule Mx.Render do
 
           Mxs.render_to(next_us - @step_us)
           Clock.advance(next_us)
-          play(band, next_us, stop_us, told)
+          play(band, next_us, stop_us, told, progressed(progress, next_us))
         end
     end
   end
+
+  defp progressed(progress, now_us) do
+    if now_ms() - progress.printed_ms >= @progress_ms do
+      rendered = min((now_us - progress.start_us) / 1_000_000, progress.total)
+      print_progress(rendered, progress.total)
+      %{progress | printed_ms: now_ms()}
+    else
+      progress
+    end
+  end
+
+  defp print_progress(rendered, total) do
+    rendered = :erlang.float_to_binary(rendered * 1.0, decimals: 1)
+    total = :erlang.float_to_binary(total * 1.0, decimals: 1)
+    IO.puts("rendered #{rendered} of #{total} seconds")
+  end
+
+  defp now_ms, do: System.monotonic_time(:millisecond)
 
   defp tell_sent(told) do
     receive do

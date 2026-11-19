@@ -111,9 +111,55 @@ defmodule Mx.RenderTest do
              render(path, out)
 
     refute File.exists?(out)
-    assert {:ok, _} = render(path, out, seconds: 30)
+    assert {:ok, output} = render(path, out, seconds: 30)
     seconds = Recording.seconds(out)
     assert seconds >= 30 and seconds <= 34
+    assert List.last(progress(output)) == {30.0, 30.0}
+  end
+
+  defp progress(output) do
+    for [rendered, total] <-
+          Regex.scan(~r/^rendered (\d+\.\d) of (\d+\.\d) seconds$/m, output,
+            capture: :all_but_first
+          ),
+        do: {String.to_float(rendered), String.to_float(total)}
+  end
+
+  test "rendering choro once through prints its progress about four times a second, rising to 148 of 148, then the report",
+       %{tmp_dir: dir} do
+    out = Path.join(dir, "choro.wav")
+
+    {micros, {result, output}} =
+      :timer.tc(fn -> render("examples/choro.exs", out, seconds: 148) end)
+
+    assert result == :ok
+    lines = progress(output)
+    rendered = Enum.map(lines, &elem(&1, 0))
+
+    assert List.last(lines) == {148.0, 148.0}
+    assert Enum.all?(lines, &(elem(&1, 1) == 148.0))
+    assert rendered == Enum.sort(rendered)
+    assert_in_delta length(lines), micros / 250_000, micros / 1_000_000 + 2
+    assert output =~ ~r/^rendered 148\.0 of 148\.0 seconds\nRecorded \d+\.\d seconds to /m
+  end
+
+  test "a song that ends renders as many seconds as its music, at its share of the tempo",
+       %{tmp_dir: dir} do
+    path =
+      write(
+        dir,
+        "song.exs",
+        "song(tempo: 120, music: part(:a, seq(c4: 2, e4: 2, g4: 4), synth: :fm))\n"
+      )
+
+    {:ok, output} = render(path, Path.join(dir, "whole.wav"))
+    assert progress(output) == [{4.0, 4.0}]
+
+    {:ok, output} = render(path, Path.join(dir, "half.wav"), share: 0.5)
+    assert progress(output) == [{8.0, 8.0}]
+
+    {:ok, output} = render(path, Path.join(dir, "short.wav"), seconds: 1.5)
+    assert progress(output) == [{1.5, 1.5}]
   end
 
   test "a file that exists is refused unless forced", %{tmp_dir: dir} do
