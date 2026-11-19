@@ -28,13 +28,11 @@ defmodule Mx.Examples.OrganTest do
     assert File.read!("LICENSE-designs.md") =~ "Simon Dalzell"
   end
 
-  test "the organ refuses vel" do
+  test "the organ takes vel" do
     path = Path.join(System.tmp_dir!(), "organ_vel_#{System.unique_integer([:positive])}.exs")
     File.write!(path, "import Mx\nsong(music: part(:a, note(60, 1, vel: 1), synth: :organ))\n")
 
-    assert_raise Mix.Error, ~r/synth organ has no option vel/, fn ->
-      capture_io(fn -> Mix.Tasks.Mx.Print.run([path]) end)
-    end
+    assert capture_io(fn -> Mix.Tasks.Mx.Print.run([path]) end) =~ ~r/play 60 vel: 1\b/
   end
 
   @tag :timing

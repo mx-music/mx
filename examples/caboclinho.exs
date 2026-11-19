@@ -15,7 +15,7 @@ defmodule Caboclinho do
 
   use Mx.Song, tempo: 132
 
-  part :flute, synth: :flute, defaults: [vibrato: 0.1], fx: [reverb: [room: 0.3, mix: 0.15]]
+  part :flute, synth: :flute, defaults: [vibrato: 0.026], fx: [reverb: [room: 0.3, mix: 0.15]]
   part :ganza, synth: :ganza, defaults: [amp: 0.5]
   part :shaker, synth: :shaker, defaults: [amp: 0.3, pan: 0.3]
   part :low_bongo, synth: :low_bongo

@@ -50,7 +50,7 @@ defmodule TenorSax do
   # The slow phrase with full vibrato, each note held to just before the next.
   defp strokes(:slow, _pass) do
     for {beat, note, held} <- phrase(),
-        do: {beat, note, 0.6, sustain: held - 0.15, release: 0.2, vibrato: 1}
+        do: {beat, note, 0.6, sustain: held - 0.15, release: 0.2, vibrato: 0.145}
   end
 
   # The phrase's first half at its softest, then its second half at its loudest.
@@ -58,7 +58,7 @@ defmodule TenorSax do
     for {beat, note, held} <- phrase(),
         do:
           {beat, note, if(beat < 8, do: 0.2, else: 1),
-           sustain: held - 0.15, release: 0.2, vibrato: 0.5}
+           sustain: held - 0.15, release: 0.2, vibrato: 0.0725}
   end
 
   # A run down the F major scale in sixteenths from E5 to its low A flat, held.
@@ -66,7 +66,7 @@ defmodule TenorSax do
     run = Enum.filter(76..45//-1, &(rem(&1, 12) in [0, 2, 4, 5, 7, 9, 10]))
 
     Enum.with_index(run, fn note, i -> {i / 4, note, 0.65, sustain: 0.2, release: 0.05} end) ++
-      [{length(run) / 4, 44, 0.8, sustain: 16 - length(run) / 4 - 0.5, release: 0.4, vibrato: 1}]
+      [{length(run) / 4, 44, 0.8, sustain: 16 - length(run) / 4 - 0.5, release: 0.4, vibrato: 0.145}]
   end
 
   # Each bar of the choro as beat and note, a run of sixteenths up to a held note and down; the

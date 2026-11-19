@@ -14,13 +14,13 @@ defmodule Mix.Tasks.Mx.HumTest do
     @describetag :engine
 
     test "a flute's quarter notes and half note come out as they were played", ctx do
-      wav = write_wav(ctx, "flute.wav", flute(ctx, vibrato: 0.25), Mxs.render_rate())
+      wav = write_wav(ctx, "flute.wav", flute(ctx, vibrato: 0.066), Mxs.render_rate())
 
       assert song(wav, 90) =~ "seq(e4: 1, g4: 1, a4: 1, b4: 2, r: 3)"
     end
 
     test "a flute's notes held with vibrato are still those four notes", ctx do
-      wav = write_wav(ctx, "flute.wav", flute(ctx, vibrato: 0.5), Mxs.render_rate())
+      wav = write_wav(ctx, "flute.wav", flute(ctx, vibrato: 0.132), Mxs.render_rate())
 
       assert song(wav, 90) =~ "seq(e4: 1, g4: 1, a4: 1, b4: 2, r: 3)"
     end

@@ -205,6 +205,7 @@ fn event(term: Term) -> NifResult<Event> {
             synth: parts[2].decode()?,
             options: options(parts[3])?,
             chain: parts[4].decode()?,
+            held: false,
         })
     } else if tag == sample() && parts.len() == 5 {
         Ok(Event::Sample {

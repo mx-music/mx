@@ -188,7 +188,8 @@ defmodule Mx.MIDITest do
              [{0.0, 60, 0.333333}, {0.333333, 62, 0.333333}, {0.666667, 64, 0.333333}]
            ]
 
-    assert File.read!(song) =~ "c4: 1 / 3, d4: 1 / 3, e4: 1 / 3"
+    assert File.read!(song) =~
+             "note(:c4, 1 / 3, vel: 0.63),\n      note(:d4, 1 / 3, vel: 0.63),\n      note(:e4, 1 / 3, vel: 0.63)"
   end
 
   test "drums on channel 10 are left out, and the task says so", %{tmp_dir: dir} do
@@ -261,7 +262,7 @@ defmodule Mx.MIDITest do
 
     assert output =~ "channel 1 on tri: 2 notes from :e5 to :f5\n"
     assert output =~ "channel 2 on tri: 3 notes from :c3 to :g3\n"
-    assert File.read!(song) =~ "note([:c3, :e3, :g3], 2)"
+    assert File.read!(song) =~ "note([:c3, :e3, :g3], 2, vel: 0.63)"
 
     assert ScoreNotes.played(song) == [
              [{0.0, 76, 1.0}, {1.0, 77, 1.0}],

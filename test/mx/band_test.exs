@@ -1562,7 +1562,7 @@ defmodule Mx.BandTest do
       ]
 
       flute =
-        "part(:flute, loop(8, fn _, _ -> seq(for _ <- 1..8, do: seq([note(72, 0.5, amp: 0.5, vibrato: 0.3, pan: -0.5), rest(0.5)])) end), synth: :flute)"
+        "part(:flute, loop(8, fn _, _ -> seq(for _ <- 1..8, do: seq([note(72, 0.5, amp: 0.5, breath: 0.3, pan: -0.5), rest(0.5)])) end), synth: :flute)"
 
       {band, _start_us} = start(load(ctx, song(60, [flute])), ctx, opts)
       assert_receive {:handed, :flute, {0, 8}, 0, _events}
@@ -1598,7 +1598,7 @@ defmodule Mx.BandTest do
 
       for {synth, params} <- tried_notes() do
         assert synth == :clarinet
-        assert %{vel: 0.8, amp: 0.5, vibrato: 0.3, pan: -0.5} = params
+        assert %{vel: 0.8, amp: 0.5, breath: 0.3, pan: -0.5} = params
       end
     end
 
@@ -1608,13 +1608,13 @@ defmodule Mx.BandTest do
           :ok = Band.try_part(band, :flute, synth: :tri)
 
           assert Enum.all?(tried_notes(), fn {:tri, params} ->
-                   not is_map_key(params, :vibrato)
+                   not is_map_key(params, :breath)
                  end)
 
           Process.sleep(100)
         end)
 
-      assert warned == "loop flute: :tri takes no option vibrato, so it is left out\n"
+      assert warned == "loop flute: :tri takes no option breath, so it is left out\n"
     end
 
     test "a part, synth or option that does not exist is refused, naming it", %{band: band} do

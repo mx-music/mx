@@ -68,7 +68,7 @@ defmodule Mx.PianoTest do
     assert {:ok, %{warnings: ["piano's option vel was held to its range, 0.05 to 1"]}} =
              Piano.parts(note: 60, vel: 2)
 
-    assert Piano.parts(note: 60, brightness: 1) == {:error, "piano has no option brightness"}
+    assert Piano.parts(note: 60, wobble: 1) == {:error, "piano has no option wobble"}
   end
 
   @tag :engine
