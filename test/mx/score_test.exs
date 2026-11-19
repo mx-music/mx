@@ -65,6 +65,32 @@ defmodule Mx.ScoreTest do
     assert staves == MapSet.new([1])
   end
 
+  test "the aria says what it holds besides its notes: meter, key, tempo marking, upbeat, staves and marks" do
+    assert {:ok, about} = Mx.Score.about("examples/erbarme_dich/bwv244.39.mxl")
+
+    assert about.meter == "12/8"
+    assert about.fifths == 2
+    assert about.tempo == 48
+    assert about.marking == "Grave"
+    assert about.upbeat
+    assert about.bars == 46
+    assert about.staves == [{"Violin", 1}, {"Alto", 1}, {"Organo a canne", 2}]
+    assert about.marks == [{1, "segno"}, {8, "Fine"}, {46, "D.S. al Fine"}]
+  end
+
+  test "saying what the aria holds leaves the song an import writes of it as it was" do
+    {:ok, imported} = Mx.Import.song("examples/erbarme_dich/bwv244.39.mxl")
+
+    assert :crypto.hash(:sha256, imported.source) |> Base.encode16(case: :lower) ==
+             "d348a45ecbcb560d6702a981efa421995d8a0868a1993855704536878aeefe4b"
+  end
+
+  test "a file that is not a score says so when asked what it holds", %{tmp_dir: dir} do
+    path = Path.join(dir, "notes.musicxml")
+    File.write!(path, "Houston")
+    assert Mx.Score.about(path) == {:error, "#{path} is not a MusicXML score"}
+  end
+
   test "the aria read without writing a song counts what a song of it leaves out" do
     {:ok, score} = Mx.Score.read("examples/erbarme_dich/bwv244.39.mxl")
 

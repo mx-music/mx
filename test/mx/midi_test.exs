@@ -53,6 +53,48 @@ defmodule Mx.MIDITest do
     {Path.rootname(path) <> ".exs", output}
   end
 
+  test "a file of four tracks, two with notes, says so with its ticks to a quarter note", %{
+    tmp_dir: dir
+  } do
+    path =
+      write(dir, "four.mid", [
+        [tempo(48), meter(4, 2)],
+        [name("Right") | note(0, 72, 0, 480)],
+        [name("Words")],
+        [name("Left") | note(1, 48, 0, 1920)]
+      ])
+
+    assert {:ok, about} = Mx.Score.about(path)
+    assert about.tracks == 4
+    assert about.tracks_with_notes == 2
+    assert about.ticks == 480
+    assert about.meter == "4/4"
+  end
+
+  test "a file's tempo changes are given with the bar and the beat each falls on", %{tmp_dir: dir} do
+    path =
+      write(dir, "slowing.mid", [
+        [tempo(48), meter(4, 2), tempo(46, 3 * 4 * 480)],
+        note(0, 60, 0, 5 * 4 * 480)
+      ])
+
+    assert {:ok, about} = Mx.Score.about(path)
+
+    assert about.tempos == [
+             %{bar: 1, beat: 0.0, tempo: 48},
+             %{bar: 4, beat: 12.0, tempo: 46}
+           ]
+  end
+
+  test "a file cut short inside a track says what is wrong when asked what it holds", %{
+    tmp_dir: dir
+  } do
+    path = Path.join(dir, "take_3.mid")
+    data = smf([[tempo(100)], note(0, 60, 0, 480)])
+    File.write!(path, binary_part(data, 0, byte_size(data) - 6))
+    assert Mx.Score.about(path) == {:error, "#{path} is cut short inside a track"}
+  end
+
   test "a file of two tracks named Right and Left imports as parts right and left that play its pitches",
        %{tmp_dir: dir} do
     right = Enum.concat([note(0, 72, 0, 480), note(0, 74, 480, 960), note(0, 76, 960, 1440)])

@@ -73,6 +73,138 @@ defmodule Mx.Score do
     end
   end
 
+  @doc """
+  What the file at `path` holds besides its notes, as `{:ok, about}` or `{:error, message}`, leaving `read/2` and every song an import writes as they are.
+
+  A MusicXML score gives its `meter` as written, such as "12/8", its key as `fifths`, sharps above 0 and flats below, its `tempo` and the words it is `marking`ed with, such as "Grave", whether it starts with an `upbeat`, its count of `bars` after the upbeat, each part's `staves` as `{name, count}`, and the `marks` written on its bars as `{bar, mark}`: "segno", "coda", and the words Fine, D.C. and D.S. as the score spells them.
+  A MIDI file gives its `tracks`, its `tracks_with_notes`, its `ticks` to a quarter note, its `meter`, its `fifths`, and its `tempos`, each as `%{bar: bar, beat: beat, tempo: tempo}` from the start.
+  """
+  def about(path) when is_binary(path) do
+    case String.downcase(Path.extname(path)) do
+      extension when extension in [".mid", ".midi"] -> Mx.MIDI.about(path)
+      _other -> about_musicxml(path)
+    end
+  end
+
+  defp about_musicxml(path) do
+    with {:ok, data} <- read_file(path),
+         {:ok, xml} <- unpack(data, path),
+         {:ok, root} <- parse(xml, path),
+         {:ok, score} <- score(root, path) do
+      parts = children(root, "part")
+      measures = parts |> List.first() |> children("measure")
+      attributes = Enum.flat_map(measures, &children(&1, "attributes"))
+      directions = Enum.flat_map(parts, &part_directions/1)
+      upbeat = measures |> Enum.take(1) |> Enum.any?(&(attr(&1, "implicit") == "yes"))
+
+      {:ok,
+       %{
+         meter: Enum.find_value(attributes, &written_meter/1),
+         fifths: first_fifths(attributes),
+         tempo: score.tempo,
+         marking: Enum.find_value(directions, &marking/1),
+         upbeat: upbeat,
+         bars: Enum.count(measures, &(attr(&1, "implicit") != "yes")),
+         staves: staves(root, parts),
+         marks: directions |> Enum.flat_map(&marks/1) |> Enum.uniq()
+       }}
+    end
+  end
+
+  defp part_directions(part) do
+    for measure <- children(part, "measure"),
+        direction <- children(measure, "direction"),
+        do: {bar_number(measure), direction}
+  end
+
+  defp bar_number(measure) do
+    case Integer.parse(attr(measure, "number") || "") do
+      {number, _rest} -> number
+      :error -> nil
+    end
+  end
+
+  defp written_meter(attributes) do
+    with [time | _] <- children(attributes, "time"),
+         beats when is_binary(beats) <- text(time, "beats"),
+         beat_type when is_binary(beat_type) <- text(time, "beat-type") do
+      "#{beats}/#{beat_type}"
+    else
+      _ -> nil
+    end
+  end
+
+  defp first_fifths(attributes) do
+    Enum.find_value(attributes, fn attributes ->
+      case path(attributes, ["key", "fifths"]) do
+        [fifths | _] -> String.to_integer(content(fifths))
+        [] -> nil
+      end
+    end) || 0
+  end
+
+  # The words of the direction that gives the score's first tempo.
+  defp marking({_bar, direction}) do
+    tempo? =
+      Enum.any?(children(direction, "sound"), &attr(&1, "tempo")) or
+        path(direction, ["direction-type", "metronome"]) != []
+
+    words = direction |> path(["direction-type", "words"]) |> Enum.map(&words/1)
+
+    case {tempo?, Enum.reject(words, &(&1 == ""))} do
+      {true, [_ | _] = words} -> Enum.join(words, " ")
+      _other -> nil
+    end
+  end
+
+  @jumps ~r/^(fine|d\.\s*c\.|d\.\s*s\.|da capo|dal segno)/i
+
+  defp marks({bar, direction}) do
+    types = path(direction, ["direction-type"])
+
+    signs =
+      for type <- types,
+          sign <- elements(type),
+          name(sign) in ["segno", "coda"],
+          do: {bar, name(sign)}
+
+    words =
+      for words <- path(direction, ["direction-type", "words"]),
+          said = words(words),
+          said =~ @jumps,
+          do: {bar, said}
+
+    signs ++ words
+  end
+
+  # Words as the score shows them, without the markup some editors leave inside them.
+  defp words(node), do: node |> content() |> String.replace(~r/<[^>]*>/, "") |> String.trim()
+
+  defp staves(root, parts) do
+    names = part_names(root)
+
+    parts
+    |> Enum.with_index(1)
+    |> Enum.map(fn {part, index} ->
+      name = names |> List.keyfind(attr(part, "id"), 0, {nil, nil}) |> elem(1)
+      name = if name in [nil, ""], do: "Part #{index}", else: name
+
+      count =
+        part
+        |> children("measure")
+        |> Enum.flat_map(&children(&1, "attributes"))
+        |> Enum.find_value(&number(&1, "staves"))
+
+      {name, count || 1}
+    end)
+  end
+
+  defp part_names(root) do
+    for part <- path(root, ["part-list", "score-part"]) do
+      {attr(part, "id"), text(part, "part-name") || text(part, "part-abbreviation")}
+    end
+  end
+
   defp read_musicxml(path) do
     with {:ok, data} <- read_file(path),
          {:ok, xml} <- unpack(data, path),
@@ -126,11 +258,7 @@ defmodule Mx.Score do
   end
 
   defp score(root, path) do
-    names =
-      for part <- path(root, ["part-list", "score-part"]) do
-        name = text(part, "part-name") || text(part, "part-abbreviation")
-        {attr(part, "id"), name}
-      end
+    names = part_names(root)
 
     parts =
       root

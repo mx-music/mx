@@ -38,6 +38,83 @@ defmodule Mx.MIDI do
     end
   end
 
+  @doc """
+  What the MIDI file at `path` holds besides its notes, as `Mx.Score.about/1` gives it, or `{:error, message}`.
+  """
+  def about(path) when is_binary(path) do
+    with {:ok, data} <- read_file(path),
+         :ok <- whole(data, path),
+         {:ok, midi} <- parse(data, path) do
+      events = midi.tracks |> Enum.concat() |> Enum.sort_by(&elem(&1, 0))
+
+      meters =
+        for {tick, {:meta, 0x58, <<beats, power, _::binary>>}} <- events, do: {tick, beats, power}
+
+      {:ok,
+       %{
+         tracks: length(midi.tracks),
+         tracks_with_notes:
+           Enum.count(
+             midi.tracks,
+             &Enum.any?(&1, fn {_tick, event} -> match?({:on, _, _, _}, event) end)
+           ),
+         ticks: midi.division,
+         meter: written_meter(meters),
+         fifths: Enum.find_value(events, 0, &key_event/1),
+         tempos: about_tempos(events, meters, midi.division)
+       }}
+    end
+  end
+
+  # Every chunk the file names is all there; a file cut short loses the end of its last track.
+  defp whole(<<"MThd", length::32, _header::binary-size(length), chunks::binary>>, path) do
+    whole_chunks(chunks, path)
+  end
+
+  defp whole(_data, path), do: {:error, "#{path} is not a MIDI file"}
+
+  defp whole_chunks(<<>>, _path), do: :ok
+
+  defp whole_chunks(<<_type::binary-4, length::32, rest::binary>>, path)
+       when byte_size(rest) >= length do
+    <<_body::binary-size(^length), rest::binary>> = rest
+    whole_chunks(rest, path)
+  end
+
+  defp whole_chunks(_rest, path), do: {:error, "#{path} is cut short inside a track"}
+
+  defp written_meter([{_tick, beats, power} | _]), do: "#{beats}/#{1 <<< power}"
+  defp written_meter([]), do: "4/4"
+
+  defp key_event({_tick, {:meta, 0x59, <<fifths::signed, _::binary>>}}), do: fifths
+  defp key_event(_event), do: nil
+
+  # Each change of tempo, the same tempo given again left out, with its beat and the bar it falls in.
+  defp about_tempos(events, meters, division) do
+    events
+    |> Enum.flat_map(&tempo_event/1)
+    |> Enum.map(fn {tick, us} -> {tick, bpm(us)} end)
+    |> Enum.dedup_by(&elem(&1, 1))
+    |> Enum.map(fn {tick, tempo} ->
+      %{bar: bar_at(tick, meters, division), beat: tick / division, tempo: tempo}
+    end)
+  end
+
+  # The bar a tick falls in, counted from 1, through each time signature from the one in force at the start.
+  defp bar_at(tick, meters, division) do
+    meters = if match?([{0, _, _} | _], meters), do: meters, else: [{0, 4, 2} | meters]
+
+    {bars, from, length} =
+      meters
+      |> Enum.take_while(fn {at, _beats, _power} -> at <= tick end)
+      |> Enum.reduce({0, 0, nil}, fn {at, beats, power}, {bars, from, length} ->
+        bars = if length, do: bars + div(at - from, length), else: bars
+        {bars, at, div(beats * 4 * division, 1 <<< power)}
+      end)
+
+    bars + div(tick - from, length) + 1
+  end
+
   defp read_file(path) do
     case File.read(path) do
       {:ok, data} -> {:ok, data}
