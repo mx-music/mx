@@ -392,6 +392,123 @@ defmodule Mix.Tasks.Mx.PlayTest do
     GenServer.stop(Mx.Engine.Mxs)
   end
 
+  @tag :engine
+  test "an engine plays through the output named, at the rate and buffer size given" do
+    name = default_device(true)
+    {:ok, _engine} = Mx.Engine.Mxs.start_link(devices: [output: name, rate: 44_100, buffer: 64])
+    assert %{device: ^name, rate: rate} = Mx.Engine.Mxs.output(self())
+    assert rate == 44_100
+    Mx.Engine.Mxs.buffer_load()
+    Process.sleep(1000)
+    %{buffers: buffers} = Mx.Engine.Mxs.buffer_load()
+    assert_in_delta buffers, 44_100 / 64, 70
+    GenServer.stop(Mx.Engine.Mxs)
+  end
+
+  @tag :engine
+  test "an engine refuses an output, a rate or a buffer size the device cannot take, naming what it takes" do
+    Process.flag(:trap_exit, true)
+    name = default_device(true)
+
+    assert {:error, "no output device named Studio; the outputs are " <> outputs} =
+             Mx.Engine.Mxs.start_link(devices: [output: "Studio"])
+
+    assert outputs =~ name
+    assert {:error, message} = Mx.Engine.Mxs.start_link(devices: [rate: 7])
+    assert message =~ ~r/^#{Regex.escape(name)} runs at [0-9, or]+ Hz, not 7$/
+    assert {:error, message} = Mx.Engine.Mxs.start_link(devices: [buffer: 7])
+    assert message =~ ~r/^#{Regex.escape(name)} takes buffers of \d+ to \d+ frames, not 7$/
+  end
+
+  @tag :engine
+  test "--output, --rate and --buffer stop the play before any sound when the device cannot take them",
+       ctx do
+    assert_raise Mix.Error, ~r/^no output device named Studio; the outputs are /, fn ->
+      Play.run([ctx.song, "--output", "Studio"])
+    end
+
+    assert_raise Mix.Error, ~r/ runs at .* Hz, not 7$/, fn ->
+      Play.run([ctx.song, "--rate", "7"])
+    end
+
+    assert_raise Mix.Error, ~r/ takes buffers of \d+ to \d+ frames, not 7$/, fn ->
+      Play.run([ctx.song, "--buffer", "7"])
+    end
+  end
+
+  @tag :engine
+  test "the project's config names the output, and --output overrides it", ctx do
+    Application.put_env(:mx, :output, "Studio")
+    on_exit(fn -> Application.delete_env(:mx, :output) end)
+
+    assert_raise Mix.Error, ~r/^no output device named Studio;/, fn ->
+      Play.run([ctx.song])
+    end
+
+    assert_raise Mix.Error, ~r/^no output device named Booth;/, fn ->
+      Play.run([ctx.song, "--output", "Booth"])
+    end
+  end
+
+  @tag :engine
+  test "--input names the input a song with live audio reads", ctx do
+    path = Path.join(ctx.tmp_dir, "live.exs")
+
+    File.write!(
+      path,
+      "import Mx\nsong(tempo: 60, music: rest(4), live_audio: [mic: [amp: 0.8]])\n"
+    )
+
+    assert_raise Mix.Error, ~r/^no input device named Nope; the inputs are /, fn ->
+      Play.run([path, "--input", "Nope"])
+    end
+  end
+
+  @tag :engine
+  test "a play recorded at a rate is written at that rate", ctx do
+    out = Path.join(ctx.tmp_dir, "rate.wav")
+    {:ok, song} = Mx.Song.load(ctx.song)
+
+    {:ok, session} =
+      Mx.Session.start_link(path: ctx.song, song: song, record: out, devices: [rate: 44_100])
+
+    Process.sleep(500)
+    Supervisor.stop(session)
+    assert {:ok, %{rate: 44_100}} = Mx.Audio.read(out)
+  end
+
+  @tag :engine
+  test "a render says --rate and --buffer do not apply to it, and renders at 48000 Hz", ctx do
+    out = Path.join(ctx.tmp_dir, "render.wav")
+
+    said =
+      capture_io(fn ->
+        Play.run([
+          ctx.song,
+          "--render",
+          out,
+          "--seconds",
+          "1",
+          "--rate",
+          "44100",
+          "--buffer",
+          "64"
+        ])
+      end)
+
+    assert said =~ "--rate and --buffer do not apply to a render, which runs at 48000 Hz\n"
+    assert {:ok, %{rate: 48_000}} = Mx.Audio.read(out)
+  end
+
+  defp default_device(output?) do
+    {:ok, devices} = Mx.Engine.Mxs.Native.devices()
+
+    {name, ^output?, true, _, _, _} =
+      Enum.find(devices, &match?({_, ^output?, true, _, _, _}, &1))
+
+    name
+  end
+
   defp write_wav(path, samples) do
     data = for sample <- samples, into: <<>>, do: <<sample::float-little-32>>
 

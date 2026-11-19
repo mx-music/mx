@@ -24,6 +24,12 @@ defmodule Mx.Engine.Mxs.Native do
   @doc "Starts an engine with every synth and effect registered: playing live, with the sound card's input or without, or offline."
   def start(_live, _input), do: :erlang.nif_error(:nif_not_loaded)
 
+  @doc "Starts a live engine, with the sound card's input or without, on `{output, input, rate, buffer}`, each nil for the device's default."
+  def start_with(_input, _settings), do: :erlang.nif_error(:nif_not_loaded)
+
+  @doc "Each output and input device as `{name, output?, default?, channels, rates, buffers}`, `rates` as lowest and highest pairs, and `buffers` a fewest and most, or nil when the device does not say."
+  def devices, do: :erlang.nif_error(:nif_not_loaded)
+
   @doc "Every synth's options, and those every note, sample and effect takes, as `{synths, note, sample, effects, effect}`."
   def catalog, do: :erlang.nif_error(:nif_not_loaded)
 

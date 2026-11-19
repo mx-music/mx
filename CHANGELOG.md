@@ -17,6 +17,7 @@
   * [mix mx.play] `--render` prints its progress about four times a second, as the seconds of music rendered and the seconds it renders in all
   * [mx] `song/1` takes `meter:`, the whole beats to a bar, 4 unless given; the page data holds it and `mix mx.export` writes it as the time signature when `--time` is not given
   * [mx] `Mx.Session.play_recording/4` plays a range of a recording on a part that plays, through its effects, without writing anything, and `Mx.Engine.Mxs.play_recording/2` plays one with no song
+  * [mx] `mix mx.play` takes `--output`, `--input`, `--rate` and `--buffer`, also set by `config :mx`, and `mix mx.devices` lists the devices and what each takes
   * [mx] `mx play` plays or renders a score, a MIDI file or an ABC tune as the song `mx import` would write, without writing it, and `Mx.Import.load/2` gives that song to a session
   * [mx] `mx play --render` takes `--no-ring-out`, which ends the file where the music ends
   * [mx] `mix mx.measure --hits` splits a file of several hits given its first note into the notes of its run, as `mix mx.fit` does, names each hit by its note, and with `--synth` renders the synth at each of them

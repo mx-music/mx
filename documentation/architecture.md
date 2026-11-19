@@ -100,7 +100,7 @@ A pass reads one snapshot of the inputs for its whole length, and a loop with `o
 mx reads the sound card's input only when the song it starts with has `live_audio`, so other songs never touch the microphone.
 A `live_audio` added while playing needs mx restarted.
 mxs cannot start with input on when the input and output devices run at different sample rates, as Bluetooth headphones at 24 kHz beside speakers at 48 kHz do.
-mx then stops with a message naming the device and the rates it runs at; set both to the same rate in Audio MIDI Setup, or use other devices.
+mx then stops with a message naming the rates each runs at; name another input with `--input`, or give a rate both run at with `--rate`, as the playing guide shows.
 macOS may ask once whether the terminal can use the microphone.
 
 ## Other parts of mx

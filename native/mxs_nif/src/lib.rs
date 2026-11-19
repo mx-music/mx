@@ -71,6 +71,36 @@ fn start(live: bool, with_input: bool) -> Result<ResourceArc<EngineResource>, St
     Ok(ResourceArc::new(EngineResource { engine: Mutex::new(engine) }))
 }
 
+/// Starts a live engine on the devices named, at the rate and buffer size given, each nil for the device's default.
+#[rustler::nif(schedule = "DirtyIo")]
+fn start_with(with_input: bool, settings: (Option<String>, Option<String>, Option<u32>, Option<u32>)) -> Result<ResourceArc<EngineResource>, String> {
+    let (device, input_device, rate, buffer) = settings;
+    let settings = mxs::Settings { device, with_input, input_device, rate, buffer };
+    let mut engine = Engine::live_with(&settings).map_err(|e| e.to_string())?;
+    register(&mut engine);
+    Ok(ResourceArc::new(EngineResource { engine: Mutex::new(engine) }))
+}
+
+/// Each output and input device as `{name, output, default, channels, rates, buffers}`, with `rates` as lowest and highest pairs and `buffers` nil when the device does not say.
+#[rustler::nif(schedule = "DirtyIo")]
+#[allow(clippy::type_complexity)]
+fn devices() -> Result<Vec<(String, bool, bool, Vec<u16>, Vec<(u32, u32)>, Option<(u32, u32)>)>, String> {
+    use cpal::traits::{DeviceTrait, HostTrait};
+    let host = cpal::default_host();
+    let default_name = |device: Option<cpal::Device>| device.and_then(|d| d.description().ok()).map(|d| d.name().to_string());
+    let default_output = default_name(host.default_output_device());
+    let default_input = default_name(host.default_input_device());
+    let devices = mxs::devices().map_err(|e| e.to_string())?;
+    Ok(devices
+        .into_iter()
+        .map(|d| {
+            let default = if d.output { &default_output } else { &default_input };
+            let is_default = default.as_deref() == Some(d.name.as_str());
+            (d.name, d.output, is_default, d.channels, d.rates, d.buffers)
+        })
+        .collect())
+}
+
 /// Every synth's options, and those every note, sample and effect takes, as `{synths, note, sample, effects, effect}`.
 #[rustler::nif]
 #[allow(clippy::type_complexity)]

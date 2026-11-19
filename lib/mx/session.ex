@@ -119,7 +119,7 @@ defmodule Mx.Session do
   @impl true
   def init(opts) when is_list(opts) do
     song = Keyword.fetch!(opts, :song)
-    synth_opts = Keyword.take(opts, [:record]) ++ [input: song.live != []]
+    synth_opts = Keyword.take(opts, [:record, :devices]) ++ [input: song.live != []]
 
     children = [
       Supervisor.child_spec({Mxs, synth_opts}, shutdown: 10_000),

@@ -46,6 +46,30 @@ mx then prints the same report as for a recording, and refuses a file that exist
 A render sends no MIDI or OSC and has no input, so mx names each part that sends MIDI or OSC, or waits for input, and leaves it out.
 `--render` cannot go with `--record`, nor with a song that has `live_audio`.
 
+## Choose the sound devices
+
+mx plays through the system's default output, at that device's default sample rate and buffer size, unless told otherwise.
+To play through an audio interface while the system's default stays the speakers, name it:
+
+```sh
+mx devices
+mx play song.exs --output "Scarlett 2i2"
+mx play song.exs --buffer 64
+```
+
+`mx devices` lists each output and input by the name the options take, with the channel counts, sample rates and buffer sizes it supports, and marks the defaults.
+`--output` names the device to play through, and `--input` the one a song with `live_audio` reads.
+`--rate` sets the sample rate in Hz, and a recording is written at the rate mx plays at.
+`--buffer` sets the frames the device asks for at a time; a smaller buffer brings a saved change and a key's sound sooner, and asks more of the machine.
+A setting the device cannot take stops mx before any sound, with a message such as "Scarlett 2i2 runs at 44100 or 48000 Hz, not 22050".
+To set them once for a project, put them in its config, and an option given to `mx play` overrides them:
+
+```elixir
+config :mx, output: "Scarlett 2i2", buffer: 128
+```
+
+A render runs at 48000 Hz on no device, so `--rate` and `--buffer` do not apply to it, and mx says so.
+
 ## Change the tempo by hand
 
 To practise a song slower, or play it faster, give it a share of its own tempo, from 0.25 to 4:

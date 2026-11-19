@@ -716,6 +716,7 @@ dependencies = [
 name = "mxs_nif"
 version = "0.1.0"
 dependencies = [
+ "cpal",
  "mxs",
  "nalgebra 0.35.0",
  "pyin",

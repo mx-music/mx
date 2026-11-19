@@ -8,7 +8,7 @@ defmodule Mx.CLITest do
 
   @moduletag :tmp_dir
 
-  @tasks ~w(bench export fit hum import levels measure page parts play print spectrogram video waveform) ++
+  @tasks ~w(bench devices export fit hum import levels measure page parts play print spectrogram video waveform) ++
            ["samples download"]
 
   defp beat(dir) do

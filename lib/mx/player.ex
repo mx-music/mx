@@ -15,10 +15,16 @@ defmodule Mx.Player do
     part: :keep,
     tempo: :string,
     grid: :string,
-    tune: :integer
+    tune: :integer,
+    output: :string,
+    input: :string,
+    rate: :integer,
+    buffer: :integer
   ]
 
   @import [:part, :tempo, :grid, :tune]
+
+  @devices [:output, :input, :rate, :buffer]
 
   @doc "The options `play/2` takes, parsed from command line arguments, and the arguments left."
   def parse(args) when is_list(args), do: OptionParser.parse!(args, strict: @switches)
@@ -45,6 +51,8 @@ defmodule Mx.Player do
          "--render and --record cannot go together: a render writes its file without playing"}
 
       out = opts[:render] ->
+        say_unused(opts)
+
         Mx.Render.render(
           path,
           out,
@@ -59,6 +67,26 @@ defmodule Mx.Player do
     end
   end
 
+  defp say_unused(opts) do
+    case Enum.filter([:rate, :buffer], &Keyword.has_key?(opts, &1)) do
+      [] ->
+        :ok
+
+      unused ->
+        names = Enum.map_join(unused, " and ", &"--#{&1}")
+        verb = if length(unused) == 1, do: "does", else: "do"
+        IO.puts("#{names} #{verb} not apply to a render, which runs at 48000 Hz")
+    end
+  end
+
+  # A device setting given to the task overrides the project's config for mx.
+  defp devices(opts) do
+    for key <- @devices,
+        value = Keyword.get(opts, key, Application.get_env(:mx, key)),
+        value != nil,
+        do: {key, value}
+  end
+
   defp play_aloud(path, opts) do
     record = opts[:record]
 
@@ -70,7 +98,9 @@ defmodule Mx.Player do
       on_end = fn -> send(player, :song_ended) end
 
       session_opts =
-        session_opts ++ [song: song, on_end: on_end] ++ Keyword.take(opts, [:record, :share])
+        session_opts ++
+          [song: song, on_end: on_end, devices: devices(opts)] ++
+          Keyword.take(opts, [:record, :share])
 
       case Session.start_link(session_opts) do
         {:ok, session} ->

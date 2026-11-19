@@ -7,8 +7,9 @@ defmodule Mx.Engine.Mxs do
   An effect chain is mxs's chain, which notes name to play into.
   It renders offline through an engine of its own for each render, so renders never share a clock.
 
+  Live, it plays through the devices named by `devices:`, `output:` and `input:`, at its `rate:` in Hz and with its `buffer:` frames, each the device's default when not given, and stops with mxs's message when a device cannot take them.
   It plays each live audio of the song from the sound card, with its effects, and reads the sound card's input only when given `input: true`.
-  When the input and output run at different rates mxs cannot start, and the message ends with `input_advice:`, by default the advice to take live audio out of the song.
+  When the input and output run at different rates mxs cannot start, and the message ends with `input_advice:`, by default the advice to name another input or rate, or to take live audio out of the song.
   A changed live audio changes in place, unless its input, channels or effects change; a removed one stops at once.
 
   A part started with `start_part/2` is a part of mxs by its name, which `mute/2` and `solo/2` silence and bring back while it plays.
@@ -115,11 +116,17 @@ defmodule Mx.Engine.Mxs do
   def init(opts) do
     live = Keyword.get(opts, :live, true)
     input = Keyword.get(opts, :input, false)
-    advice = Keyword.get(opts, :input_advice, "or take live_audio out of the song")
+
+    advice =
+      Keyword.get(
+        opts,
+        :input_advice,
+        "name another input with --input, give a rate both run at with --rate, or take live_audio out of the song"
+      )
 
     Process.flag(:trap_exit, true)
 
-    with {:ok, engine} <- Native.start(live, input),
+    with {:ok, engine} <- start(live, input, Keyword.get(opts, :devices, [])),
          :ok <- instruments(engine),
          :ok <- record(engine, opts[:record]) do
       {reports, output} = reports(engine, live)
@@ -156,6 +163,15 @@ defmodule Mx.Engine.Mxs do
       {:error, message} ->
         {:stop, message}
     end
+  end
+
+  defp start(false, input, _devices), do: Native.start(false, input)
+
+  defp start(true, input, devices) do
+    Native.start_with(
+      input,
+      {devices[:output], devices[:input], devices[:rate], devices[:buffer]}
+    )
   end
 
   # The output's report comes at once, so the output is known before anyone asks for it.
