@@ -20,6 +20,7 @@ defmodule Mix.Tasks.Mx.Measure do
   `--drone` with `--held` measures each file as one note held from its first sample to its last, for a drone plucked again and again, which would otherwise read as a note at each pluck.
   It prints each note's pitch, attack and vibrato, then their median attack and vibrato, and for each band the level of the harmonics and of the noise between them, in dB against the fundamental of the lowest note.
   `--hits` measures hits, as `Mx.Measure.Hits` describes, and a file with no pitch needs no note after its name.
+  A file of several hits named with its first note, such as `Vibraphone.sustain.ff.C3B3.aif:C3`, is a run, split into its notes as `mix mx.fit` splits one, and each hit is named by its note.
   It prints the strongest peaks of each hit as ratios to the lowest, then for each band the seconds it takes to fade 60 dB and its level as the hit starts, against the loudest band.
   `--partials` with a count, such as `--partials 12`, also prints under each hit up to that many of its strongest partials, lowest first: the frequency in Hz, the ratio to the lowest, the level against the loudest, and the seconds it takes to fade 60 dB.
   With `--held`, it prints for each note where it holds from, where it is let go, how fast it falls then and its vibrato, and under it up to that many of its strongest partials: the level at each moment of the attack before it holds, the level it holds at, its slope once let go and how far it swings with the vibrato, as `Mx.Fit.Held` measures them.
@@ -30,10 +31,10 @@ defmodule Mix.Tasks.Mx.Measure do
       mx measure --hits Agogo_Low_v1_rr1_Mid.wav --partials 12 --synth low_agogo
 
   `--hits` then prints each band's level at 0, 50, 100 and 200 ms after the hit's loudest moment, against the loudest band then, as medians over the hits; a moment past a hit's end prints as -, and a level more than 40 dB down as -40.
-  `--compare` with a file name, with `--hits` and `--synth`, writes a WAV file of up to three recorded hits whose bands are nearest the median, then the synth's hit three times, each 0.6 seconds at the same peak, for listening or for `mx spectrogram`.
+  `--compare` with a file name, with `--hits` and `--synth`, writes a WAV file of up to three recorded hits whose bands are nearest the median, then the synth's hit at each of their notes, each 0.6 seconds at the same peak, for listening or for `mx spectrogram`.
 
       mx measure --hits "pandeiro A.wav" --synth pandeiro_thumb --compare thumb.wav
-  With `--synth`, a held note renders for as long as the recordings hold it, and a hit renders once at each note given, with only the options the synth takes.
+  With `--synth`, a held note renders for as long as the recordings hold it, and a hit renders once at the note of each hit found, with only the options the synth takes.
 
       mx measure --strokes "cuica (2).wav"
       mx measure --strokes "cuica (2).wav" --tracks 17,19 --ignore 8500-9100
@@ -329,7 +330,7 @@ defmodule Mix.Tasks.Mx.Measure do
     recorded = Hits.summary(found)
 
     if synth do
-      notes = measured |> Enum.map(&elem(&1, 1)) |> Enum.uniq()
+      notes = found |> Enum.map(& &1.note) |> Enum.uniq()
       rendered = render_hits(synth, given, notes, count)
       if count, do: print_hits(heading(synth, given), rendered)
       IO.puts("")
@@ -488,10 +489,17 @@ defmodule Mix.Tasks.Mx.Measure do
       |> Enum.sort_by(fn {_path, _note, hit, _to} -> distance(hit, recorded) end)
       |> Enum.take(3)
 
-    [{_path, note, _hit, _to} | _] = picked
-    opts = synth_opts(synth, [note: note] ++ given)
-    rendered = in_tmp_dir(&Mxs.render_note(synth, opts, @compared, &1, []))
-    parts = Enum.map(picked, &recorded_hit/1) ++ List.duplicate(rendered, 3)
+    notes = Enum.map(picked, fn {_path, _note, hit, _to} -> hit.note end)
+
+    rendered =
+      in_tmp_dir(fn dir ->
+        for note <- Enum.uniq(notes), into: %{} do
+          opts = synth_opts(synth, [note: note] ++ given)
+          {note, Mxs.render_note(synth, opts, @compared, dir, [])}
+        end
+      end)
+
+    parts = Enum.map(picked, &recorded_hit/1) ++ Enum.map(notes, &rendered[&1])
     Audio.write(out, Enum.flat_map(parts, &compared/1), Mxs.render_rate())
 
     names =
@@ -499,8 +507,9 @@ defmodule Mix.Tasks.Mx.Measure do
         "#{Path.basename(path)} at #{:erlang.float_to_binary(hit.start, decimals: 2)} s"
       end)
 
+    times = if length(Enum.uniq(notes)) > 1, do: "at the same notes", else: "three times"
     IO.puts("")
-    IO.puts("wrote #{out}: #{listed(names)}, then #{synth} three times")
+    IO.puts("wrote #{out}: #{listed(names)}, then #{synth} #{times}")
   end
 
   defp distance(hit, recorded) do
@@ -709,9 +718,12 @@ defmodule Mix.Tasks.Mx.Measure do
     unit = if count == 1, do: "hit", else: "hits"
     IO.puts("#{name}: #{count} #{unit}")
 
+    run? = hits |> Enum.map(& &1.note) |> Enum.uniq() |> length() > 1
+
     for {hit, number} <- Enum.with_index(hits, 1) do
       peaks = Enum.map_join(hit.peaks, ", ", &:erlang.float_to_binary(&1, decimals: 2))
-      IO.puts("  hit #{number}: peaks at #{peaks}")
+      label = if run?, do: "hit #{number}, #{Measure.name(hit.note)}", else: "hit #{number}"
+      IO.puts("  #{label}: peaks at #{peaks}")
       Enum.each(hit.partials, &IO.puts(partial(&1)))
     end
 

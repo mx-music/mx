@@ -154,6 +154,49 @@ defmodule Mix.Tasks.Mx.MeasureTest do
     assert output =~ ~r/^250-400 Hz +1\.\d\d s +\+0\.0 dB$/m
   end
 
+  test "with --hits, names each hit of a run that rings on under the next by the note it plays",
+       ctx do
+    path = write_wav(ctx, "run.wav", run([261.63, 277.18, 293.66]))
+    output = capture_io(fn -> Mix.Tasks.Mx.Measure.run(["--hits", path <> ":C4"]) end)
+
+    assert output =~ "run.wav: 3 hits"
+    assert output =~ ~r/^  hit 1, c4: peaks at 1\.00, 3\.9\d/m
+    assert output =~ ~r/^  hit 2, cs4: peaks at/m
+    assert output =~ ~r/^  hit 3, d4: peaks at/m
+  end
+
+  @tag :engine
+  test "with --hits and --synth, renders the synth at the note of each hit of a run", ctx do
+    path = write_wav(ctx, "run.wav", run([261.63, 277.18, 293.66]))
+
+    output =
+      capture_io(fn ->
+        Mix.Tasks.Mx.Measure.run([
+          "--hits",
+          path <> ":C4",
+          "--synth",
+          "vibraphone",
+          "--vel",
+          "1",
+          "--partials",
+          "4"
+        ])
+      end)
+
+    [_recorded, synth] = String.split(output, "vibraphone at vel 1.0: 3 hits")
+
+    for {name, hz} <- [{"c4", 261.6}, {"cs4", 277.2}, {"d4", 293.7}] do
+      [lowest] =
+        Regex.run(~r/hit \d, #{name}: peaks at[^\n]*\n +([\d.]+) Hz/, synth,
+          capture: :all_but_first
+        )
+
+      assert_in_delta String.to_float(lowest), hz, 1.5
+    end
+
+    assert length(Regex.scan(~r/^  hit \d, (c4|cs4|d4): /m, output)) == 6
+  end
+
   @tag :engine
   test "with --hits and --synth, keeps a space between a long synth heading and the difference",
        ctx do
@@ -256,6 +299,36 @@ defmodule Mix.Tasks.Mx.MeasureTest do
 
     capture_io(fn -> Mix.Tasks.Mx.Spectrogram.run([out]) end)
     assert File.exists?(Path.rootname(out) <> ".png")
+  end
+
+  @tag :engine
+  test "--compare on a run writes the synth at the notes of the hits it picks", ctx do
+    path = write_wav(ctx, "run.wav", run([261.63, 277.18, 293.66]))
+    out = Path.join(ctx.tmp_dir, "ab.wav")
+
+    output =
+      capture_io(fn ->
+        Mix.Tasks.Mx.Measure.run([
+          "--hits",
+          path <> ":C4",
+          "--synth",
+          "vibraphone",
+          "--compare",
+          out
+        ])
+      end)
+
+    assert output =~ ~r/^wrote .*ab\.wav: .*, then vibraphone at the same notes$/m
+
+    {:ok, %{samples: samples}} = Mx.Audio.read(out)
+    each = round(0.85 * 48_000)
+    synths = samples |> Enum.chunk_every(each) |> Enum.drop(3)
+
+    loudest =
+      for synth <- synths,
+          do: Enum.max_by(Hits.hit(synth, 48_000, 60, partials: 4).partials, & &1.level).hz
+
+    assert loudest |> Enum.map(&round/1) |> Enum.sort() == [262, 277, 294]
   end
 
   test "--compare needs --hits and --synth", ctx do
@@ -855,6 +928,74 @@ defmodule Mix.Tasks.Mx.MeasureTest do
     end
   end
 
+  # https://theremin.music.uiowa.edu/MISvibraphone.html, in the folder MX_IOWA_VIBRAPHONE names.
+  describe "the Iowa vibraphone recordings" do
+    @describetag :iowa
+
+    setup do
+      dir =
+        System.get_env("MX_IOWA_VIBRAPHONE") ||
+          flunk("set MX_IOWA_VIBRAPHONE to the folder of the Iowa vibraphone recordings")
+
+      %{dir: dir}
+    end
+
+    @tag :engine
+    test "renders the vibraphone at each of the 12 notes of the run C3 to B3 played ff, its C3 with the recording's partials",
+         %{dir: dir} do
+      path = Path.join(dir, "Vibraphone.sustain.ff.C3B3.aif")
+
+      output =
+        capture_io(fn ->
+          Mix.Tasks.Mx.Measure.run([
+            "--hits",
+            "--partials",
+            "8",
+            path <> ":C3",
+            "--synth",
+            "vibraphone",
+            "--vel",
+            "1"
+          ])
+        end)
+
+      [recorded, synth] = String.split(output, "vibraphone at vel 1.0: 12 hits")
+      names = ~w(c3 cs3 d3 ds3 e3 f3 fs3 g3 gs3 a3 as3 b3)
+
+      for part <- [recorded, synth] do
+        found =
+          for [name] <- Regex.scan(~r/^  hit \d+, (\w+): /m, part, capture: :all_but_first),
+              do: name
+
+        assert found == names
+      end
+
+      [c3] = Regex.run(~r/hit 1, c3: [^\n]*\n((?: {4}[^\n]*\n)+)/, synth, capture: :all_but_first)
+
+      ratios =
+        for [ratio] <- Regex.scan(~r/Hz +([\d.]+) /, c3, capture: :all_but_first), do: ratio
+
+      assert ["1.00", "9.02", "10.03", "11.03"] -- ratios == []
+    end
+
+    test "splits the run C3 to B3 played pp into the 12 notes mix mx.fit finds, within 10 ms of its strikes",
+         %{dir: dir} do
+      path = Path.join(dir, "Vibraphone.sustain.pp.C3B3.aif")
+      output = capture_io(fn -> Mix.Tasks.Mx.Measure.run(["--hits", path <> ":C3"]) end)
+      assert output =~ "Vibraphone.sustain.pp.C3B3.aif: 12 hits"
+
+      {:ok, recordings} = Mx.Fit.Struck.in_file(path, Enum.to_list(48..59), 40)
+      {:ok, %{rate: rate}, _data} = Mx.Audio.raw(path)
+      {:ok, hits} = Hits.file(path, 48)
+
+      assert Enum.map(hits, & &1.note) == Enum.map(recordings, & &1.note)
+
+      for {hit, %{span: {from, _to}}} <- Enum.zip(hits, recordings) do
+        assert_in_delta hit.start, from / rate, 0.01
+      end
+    end
+  end
+
   describe "the Iowa guitar recordings" do
     @describetag :iowa
 
@@ -939,6 +1080,18 @@ defmodule Mix.Tasks.Mx.MeasureTest do
       0.1 * level *
         Enum.sum(for number <- 1..6, do: :math.sin(2 * :math.pi() * f0 * number * time) / number)
     end
+  end
+
+  # Bars struck a second apart, each ringing on under the next.
+  defp run(lowests) do
+    count = length(lowests)
+
+    lowests
+    |> Enum.with_index(fn lowest, number ->
+      List.duplicate(0.0, number * 48_000) ++
+        hit(lowest, 3.0) ++ List.duplicate(0.0, (count - 1 - number) * 48_000)
+    end)
+    |> Enum.zip_with(&(Enum.sum(&1) / 2))
   end
 
   # Partials at 1 and 3.9 times the lowest, fading 60 dB over `fade` seconds.

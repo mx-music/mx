@@ -1,12 +1,14 @@
 //! Hits, struck bars, bells, drums and scrapers, for `Mx.Measure.Hits`: each band's level and fade, its level at moments after the hit, the strongest peaks, and the partials.
 
-use super::{BANDS, Spectra, db, fade, filter_loss, high_pass, hz, onsets, refine};
+use super::{BANDS, Spectra, db, fade, filter_loss, high_pass, hz, onsets, refine, runs};
 use rustler::NifMap;
 
 const HOP: f64 = 0.01;
 const LONGEST: f64 = 4.0;
 const PEAKS: usize = 6;
 const MOMENTS: [f64; 4] = [0.0, 50.0, 100.0, 200.0];
+/// The semitones above its first note a run of hits may reach, short of the octave that would name a note by its octave's fundamental.
+const RUN: i64 = 11;
 
 #[derive(NifMap)]
 pub struct Band {
@@ -32,6 +34,7 @@ pub struct Partial {
 #[derive(NifMap)]
 pub struct Hit {
     pub start: f64,
+    pub note: Option<i64>,
     pub bands: Vec<Band>,
     pub moments: Vec<Moments>,
     pub peaks: Vec<f64>,
@@ -43,17 +46,26 @@ fn cutoff(note: Option<i64>) -> f64 {
 }
 
 /// Each hit of a sound, one after another from silence, with the note they play or None.
+/// Several hits given a note are a run from that note up to `RUN` semitones above it, split into its notes as `mix mx.fit` splits a run, each hit named by its note, so a bar ringing on under the next is not a hit of its own.
 pub fn hits(samples: &[f64], rate: f64, note: Option<i64>, partials: Option<usize>) -> Vec<Hit> {
     let cutoff = cutoff(note);
     let sound = high_pass(samples, rate, cutoff);
-    let starts = onsets(&sound, rate, 0.25);
-    let ends: Vec<usize> = starts.iter().skip(1).cloned().chain([sound.len()]).collect();
+    let onsets: Vec<(usize, Option<i64>)> = onsets(&sound, rate, 0.25).into_iter().map(|from| (from, note)).collect();
+    let starts = match note {
+        Some(first) if onsets.len() > 1 => runs::split(samples, rate, &(first..=first + RUN).collect::<Vec<_>>(), false)
+            .into_iter()
+            .filter(|piece| piece.left_out.is_none())
+            .map(|piece| (piece.from, Some(piece.note)))
+            .collect(),
+        _ => onsets,
+    };
+    let ends: Vec<usize> = starts.iter().skip(1).map(|(from, _)| *from).chain([sound.len()]).collect();
     let longest = (LONGEST * rate).round() as usize;
     let mut spectra = Spectra::default();
     starts
         .iter()
         .zip(&ends)
-        .filter_map(|(&from, &to)| measure(&sound[from..to.min(from + longest)], from as f64 / rate, rate, cutoff, partials, &mut spectra))
+        .filter_map(|(&(from, note), &to)| measure(&sound[from..to.min(from + longest)], from as f64 / rate, note, rate, cutoff, partials, &mut spectra))
         .collect()
 }
 
@@ -62,10 +74,10 @@ pub fn hit(samples: &[f64], rate: f64, note: Option<i64>, partials: Option<usize
     let cutoff = cutoff(note);
     let sound = high_pass(samples, rate, cutoff);
     let segment = &sound[..sound.len().min((LONGEST * rate).round() as usize)];
-    measure(segment, 0.0, rate, cutoff, partials, &mut Spectra::default())
+    measure(segment, 0.0, note, rate, cutoff, partials, &mut Spectra::default())
 }
 
-fn measure(sound: &[f64], start: f64, rate: f64, cutoff: f64, count: Option<usize>, spectra: &mut Spectra) -> Option<Hit> {
+fn measure(sound: &[f64], start: f64, note: Option<i64>, rate: f64, cutoff: f64, count: Option<usize>, spectra: &mut Spectra) -> Option<Hit> {
     let size = 2usize.pow((0.043 * rate).log2().round() as u32);
     let hop = (HOP * rate).round() as usize;
     if sound.len() < size {
@@ -80,6 +92,7 @@ fn measure(sound: &[f64], start: f64, rate: f64, cutoff: f64, count: Option<usiz
     let tracks = tracks(&frames, rate / size as f64, rate, cutoff);
     Some(Hit {
         start,
+        note,
         bands: bands(&tracks, &times),
         moments: track_moments(&tracks),
         peaks: peaks(sound, rate, cutoff, spectra),

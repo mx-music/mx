@@ -3,6 +3,7 @@ defmodule Mx.Measure.Hits do
   Measures recordings of hits, struck bars, bells, drums and scrapers, with or without a pitch, so a synth's design can be compared with a real instrument's.
 
   A file holds one hit or several, one after another, each starting from silence.
+  Several hits given a note are a run from that note up to 11 semitones above it, split into its notes as `Mx.Fit.Struck` splits a run, so a bar that rings on under the next one is not a hit of its own; each hit gives its note, the run's or the one given.
   Rumble is filtered out below three quarters of the note given, or below 30 Hz without one, and the bands are measured from there up.
   For each hit it finds the level of each band as the hit starts, against the loudest band, and the seconds each band takes to fade 60 dB.
   It also lists the frequencies of the hit's strongest peaks, up to six within 30 dB of the loudest, as ratios to the lowest of them, so the partials of a bar or a drum show whatever their pitch.
