@@ -118,6 +118,22 @@ defmodule Mx.Samples do
   @doc "Whether an option cuts a sample or fits it to beats, which mx works out into the sample players' own options."
   def cut_option?(option), do: option in @cut
 
+  @doc "The path of the sample `ref` played with a sample's options `opts`, as `{:ok, path}`, or `{:error, message}` refusing a file that cannot play, an option samples do not take, or one that cannot cut it."
+  def check(ref, opts) when is_list(opts) do
+    case Enum.find(
+           Keyword.keys(opts),
+           &(not (Mx.Synths.option?(:stereo_player, &1) or cut_option?(&1)))
+         ) do
+      nil ->
+        with {:ok, path} <- path(ref),
+             :ok <- check_cut(ref, path, opts),
+             do: {:ok, path}
+
+      option ->
+        {:error, "samples have no option #{option}"}
+    end
+  end
+
   @doc "Refuses options that cannot cut the sample `ref` at `path`, as `:ok` or `{:error, message}`."
   def check_cut(ref, path, opts) do
     given = &Keyword.has_key?(opts, &1)

@@ -235,6 +235,27 @@ defmodule Mx.Engine.Mxs do
   @impl Mx.Engine
   def load_sample(path, loop), do: GenServer.cast(__MODULE__, {:load_sample, path, loop})
 
+  @doc "Loads the sample at `path` now, unless it is loaded already, and returns it as a sample event takes it, `{:ok, sample}`, or `{:error, message}`."
+  def sample(path) when is_binary(path), do: GenServer.call(__MODULE__, {:sample, path}, 60_000)
+
+  @doc """
+  Plays a recording alone, beside any song and through no part, from 150 ms on, and returns `{:ok, id}`, the id `stop_sounds/1` takes.
+
+  It takes a sample's options, `from:` and `to:` in seconds among them, and refuses a file that cannot play or a range outside it with `{:error, message}`.
+  """
+  def play_recording(ref, opts \\ []) when is_list(opts) do
+    with {:ok, path} <- Mx.Samples.check(ref, opts),
+         {:ok, sample} <- sample(path) do
+      id = new_id()
+      opts = Mx.Samples.cut(opts, sample.seconds, 60)
+      play(Mx.Clock.now() + 150_000, [{:sample, id, sample, opts, nil}])
+      {:ok, id}
+    end
+  end
+
+  @doc "Stops the sounds of the ids given, such as a recording `play_recording/2` plays, within 150 ms."
+  def stop_sounds(ids) when is_list(ids), do: play(Mx.Clock.now() + 150_000, [{:stop, ids}])
+
   @impl Mx.Engine
   def start_fx(effects) do
     {engine, _} = :persistent_term.get(__MODULE__)
@@ -434,6 +455,8 @@ defmodule Mx.Engine.Mxs do
     {:sample, id, sample, options(params), key(chain)}
   end
 
+  def event({:stop, ids}), do: {:stop, ids}
+
   def event({:set, target, params}) do
     changes = for {name, value} <- params, do: {Atom.to_string(name), value / 1}
     {:set, target(target), changes}
@@ -463,6 +486,15 @@ defmodule Mx.Engine.Mxs do
   end
 
   @impl GenServer
+  def handle_call({:sample, path}, _from, state) do
+    state = load(path, state)
+
+    case Map.fetch(state.samples, path) do
+      {:ok, sample} -> {:reply, {:ok, sample}, state}
+      :error -> {:reply, {:error, "mxs could not load sample #{path}"}, state}
+    end
+  end
+
   def handle_call({:prepare, song}, _from, state) do
     paths = song.loops |> Enum.flat_map(& &1.samples) |> Enum.uniq()
     state = Enum.reduce(paths, state, &load/2)

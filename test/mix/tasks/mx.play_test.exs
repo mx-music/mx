@@ -322,4 +322,87 @@ defmodule Mix.Tasks.Mx.PlayTest do
     {:ok, %{samples: samples, rate: rate}} = Mx.Audio.read(path)
     Enum.find_index(samples, &(abs(&1) > 0.001)) / rate
   end
+
+  @tag :engine
+  test "a session plays a recording on a part through its echo, stops it, refuses a part, a range or a file that cannot play, and leaves the file as it is",
+       ctx do
+    path = Path.join(ctx.tmp_dir, "echoes.exs")
+    out = Path.join(ctx.tmp_dir, "echoes.wav")
+    burst = Path.join(ctx.tmp_dir, "burst.wav")
+    step = "examples/tranquility_base/a11step.aiff"
+
+    song =
+      "import Mx\nsong(tempo: 120, music: part(:voice, loop(4, fn _, _ -> rest(4) end), fx: [echo: [phase: 1, decay: 8, mix: 1]]))\n"
+
+    File.write!(path, song)
+    write_wav(burst, for(i <- 0..959, do: :math.sin(i / 3)))
+    {:ok, loaded} = Mx.Song.load(path)
+    {:ok, session} = Mx.Session.start_link(path: path, song: loaded, record: out)
+    {:ok, device} = StringIO.open("")
+
+    for {_id, pid, _type, _modules} <- Supervisor.which_children(session),
+        do: Process.group_leader(pid, device)
+
+    Process.sleep(500)
+
+    # At -74 dB the burst and its echoes are not heard, but the recording holds them.
+    asked_us = System.os_time(:microsecond)
+    assert {:ok, beat} = Mx.Session.play_recording(session, :voice, burst, amp: 0.0002)
+    [{0, start_us, 120}] = Mx.Band.timeline(Mx.Band)
+    assert start_us + beat * 500_000 - asked_us < 2_000_000
+    Process.sleep(3000)
+    assert :ok = Mx.Session.stop_recording(session, :voice)
+
+    assert Mx.Session.play_recording(session, :no_such_part, step, from: 2.447, to: 3.4) ==
+             {:error, "the song has no part named no_such_part"}
+
+    assert Mx.Session.play_recording(session, :voice, step, from: 6.0, to: 9.0) ==
+             {:error, "sample #{step} lasts 7.155 seconds, so to: 9.0 is outside it"}
+
+    broken = Path.join(ctx.tmp_dir, "broken.wav")
+    File.write!(broken, "not a sound")
+
+    assert Mx.Session.play_recording(session, :voice, broken, []) ==
+             {:error, "sample file #{broken} cannot play: it is not a FLAC, WAV or AIFF file"}
+
+    Supervisor.stop(session)
+    assert File.read!(path) == song
+
+    {:ok, %{samples: samples, rate: rate}} = Mx.Audio.read(out)
+    [first | _] = starts = note_starts(samples)
+    gaps = Enum.map(starts, &((&1 - first) / rate))
+    assert length(gaps) >= 3
+
+    for {gap, repeat} <- Enum.with_index(Enum.take(gaps, 3)) do
+      assert_in_delta gap, repeat * 0.5, 0.005
+    end
+  end
+
+  @tag :engine
+  test "a recording plays alone with no song, and stops", ctx do
+    burst = Path.join(ctx.tmp_dir, "burst.wav")
+    write_wav(burst, for(i <- 0..959, do: 0.0001 * :math.sin(i / 3)))
+    {:ok, _engine} = Mx.Engine.Mxs.start_link([])
+    assert {:ok, id} = Mx.Engine.Mxs.play_recording(burst, from: 0.0, to: 0.01)
+    assert :ok = Mx.Engine.Mxs.stop_sounds([id])
+
+    assert Mx.Engine.Mxs.play_recording(burst, from: 0.0, to: 1.0) ==
+             {:error, "sample #{burst} lasts 0.020 seconds, so to: 1.0 is outside it"}
+
+    GenServer.stop(Mx.Engine.Mxs)
+  end
+
+  defp write_wav(path, samples) do
+    data = for sample <- samples, into: <<>>, do: <<sample::float-little-32>>
+
+    fmt =
+      <<3::little-16, 1::little-16, 48_000::little-32, 192_000::little-32, 4::little-16,
+        32::little-16>>
+
+    body =
+      "WAVE" <>
+        "fmt " <> <<16::little-32>> <> fmt <> "data" <> <<byte_size(data)::little-32>> <> data
+
+    File.write!(path, "RIFF" <> <<byte_size(body)::little-32>> <> body)
+  end
 end

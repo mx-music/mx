@@ -12,6 +12,7 @@ defmodule Mx.Loop do
   A loop started with `start: :join` waits for the band to send `{:join, beat, pass}`, and plays that pass from that beat.
 
   The loop sends the band `{:part_waits, name, wait}` when it is handed a new version or told to stop: the beat its next pass starts on, `:never` when it has no pass left, `:input` when it waits for input, or `{:stops, beat}`.
+  It sends `{:part_chain, name, chain}` when it starts its effects, the chain its notes play into.
   It sends `{:part_took_over, name, beat}` when the new version's first pass starts, when it stops, and, started with `announce: true`, when its own first pass starts.
   `take_over_now/2` ends the pass that sounds at a beat, and plays the new version's pass from that beat, or stops there; given `hand`, `cut` is given that beat first, to drop what the engine holds from there on.
   `try_out/3` plays the loop's notes with another synth or other options from a beat, working the pass that sounds then out again from that beat, as `take_over_now/2` does, and keeps them through new versions.
@@ -472,7 +473,9 @@ defmodule Mx.Loop do
       state
     else
       if state.fx, do: state.stop_fx.(state.fx, Band.time_at(timeline, start))
-      %{state | chain: chain, fx: if(grouped, do: start_chain(state, chain))}
+      fx = if grouped, do: start_chain(state, chain)
+      send(state.band, {:part_chain, state.loop.name, fx})
+      %{state | chain: chain, fx: fx}
     end
   end
 

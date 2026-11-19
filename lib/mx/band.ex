@@ -20,6 +20,7 @@ defmodule Mx.Band do
   Given `from`, a beat of the song, each loop starts in the pass that holds that beat and plays it from there, so that beat sounds first; a loop whose passes end before it does not start.
   A part a new version of a song written as music adds joins at the next section, with the pass number the other parts play there.
   Every loop with a start beat is handed to `worked_out` with that beat before any loop works out a pass, so no loop's pass reads the shared values before the other loops' set steps are in.
+  `play_recording/4` plays a sample into a part's effects beside its notes, from the part's chain each loop sends the band as `{:part_chain, name, chain}` when it starts one.
   """
 
   use GenServer
@@ -103,6 +104,23 @@ defmodule Mx.Band do
     GenServer.call(band, {:try_part, name, tried})
   end
 
+  @doc """
+  Plays a loaded sample, as a sample event takes it, into the part `name`'s effects from the first whole beat more than 150 ms away, and returns `{:ok, beat}`.
+
+  `opts` are a sample's, `from:` and `to:` in seconds among them, and the part plays on beside it.
+  A recording the part is already playing this way stops as the new one starts.
+  A part the song does not have is refused with `{:error, message}`.
+  """
+  def play_recording(band, name, sample, opts)
+      when (is_pid(band) or is_atom(band)) and is_map(sample) and is_list(opts) do
+    GenServer.call(band, {:play_recording, name, sample, opts})
+  end
+
+  @doc "Stops the recording `play_recording/4` plays on the part `name`, if one plays, within 150 ms."
+  def stop_recording(band, name) when is_pid(band) or is_atom(band) do
+    GenServer.call(band, {:stop_recording, name})
+  end
+
   @doc "Plays the part `name` as the song gives it again, from the first whole beat 150 ms away, or after every note already sent without `hand`."
   def stop_trying(band, name) when is_pid(band) or is_atom(band) do
     GenServer.call(band, {:stop_trying, name})
@@ -169,6 +187,8 @@ defmodule Mx.Band do
       followers: Keyword.get(opts, :follow, []),
       subscribers: [],
       trials: %{},
+      chains: %{},
+      recordings: %{},
       version: nil,
       told: []
     }
@@ -244,6 +264,25 @@ defmodule Mx.Band do
       {:reply, :ok, put_trial(state, part, trial)}
     else
       error -> {:reply, error, state}
+    end
+  end
+
+  def handle_call({:play_recording, name, sample, opts}, {_, _}, %{} = state) do
+    case parts(state, [name]) do
+      {:ok, [part]} -> start_recording(state, part, sample, opts)
+      error -> {:reply, error, state}
+    end
+  end
+
+  def handle_call({:stop_recording, name}, {_, _}, %{} = state) do
+    case parts(state, [name]) do
+      {:ok, [part]} ->
+        {id, recordings} = Map.pop(state.recordings, part)
+        if id, do: state.play.(now() + @tempo_lead_us, [{:stop, [id]}])
+        {:reply, :ok, %{state | recordings: recordings}}
+
+      error ->
+        {:reply, error, state}
     end
   end
 
@@ -366,6 +405,10 @@ defmodule Mx.Band do
     {:noreply, state}
   end
 
+  def handle_info({:part_chain, name, chain}, %{} = state) do
+    {:noreply, put_in(state.chains[name], chain)}
+  end
+
   def handle_info({:part_took_over, name, beat}, %{} = state) do
     report(state, {:mx_took_over, name, beat})
 
@@ -428,6 +471,20 @@ defmodule Mx.Band do
       nil -> {:ok, Enum.uniq(for name <- names, do: known[to_string(name)])}
       unknown -> {:error, "the song has no part named #{unknown}"}
     end
+  end
+
+  # A recording plays from the first whole beat the engine can still place, stopping the one the
+  # part played before.
+  defp start_recording(state, part, sample, opts) do
+    lead_us = max(state.tempo_lead_us, @tempo_lead_us)
+    beat = floor(beat_at(state.timeline, now() + lead_us)) + 1
+    at_us = time_at(state.timeline, beat)
+    tempo = tempo_at(state.timeline, beat)
+    opts = Mx.Synths.to_seconds(:mono_player, Mx.Samples.cut(opts, sample.seconds, tempo), tempo)
+    id = Keyword.get(state.loop_opts, :new_id, fn -> System.unique_integer([:positive]) end).()
+    stops = for old <- List.wrap(state.recordings[part]), do: {:stop, [old]}
+    state.play.(at_us, stops ++ [{:sample, id, sample, opts, state.chains[part]}])
+    {:reply, {:ok, beat}, put_in(state.recordings[part], id)}
   end
 
   # Sends the followers each message they were not sent yet.

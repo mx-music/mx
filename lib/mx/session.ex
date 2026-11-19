@@ -84,6 +84,25 @@ defmodule Mx.Session do
     Band.try_part(band(session), name, tried)
   end
 
+  @doc """
+  Plays the recording `ref`, a path or a sample's name, on the part `name` from the first whole beat more than 150 ms away, through the part's effects and at its place in the mix, while the part plays on, and returns `{:ok, beat}`.
+
+  It takes a sample's options, `from:` and `to:` in seconds and `amp:` among them, and nothing is written to the song's file.
+  It plays through saves of the file, mutes with the part, and stops when another recording plays on the part or `stop_recording/2` stops it.
+  A part the song does not have, a file that cannot play and a range outside the recording are refused with `{:error, message}`.
+  `Mx.Engine.Mxs.play_recording/2` plays one with no song.
+  """
+  def play_recording(session, name, ref, opts \\ []) when is_pid(session) and is_list(opts) do
+    with {:ok, path} <- Mx.Samples.check(ref, opts),
+         {:ok, sample} <- Mxs.sample(path) do
+      Band.play_recording(band(session), name, sample, opts)
+    end
+  end
+
+  @doc "Stops the recording `play_recording/4` plays on the part `name`, within 150 ms, while the part and the song go on."
+  def stop_recording(session, name) when is_pid(session),
+    do: Band.stop_recording(band(session), name)
+
   @doc "Plays the part `name` as the song gives it again, from its next note within a bar."
   def stop_trying(session, name) when is_pid(session), do: Band.stop_trying(band(session), name)
 

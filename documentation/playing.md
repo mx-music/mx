@@ -74,6 +74,21 @@ What is tried adds to what was tried on the part before, and an option the song 
 A part, synth or option that does not exist is refused with a message that names it.
 What is tried lasts while the session plays, through every save of the file, until `stop_trying` plays the part as the song gives it again.
 
+## Play a recording on a part
+
+A program that drives a session can play a range of a recording on a part, to hear it through the part's effects before writing a sample line for it:
+
+```elixir
+Mx.Session.play_recording(session, :voice, "examples/tranquility_base/a11step.aiff", from: 2.447, to: 3.4)
+Mx.Session.stop_recording(session, :voice)
+```
+
+The recording sounds from the first whole beat 150 ms away, through the part's effects and at its place in the mix, while the part plays on, and it takes the options a sample line takes.
+Nothing is written to the song's file, and saving the file while it sounds does not stop it.
+Another recording on the same part stops the first, and muting the part mutes it.
+A part the song does not have, a file that cannot play and a range outside the recording are refused with a message that names them.
+`Mx.Engine.Mxs.play_recording/2` plays a recording alone, with no song, and `Mx.Engine.Mxs.stop_sounds/1` stops it.
+
 ## Make a video of a render
 
 GitHub plays no sound in a README, only video, so a song is heard there as a video of its render.

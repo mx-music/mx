@@ -1480,6 +1480,74 @@ defmodule Mx.BandTest do
     end
   end
 
+  describe "playing a recording on a part" do
+    @describetag :tmp_dir
+
+    setup ctx do
+      test = self()
+      ids = :counters.new(1, [])
+
+      opts = [
+        start_fx: fn chain -> send(test, {:started_fx, chain}) && %{key: :voice_chain} end,
+        new_id: fn -> :counters.add(ids, 1, 1) && :counters.get(ids, 1) end
+      ]
+
+      song =
+        load(
+          ctx,
+          song(60, [
+            "part(:voice, loop(8, fn _, _ -> seq(for _ <- 1..8, do: seq([note(67, 0.5), rest(0.5)])) end), fx: [echo: [phase: 0.75]])"
+          ])
+        )
+
+      sample = %{sample: :step, channels: 1, seconds: 7.155}
+      %{song: song, sample: sample, opts: opts}
+    end
+
+    test "plays a range of the recording into the part's effects from the first whole beat 150 ms away, beside the part's notes",
+         ctx do
+      {band, _start_us} = start(ctx.song, ctx, ctx.opts)
+      assert_receive {:started_fx, [echo: _]}
+      Process.sleep(1200)
+
+      asked_us = System.os_time(:microsecond)
+
+      assert {:ok, beat} =
+               Band.play_recording(band, :voice, ctx.sample, from: 2.447, to: 3.4, amp: 0.8)
+
+      at_us = Band.time_at(Band.timeline(band), beat)
+      assert at_us - asked_us > 150_000 and at_us - asked_us <= 1_150_000
+
+      assert_receive {:played, ^at_us,
+                      [{:sample, id, %{sample: :step}, opts, %{key: :voice_chain}}]}
+
+      assert_in_delta opts[:start], 2.447 / 7.155, 1.0e-9
+      assert_in_delta opts[:finish], 3.4 / 7.155, 1.0e-9
+      assert opts[:amp] == 0.8
+
+      assert_receive {:played, note_us, [{:note, _, _, _, _, _}]} when note_us > at_us, 2000
+
+      assert {:ok, again} = Band.play_recording(band, :voice, ctx.sample, from: 0.0, to: 2.4)
+      again_us = Band.time_at(Band.timeline(band), again)
+      assert_receive {:played, ^again_us, [{:stop, [^id]}, {:sample, other, _, _, _}]}
+      assert other != id
+
+      assert :ok = Band.stop_recording(band, :voice)
+      assert_receive {:played, stop_us, [{:stop, [^other]}]}
+      assert stop_us - System.os_time(:microsecond) < 1_000_000
+    end
+
+    test "a part the song does not have is refused, naming it", ctx do
+      {band, _start_us} = start(ctx.song, ctx, ctx.opts)
+
+      assert Band.play_recording(band, :no_such_part, ctx.sample, []) ==
+               {:error, "the song has no part named no_such_part"}
+
+      assert Band.stop_recording(band, :no_such_part) ==
+               {:error, "the song has no part named no_such_part"}
+    end
+  end
+
   describe "trying a synth or options on a part" do
     @describetag :tmp_dir
 
