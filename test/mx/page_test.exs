@@ -172,4 +172,18 @@ defmodule Mx.PageTest do
       assert {:ok, %{source: "the text"}} = Page.whole(song, path, "the text")
     end
   end
+
+  test "the page links mx to its repository, and no file mx ships names the old address" do
+    template = File.read!(Application.app_dir(:mx, "priv/page.html"))
+    assert template =~ ~s(rendered by <a href="https://github.com/mx-music/mx">mx</a>)
+
+    shipped =
+      Enum.flat_map(
+        ~w(lib priv native/mxs_nif/src),
+        &Path.wildcard("#{&1}/**/*.{ex,html,txt,rs}")
+      ) ++
+        ["README.md", "mix.exs"]
+
+    assert Enum.filter(shipped, &(File.read!(&1) =~ "github.com/rodrigues/mx")) == []
+  end
 end
