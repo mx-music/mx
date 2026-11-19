@@ -187,6 +187,15 @@ song(tempo: 72, music: music)
 
 The tempo is 60 beats a minute unless given.
 
+`meter:` says how many beats make a bar, a whole number, 4 unless given:
+
+```elixir
+song(tempo: 90, meter: 3, music: waltz)
+```
+
+mx gives the meter with the song's page data, for a program that draws the song in bars, and `mx export` writes it as the score's time signature, 3/4 for `meter: 3`, unless `--time` gives another.
+It does not change what plays.
+
 ### Sections
 
 The items of the song's outermost `seq` are its sections, also when the `seq` is inside `repeat`.

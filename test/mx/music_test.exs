@@ -1012,6 +1012,21 @@ defmodule Mx.MusicTest do
 
   defp played(events), do: Enum.map(events, fn {beat, note, _opts} -> {beat, note} end)
 
+  @tag :tmp_dir
+  test "a song states its meter as whole beats to a bar, 4 unless given, and a meter of 0 is refused",
+       ctx do
+    assert {:ok, %{meter: 3}} = load(ctx, "song(meter: 3, music: part(:a, seq(c4: 3)))")
+    assert {:ok, %{meter: 4}} = load(ctx, "song(music: part(:a, seq(c4: 4)))")
+
+    for meter <- ["0", "2.5", ":waltz"] do
+      path = write(ctx, "song(meter: #{meter}, music: part(:a, seq(c4: 4)))")
+
+      assert Song.load(path) ==
+               {:error,
+                "#{path}:3: song takes meter: as whole beats to a bar above 0, not #{meter}"}
+    end
+  end
+
   defp load(ctx, body), do: ctx |> write(body) |> Song.load()
 
   defp write(%{tmp_dir: dir}, body) do

@@ -8,7 +8,7 @@ defmodule Mix.Tasks.Mx.Export do
       mx export song.exs --time 12/8 --key bm --out song.mxl
 
   The score is written beside the song with the extension .musicxml unless `--out` names it, compressed when that ends in .mxl, and `--force` writes over a file that exists.
-  `--time` gives the time signature, 4/4 unless given, and `--key` the key its notes are spelled in, such as d, bm or fsm, C major unless given.
+  `--time` gives the time signature, the song's `meter:` over 4 unless given, so 4/4 for a song that gives no meter, and `--key` the key its notes are spelled in, such as d, bm or fsm, C major unless given.
   `--pickup` gives the length in beats of a pickup bar, written as bar 0 before the first full bar, such as 0.5 for an eighth note; it must be shorter than a bar.
   `--title` gives the score's title, which is otherwise the song file's name.
   A part that plays no notes with a pitch, such as drums or samples, or that waits for input, is left out, and the task says so.

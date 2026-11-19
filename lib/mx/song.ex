@@ -1,6 +1,6 @@
 defmodule Mx.Song do
   @moduledoc """
-  A song loaded from a file: its tempo and its parts, each played as a loop, in the order of the song.
+  A song loaded from a file: its tempo, its `meter` in beats to a bar, and its parts, each played as a loop, in the order of the song.
   `tempos` holds the tempo changes its music writes, each section's as `Mx.Tempo` takes them, or nil when it writes none.
 
   A song file is either a script that ends with `Mx.song/1`, or a module that uses `Mx.Song`:
@@ -47,7 +47,14 @@ defmodule Mx.Song do
     defstruct [:name, input: 1, stereo: false, opts: [], fx: []]
   end
 
-  defstruct tempo: 60, tempos: nil, osc_to: nil, osc_from: nil, loops: [], live: [], played: []
+  defstruct tempo: 60,
+            meter: 4,
+            tempos: nil,
+            osc_to: nil,
+            osc_from: nil,
+            loops: [],
+            live: [],
+            played: []
 
   @key :mx_song
   @modules_key :mx_song_modules
@@ -278,6 +285,9 @@ defmodule Mx.Song do
 
   @doc "Records the tempo of the song being loaded."
   def put_tempo(bpm) when is_number(bpm), do: update(&%{&1 | tempo: bpm})
+
+  @doc "Records the beats to a bar of the song being loaded."
+  def put_meter(beats) when is_integer(beats), do: update(&%{&1 | meter: beats})
 
   @doc "Records the tempo changes the music of the song being loaded writes."
   def put_tempos(tempos) when is_map(tempos), do: update(&%{&1 | tempos: tempos})

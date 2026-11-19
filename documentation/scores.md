@@ -76,7 +76,7 @@ It writes the score beside the song with the extension `.musicxml`, or to `--out
 The score holds the whole of the song's music once, as `mx print` prints it.
 Each part that plays notes becomes a part of the score, and a part that plays no notes with a pitch, such as drums and samples, or that waits for input, is left out; mx names each one it leaves out.
 mx prints how many notes each part has, and its lowest and highest note.
-`--time` sets the time signature, 4/4 without it, and `--key` the key its notes are spelled in, such as `d`, `bm` or `fsm`, C major without it.
+`--time` sets the time signature, the song's `meter:` over 4 without it, so 3/4 for a song with `meter: 3` and 4/4 for one that gives none, and `--key` the key its notes are spelled in, such as `d`, `bm` or `fsm`, C major without it.
 `--title` sets the title, which is otherwise the song file's name.
 
 A piece that opens with a pickup, a short bar before the first full one, needs `--pickup` and the pickup's length in beats, since a song does not record where its bar lines fall:

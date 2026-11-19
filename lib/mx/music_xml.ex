@@ -38,15 +38,15 @@ defmodule Mx.MusicXML do
   @minor ~w(ab eb bb f c g d a e b fs cs gs ds as)
 
   @doc """
-  Writes the song at `path` as a score to `out`, compressed when `out` ends in .mxl, with `time:`, `key:`, `pickup:`, `title:` and `force:`.
+  Writes the song at `path` as a score to `out`, compressed when `out` ends in .mxl, with `time:`, the song's meter over 4 unless given, `key:`, `pickup:`, `title:` and `force:`.
   Returns `{:ok, %{parts: parts, left_out: left_out}}`, each part as its name, how many notes it holds and its lowest and highest note, and each part left out as its name and why; or `{:error, message}`.
   """
   def write(path, out, opts \\ []) when is_binary(path) and is_binary(out) and is_list(opts) do
-    with {:ok, time} <- time(Keyword.get(opts, :time, "4/4")),
-         {:ok, key} <- key(Keyword.get(opts, :key, "c")),
-         {:ok, pickup} <- pickup(Keyword.get(opts, :pickup), time),
+    with {:ok, key} <- key(Keyword.get(opts, :key, "c")),
          :ok <- Page.check(out, Keyword.get(opts, :force, false)),
          {:ok, song} <- Song.load(path),
+         {:ok, time} <- song_time(song, opts),
+         {:ok, pickup} <- pickup(Keyword.get(opts, :pickup), time),
          {:ok, parts, left_out} <- parts(song, path) do
       beats = parts |> Enum.map(&elem(&1, 2)) |> Enum.max(fn -> 0 end)
       title = Keyword.get_lazy(opts, :title, fn -> title(path) end)
@@ -69,6 +69,12 @@ defmodule Mx.MusicXML do
          left_out: left_out
        }}
     end
+  end
+
+  @doc "The time signature given as `time:` in `opts`, or else the song's meter over 4, as `time/1` gives it."
+  def song_time(song, opts) do
+    meter = song.meter
+    time(Keyword.get(opts, :time, "#{meter}/4"))
   end
 
   @doc "A time signature such as `12/8` as `{:ok, {12, 8}}`, or `{:error, message}`."

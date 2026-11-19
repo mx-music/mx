@@ -52,6 +52,7 @@ defmodule Mx.Page do
          file: Path.basename(path),
          source: source || File.read!(path),
          tempo: song.tempo,
+         meter: song.meter,
          seconds: seconds,
          beats: Enum.map(0..ceil(beats), &seconds_at(timeline, &1)),
          sections:

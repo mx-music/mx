@@ -95,6 +95,7 @@ defmodule Mx.Music do
       :forever,
       :tempos,
       tempo: 60,
+      meter: 4,
       live_audio: [],
       osc_to: nil,
       osc_from: nil
@@ -102,7 +103,7 @@ defmodule Mx.Music do
   end
 
   @part_options [:synth, :fx, :defaults, :midi]
-  @song_options [:tempo, :music, :live_audio, :osc_to, :osc_from]
+  @song_options [:tempo, :meter, :music, :live_audio, :osc_to, :osc_from]
   @forever "repeat without a count plays until mx stops, so it can only hold the whole of a song's music"
 
   @doc "A note of a pitch, given as a name, a number or a list of them, lasting some beats, with options for the part's synth."
@@ -720,6 +721,15 @@ defmodule Mx.Music do
       raise ArgumentError, "song takes its music with music: ..."
     end
 
+    case Keyword.get(opts, :meter, 4) do
+      meter when is_integer(meter) and meter > 0 ->
+        :ok
+
+      meter ->
+        meter = inspect(meter)
+        raise ArgumentError, "song takes meter: as whole beats to a bar above 0, not #{meter}"
+    end
+
     case opts[:osc_to] do
       nil -> :ok
       {host, port} when is_binary(host) and is_integer(port) -> :ok
@@ -941,6 +951,7 @@ defmodule Mx.Music do
   @doc "Records a song into the song being loaded: its settings, and a loop for each of its parts."
   def load(%Song{} = song) do
     Mx.Song.put_tempo(song.tempo)
+    Mx.Song.put_meter(song.meter)
     if song.tempos, do: Mx.Song.put_tempos(song.tempos)
     if song.osc_from, do: Mx.Song.put_osc_from(song.osc_from)
     with {host, port} <- song.osc_to, do: Mx.Song.put_osc_to(host, port)

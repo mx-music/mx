@@ -473,10 +473,10 @@ defmodule Mx.MIDI do
   Returns `{:ok, %{parts: parts, left_out: left_out, notes: notes}}`, the parts and what is left out as `Mx.MusicXML.write/3` gives them and `notes` a line for each tempo change written otherwise than the song makes it, or `{:error, message}`.
   """
   def write(path, out, opts \\ []) when is_binary(path) and is_binary(out) and is_list(opts) do
-    with {:ok, {beats, type}} <- MusicXML.time(Keyword.get(opts, :time, "4/4")),
-         {:ok, {fifths, mode} = key} <- MusicXML.key(Keyword.get(opts, :key, "c")),
+    with {:ok, {fifths, mode} = key} <- MusicXML.key(Keyword.get(opts, :key, "c")),
          :ok <- Page.check(out, Keyword.get(opts, :force, false)),
          {:ok, song} <- Song.load(path),
+         {:ok, {beats, type}} <- MusicXML.song_time(song, opts),
          {:ok, parts, left_out} <- MusicXML.parts(song, path) do
       length = parts |> Enum.map(&elem(&1, 2)) |> Enum.max(fn -> 0 end)
       title = Keyword.get_lazy(opts, :title, fn -> MusicXML.title(path) end)

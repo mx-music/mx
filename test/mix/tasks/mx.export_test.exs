@@ -37,6 +37,35 @@ defmodule Mix.Tasks.Mx.ExportTest do
     end
   end
 
+  test "a song in 3 writes a score, a MIDI file and an ABC tune in 3/4 unless --time is given",
+       %{tmp_dir: dir} do
+    song = Path.join(dir, "waltz.exs")
+
+    File.write!(
+      song,
+      "import Mx\nsong(meter: 3, music: part(:waltz, seq(c4: 1, e4: 1, g4: 1), synth: :piano))\n"
+    )
+
+    for {file, args} <- [
+          {"waltz.musicxml", []},
+          {"waltz.mid", []},
+          {"waltz.abc", []},
+          {"common.musicxml", ["--time", "4/4"]}
+        ] do
+      capture_io(fn -> Export.run([song, "--out", Path.join(dir, file) | args]) end)
+    end
+
+    assert File.read!(Path.join(dir, "waltz.musicxml")) =~
+             "<time><beats>3</beats><beat-type>4</beat-type></time>"
+
+    assert File.read!(Path.join(dir, "common.musicxml")) =~
+             "<time><beats>4</beats><beat-type>4</beat-type></time>"
+
+    assert File.read!(Path.join(dir, "waltz.abc")) =~ "\nM:3/4\n"
+    {:ok, midi} = Mx.MIDI.parse(File.read!(Path.join(dir, "waltz.mid")), "waltz.mid")
+    assert [<<3, 2, 24, 8>>] = for({_, {:meta, 0x58, time}} <- hd(midi.tracks), do: time)
+  end
+
   test "names the parts it leaves out", %{tmp_dir: dir} do
     song = Path.join(dir, "beat.exs")
 

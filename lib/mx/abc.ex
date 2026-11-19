@@ -785,11 +785,11 @@ defmodule Mx.ABC do
   def write(path, out, opts \\ []) when is_binary(path) and is_binary(out) and is_list(opts) do
     key_text = Keyword.get(opts, :key, "c")
 
-    with {:ok, {beats, type} = time} <- MusicXML.time(Keyword.get(opts, :time, "4/4")),
-         {:ok, {fifths, _mode} = key} <- MusicXML.key(key_text),
-         {:ok, pickup} <- MusicXML.pickup(Keyword.get(opts, :pickup), time),
+    with {:ok, {fifths, _mode} = key} <- MusicXML.key(key_text),
          :ok <- Page.check(out, Keyword.get(opts, :force, false)),
          {:ok, song} <- Song.load(path),
+         {:ok, {beats, type} = time} <- MusicXML.song_time(song, opts),
+         {:ok, pickup} <- MusicXML.pickup(Keyword.get(opts, :pickup), time),
          {:ok, parts, left_out} <- MusicXML.parts(song, path) do
       length = parts |> Enum.map(&elem(&1, 2)) |> Enum.max(fn -> 0 end)
       title = Keyword.get_lazy(opts, :title, fn -> MusicXML.title(path) end)
