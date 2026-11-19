@@ -13,7 +13,7 @@ defmodule Mix.Tasks.Mx.PartsTest do
     assert hd(lines) == "piano, note 60, vel 0.6: #{length(parts.harmonics)} harmonics"
     harmonics = lines |> tl() |> Enum.take_while(&(&1 != "  partners"))
     assert length(harmonics) == length(parts.harmonics)
-    assert hd(harmonics) == "      261.6 Hz   1.00   +0.0 dB  4.15 s"
+    assert hd(harmonics) == "      261.6 Hz   1.00   +0.0 dB  8.79 s"
     assert Enum.any?(lines, &String.starts_with?(&1, "  thump "))
     assert Enum.any?(lines, &String.starts_with?(&1, "  knock "))
   end

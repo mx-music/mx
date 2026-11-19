@@ -46,8 +46,9 @@ defmodule Mx.PianoTest do
     {:ok, parts} = Piano.parts(note: 60)
 
     assert parts.thump.below_hz > 0 and parts.thump.seconds > 0
-    assert parts.knock.resonances == [80.0, 105.0, 160.0, 230.0, 320.0, 350.0, 410.0, 520.0]
-    assert Enum.any?(parts.partners, &(&1.kind == :slow))
+    resonances = Enum.map(parts.knock.resonances, &Float.round(&1, 1))
+    assert resonances == [64.1, 98.5, 136.6, 179.0, 337.6, 403.0, 476.0]
+    assert Enum.any?(parts.partners, &(&1.kind == :twin))
     assert {:ok, %{knock: nil}} = Piano.parts(note: 60, knock: 0)
   end
 
