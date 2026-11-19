@@ -53,13 +53,15 @@ defmodule Mx.Render do
     end
   end
 
-  defp check_ring_out(ring_out) when is_boolean(ring_out), do: :ok
-
-  defp check_ring_out(ring_out),
-    do: {:error, "--ring-out takes true or false, not #{inspect(ring_out)}"}
-
   defp check(_song, seconds) when is_number(seconds) and seconds > 0, do: :ok
   defp check(_song, seconds), do: {:error, "--seconds takes a length above 0, not #{seconds}"}
+
+  defp check_ring_out(ring_out) when is_boolean(ring_out), do: :ok
+
+  defp check_ring_out(ring_out) do
+    ring_out = inspect(ring_out)
+    {:error, "--ring-out takes true or false, not #{ring_out}"}
+  end
 
   # The seconds of music the render plays: until its music ends, or for `seconds` when that is
   # sooner or the music does not end.
