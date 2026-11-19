@@ -8,6 +8,8 @@ defmodule Mx.Page do
   A sample shows as a hit, and so does a note of a sampled instrument, as its pass names the file it plays and not the key.
   A hit lasts as long as its sample file plays at its rate, cut short by a sustain it is given, or as long as the attack, decay, sustain and release given to its synth; a synth hit given none of them lasts 0 seconds, as its synth alone knows how long it rings.
   A part that waits for input is left out, as a render leaves it out.
+
+  Each part's `synth` names its sound: the synth it plays notes on, such as `flute`; a sampled instrument by its folder and collection, such as `sampled instrument Samples/kickmic/kick of virtuosity_drums`, a list of files by the folder they share or else by the first file and the count of the others; and a part that plays only samples by its sample, such as `vinyl_hiss`, or by the first it plays and the count of the others, such as `kick and 1 other`.
   """
 
   alias Mx.{Pass, Recording, Render, Samples, Song, Synths, Tempo}
@@ -150,12 +152,34 @@ defmodule Mx.Page do
 
     %{
       name: loop.name,
-      synth: to_string(loop.synth),
+      synth: sound(loop.synth, played),
       fx: Enum.map(loop.fx, fn {effect, _opts} -> effect end),
       notes: Enum.sort(notes),
       hits: Enum.sort(hits)
     }
   end
+
+  # A part that gives no sampled instrument and plays only samples is named by the samples it plays.
+  defp sound(synth, played) do
+    steps = for {_, _, events, _} <- Enum.reverse(played), {_, step, _} <- events, do: step
+    samples = for {:sample, ref, _path} <- steps, uniq: true, do: sample_name(ref)
+
+    if is_atom(synth) and samples != [] and not Enum.any?(steps, &played_note?/1) do
+      first = hd(samples)
+      others = Mx.Sampled.others(length(samples) - 1)
+      "#{first}#{others}"
+    else
+      to_string(synth)
+    end
+  end
+
+  defp played_note?(step),
+    do: is_number(step) or step == :own_note or match?({:midi_note, _}, step)
+
+  defp sample_name({_collection, name}) when is_atom(name), do: Atom.to_string(name)
+  defp sample_name({_collection, path}) when is_binary(path), do: sample_name(path)
+  defp sample_name(name) when is_atom(name), do: Atom.to_string(name)
+  defp sample_name(path) when is_binary(path), do: path |> Path.basename() |> Path.rootname()
 
   # A control step names the notes it changes by their place among the pass's events.
   defp marks({timeline, start, events, _beats}, synth, files) do

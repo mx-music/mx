@@ -39,6 +39,29 @@ defmodule Mx.SampledTest do
     Song.load(path)
   end
 
+  test "a sampled instrument of a list of files is named by the folder they share, with their collection, or by its first file and the count of the others" do
+    kick =
+      for take <- 1..2,
+          do: {{:virtuosity_drums, "Samples/kickmic/kick/kickmic_kick_vl1_rr#{take}.flac"}, []}
+
+    assert to_string(Sampled.new(kick)) ==
+             "sampled instrument Samples/kickmic/kick of virtuosity_drums"
+
+    assert to_string(Sampled.new([{"keys/c4.wav", note: 60}, {"keys/soft/c4.wav", note: 60}])) ==
+             "sampled instrument keys"
+
+    apart = [{"kick.wav", note: 36}, {"snare.wav", note: 38}, {"hat.wav", note: 42}]
+    assert to_string(Sampled.new(apart)) == "sampled instrument kick.wav and 2 others"
+
+    mixed = [{{:vcsl, "Drums/kick.wav"}, note: 36}, {"Drums/snare.wav", note: 38}]
+    assert to_string(Sampled.new(mixed)) == "sampled instrument kick.wav and 1 other"
+
+    folder = {:vcsl, "Idiophones/Plucked Idiophones/Mbira dzaVadzimu Nyamaropa, Zimbabwe, Low B"}
+
+    assert to_string(Sampled.new(folder)) ==
+             "sampled instrument Idiophones/Plucked Idiophones/Mbira dzaVadzimu Nyamaropa, Zimbabwe, Low B of vcsl"
+  end
+
   # Each sample a part plays in a pass, as its file name and rate rounded to four places.
   defp played(song, name, pass \\ 0) do
     loop = Enum.find(song.loops, &(&1.name == name))

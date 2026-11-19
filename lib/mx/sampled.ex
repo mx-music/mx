@@ -230,6 +230,12 @@ defmodule Mx.Sampled do
     end
   end
 
+  @doc false
+  # The count of the things named after the first, as words that follow its name.
+  def others(0), do: ""
+  def others(1), do: " and 1 other"
+  def others(count), do: " and #{count} others"
+
   defimpl String.Chars do
     @doc false
     def to_string(%{source: folder}) when is_binary(folder), do: "sampled instrument #{folder}"
@@ -242,6 +248,40 @@ defmodule Mx.Sampled do
       "sampled instrument #{folder} of #{collection}"
     end
 
-    def to_string(_sampled), do: "sampled instrument"
+    # A list of files is named by the folder they share, or by its first file and the count of the
+    # others when they share none.
+    def to_string(%{source: files}) when is_list(files) do
+      paths = Enum.map(files, &elem(&1, 0))
+      collections = paths |> Enum.map(&collection/1) |> Enum.uniq()
+      folders = Enum.map(paths, &(&1 |> file() |> Path.dirname() |> Path.split()))
+
+      case {collections, shared(folders)} do
+        {[collection], [_ | _] = folder} ->
+          folder = Path.join(folder)
+
+          if collection,
+            do: "sampled instrument #{folder} of #{collection}",
+            else: "sampled instrument #{folder}"
+
+        _apart ->
+          first = paths |> hd() |> file() |> Path.basename()
+          others = Mx.Sampled.others(length(paths) - 1)
+          "sampled instrument #{first}#{others}"
+      end
+    end
+
+    defp collection({collection, _path}), do: collection
+    defp collection(_path), do: nil
+
+    defp file({_collection, path}), do: path
+    defp file(path), do: path
+
+    defp shared(folders) do
+      folders
+      |> Enum.zip_with(& &1)
+      |> Enum.take_while(fn [first | rest] -> Enum.all?(rest, &(&1 == first)) end)
+      |> Enum.map(&hd/1)
+      |> Enum.reject(&(&1 == "."))
+    end
   end
 end

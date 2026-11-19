@@ -54,6 +54,47 @@ defmodule Mx.PageTest do
     assert {:ok, %{meter: 4}} = Page.data(song, path, 1.0)
   end
 
+  defp silent(path) do
+    data = :binary.copy(<<0.0::little-float-32>>, 4800)
+
+    format =
+      <<16::little-32, 3::little-16, 1::little-16, 48_000::little-32, 192_000::little-32,
+        4::little-16, 32::little-16>>
+
+    File.write!(
+      path,
+      "RIFF" <>
+        <<36 + byte_size(data)::little-32>> <>
+        "WAVEfmt " <> format <> "data" <> <<byte_size(data)::little-32>> <> data
+    )
+
+    inspect(path)
+  end
+
+  test "names a part that plays only samples by its sample, or the first and the count of the others, and one that also plays notes by its synth",
+       %{tmp_dir: dir} do
+    [kick, snare] = for name <- ["kick", "snare"], do: silent(Path.join(dir, "#{name}.wav"))
+
+    {song, path} =
+      load(dir, """
+      song(tempo: 120, music: together([
+        part(:hiss, sample(#{kick}, 2)),
+        part(:kit, seq([sample(#{kick}, 1), sample(#{snare}, 1), sample(#{kick}, 1)])),
+        part(:both, seq([note(:c4, 1), sample(#{snare}, 1)]), synth: :fm),
+        part(:flute, seq(c4: 2), synth: :flute)
+      ]))
+      """)
+
+    assert {:ok, %{parts: parts}} = Page.data(song, path, 2.0)
+
+    assert Enum.map(parts, &{&1.name, &1.synth}) == [
+             hiss: "kick",
+             kit: "kick and 1 other",
+             both: "fm",
+             flute: "flute"
+           ]
+  end
+
   test "gives a hit the seconds it sounds when its sample or options say, and 0 otherwise", %{
     tmp_dir: dir
   } do
