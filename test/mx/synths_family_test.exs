@@ -34,7 +34,12 @@ defmodule Mx.SynthsFamilyTest do
   @tag :tmp_dir
   test "a flute below its range plays as before", %{tmp_dir: dir} do
     song = Path.join(dir, "low.exs")
-    File.write!(song, "import Mx\nsong(tempo: 60, music: part(:flute, seq(c3: 1), synth: :flute))\n")
+
+    File.write!(
+      song,
+      "import Mx\nsong(tempo: 60, music: part(:flute, seq(c3: 1), synth: :flute))\n"
+    )
+
     wav = Path.join(dir, "low.wav")
     :ok = Mx.Render.render(song, wav, seconds: 1.5, force: true)
     {:ok, audio} = Mx.Audio.read(wav)
