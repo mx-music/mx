@@ -12,6 +12,11 @@ defmodule Mix.Tasks.Mx.Import do
   `--out` names another path for the song, and `--force` writes over a song that exists.
   The syllables of text, slurs, trills and other ornaments, fermatas, grace notes and articulations of a score are left out, and the task counts each kind after the parts.
 
+  `--recording performance.wav` takes the timing and loudness of a recording of the score in place of the score's own: the tempo is the recording's average, each note starts and lasts as long as it does in the recording, and its vel follows the recording's loudness where it starts, as `Mx.Performance` describes.
+  The task prints the second each bar starts at in the recording, after the parts.
+  `--bars 0-12` lines the recording up with those bars only, for a recording of part of the score, and the song plays those bars alone.
+  Where the recording plays on after the score, stops before it, or plays something the score does not have, the task names the bar after which the two part ways and writes no song.
+
   A file ending in .mid or .midi is read as a MIDI file, one part per track that plays notes, or per channel when a single track holds them all, each note at the vel it was struck with.
   Its notes move to the nearest sixteenth note, and `--grid` names another division of a whole note, such as 1/32, or 1/12 for eighth-note triplets.
   The song plays each tempo change of the file at its beat, moved to the nearest step of the grid as a note is, unless `--tempo` is given, when the task names each change as left out.
@@ -33,7 +38,9 @@ defmodule Mix.Tasks.Mx.Import do
           tempo: :string,
           force: :boolean,
           grid: :string,
-          tune: :integer
+          tune: :integer,
+          recording: :string,
+          bars: :string
         ]
       )
 
@@ -51,6 +58,10 @@ defmodule Mix.Tasks.Mx.Import do
 
     File.write!(out, imported.source)
     Mx.Command.info("Wrote #{out}")
-    Enum.each(imported.parts ++ imported.left_out ++ imported.tunes, &Mx.Command.info/1)
+
+    Enum.each(
+      imported.parts ++ imported.bars ++ imported.left_out ++ imported.tunes,
+      &Mx.Command.info/1
+    )
   end
 end

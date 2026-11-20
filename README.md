@@ -117,10 +117,12 @@ mx can start a song from music that already exists.
 
 ```sh
 mx import score.mxl --tempo 72 --part "Soprano=oboe"
+mx import score.mxl --recording performance.wav --part "Soprano=oboe"
 mx export song.exs --time 6/8 --key d
 mx hum hum.wav --tempo 90
 ```
 
+`--recording` takes the timing and loudness of a recording of the score, as Marian Anderson's recording of Bach's "Erbarme dich" does for the aria in `examples/erbarme_dich`.
 [Scores and hums](documentation/scores.md) describes the four commands.
 
 ## Live input and output

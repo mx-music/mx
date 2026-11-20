@@ -58,6 +58,29 @@ mx play examples/erbarme_dich/aria.exs
 
 Its D.S. al Fine is not taken, so the aria ends at bar 46 without going back to the opening ritornello.
 
+### With the timing of a recording
+
+An imported score plays every bar at one tempo, and every note at the vel its dynamics give, which sounds typed rather than played.
+`--recording` takes the timing and loudness of a recording of the same music instead.
+Marian Anderson's 1953 recording of the aria, with the Robert Shaw Chorale and Orchestra, is marked with the Public Domain Mark 1.0 and is at https://taju.uniarts.fi/bitstreams/30ed028d-ca86-4ac6-afa2-8f734936008d/download:
+
+```sh
+ffmpeg -i anderson.mp3 -t 6:28 anderson.wav
+mx import examples/erbarme_dich/bwv244.39.mxl --recording anderson.wav --bars 0-46 --part "Violin=violin" --part "Alto=oboe" --part "Organo a canne=organ" --out aria_anderson.exs
+```
+
+mx lines the recording up against the score by the energy in each of the 12 pitch classes, and writes the song with the recording's timing and loudness in place of the score's.
+The recording is a WAV file.
+The song's tempo is the recording's average, 43 beats a minute for this one, and `--tempo` is refused with `--recording`.
+Each note starts and lasts as long as it does in the recording, in beats at that tempo, to the nearest 1/48 of a beat, so a bar the recording plays slowly lasts more beats than the score writes, and notes the score writes together still start together.
+A note's vel is the recording's loudness where it starts, from 0.3 at the softest note start to 1 at the loudest, the same for every part, since a recording does not tell the parts apart; it replaces the score's dynamics.
+mx prints the second each bar starts at in the recording after the parts, and the song's comment names the recording.
+
+`--bars 0-46` lines the recording up with those bars only, for a recording of part of the score, and the song plays those bars alone.
+Where the recording plays on after the score, stops before it, or plays something the score does not have in the middle, such as a repeat the score does not mark, mx refuses with "the recording and the score part ways after bar 46, at 6:28 in the recording" and writes no song.
+The whole Anderson recording is refused so, since it goes back to the opening after bar 46, as the score's D.S. al Fine asks and the song does not; cutting it at 6:28 keeps the bars the song plays.
+A score that plays a bar more than once cannot take a recording's timing yet.
+
 To hear a score before writing a song from it, play the score itself, with the options `mx import` takes:
 
 ```sh

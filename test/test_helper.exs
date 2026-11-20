@@ -9,6 +9,7 @@ ExUnit.start(
     :bench,
     :philharmonia,
     :nasa,
-    :nsynth
+    :nsynth,
+    :anderson
   ]
 )

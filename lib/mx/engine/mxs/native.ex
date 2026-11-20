@@ -87,6 +87,9 @@ defmodule Mx.Engine.Mxs.Native do
   @doc "A recording's levels over time, `per_second` rows a second, each as `{second, level, bands, brightness}`, from its data as `Mx.Audio.raw/1` gives it."
   def level_rows(_data, _format, _rate, _per_second), do: :erlang.nif_error(:nif_not_loaded)
 
+  @doc "Lines a recording's data up against a score's frames of the energy in each pitch class, `hop` seconds apart at the score's tempo, the recording starting within its first `free` seconds, as `{seconds, costs, levels}`: the second each frame plays at, the cost there from 0 to 2, and the recording's level in dB every 50 ms."
+  def align(_data, _format, _rate, _score, _hop, _free), do: :erlang.nif_error(:nif_not_loaded)
+
   @doc "The second each sound in a recording starts and its level in dB under the loudest stroke's, as `{second, level}`, from its data as `Mx.Audio.raw/1` gives it."
   def strokes(_data, _format, _rate), do: :erlang.nif_error(:nif_not_loaded)
 

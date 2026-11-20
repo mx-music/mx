@@ -28,10 +28,12 @@ defmodule Mx.Import do
       end
 
     synths = synths(opts, score, path)
+    {score, bars} = performance(score, opts)
     tempo = tempo(opts[:tempo], score.tempo)
     {score, tempos_left_out} = tempos(score, opts[:tempo])
     parts = Enum.map(score.parts, &{&1, Map.get(synths, &1.name, :tri)})
-    source = song(score, parts, tempo, Path.basename(path), out)
+    recording = opts[:recording] && Path.basename(opts[:recording])
+    source = song(score, parts, tempo, Path.basename(path), out, recording)
 
     {:ok,
      %{
@@ -39,7 +41,8 @@ defmodule Mx.Import do
        out: out,
        parts: Enum.map(parts, fn {part, synth} -> summary(part, synth) end),
        left_out: score.left_out ++ tempos_left_out,
-       tunes: tune_lines(path)
+       tunes: tune_lines(path),
+       bars: bars
      }}
   catch
     {__MODULE__, message} -> {:error, message}
@@ -116,6 +119,46 @@ defmodule Mx.Import do
     end
   end
 
+  defp performance(score, opts) do
+    bars = opts[:bars] && bars(opts[:bars])
+
+    cond do
+      opts[:recording] == nil and bars != nil ->
+        fail(
+          "--bars lines a recording up with some of the score's bars; give the recording with --recording"
+        )
+
+      opts[:recording] == nil ->
+        {score, []}
+
+      opts[:tempo] != nil ->
+        fail("--tempo and --recording both set the tempo; give one of them")
+
+      true ->
+        case Mx.Performance.retime(score, opts[:recording], bars: bars) do
+          {:ok, performance} ->
+            lines =
+              for {number, second} <- performance.bars,
+                  do: "bar #{number} starts at #{second} s in the recording"
+
+            {performance.score, lines}
+
+          {:error, message} ->
+            fail(message)
+        end
+    end
+  end
+
+  defp bars(given) do
+    with [first, last] <- String.split(given, "-"),
+         {first, ""} <- Integer.parse(first),
+         {last, ""} when last >= first <- Integer.parse(last) do
+      first..last
+    else
+      _other -> fail("--bars takes the first and last bar, such as --bars 0-12")
+    end
+  end
+
   defp tempo(nil, nil), do: fail("give the score's tempo with --tempo")
   defp tempo(nil, tempo), do: tempo
 
@@ -181,7 +224,7 @@ defmodule Mx.Import do
     end
   end
 
-  defp song(score, parts, tempo, file, out) do
+  defp song(score, parts, tempo, file, out, recording) do
     song_module = song_module(out)
     names = loop_names(Enum.map(parts, fn {part, _synth} -> part.name end))
     rendered = Enum.map(parts, fn {part, synth} -> render(part, synth, score.order) end)
@@ -232,10 +275,10 @@ defmodule Mx.Import do
 
     moduledoc =
       [
-        "#{title}, imported from #{file} by mix mx.import.",
+        imported(title, file, recording),
         "Each part's bars are written one to a line where they fit, as the bar's number and its music; a bar of several voices plays them together.",
         "A note's length is in beats, a quarter note being a beat; a note tied over a bar line sounds for the whole tie, given as its sustain, and the note it ties into is a rest.",
-        vels(file),
+        vels(file, recording),
         tempos_line(score.tempos),
         "The whole score plays once, #{beats} beats."
       ]
@@ -282,7 +325,17 @@ defmodule Mx.Import do
   defp tempos_line(_tempos),
     do: "The tempo changes where the file's does, at the beat of each change."
 
-  defp vels(file) do
+  defp imported(title, file, nil), do: "#{title}, imported from #{file} by mix mx.import."
+
+  defp imported(title, file, recording),
+    do:
+      "#{title}, imported from #{file} by mix mx.import, with the timing and loudness of the recording #{recording}."
+
+  defp vels(_file, recording) when is_binary(recording),
+    do:
+      "A note's vel is the recording's loudness where it starts, from 0.3 at its softest note to 1 at its loudest."
+
+  defp vels(file, nil) do
     if Path.extname(file) in [".mid", ".midi"] do
       "Each note plays at the vel it was struck with in the file, and the notes of a chord at their mean."
     else

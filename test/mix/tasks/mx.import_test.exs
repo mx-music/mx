@@ -426,6 +426,62 @@ defmodule Mix.Tasks.Mx.ImportTest do
     assert guide =~ "mx import examples/wachet_auf/bwv140.7.mxl --tempo 72"
   end
 
+  describe "with a recording" do
+    test "a recording that is not a WAV file is refused, naming it", %{tmp_dir: dir} do
+      mp3 = Path.join(dir, "anderson.mp3")
+
+      assert_raise Mix.Error, "give the recording as a WAV file, not #{mp3}", fn ->
+        import!([
+          "examples/erbarme_dich/bwv244.39.mxl",
+          "--recording",
+          mp3,
+          "--out",
+          Path.join(dir, "aria.exs")
+        ])
+      end
+    end
+
+    test "--tempo is refused with --recording, and --bars without it", %{tmp_dir: dir} do
+      out = Path.join(dir, "aria.exs")
+
+      assert_raise Mix.Error,
+                   "--tempo and --recording both set the tempo; give one of them",
+                   fn ->
+                     import!([
+                       "examples/erbarme_dich/bwv244.39.mxl",
+                       "--recording",
+                       "a.wav",
+                       "--tempo",
+                       "40",
+                       "--out",
+                       out
+                     ])
+                   end
+
+      assert_raise Mix.Error, ~r/^--bars lines a recording up/, fn ->
+        import!(["examples/erbarme_dich/bwv244.39.mxl", "--bars", "0-12", "--out", out])
+      end
+    end
+
+    test "the aria imported without a recording is the song in its examples", %{tmp_dir: dir} do
+      out = Path.join(dir, "aria.exs")
+
+      import!([
+        "examples/erbarme_dich/bwv244.39.mxl",
+        "--part",
+        "Violin=violin",
+        "--part",
+        "Alto=oboe",
+        "--part",
+        "Organo a canne=organ",
+        "--out",
+        out
+      ])
+
+      assert File.read!(out) == File.read!("examples/erbarme_dich/aria.exs")
+    end
+  end
+
   defp import!(args), do: capture_io(fn -> Import.run(args) end)
 
   defp print(song, loop) do

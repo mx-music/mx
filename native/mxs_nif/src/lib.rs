@@ -1,5 +1,6 @@
 //! mx's NIF onto mxs: it turns Elixir terms into the engine's types and calls its public API.
 
+mod align;
 mod analysis;
 mod levels;
 mod spectrogram;
@@ -392,6 +393,31 @@ fn levels(data: Binary, format: (String, usize, usize), count: usize) -> NifResu
         (slice.iter().map(|x| x * x).sum::<f64>() / slice.len().max(1) as f64).sqrt()
     });
     Ok((peak, slices.collect()))
+}
+
+/// Lines the recording in `data` up against `score`, frames of the energy in each pitch class `hop` seconds apart at the score's tempo, the recording starting within its first `free` seconds; returns `{seconds, costs, levels}`: the second each score frame plays at, the cost there from 0 to 2, and the recording's level in dB every 50 ms.
+#[rustler::nif(schedule = "DirtyCpu")]
+fn align(data: Binary, format: (String, usize, usize), rate: f64, score: Vec<Vec<f64>>, hop: f64, free: f64) -> NifResult<(Vec<f64>, Vec<f64>, Vec<f64>)> {
+    let (kind, bits, channels) = format;
+    let values = spectrogram::samples(data.as_slice(), &kind, bits, 1, 0, usize::MAX).ok_or(rustler::Error::BadArg)?;
+    let sound: Vec<f64> = values.chunks_exact(channels.max(1)).map(|frame| frame.iter().sum::<f64>() / channels as f64).collect();
+    let score: Vec<[f64; 12]> = score
+        .iter()
+        .map(|counts| {
+            let mut frame = [0.0; 12];
+            frame.iter_mut().zip(counts).for_each(|(slot, count)| *slot = *count);
+            align::unit(&mut frame);
+            frame
+        })
+        .collect();
+    let (recording, starts) = align::chroma(&sound, rate, hop);
+    let (frames, costs) = align::path(&score, &recording, (free / hop) as usize);
+    let second = |frame: f64| {
+        let (low, high) = (frame.floor() as usize, (frame.ceil() as usize).min(starts.len() - 1));
+        starts[low] + (starts[high] - starts[low]) * (frame - frame.floor())
+    };
+    let seconds = frames.iter().map(|f| second(*f)).collect();
+    Ok((seconds, costs, align::levels(&sound, rate, 0.05)))
 }
 
 type PianoParts = (Vec<(u32, f64, f64, f64)>, Vec<(u32, String, f64, f64, f64)>, (f64, f64, f64), Option<(f64, Vec<f64>)>, Vec<String>);
