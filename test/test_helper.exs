@@ -10,6 +10,7 @@ ExUnit.start(
     :philharmonia,
     :nasa,
     :nsynth,
-    :anderson
+    :anderson,
+    :cargo_about
   ]
 )

@@ -44,6 +44,7 @@ defmodule Mx.MixProject do
         README.md
         CHANGELOG.md
         LICENSE
+        THIRD_PARTY_NOTICES.md
         LICENSE-designs.md
       )
     ]
