@@ -466,6 +466,11 @@ defmodule Mx.Engine.Mxs do
     {:note, id, to_string(synth), options(pitch ++ params), key(chain)}
   end
 
+  def event({:held, id, synth, note, params, chain}) do
+    {:note, id, synth, options, key} = event({:note, id, synth, note, params, chain})
+    {:held, id, synth, options, key}
+  end
+
   def event({:sample, id, %{sample: sample}, params, chain}) do
     {:sample, id, sample, options(params), key(chain)}
   end
@@ -476,6 +481,8 @@ defmodule Mx.Engine.Mxs do
     changes = for {name, value} <- params, do: {Atom.to_string(name), value / 1}
     {:set, target(target), changes}
   end
+
+  def event({:release, ids}), do: {:release, ids}
 
   defp target({:sounds, ids}), do: {:sounds, ids}
   defp target({:part, chain}), do: {:part, key(chain)}

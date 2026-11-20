@@ -8,6 +8,9 @@ defmodule Mx.Engine do
     * `{:note, id, synth, note, params, chain}`, a note of a synth, with its pitch as `note`, or nil for a drum's own pitch.
     * `{:sample, id, sample, params, chain}`, a sample as `prepare` or `load_sample` handed it back.
     * `{:set, target, params}`, a change to sounds already playing: `{:sounds, ids}`, `{:part, chain}` for every note playing in a chain, or `{:effect, chain, index}` for one of its effects.
+    * `{:held, id, synth, note, params, chain}`, a note that sounds until a release lets it go, given no length.
+    * `{:release, ids}`, which lets those held notes go, each fading over its synth's release.
+    * `{:stop, ids}`, which cuts those sounds over 10 ms.
 
   It also renders notes offline, for measuring and fitting synths.
   `id` is nil for a sound nothing changes later, and otherwise one `new_id/0` gave; `chain` is nil, or an effect chain as `start_fx` handed it back, which the note plays into.
@@ -21,6 +24,9 @@ defmodule Mx.Engine do
           {:note, id() | nil, atom(), number() | [number()] | nil, params(), chain() | nil}
           | {:sample, id() | nil, term(), params(), chain() | nil}
           | {:set, target(), params()}
+          | {:held, id(), atom(), number() | nil, params(), chain() | nil}
+          | {:release, list(id())}
+          | {:stop, list(id())}
 
   @doc "Starts the engine, with options of its own."
   @callback start_link(opts :: Keyword.t()) :: GenServer.on_start()

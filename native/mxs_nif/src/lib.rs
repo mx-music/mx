@@ -12,7 +12,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime};
 
-rustler::atoms! { ok, error, note, sample, input, set, stop, sounds, part, effect, option, name, list, call, mxs_report, clock, output, voices, levels, pass_ending, pass_started }
+rustler::atoms! { ok, error, note, held, release, sample, input, set, stop, sounds, part, effect, option, name, list, call, mxs_report, clock, output, voices, levels, pass_ending, pass_started }
 
 struct EngineResource {
     engine: Mutex<Engine>,
@@ -174,7 +174,7 @@ fn inputs(resource: ResourceArc<EngineResource>) -> usize {
     lock(&resource).inputs()
 }
 
-/// Plays `{seconds, event}` pairs, each event `{:note, id, synth, options, chain}`, `{:sample, id, sample, options, chain}`, `{:input, id, input, channels, options, chain}`, `{:set, target, options}` or `{:stop, ids}`.
+/// Plays `{seconds, event}` pairs, each event `{:note, id, synth, options, chain}`, `{:held, id, synth, options, chain}`, `{:sample, id, sample, options, chain}`, `{:input, id, input, channels, options, chain}`, `{:set, target, options}`, `{:release, ids}` or `{:stop, ids}`.
 #[rustler::nif(schedule = "DirtyCpu")]
 fn play<'a>(env: Env<'a>, resource: ResourceArc<EngineResource>, events: Vec<(f64, Term<'a>)>) -> NifResult<Term<'a>> {
     let events = events.into_iter().map(|(at, term)| Ok((at, event(term)?))).collect::<NifResult<Vec<_>>>()?;
@@ -199,13 +199,13 @@ fn play_at<'a>(env: Env<'a>, resource: ResourceArc<EngineResource>, unix_us: i64
 fn event(term: Term) -> NifResult<Event> {
     let parts = get_tuple(term)?;
     let tag: Atom = parts[0].decode()?;
-    if tag == note() && parts.len() == 5 {
+    if (tag == note() || tag == held()) && parts.len() == 5 {
         Ok(Event::Note {
             id: parts[1].decode()?,
             synth: parts[2].decode()?,
             options: options(parts[3])?,
             chain: parts[4].decode()?,
-            held: false,
+            held: tag == held(),
         })
     } else if tag == sample() && parts.len() == 5 {
         Ok(Event::Sample {
@@ -224,6 +224,8 @@ fn event(term: Term) -> NifResult<Event> {
         })
     } else if tag == stop() && parts.len() == 2 {
         Ok(Event::Stop { ids: parts[1].decode()? })
+    } else if tag == release() && parts.len() == 2 {
+        Ok(Event::Release { ids: parts[1].decode()? })
     } else if tag == set() && parts.len() == 3 {
         let options: Vec<(String, f64)> = parts[2].decode()?;
         Ok(Event::Set { target: target(parts[1])?, options })

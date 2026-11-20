@@ -34,6 +34,49 @@ defmodule Mx.Engine.MxsTest do
       assert Mxs.event({:set, {:effect, chain, 1}, [mix: 0.5]}) ==
                {:set, {:effect, 3, 1}, [{"mix", 0.5}]}
     end
+
+    test "a held note is a note with no length, which a release lets go and a stop cuts" do
+      assert Mxs.event({:held, 7, :violin, 67, [vel: 0.5], nil}) ==
+               {:held, 7, "violin", [{"note", 67.0}, {"vel", 0.5}], nil}
+
+      assert Mxs.event({:release, [7]}) == {:release, [7]}
+      assert Mxs.event({:stop, [7]}) == {:stop, [7]}
+    end
+  end
+
+  describe "a held note" do
+    test "sounds until it is let go, then falls silent over its release" do
+      engine = offline([{0.0, {:held, 1, :piano, 60, [vel: 0.6], nil}}])
+      before = render(engine, 5)
+      assert rms(Enum.take(before, -4_800)) > 1.0e-4
+
+      :ok = Mxs.Native.play(engine, [{5.0, Mxs.event({:release, [1]})}])
+      after_release = render(engine, 3)
+      assert Enum.any?(Enum.take(after_release, 960), &(abs(&1) > 1.0e-4))
+      assert Enum.all?(Enum.take(after_release, -24_000), &(&1 == 0.0))
+    end
+
+    test "given bend 2 a second in, sounds two semitones higher 10 ms later" do
+      engine =
+        offline([
+          {0.0, {:held, 1, :violin, 67, [vel: 0.6, vibrato: 0], nil}},
+          {1.0, {:set, {:sounds, [1]}, [bend: 2]}}
+        ])
+
+      sound = render(engine, 1.2)
+      rate = Mxs.render_rate()
+      before = loudest_cents(Enum.slice(sound, round(0.85 * rate), round(0.1 * rate)), 392.0)
+      bent = loudest_cents(Enum.slice(sound, round(1.01 * rate), round(0.1 * rate)), 392.0)
+      assert_in_delta bent - before, 200, 10
+    end
+
+    test "is silent within 10 ms of a stop" do
+      engine = offline([{0.0, {:held, 1, :saw, 60, [], nil}}, {1.0, {:stop, [1]}}])
+      sound = render(engine, 1.5)
+      rate = Mxs.render_rate()
+      assert rms(Enum.slice(sound, round(0.9 * rate), round(0.05 * rate))) > 0.01
+      assert Enum.all?(Enum.drop(sound, round(1.01 * rate)), &(&1 == 0.0))
+    end
   end
 
   describe "the synths mxs has" do
@@ -683,5 +726,36 @@ defmodule Mx.Engine.MxsTest do
 
     assert Mxs.render_rate() == 48_000
     assert Mxs.Native.rate(engine) == Mxs.render_rate()
+  end
+
+  defp offline(events) do
+    {:ok, engine} = Mxs.Native.start(false, false)
+    :ok = Mxs.Native.play(engine, for({at, event} <- events, do: {at, Mxs.event(event)}))
+    engine
+  end
+
+  defp render(engine, seconds) do
+    {:ok, {left, _right}} = Mxs.Native.render(engine, seconds / 1)
+    for <<sample::float-32-native <- left>>, do: sample
+  end
+
+  defp rms(samples), do: :math.sqrt(Enum.sum(Enum.map(samples, &(&1 * &1))) / length(samples))
+
+  # The cents from `hz`, in steps of 5 from -100 to 300, at which `samples` are loudest.
+  defp loudest_cents(samples, hz) do
+    rate = Mxs.render_rate()
+
+    Enum.max_by(-100..300//5, fn cents ->
+      w = 2 * :math.pi() * hz * 2 ** (cents / 1200) / rate
+
+      {re, im} =
+        samples
+        |> Enum.with_index()
+        |> Enum.reduce({0.0, 0.0}, fn {x, i}, {re, im} ->
+          {re + x * :math.cos(w * i), im - x * :math.sin(w * i)}
+        end)
+
+      re * re + im * im
+    end)
   end
 end
