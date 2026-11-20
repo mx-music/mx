@@ -11,7 +11,7 @@ defmodule Choro do
   the regional's own, and the music itself is in the public domain.
   """
 
-  use Mx.Song, tempo: 104
+  use Mx.Song, tempo: 104, key: :g
 
   part :flute,
     synth: :flute,

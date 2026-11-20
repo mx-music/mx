@@ -42,9 +42,9 @@ defmodule Mx.MusicXML do
   Returns `{:ok, %{parts: parts, left_out: left_out}}`, each part as its name, how many notes it holds and its lowest and highest note, and each part left out as its name and why; or `{:error, message}`.
   """
   def write(path, out, opts \\ []) when is_binary(path) and is_binary(out) and is_list(opts) do
-    with {:ok, key} <- key(Keyword.get(opts, :key, "c")),
-         :ok <- Page.check(out, Keyword.get(opts, :force, false)),
+    with :ok <- Page.check(out, Keyword.get(opts, :force, false)),
          {:ok, song} <- Song.load(path),
+         {:ok, key} <- key(song_key(song, opts)),
          {:ok, time} <- song_time(song, opts),
          {:ok, pickup} <- pickup(Keyword.get(opts, :pickup), time),
          {:ok, parts, left_out} <- parts(song, path) do
@@ -104,6 +104,11 @@ defmodule Mx.MusicXML do
         {:error,
          "--pickup takes a number of beats shorter than a bar of #{bar} beats, such as 0.5, not #{text}"}
     end
+  end
+
+  @doc "The key given as `key:` in `opts`, or else the key the song states, or else C major, as text such as `em`."
+  def song_key(song, opts) do
+    Keyword.get_lazy(opts, :key, fn -> if song.key, do: Atom.to_string(song.key), else: "c" end)
   end
 
   @doc "A key such as `d`, `bm` or `fsm` as `{:ok, {fifths, mode}}`, sharps counting up and flats down, or `{:error, message}`."

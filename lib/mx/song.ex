@@ -1,6 +1,6 @@
 defmodule Mx.Song do
   @moduledoc """
-  A song loaded from a file: its tempo, its `meter` in beats to a bar, and its parts, each played as a loop, in the order of the song.
+  A song loaded from a file: its tempo, its `meter` in beats to a bar, its `key`, nil when it states none, and its parts, each played as a loop, in the order of the song.
   `tempos` holds the tempo changes its music writes, each section's as `Mx.Tempo` takes them, or nil when it writes none.
 
   A song file is either a script that ends with `Mx.song/1`, or a module that uses `Mx.Song`:
@@ -49,6 +49,7 @@ defmodule Mx.Song do
 
   defstruct tempo: 60,
             meter: 4,
+            key: nil,
             tempos: nil,
             osc_to: nil,
             osc_from: nil,
@@ -292,6 +293,9 @@ defmodule Mx.Song do
 
   @doc "Records the beats to a bar of the song being loaded."
   def put_meter(beats) when is_integer(beats), do: update(&%{&1 | meter: beats})
+
+  @doc "Records the key the song being loaded states, such as `:em`."
+  def put_key(key) when is_atom(key), do: update(&%{&1 | key: key})
 
   @doc "Records the tempo changes the music of the song being loaded writes."
   def put_tempos(tempos) when is_map(tempos), do: update(&%{&1 | tempos: tempos})

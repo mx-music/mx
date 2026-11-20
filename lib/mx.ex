@@ -255,7 +255,7 @@ defmodule Mx do
   defdelegate sampled(source), to: Mx.Sampled, as: :new
 
   @doc """
-  The song, which a song file ends with: its `music:`, its `tempo:`, 60 by default, its `meter:`, the whole beats to a bar, 4 by default, and `live_audio:`, `osc_to:` and `osc_from:`.
+  The song, which a song file ends with: its `music:`, its `tempo:`, 60 by default, its `meter:`, the whole beats to a bar, 4 by default, its `key:`, such as `:em`, none by default, and `live_audio:`, `osc_to:` and `osc_from:`.
 
       import Mx
 

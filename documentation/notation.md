@@ -196,6 +196,18 @@ song(tempo: 90, meter: 3, music: waltz)
 mx gives the meter with the song's page data, for a program that draws the song in bars, and `mx export` writes it as the score's time signature, 3/4 for `meter: 3`, unless `--time` gives another.
 It does not change what plays.
 
+`key:` says the key the song is in, spelled as `mx export --key` spells it, the tonic's letter, `s` for sharp or `b` for flat, then `m` for minor:
+
+```elixir
+song(tempo: 104, key: :em, music: music)
+```
+
+`:em` is E minor, `:bb` B♭ major and `:fsm` F♯ minor; a module song states it with its tempo, as `use Mx.Song, tempo: 104, key: :g`.
+A song that states no key is in none.
+mx gives the key with the song's page data, and `mx export` writes the score in it unless `--key` gives another.
+A key mx does not know, such as `:h`, is refused when the song is read.
+It does not change what plays.
+
 ### Sections
 
 The items of the song's outermost `seq` are its sections, also when the `seq` is inside `repeat`.

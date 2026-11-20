@@ -96,6 +96,7 @@ defmodule Mx.Music do
       :tempos,
       tempo: 60,
       meter: 4,
+      key: nil,
       live_audio: [],
       osc_to: nil,
       osc_from: nil
@@ -103,7 +104,7 @@ defmodule Mx.Music do
   end
 
   @part_options [:synth, :fx, :defaults, :midi]
-  @song_options [:tempo, :meter, :music, :live_audio, :osc_to, :osc_from]
+  @song_options [:tempo, :meter, :key, :music, :live_audio, :osc_to, :osc_from]
   @forever "repeat without a count plays until mx stops, so it can only hold the whole of a song's music"
 
   @doc "A note of a pitch, given as a name, a number or a list of them, lasting some beats, with options for the part's synth."
@@ -730,11 +731,27 @@ defmodule Mx.Music do
         raise ArgumentError, "song takes meter: as whole beats to a bar above 0, not #{meter}"
     end
 
+    case opts[:key] do
+      nil ->
+        :ok
+
+      key when is_atom(key) ->
+        with {:error, _} <- Mx.MusicXML.key(Atom.to_string(key)), do: refuse_key(key)
+
+      key ->
+        refuse_key(key)
+    end
+
     case opts[:osc_to] do
       nil -> :ok
       {host, port} when is_binary(host) and is_integer(port) -> :ok
       other -> raise ArgumentError, "song takes osc_to: as {host, port}, not #{inspect(other)}"
     end
+  end
+
+  defp refuse_key(key) do
+    key = inspect(key)
+    raise ArgumentError, "song takes key: as a key such as :d, :bm or :fsm, not #{key}"
   end
 
   defp unzip3(triples) do
@@ -952,6 +969,7 @@ defmodule Mx.Music do
   def load(%Song{} = song) do
     Mx.Song.put_tempo(song.tempo)
     Mx.Song.put_meter(song.meter)
+    if song.key, do: Mx.Song.put_key(song.key)
     if song.tempos, do: Mx.Song.put_tempos(song.tempos)
     if song.osc_from, do: Mx.Song.put_osc_from(song.osc_from)
     with {host, port} <- song.osc_to, do: Mx.Song.put_osc_to(host, port)

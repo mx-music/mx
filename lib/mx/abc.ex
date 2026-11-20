@@ -783,11 +783,10 @@ defmodule Mx.ABC do
   Returns `{:ok, %{parts: parts, left_out: left_out, notes: notes}}`, as `Mx.MusicXML.write/3` returns and with `notes` saying what ABC leaves out, or `{:error, message}`.
   """
   def write(path, out, opts \\ []) when is_binary(path) and is_binary(out) and is_list(opts) do
-    key_text = Keyword.get(opts, :key, "c")
-
-    with {:ok, {fifths, _mode} = key} <- MusicXML.key(key_text),
-         :ok <- Page.check(out, Keyword.get(opts, :force, false)),
+    with :ok <- Page.check(out, Keyword.get(opts, :force, false)),
          {:ok, song} <- Song.load(path),
+         key_text = MusicXML.song_key(song, opts),
+         {:ok, {fifths, _mode} = key} <- MusicXML.key(key_text),
          {:ok, {beats, type} = time} <- MusicXML.song_time(song, opts),
          {:ok, pickup} <- MusicXML.pickup(Keyword.get(opts, :pickup), time),
          {:ok, parts, left_out} <- MusicXML.parts(song, path) do

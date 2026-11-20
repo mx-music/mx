@@ -55,6 +55,7 @@ defmodule Mx.Page do
          source: source || File.read!(path),
          tempo: song.tempo,
          meter: song.meter,
+         key: song.key && Atom.to_string(song.key),
          seconds: seconds,
          beats: Enum.map(0..ceil(beats), &seconds_at(timeline, &1)),
          sections:

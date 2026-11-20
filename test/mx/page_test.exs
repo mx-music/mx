@@ -46,6 +46,13 @@ defmodule Mx.PageTest do
     assert Enum.map(drum.hits, &hd/1) == [0.0, 1.0]
   end
 
+  test "gives the key the song states, and nil when it states none", %{tmp_dir: dir} do
+    {song, path} = load(dir, "song(key: :em, music: part(:tune, seq(e4: 1), synth: :fm))")
+    assert {:ok, %{key: "em"}} = Page.data(song, path, 1.0)
+    {song, path} = load(dir, "song(music: part(:tune, seq(e4: 1), synth: :fm))")
+    assert {:ok, %{key: nil}} = Page.data(song, path, 1.0)
+  end
+
   test "gives the song's meter, 4 when it gives none", %{tmp_dir: dir} do
     {song, path} = load(dir, "song(meter: 3, music: part(:waltz, seq(c4: 3), synth: :fm))")
     assert {:ok, %{meter: 3}} = Page.data(song, path, 1.0)

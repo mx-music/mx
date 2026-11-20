@@ -66,6 +66,41 @@ defmodule Mix.Tasks.Mx.ExportTest do
     assert [<<3, 2, 24, 8>>] = for({_, {:meta, 0x58, time}} <- hd(midi.tracks), do: time)
   end
 
+  test "a song in E minor writes a score, a MIDI file and an ABC tune in E minor unless --key is given",
+       %{tmp_dir: dir} do
+    song = Path.join(dir, "minor.exs")
+
+    File.write!(
+      song,
+      "import Mx\nsong(key: :em, music: part(:tune, seq(e4: 1, fs4: 1, g4: 1), synth: :piano))\n"
+    )
+
+    for {file, args} <- [
+          {"minor.musicxml", []},
+          {"minor.mid", []},
+          {"minor.abc", []},
+          {"major.musicxml", ["--key", "d"]}
+        ] do
+      capture_io(fn -> Export.run([song, "--out", Path.join(dir, file) | args]) end)
+    end
+
+    assert File.read!(Path.join(dir, "minor.musicxml")) =~
+             "<key><fifths>1</fifths><mode>minor</mode></key>"
+
+    assert File.read!(Path.join(dir, "major.musicxml")) =~
+             "<key><fifths>2</fifths><mode>major</mode></key>"
+
+    assert File.read!(Path.join(dir, "minor.abc")) =~ "\nK:Em"
+    {:ok, midi} = Mx.MIDI.parse(File.read!(Path.join(dir, "minor.mid")), "minor.mid")
+    assert [<<1, 1>>] = for({_, {:meta, 0x59, key}} <- hd(midi.tracks), do: key)
+  end
+
+  test "choro writes its score with one sharp without a key given", %{tmp_dir: dir} do
+    out = Path.join(dir, "choro.musicxml")
+    capture_io(fn -> Export.run(["examples/choro.exs", "--out", out]) end)
+    assert File.read!(out) =~ "<key><fifths>1</fifths><mode>major</mode></key>"
+  end
+
   test "names the parts it leaves out", %{tmp_dir: dir} do
     song = Path.join(dir, "beat.exs")
 
