@@ -272,6 +272,22 @@ All of them, in alphabetical order:
 accordion, acid, bandolim, bassoon, berimbau, brass, cabasa, cajon, cavaquinho, caxixi, cello, clap, clarinet, clave, closed_hihat, cowbell, crash, cross_stick, cuica, deep_bass, double_bass, electric_bass, electric_guitar, electric_piano, flute, flute_figured, fm, ganza, glockenspiel, guiro, guitar, harmonium, harp, high_agogo, high_bongo, high_conga, high_timbale, high_tom, horn, kick, low_agogo, low_bongo, low_conga, low_timbale, low_tom, marimba, mid_conga, mid_tom, noise, oboe, open_hihat, organ, pandeiro, pandeiro_heel, pandeiro_jingles, pandeiro_slap, pandeiro_thumb, pedal_hihat, piano, pluck, pulse, ride, rimshot, saw, shaker, sitar, snare, square, supersaw, surdo, tabla, tabla_ghe, tabla_ke, tabla_na, tabla_tas, tabla_te, tabla_tun, tamborim, tambourine, tambourine_shake, tanpura, tenor_sax, timbale_shell, timpani, tri, triangle, trombone, trumpet, tuba, vibraphone, viola, violin, xylophone.
 
 They are mx's own designs, in mxs's `src/synths`.
+
+Each synth belongs to one family, and each pitched one is meant for a range of notes:
+
+- keys: piano, electric_piano, organ, harmonium, accordion
+- plucked strings: guitar, electric_guitar, electric_bass, bandolim, cavaquinho, harp, sitar, pluck, tanpura, berimbau
+- bowed strings: violin, viola, cello, double_bass
+- winds: flute, oboe, clarinet, bassoon, tenor_sax, trumpet, trombone, horn, tuba, brass, flute_figured
+- mallets: marimba, vibraphone, xylophone, glockenspiel, timpani
+- synths: tri, saw, square, pulse, supersaw, fm, acid, deep_bass, noise
+- drums: every other synth
+
+`Mx.Synths.family(:flute)` gives `:winds`, and `Mx.Synths.range(:flute)` gives `{59, 97}`, the MIDI notes from B3 to D♭7 that its recordings run over.
+A synth fitted to recordings is meant for the notes it was fitted to, or further where its section below says so, as the piano's A0 to C8.
+A synth with no range of its own, such as `saw` or a drum, gives nil, as do the cavaquinho, bandolim, sitar, tanpura, organ, harmonium, accordion, pluck and brass for now.
+A note outside its synth's range still plays.
+mxs's catalog of the synths gives each one's family and range.
 mx ships none of Sonic Pi's synths, its sc808 drum kit or its effects.
 
 mx's own synths take `note`, `amp`, `pan`, `attack`, `decay`, `sustain`, `release`, `attack_level`, `decay_level` and `sustain_level`, and slides for `note`, `amp` and `pan`.

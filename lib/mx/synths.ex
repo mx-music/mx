@@ -48,6 +48,19 @@ defmodule Mx.Synths do
     if Map.has_key?(Map.get(catalog(), to_string(synth), %{}), name), do: String.to_atom(name)
   end
 
+  @doc "The family a synth belongs to: `:keys`, `:plucked_strings`, `:bowed_strings`, `:winds`, `:mallets`, `:synths` or `:drums`."
+  def family(synth) when is_atom(synth) or is_binary(synth) do
+    families() |> Map.fetch!(to_string(synth)) |> elem(0)
+  end
+
+  @doc """
+  The lowest and highest MIDI notes a synth is meant to play, as `{low, high}`, or nil for a synth with no range of its own, such as `saw` or a drum.
+  A note outside the range still plays.
+  """
+  def range(synth) when is_atom(synth) or is_binary(synth) do
+    families() |> Map.fetch!(to_string(synth)) |> elem(1)
+  end
+
   @doc "Every synth a loop can play, by name."
   def synths, do: catalog() |> Map.keys() |> Enum.filter(&exists?/1)
 
@@ -201,10 +214,20 @@ defmodule Mx.Synths do
     :persistent_term.erase(__MODULE__)
     :persistent_term.erase({__MODULE__, :limits})
     :persistent_term.erase({__MODULE__, :beats})
+    :persistent_term.erase({__MODULE__, :families})
   end
 
   defp limits, do: cached(:limits, &Mxs.limits/0)
   defp beats, do: cached(:beats, &Mxs.beats/0)
+
+  defp families do
+    cached(:families, fn ->
+      Map.new(Mx.Engine.Mxs.Native.families(), fn {name, family, range} ->
+        range = with {low, high} <- range, do: {trunc(low), trunc(high)}
+        {name, {String.to_atom(family), range}}
+      end)
+    end)
+  end
 
   defp cached(key, read) do
     case :persistent_term.get({__MODULE__, key}, nil) do

@@ -33,6 +33,9 @@ defmodule Mx.Engine.Mxs.Native do
   @doc "Every synth's options, and those every note, sample, effect and live input takes, as `{synths, note, sample, effects, effect, input}`."
   def catalog, do: :erlang.nif_error(:nif_not_loaded)
 
+  @doc "Each synth's family and the lowest and highest notes it is meant to play, as `{name, family, range}`, the family a string such as \"plucked_strings\" and the range nil when the synth has none."
+  def families, do: :erlang.nif_error(:nif_not_loaded)
+
   @doc "The seconds the engine has played so far."
   def now(_engine), do: :erlang.nif_error(:nif_not_loaded)
 

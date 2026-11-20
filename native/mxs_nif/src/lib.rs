@@ -102,6 +102,12 @@ fn devices() -> Result<Vec<(String, bool, bool, Vec<u16>, Vec<(u32, u32)>, Optio
         .collect())
 }
 
+/// Each synth's family, such as `winds`, and the lowest and highest notes it is meant to play, or nil when it has no range, as `{name, family, range}`.
+#[rustler::nif]
+fn families() -> Vec<(String, String, Option<(f64, f64)>)> {
+    engine().synths().map(|s| (s.name().to_string(), s.family().name().replace(' ', "_"), s.range())).collect()
+}
+
 /// Every synth's options, and those every note, sample, effect and live input takes, as `{synths, note, sample, effects, effect, input}`.
 #[rustler::nif]
 #[allow(clippy::type_complexity)]
