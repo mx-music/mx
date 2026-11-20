@@ -59,16 +59,15 @@ defmodule Mx.Engine.Mxs do
     end)
   end
 
-  # Each entry's own options, then those every note, sample or effect takes, which win over its
-  # own.
+  # Each entry's own options, then those every note or effect takes, which win over its own.
   defp entries do
-    {_synths, note, sample, effects, effect} = Native.catalog()
+    {_synths, note, sample, effects, effect, input} = Native.catalog()
 
     synths = for {name, specs} <- synth_specs(), do: {name, specs ++ note}
 
     synths ++
-      [{"mono_player", sample ++ note}, {"stereo_player", sample ++ note}] ++
-      [{"live_audio_mono", note}, {"live_audio_stereo", note}] ++
+      [{"mono_player", sample}, {"stereo_player", sample}] ++
+      [{"live_audio_mono", input}, {"live_audio_stereo", input}] ++
       for {name, specs} <- effects ++ effect_specs(), do: {"fx_" <> name, specs ++ effect}
   end
 
@@ -96,7 +95,7 @@ defmodule Mx.Engine.Mxs do
   end
 
   defp synth_specs do
-    {synths, _note, _sample, _effects, _effect} = Native.catalog()
+    {synths, _note, _sample, _effects, _effect, _input} = Native.catalog()
 
     synths ++
       for module <- Mx.Instrument.modules(),

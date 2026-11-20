@@ -46,6 +46,18 @@ defmodule Mx.Engine.MxsTest do
       assert Synths.option?(:stereo_player, :rate)
     end
 
+    test "every synth's notes take bend, brightness and pressure, while the players and live audio take amp and pan alone" do
+      for synth <- [:piano, :berimbau, :saw], option <- [:bend, :brightness, :pressure] do
+        assert Synths.option?(synth, option), "#{synth} #{option}"
+      end
+
+      for player <- [:mono_player, :stereo_player, :live_audio_mono, :live_audio_stereo] do
+        assert Synths.option?(player, :amp)
+        assert Synths.option?(player, :pan)
+        refute Synths.option?(player, :bend), "#{player}"
+      end
+    end
+
     @tag :tmp_dir
     test "a song that gives a synth an option it does not declare fails when it loads", ctx do
       path = Path.join(ctx.tmp_dir, "song.exs")

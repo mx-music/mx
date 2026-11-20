@@ -101,15 +101,15 @@ fn devices() -> Result<Vec<(String, bool, bool, Vec<u16>, Vec<(u32, u32)>, Optio
         .collect())
 }
 
-/// Every synth's options, and those every note, sample and effect takes, as `{synths, note, sample, effects, effect}`.
+/// Every synth's options, and those every note, sample, effect and live input takes, as `{synths, note, sample, effects, effect, input}`.
 #[rustler::nif]
 #[allow(clippy::type_complexity)]
-fn catalog() -> (Vec<(String, Vec<SpecTerm>)>, Vec<SpecTerm>, Vec<SpecTerm>, Vec<(String, Vec<SpecTerm>)>, Vec<SpecTerm>) {
+fn catalog() -> (Vec<(String, Vec<SpecTerm>)>, Vec<SpecTerm>, Vec<SpecTerm>, Vec<(String, Vec<SpecTerm>)>, Vec<SpecTerm>, Vec<SpecTerm>) {
     let engine = engine();
     let synths = engine.synths().map(|s| (s.name().to_string(), s.specs().iter().map(spec_term).collect())).collect();
     let effects = engine.effects().map(|e| (e.name().to_string(), e.specs().iter().map(spec_term).collect())).collect();
     let terms = |specs: Vec<Spec>| specs.iter().map(spec_term).collect();
-    (synths, terms(engine.note_specs()), terms(engine.sample_specs()), effects, terms(engine.effect_specs()))
+    (synths, terms(engine.note_specs()), terms(engine.sample_specs()), effects, terms(engine.effect_specs()), terms(engine.input_specs()))
 }
 
 fn spec_term(spec: &Spec) -> SpecTerm {

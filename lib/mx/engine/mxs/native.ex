@@ -30,7 +30,7 @@ defmodule Mx.Engine.Mxs.Native do
   @doc "Each output and input device as `{name, output?, default?, channels, rates, buffers}`, `rates` as lowest and highest pairs, and `buffers` a fewest and most, or nil when the device does not say."
   def devices, do: :erlang.nif_error(:nif_not_loaded)
 
-  @doc "Every synth's options, and those every note, sample and effect takes, as `{synths, note, sample, effects, effect}`."
+  @doc "Every synth's options, and those every note, sample, effect and live input takes, as `{synths, note, sample, effects, effect, input}`."
   def catalog, do: :erlang.nif_error(:nif_not_loaded)
 
   @doc "The seconds the engine has played so far."
