@@ -109,6 +109,9 @@ defmodule Mx.Engine.Mxs.Native do
   @doc "Notes made with partials known exactly, measured as a recording of a struck note is, as `mx measure --known` prints them."
   def measure_known, do: :erlang.nif_error(:nif_not_loaded)
 
+  @doc "The seconds each effect of a chain, as `start_effects/2` takes them, sounds on after its input stops, with the options declared in beats in beats at `bpm` when given, or `{:error, message}`."
+  def effect_tails(_effects, _bpm), do: :erlang.nif_error(:nif_not_loaded)
+
   @doc "The notes of a recording's data that holds one of `notes`, MIDI note numbers, or a run of them, as `Mx.Fit.Struck` splits them."
   def split_struck(_data, _format, _rate, _notes, _held), do: :erlang.nif_error(:nif_not_loaded)
 

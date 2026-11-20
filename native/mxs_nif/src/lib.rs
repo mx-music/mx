@@ -112,6 +112,13 @@ fn catalog() -> (Vec<(String, Vec<SpecTerm>)>, Vec<SpecTerm>, Vec<SpecTerm>, Vec
     (synths, terms(engine.note_specs()), terms(engine.sample_specs()), effects, terms(engine.effect_specs()), terms(engine.input_specs()))
 }
 
+/// The seconds each of `effects`, as `start_effects` takes them, sounds on after its input stops, with the options declared in beats in beats at `bpm` when given.
+#[rustler::nif]
+fn effect_tails(effects: Vec<(String, Term)>, bpm: Option<f64>) -> NifResult<Result<Vec<f64>, String>> {
+    let effects = effects.into_iter().map(|(name, opts)| Ok((name, options(opts)?))).collect::<NifResult<Vec<_>>>()?;
+    Ok(engine().effect_tails(&effects, bpm).map_err(|e| e.to_string()))
+}
+
 fn spec_term(spec: &Spec) -> SpecTerm {
     let (kind, values) = match &spec.kind {
         Kind::Note => ("note", vec![]),

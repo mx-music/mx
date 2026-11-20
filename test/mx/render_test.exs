@@ -140,7 +140,9 @@ defmodule Mx.RenderTest do
     assert Enum.all?(lines, &(elem(&1, 1) == 148.0))
     assert rendered == Enum.sort(rendered)
     assert_in_delta length(lines), micros / 250_000, micros / 1_000_000 + 2
-    assert output =~ ~r/^rendered 148\.0 of 148\.0 seconds\nRecorded \d+\.\d seconds to /m
+
+    assert output =~
+             ~r/^rendered 148\.0 of 148\.0 seconds\nthe render ends as the last notes fade, cutting short the reverb of part flute, which rings 5\.5 seconds on; --ring-out keeps it\nRecorded \d+\.\d seconds to /m
   end
 
   test "a song that ends renders as many seconds as its music, at its share of the tempo",
@@ -173,9 +175,17 @@ defmodule Mx.RenderTest do
     {:ok, _output} = render(path, left_out, ring_out: false)
     assert_in_delta Recording.seconds(left_out), 4.0, 0.001
 
+    as_ever = Path.join(dir, "as_ever.wav")
+    {:ok, output} = render(path, as_ever)
+    assert Recording.seconds(as_ever) > 4.25
+
+    assert output =~
+             "the render ends as the last notes fade, cutting short the reverb of part a, which rings 5.5 seconds on; --ring-out keeps it\n"
+
     kept = Path.join(dir, "kept.wav")
-    {:ok, _output} = render(path, kept)
-    assert Recording.seconds(kept) > 4.25
+    {:ok, output} = render(path, kept, ring_out: true)
+    assert_in_delta Recording.seconds(kept), Recording.seconds(as_ever) + 5.5, 0.011
+    refute output =~ "cutting short"
 
     assert {{:error, "--ring-out takes true or false, not 1"}, ""} =
              render(path, Path.join(dir, "bad.wav"), ring_out: 1)
@@ -185,6 +195,29 @@ defmodule Mx.RenderTest do
     assert_in_delta Recording.seconds(left_out), 4.0, 0.001
 
     assert Player.play(path, ring_out: false) == {:error, "--ring-out goes with --render"}
+  end
+
+  test "says how long choro's effects ring once its notes have faded, and which part's effect rings longest" do
+    {:ok, song} = Mx.Song.load("examples/choro.exs")
+
+    assert Render.ring_out(song, seconds: 148) ==
+             {:ok, %{seconds: 5.5, part: :flute, effect: :reverb}}
+  end
+
+  test "an echo given in beats rings for those beats at the tempo the music ends at, and a song with no effects rings for none",
+       %{tmp_dir: dir} do
+    path =
+      write(dir, "song.exs", """
+      song(tempo: 120, music: part(:a, seq(c4: 4), synth: :fm, fx: [echo: [decay: 4]]))
+      """)
+
+    {:ok, song} = Mx.Song.load(path)
+    assert Render.ring_out(song) == {:ok, %{seconds: 2.0, part: :a, effect: :echo}}
+    assert Render.ring_out(song, share: 0.5) == {:ok, %{seconds: 4.0, part: :a, effect: :echo}}
+
+    path = write(dir, "dry.exs", "song(tempo: 120, music: part(:a, seq(c4: 4), synth: :fm))\n")
+    {:ok, song} = Mx.Song.load(path)
+    assert Render.ring_out(song) == {:ok, nil}
   end
 
   test "a file that exists is refused unless forced", %{tmp_dir: dir} do

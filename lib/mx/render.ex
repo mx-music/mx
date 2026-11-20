@@ -6,6 +6,8 @@ defmodule Mx.Render do
   At each step every loop is ticked in turn by name and waited for, so its passes reach the engine in the same order on every run, and the engine renders up to that time.
   The render starts at the song's first beat, and ends once its music has ended or `seconds:` have passed, and the notes still sounding have faded, for four seconds at most.
   With `ring_out: false` it leaves that ring out, so the file ends where the music ends.
+  With `ring_out: true` it keeps the ring for as long as the effects ring after those notes have faded, as `ring_out/2` gives it.
+  Without `ring_out:` the render ends as those notes fade, and says which part's effect it cuts short and how long it would ring.
   MIDI and OSC are not sent, and a loop that waits for input plays nothing; each part left out is named once, a part that sends MIDI or OSC the first time it does.
 
   While it renders it prints a line such as `rendered 37.5 of 148.2 seconds` about four times a second, and once more when the music has rendered, giving the seconds of music rendered and the seconds it renders in all, until the music ends or for `seconds:`, the fade after it left out.
@@ -23,7 +25,7 @@ defmodule Mx.Render do
   def render(path, out, opts) when is_binary(path) and is_binary(out) and is_list(opts) do
     seconds = opts[:seconds]
     share = Keyword.get(opts, :share, 1)
-    ring_out = Keyword.get(opts, :ring_out, true)
+    ring_out = opts[:ring_out]
 
     with :ok <- Band.check_share(share),
          :ok <- check_ring_out(ring_out),
@@ -32,10 +34,12 @@ defmodule Mx.Render do
          {:ok, song} <- load(path, opts),
          :ok <- check(song, seconds),
          playing = %{song | loops: Enum.filter(song.loops, &(&1.on == nil))},
-         {:ok, total} <- total(playing, seconds, share) do
+         {:ok, total} <- total(playing, seconds, share),
+         {:ok, ring} <- ring(playing, seconds, share) do
       Enum.each(left_out(song), &IO.puts/1)
       follow = List.wrap(opts[:follow])
-      run(playing, out, seconds, follow, share, total, ring_out)
+      run(playing, out, seconds, follow, share, total, {ring_out, ring})
+      if ring_out == nil and ring, do: IO.puts(cut_short(ring))
       Enum.each(Recording.report(out), &IO.puts/1)
     end
   end
@@ -50,6 +54,69 @@ defmodule Mx.Render do
       end
     else
       Song.load(path)
+    end
+  end
+
+  @doc """
+  How long a song's effects ring once its notes have faded, rendered for `seconds:` and at `share:` of its tempo as `render/3` takes them, as `{:ok, %{seconds: seconds, part: part, effect: effect}}` naming the part whose effects ring longest and the effect of it that rings longest, `{:ok, nil}` when no effect rings, or `{:error, message}`.
+
+  A part's effects ring for as long as each of them rings in turn, from its options, and an option given in beats lasts those beats at the tempo the music ends at.
+  """
+  def ring_out(%Song{} = song, opts \\ []) when is_list(opts) do
+    playing = %{song | loops: Enum.filter(song.loops, &(&1.on == nil))}
+    ring(playing, opts[:seconds], Keyword.get(opts, :share, 1))
+  end
+
+  defp ring(song, seconds, share) do
+    with {:ok, bpm} <- end_tempo(song, seconds) do
+      song.loops
+      |> map_ok(fn loop ->
+        with {:ok, tails} <- Mxs.effect_tails(loop.fx, bpm * share) do
+          rings = Enum.zip(Keyword.keys(loop.fx), tails)
+          {:ok, {loop.name, Enum.sum(tails), rings}}
+        end
+      end)
+      |> longest_ring()
+    end
+  end
+
+  defp longest_ring({:ok, rings}) do
+    case Enum.filter(rings, fn {_part, seconds, _rings} -> seconds > 0 end) do
+      [] ->
+        {:ok, nil}
+
+      ringing ->
+        {part, seconds, rings} = Enum.max_by(ringing, &elem(&1, 1), fn -> nil end)
+        {effect, _tail} = Enum.max_by(rings, &elem(&1, 1))
+        {:ok, %{seconds: seconds, part: part, effect: effect}}
+    end
+  end
+
+  defp longest_ring(error), do: error
+
+  defp cut_short(%{seconds: seconds, part: part, effect: effect}) do
+    seconds = :erlang.float_to_binary(seconds / 1, decimals: 1)
+
+    "the render ends as the last notes fade, cutting short the #{effect} of part #{part}, which rings #{seconds} seconds on; --ring-out keeps it"
+  end
+
+  # The tempo the music ends at: the song's own, or where the loop that ends last ends.
+  defp end_tempo(%Song{tempos: nil} = song, _seconds), do: {:ok, song.tempo}
+
+  defp end_tempo(song, seconds) do
+    ending = Enum.filter(song.loops, &(&1.passes != nil))
+
+    with {:ok, ends} <- map_ok(ending, &ends(&1, song)) do
+      case {ends, seconds} do
+        {[], _seconds} ->
+          {:ok, song.tempo}
+
+        {_ends, seconds} when seconds != nil and length(ending) < length(song.loops) ->
+          {:ok, song.tempo}
+
+        _ending ->
+          {:ok, ends |> Enum.max_by(&elem(&1, 0)) |> elem(1)}
+      end
     end
   end
 
@@ -69,7 +136,7 @@ defmodule Mx.Render do
   defp check(_song, seconds) when is_number(seconds) and seconds > 0, do: :ok
   defp check(_song, seconds), do: {:error, "--seconds takes a length above 0, not #{seconds}"}
 
-  defp check_ring_out(ring_out) when is_boolean(ring_out), do: :ok
+  defp check_ring_out(ring_out) when is_boolean(ring_out) or is_nil(ring_out), do: :ok
 
   defp check_ring_out(ring_out) do
     ring_out = inspect(ring_out)
@@ -83,12 +150,12 @@ defmodule Mx.Render do
     endless? = length(ending) < length(song.loops)
 
     with {:ok, ends} <- map_ok(ending, &ends(&1, song)) do
-      music = Enum.max(ends, fn -> 0 end) / share
+      music = ends |> Enum.map(&elem(&1, 0)) |> Enum.max(fn -> 0 end) |> Kernel./(share)
       {:ok, if(endless?, do: seconds, else: min(music, seconds || music))}
     end
   end
 
-  # The seconds at which a loop's last pass ends, at the song's own tempo.
+  # The seconds at which a loop's last pass ends, at the song's own tempo, and the tempo then.
   defp ends(loop, song) do
     sections = loop.music.sections
     window = elem(sections, tuple_size(sections) - 1).beats
@@ -103,7 +170,7 @@ defmodule Mx.Render do
 
     with {:ok, beats} <- played do
       {timeline, _start} = Tempo.through(song.tempos, song.tempo, max(loop.passes - 1, 0), window)
-      {:ok, Tempo.time_at(timeline, beats) / 1_000_000}
+      {:ok, {Tempo.time_at(timeline, beats) / 1_000_000, Tempo.tempo_at(timeline, beats)}}
     end
   end
 
@@ -129,7 +196,7 @@ defmodule Mx.Render do
   # Every render starts at the same time, so each beat's time rounds the same way on every run.
   @start_us 0
 
-  defp run(song, out, seconds, follow, share, total, ring_out) do
+  defp run(song, out, seconds, follow, share, total, {ring_out, ring}) do
     start_us = @start_us
     Clock.start_render(start_us)
     Process.flag(:trap_exit, true)
@@ -171,9 +238,18 @@ defmodule Mx.Render do
       cut(band, last_us - @step_us + @ahead_us)
       GenServer.stop(band)
 
-      if ring_out,
-        do: fade(last_us, last_us + @fade_us),
-        else: Mxs.render_to(start_us + round(total * 1_000_000))
+      case {ring_out, ring} do
+        {false, _ring} ->
+          Mxs.render_to(start_us + round(total * 1_000_000))
+
+        {true, %{seconds: seconds}} ->
+          faded_us = fade(last_us, last_us + @fade_us)
+          Clock.advance(faded_us + round(seconds * 1_000_000))
+          Mxs.render_to(faded_us + round(seconds * 1_000_000))
+
+        _as_ever ->
+          fade(last_us, last_us + @fade_us)
+      end
 
       GenServer.stop(inputs)
       GenServer.stop(engine)
@@ -269,6 +345,6 @@ defmodule Mx.Render do
     now_us = now_us + @step_us
     Clock.advance(now_us)
 
-    if Mxs.render_to(now_us) and now_us < until_us, do: fade(now_us, until_us), else: :ok
+    if Mxs.render_to(now_us) and now_us < until_us, do: fade(now_us, until_us), else: now_us
   end
 end

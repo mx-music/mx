@@ -22,6 +22,7 @@
   * [mx] `Mx.Score.about/1` says what a score or a MIDI file holds besides its notes: a score's meter as written, key, tempo marking, upbeat, bars, staves and marks such as a segno or "Fine", and a MIDI file's tracks, tracks with notes, ticks to a quarter note, meter, key and each tempo with its bar
   * [mx] `mx play` plays or renders a score, a MIDI file or an ABC tune as the song `mx import` would write, without writing it, and `Mx.Import.load/2` gives that song to a session
   * [mx] `mx play --render` takes `--no-ring-out`, which ends the file where the music ends
+  * [mx] A render says which part's effect it cuts short as the last notes fade, `--ring-out` keeps that ring, and `Mx.Render.ring_out/2` says how long it lasts before a render starts
   * [mx] `mix mx.measure --hits` splits a file of several hits given its first note into the notes of its run, as `mix mx.fit` does, names each hit by its note, and with `--synth` renders the synth at each of them
   * [mx] A sampled instrument of a list of files is named by the folder its files share, and the page data names a part that plays only samples by its samples
 

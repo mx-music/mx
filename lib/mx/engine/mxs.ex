@@ -284,6 +284,12 @@ defmodule Mx.Engine.Mxs do
     end
   end
 
+  @doc "The seconds each of a part's effects sounds on after its input stops, with the options declared in beats in beats at `bpm`, or `{:error, message}`; it needs no engine started."
+  def effect_tails(effects, bpm) when is_list(effects) and is_number(bpm) do
+    effects = for {effect, opts} <- effects, do: {Atom.to_string(effect), options(opts)}
+    Native.effect_tails(effects, bpm / 1)
+  end
+
   @doc """
   Starts the part `name` with a part's effects, none for a part without any, and returns the chain its notes play into, as `start_fx/1` does.
 
