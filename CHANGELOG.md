@@ -26,6 +26,9 @@
   * [mx] A render says which part's effect it cuts short as the last notes fade, `--ring-out` keeps that ring, and `Mx.Render.ring_out/2` says how long it lasts before a render starts
   * [mx] `mix mx.measure --hits` splits a file of several hits given its first note into the notes of its run, as `mix mx.fit` does, names each hit by its note, and with `--synth` renders the synth at each of them
   * [mx] A sampled instrument of a list of files is named by the folder its files share, and the page data names a part that plays only samples by its samples
+  * [Mx.Synths] `family/1` and `range/1` give each synth's family, such as `:winds`, and the lowest and highest notes it is meant to play, from mxs 0.3.0
+  * [mx] `song/1` and `use Mx.Song` take `key:`, such as `:em`, which the page data holds and `mix mx.export` writes the score in when `--key` is not given
+  * [mx] The Hex package holds THIRD_PARTY_NOTICES.md, the Rust crates built into mxs_nif and the Elixir packages mx runs with, each with its version and licence, and the licence texts; each release attaches it too
 
 ## v0.2.2 (2026-11-16)
 
