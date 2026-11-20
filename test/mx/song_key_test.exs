@@ -32,9 +32,4 @@ defmodule Mx.SongKeyTest do
 
     assert message =~ "song takes key: as a key such as :d, :bm or :fsm, not :h"
   end
-
-  test "choro states the key it starts in, G major" do
-    {:ok, song} = Mx.Song.load("examples/choro.exs")
-    assert song.key == :g
-  end
 end

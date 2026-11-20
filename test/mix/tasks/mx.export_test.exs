@@ -95,12 +95,6 @@ defmodule Mix.Tasks.Mx.ExportTest do
     assert [<<1, 1>>] = for({_, {:meta, 0x59, key}} <- hd(midi.tracks), do: key)
   end
 
-  test "choro writes its score with one sharp without a key given", %{tmp_dir: dir} do
-    out = Path.join(dir, "choro.musicxml")
-    capture_io(fn -> Export.run(["examples/choro.exs", "--out", out]) end)
-    assert File.read!(out) =~ "<key><fifths>1</fifths><mode>major</mode></key>"
-  end
-
   test "names the parts it leaves out", %{tmp_dir: dir} do
     song = Path.join(dir, "beat.exs")
 

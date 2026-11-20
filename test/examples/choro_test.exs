@@ -60,6 +60,18 @@ defmodule Mx.Examples.ChoroTest do
     assert notes(before(loop_part(print(7), "clarinet"), 30)) == flute
   end
 
+  test "choro states the key it starts in, G major" do
+    {:ok, song} = Mx.Song.load(@song)
+    assert song.key == :g
+  end
+
+  @tag :tmp_dir
+  test "choro writes its score with one sharp without a key given", %{tmp_dir: dir} do
+    out = Path.join(dir, "choro.musicxml")
+    capture_io(fn -> Mix.Tasks.Mx.Export.run([@song, "--out", out]) end)
+    assert File.read!(out) =~ "<key><fifths>1</fifths><mode>major</mode></key>"
+  end
+
   test "the examples guide points to the demo" do
     assert File.read!("documentation/examples.md") =~ "examples/choro.exs"
   end
