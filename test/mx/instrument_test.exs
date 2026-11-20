@@ -136,4 +136,30 @@ defmodule Mx.InstrumentTest do
     [{module, _}] = Code.compile_string(source, "chime.exs")
     assert peak(render(module, :chime, note: 72)) > 0.01
   end
+
+  test "a synth saturates, clips and folds its sound, filters it through a ladder, and takes its offset away below hz" do
+    source = """
+    defmodule Mx.InstrumentTest.Grit do
+      use Mx.Instrument
+
+      attr :note, :note, default: 45
+      defsynth saturated(hit), do: saw(hz: hz(hit.note)) |> saturate(drive: 24, level: 0.5) |> through()
+      attr :note, :note, default: 45
+      defsynth clipped(hit), do: saw(hz: hz(hit.note)) |> clip(drive: 12, level: 0.5) |> through()
+      attr :note, :note, default: 45
+      defsynth folded(hit), do: saw(hz: hz(hit.note)) |> fold(drive: 12, level: 0.5) |> through()
+
+      defp through(sound) do
+        sound |> ladder(hz: 800, resonance: 0.6) |> dc_block(hz: 20) |> rings(seconds: 1)
+      end
+    end
+    """
+
+    [{module, _}] = Code.compile_string(source, "grit.exs")
+
+    for synth <- [:saturated, :clipped, :folded] do
+      level = peak(render(module, synth, note: 45))
+      assert level > 0.01 and level < 1, "#{synth} peaks at #{level}"
+    end
+  end
 end

@@ -73,7 +73,8 @@ defmodule Mx.Instrument.Vocabulary do
 
   Numbers: `hz/1`, `db/1`, `log2/1`, `exp/1`, `sin/1`, `cos/1`, `clamp/3` and `select/3`, worked out at once on numbers and when the note starts on its options.
   Sources: `impulse/0`, `follow/1`, `time/0`, `sine/1`, `vibrato/1`, `partials/2`, `bowed_string/1`, `air_jet/1`, `saw/1`, `square/1`, `triangle/1`, `pulse/1` and `noise/1`.
-  Filters: `lowpass/2`, `highpass/2` and `bandpass/2`, at `hz:` with `q:` and `poles:`, `lowshelf/2`, `highshelf/2` and `peak/2`, at `hz:` with `q:` and `db:`, `mode/2`, a resonator struck by its input at `hz:`, ringing at `level:` and fading 60 dB over `fade:` seconds, `wind_bands/2`, `delay/2`, and `dc_block/1`.
+  Filters: `lowpass/2`, `highpass/2` and `bandpass/2`, at `hz:` with `q:`, either of which may change as the note sounds, and `poles:`, `ladder/2`, a four-pole resonant lowpass at `hz:` with `resonance:` from 0 to 1, where it rings on at `hz:`, `lowshelf/2`, `highshelf/2` and `peak/2`, at `hz:` with `q:` and `db:`, `mode/2`, a resonator struck by its input at `hz:`, ringing at `level:` and fading 60 dB over `fade:` seconds, `wind_bands/2`, `delay/2`, and `dc_block/1` and `dc_block/2`, which take away any offset below `hz:`, 10 unless given.
+  Distortion: `saturate/2` rounds a sound off towards `level:`, `clip/2` cuts it off at `level:`, and `fold/2` folds it back at `level:`, each after a `drive:` in dB, worked out at twice the engine's rate.
   Shapes: `envelope/1` and `perc/1` are levels over time, and `envelope/2` and `perc/2` scale a sound by them.
   Mixing: `mix/1` adds a list of sounds, and `gain/2` scales one.
   A synth ends with `note_envelope/2`, shaping its sound by the note's envelope, or `rings/2`, ending it after `seconds:`.
@@ -158,8 +159,20 @@ defmodule Mx.Instrument.Vocabulary do
   @doc "A sound delayed by `seconds:`, which may change as it plays, up to `max:`."
   def delay(sound, opts), do: Expr.call(:delay, [sound], opts)
 
-  @doc "A sound with any constant offset taken out."
-  def dc_block(sound), do: Expr.call(:dc_block, [sound])
+  @doc "A sound with any constant offset below `hz:`, 10 unless given, taken out."
+  def dc_block(sound, opts \\ []), do: Expr.call(:dc_block, [sound], opts)
+
+  @doc "A sound through a four-pole resonant lowpass at `hz:`, with `resonance:` from 0 to 1, where it rings on at `hz:` once set ringing."
+  def ladder(sound, opts), do: Expr.call(:ladder, [sound], opts)
+
+  for {shaper, does} <- [
+        saturate: "rounded off smoothly towards `level:`, which it never passes",
+        clip: "cut off at `level:` either side of 0",
+        fold: "folded back each time it passes `level:` either side of 0"
+      ] do
+    @doc "A sound driven by `drive:` in dB, 0 unless given, and #{does}, 1 unless given."
+    def unquote(shaper)(sound, opts), do: Expr.call(unquote(shaper), [sound], opts)
+  end
 
   @doc "Segments from silence through each point, `{seconds, level}` straight, `{seconds, level, curve}` bent, or `{seconds, level, :exp}` exponential."
   def envelope(points), do: Expr.call(:envelope, [points])
