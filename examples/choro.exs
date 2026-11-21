@@ -40,15 +40,13 @@ defmodule Choro do
 
   # Each pass plays one strain of sixteen bars, in the order of the form.
   def song do
-    sections = for {section, count} <- [a: 2, b: 2, a: 1, c: 2, a: 1], _ <- 1..count, do: section
-
-    strains =
-      sections
-      |> Enum.zip(tl(sections) ++ [hd(sections)])
-      |> Enum.with_index()
-      |> Enum.map(fn {{section, coming}, pass} -> strain(pass, section, coming) end)
-
-    repeat(seq(strains))
+    repeat(
+      form(
+        [a: 2, b: 2, a: 1, c: 2, a: 1],
+        fn section, %{pass: pass, coming: coming} -> strain(pass, section, coming) end,
+        round: true
+      )
+    )
   end
 
   # A strain, given its pass of the form and the strain that follows.

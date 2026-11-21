@@ -10,17 +10,12 @@ defmodule Tuba do
   part :tuba, synth: :tuba
 
   def song do
-    repeat(seq(form()))
+    repeat(form())
   end
 
   # The form, each of its passes a section.
   defp form do
-    sections =
-      for {section, count} <- [oompah: 1, walking: 1, melody: 1, extremes: 1, ending: 1],
-          _ <- 1..count,
-          do: section
-
-    Enum.with_index(sections, fn section, pass ->
+    form([oompah: 1, walking: 1, melody: 1, extremes: 1, ending: 1], fn section, %{pass: pass} ->
       part(:tuba, tuba(section, pass))
     end)
   end

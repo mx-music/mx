@@ -10,17 +10,12 @@ defmodule Bassoon do
   part :bassoon, synth: :bassoon
 
   def song do
-    repeat(seq(form()))
+    repeat(form())
   end
 
   # The form, each of its passes a section.
   defp form do
-    sections =
-      for {section, count} <- [tenor: 1, bass: 1, detached: 2, ending: 1],
-          _ <- 1..count,
-          do: section
-
-    Enum.with_index(sections, fn section, pass ->
+    form([tenor: 1, bass: 1, detached: 2, ending: 1], fn section, %{pass: pass} ->
       part(:bassoon, bassoon(section, pass))
     end)
   end

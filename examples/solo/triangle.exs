@@ -15,17 +15,12 @@ defmodule Triangle do
   part :triangle, synth: :triangle, defaults: [amp: 0.5]
 
   def song do
-    repeat(seq(form()))
+    repeat(form())
   end
 
   # The form, each of its passes a section.
   defp form do
-    sections =
-      for {section, count} <- [ringing: 2, damped: 1, roll: 1, baiao: 3, ending: 1],
-          _ <- 1..count,
-          do: section
-
-    Enum.with_index(sections, fn section, pass ->
+    form([ringing: 2, damped: 1, roll: 1, baiao: 3, ending: 1], fn section, %{pass: pass} ->
       part(:triangle, triangle(section, pass))
     end)
   end

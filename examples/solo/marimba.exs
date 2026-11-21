@@ -9,17 +9,12 @@ defmodule Marimba do
   part :marimba, synth: :marimba
 
   def song do
-    repeat(seq(form()))
+    repeat(form())
   end
 
   # The form, each of its passes a section.
   defp form do
-    sections =
-      for {section, count} <- [sweep: 1, melody: 2, low_high: 1, ending: 1],
-          _ <- 1..count,
-          do: section
-
-    Enum.with_index(sections, fn section, pass ->
+    form([sweep: 1, melody: 2, low_high: 1, ending: 1], fn section, %{pass: pass} ->
       part(:marimba, marimba(section, pass))
     end)
   end

@@ -10,14 +10,12 @@ defmodule DoubleBass do
   part :double_bass, synth: :double_bass
 
   def song do
-    repeat(seq(form()))
+    repeat(form())
   end
 
   # The form, each of its passes a section.
   defp form do
-    sections = for {section, count} <- [walk: 3, bowed: 1, ending: 1], _ <- 1..count, do: section
-
-    Enum.with_index(sections, fn section, pass ->
+    form([walk: 3, bowed: 1, ending: 1], fn section, %{pass: pass} ->
       part(:double_bass, double_bass(section, pass))
     end)
   end

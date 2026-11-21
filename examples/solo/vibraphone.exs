@@ -9,17 +9,12 @@ defmodule Vibraphone do
   part :vibraphone, synth: :vibraphone
 
   def song do
-    repeat(seq(form()))
+    repeat(form())
   end
 
   # The form, each of its passes a section.
   defp form do
-    sections =
-      for {section, count} <- [chords: 1, motor: 1, damped: 2, ending: 1],
-          _ <- 1..count,
-          do: section
-
-    Enum.with_index(sections, fn section, pass ->
+    form([chords: 1, motor: 1, damped: 2, ending: 1], fn section, %{pass: pass} ->
       part(:vibraphone, vibraphone(section, pass))
     end)
   end

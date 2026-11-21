@@ -10,31 +10,29 @@ defmodule Agogo do
   part :high_agogo, synth: :high_agogo
 
   def song do
-    repeat(seq(form()))
+    repeat(form())
   end
 
   # The form, each of its passes a section.
   defp form do
-    sections =
-      for {section, count} <- [
-            samba: 4,
-            partido: 4,
-            maracatu: 4,
-            accents: 2,
-            one: 2,
-            two: 2,
-            three: 2,
-            four: 2
-          ],
-          _ <- 1..count,
-          do: section
-
-    Enum.with_index(sections, fn section, pass ->
-      together([
-        part(:low_agogo, low_agogo(section, pass)),
-        part(:high_agogo, high_agogo(section, pass))
-      ])
-    end)
+    form(
+      [
+        samba: 4,
+        partido: 4,
+        maracatu: 4,
+        accents: 2,
+        one: 2,
+        two: 2,
+        three: 2,
+        four: 2
+      ],
+      fn section, %{pass: pass} ->
+        together([
+          part(:low_agogo, low_agogo(section, pass)),
+          part(:high_agogo, high_agogo(section, pass))
+        ])
+      end
+    )
   end
 
   # A pass of low_agogo, as 8 beats.

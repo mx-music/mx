@@ -220,6 +220,23 @@ defmodule Mix.Tasks.Mx.PrintTest do
   end
 
   @tag :tmp_dir
+  test "prints a section of a form as a pass", %{tmp_dir: dir} do
+    path = Path.join(dir, "form.exs")
+
+    File.write!(path, """
+    import Mx
+
+    song(music: repeat(form([a: 2, b: 1], fn name -> part(:lead, seq([{if(name == :a, do: :c4, else: :e4), 1}])) end)))
+    """)
+
+    assert capture_io(fn -> Print.run([path, "--pass", "2"]) end) ==
+             "lead, pass 2, 1 beat at 60 bpm\nbeat 0  play 64 sustain: 1\n"
+
+    assert capture_io(fn -> Print.run([path, "--pass", "3"]) end) ==
+             "lead, pass 3, 1 beat at 60 bpm\nbeat 0  play 60 sustain: 1\n"
+  end
+
+  @tag :tmp_dir
   test "prints play options and fractional beats", %{tmp_dir: dir} do
     path = Path.join(dir, "half.exs")
 

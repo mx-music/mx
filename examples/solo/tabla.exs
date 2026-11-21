@@ -19,17 +19,12 @@ defmodule Tabla do
   part :tabla_ghe, synth: :tabla_ghe
 
   def song do
-    repeat(seq(form()))
+    repeat(form())
   end
 
   # The form, each of its passes a section.
   defp form do
-    sections =
-      for {section, count} <- [theka: 2, variation: 2, bends: 2, theka: 1],
-          _ <- 1..count,
-          do: section
-
-    Enum.with_index(sections, fn section, pass ->
+    form([theka: 2, variation: 2, bends: 2, theka: 1], fn section, %{pass: pass} ->
       together([
         part(:tabla_na, tabla_na(section, pass)),
         part(:tabla_tun, tabla_tun(section, pass)),

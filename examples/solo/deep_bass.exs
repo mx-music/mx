@@ -11,17 +11,12 @@ defmodule DeepBass do
   part :deep_bass, synth: :deep_bass
 
   def song do
-    repeat(seq(form()))
+    repeat(form())
   end
 
   # The form, each of its passes a section of four bars.
   defp form do
-    sections =
-      for {section, count} <- [ballad: 2, groove: 2, high: 1, ending: 1],
-          _ <- 1..count,
-          do: section
-
-    Enum.with_index(sections, fn section, pass ->
+    form([ballad: 2, groove: 2, high: 1, ending: 1], fn section, %{pass: pass} ->
       part(:deep_bass, deep_bass(section, pass))
     end)
   end

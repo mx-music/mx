@@ -314,6 +314,62 @@ defmodule Mx.Music do
     end
   end
 
+  @doc "Music played one section after another, each the music the function returns for a section's name, or for its name and a map of its `pass`, `time` and `coming`; `round: true` gives the last section the first one's name as `coming`."
+  def form(sections, fun, opts \\ [])
+
+  def form([_ | _] = sections, fun, opts) when is_function(fun, 1) or is_function(fun, 2) do
+    check_keyword("form", opts)
+
+    case Keyword.keys(opts) -- [:round] do
+      [] -> :ok
+      [key | _] -> raise ArgumentError, "form takes round:, not #{key}:"
+    end
+
+    names = Enum.flat_map(sections, &form_names/1)
+    comings = tl(names) ++ [if(opts[:round], do: hd(names))]
+
+    {items, _times} =
+      names
+      |> Enum.zip(comings)
+      |> Enum.with_index()
+      |> Enum.map_reduce(%{}, fn {{name, coming}, pass}, times ->
+        time = Map.get(times, name, 0)
+
+        item =
+          if is_function(fun, 1),
+            do: fun.(name),
+            else: fun.(name, %{pass: pass, time: time, coming: coming})
+
+        {item, Map.put(times, name, time + 1)}
+      end)
+
+    seq(items)
+  end
+
+  def form(sections, fun, _opts) do
+    given = inspect({sections, fun})
+
+    raise ArgumentError,
+          "form takes a list of sections and a function of one or two arguments, not #{given}"
+  end
+
+  defp form_names({name, count}) when is_atom(name) and is_integer(count) and count >= 1,
+    do: List.duplicate(name, count)
+
+  defp form_names(name) when is_atom(name), do: [name]
+
+  defp form_names({name, count}) when is_atom(name) do
+    count = inspect(count)
+
+    raise ArgumentError,
+          "form takes section names, or names with counts from 1 up, not #{name}: #{count}"
+  end
+
+  defp form_names(entry) do
+    entry = inspect(entry)
+    raise ArgumentError, "form takes section names, or names with counts from 1 up, not #{entry}"
+  end
+
   @doc "Music whose items all start at once, each the music the function returns for an item of the collection."
   def together(collection, fun), do: together(collected("together", collection, fun))
 

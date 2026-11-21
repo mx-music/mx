@@ -116,6 +116,40 @@ defmodule Mx.MusicTest do
     end
 
     @tag :tmp_dir
+    test "form plays the music for each section in turn, a count playing it that many times",
+         ctx do
+      {:ok, song} =
+        load(ctx, """
+        song(music: part(:lead, form([a: 2, b: 1], fn name -> note(if(name == :a, do: :c4, else: :e4), 1) end)))
+        """)
+
+      assert played(events(song, :lead)) == [{0, 60}, {1, 60}, {2, 64}]
+    end
+
+    test "form calls a function of one argument with each name, and of two with its pass, time and coming" do
+      names = fn sections ->
+        Mx.form(sections, fn name -> send(self(), name) && Mx.rest(1) end)
+        for _ <- sections, do: receive(do: (name -> name))
+      end
+
+      assert names.([:a, :b]) == [:a, :b]
+
+      maps = fn opts ->
+        Mx.form([a: 2, b: 1, a: 1], fn _name, map -> send(self(), map) && Mx.rest(1) end, opts)
+        for _ <- 1..4, do: receive(do: (map -> map))
+      end
+
+      assert maps.([]) == [
+               %{pass: 0, time: 0, coming: :a},
+               %{pass: 1, time: 1, coming: :b},
+               %{pass: 2, time: 0, coming: :a},
+               %{pass: 3, time: 2, coming: nil}
+             ]
+
+      assert List.last(maps.(round: true)) == %{pass: 3, time: 2, coming: :a}
+    end
+
+    @tag :tmp_dir
     test "swing moves each note to the beat its function returns, and leaves the length", ctx do
       {:ok, song} =
         load(
@@ -293,6 +327,16 @@ defmodule Mx.MusicTest do
       assert_raise ArgumentError,
                    ~r/^at takes \{beat, value\} entries, a length and a function of one argument/,
                    fn -> Mx.at([{0, 1}], 4, :oops) end
+    end
+
+    test "form refuses a count below 1 and a name that is not an atom, naming the entry" do
+      assert_raise ArgumentError,
+                   "form takes section names, or names with counts from 1 up, not a: 0",
+                   fn -> Mx.form([a: 0], fn _ -> Mx.rest(1) end) end
+
+      assert_raise ArgumentError,
+                   ~s(form takes section names, or names with counts from 1 up, not "a"),
+                   fn -> Mx.form(["a"], fn _ -> Mx.rest(1) end) end
     end
 
     @tag :tmp_dir

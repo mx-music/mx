@@ -58,6 +58,19 @@ defmodule Mx do
   defdelegate seq(collection, fun), to: Mx.Music
 
   @doc """
+  A song's form: one section after another, each the music the function returns for it, so each is a section of the song as an item of its outermost `seq` is.
+  The sections are a list of names, or of names and counts, so `[a: 2, b: 1]` plays a, a and b.
+  A function of one argument takes the section's name; one of two takes the name and a map of `pass`, the sections played before it from 0, `time`, the times a section of its name played before from 0, and `coming`, the name of the section that follows, nil for the last.
+  `round: true` gives the last section the first one's name as `coming`, for a form that repeats.
+
+      repeat(form([a: 2, b: 2, a: 1], fn section, %{coming: coming} -> strain(section, coming) end, round: true))
+
+      iex> beats(form([a: 2, b: 1], fn _section -> rest(4) end))
+      12
+  """
+  defdelegate form(sections, fun, opts \\ []), to: Mx.Music
+
+  @doc """
   Music whose items all start at once, as long as the longest.
 
       together([

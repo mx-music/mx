@@ -9,17 +9,12 @@ defmodule Xylophone do
   part :xylophone, synth: :xylophone
 
   def song do
-    repeat(seq(form()))
+    repeat(form())
   end
 
   # The form, each of its passes a section.
   defp form do
-    sections =
-      for {section, count} <- [runs: 2, repeats: 1, bright: 1, ending: 1],
-          _ <- 1..count,
-          do: section
-
-    Enum.with_index(sections, fn section, pass ->
+    form([runs: 2, repeats: 1, bright: 1, ending: 1], fn section, %{pass: pass} ->
       part(:xylophone, xylophone(section, pass))
     end)
   end

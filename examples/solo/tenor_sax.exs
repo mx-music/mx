@@ -10,17 +10,12 @@ defmodule TenorSax do
   part :tenor_sax, synth: :tenor_sax
 
   def song do
-    repeat(seq(form()))
+    repeat(form())
   end
 
   # The form, each of its passes a section.
   defp form do
-    sections =
-      for {section, count} <- [choro: 2, slow: 1, extremes: 1, ending: 1],
-          _ <- 1..count,
-          do: section
-
-    Enum.with_index(sections, fn section, pass ->
+    form([choro: 2, slow: 1, extremes: 1, ending: 1], fn section, %{pass: pass} ->
       part(:tenor_sax, tenor_sax(section, pass))
     end)
   end
@@ -66,7 +61,10 @@ defmodule TenorSax do
     run = Enum.filter(76..45//-1, &(rem(&1, 12) in [0, 2, 4, 5, 7, 9, 10]))
 
     Enum.with_index(run, fn note, i -> {i / 4, note, 0.65, sustain: 0.2, release: 0.05} end) ++
-      [{length(run) / 4, 44, 0.8, sustain: 16 - length(run) / 4 - 0.5, release: 0.4, vibrato: 0.145}]
+      [
+        {length(run) / 4, 44, 0.8,
+         sustain: 16 - length(run) / 4 - 0.5, release: 0.4, vibrato: 0.145}
+      ]
   end
 
   # Each bar of the choro as beat and note, a run of sixteenths up to a held note and down; the

@@ -13,17 +13,13 @@ defmodule Claves do
   part :clave, synth: :clave, defaults: [amp: 0.5]
 
   def song do
-    repeat(seq(form()))
+    repeat(form())
   end
 
   # The form, each of its passes a section.
   defp form do
-    sections =
-      for {section, count} <- [son: 2, son_2_3: 1, rumba: 2, bossa: 2, bembe: 2, ending: 1],
-          _ <- 1..count,
-          do: section
-
-    Enum.with_index(sections, fn section, pass ->
+    form([son: 2, son_2_3: 1, rumba: 2, bossa: 2, bembe: 2, ending: 1], fn section,
+                                                                           %{pass: pass} ->
       part(:clave, clave(section, pass))
     end)
   end

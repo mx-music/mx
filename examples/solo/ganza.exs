@@ -9,15 +9,12 @@ defmodule Ganza do
   part :shaker, synth: :shaker
 
   def song do
-    repeat(seq(form()))
+    repeat(form())
   end
 
   # The form, each of its passes a section.
   defp form do
-    sections =
-      for {section, count} <- [one: 4, two: 2, three: 2, four: 4], _ <- 1..count, do: section
-
-    Enum.with_index(sections, fn section, pass ->
+    form([one: 4, two: 2, three: 2, four: 4], fn section, %{pass: pass} ->
       together([
         part(:ganza, ganza(section, pass)),
         part(:shaker, shaker(section, pass))

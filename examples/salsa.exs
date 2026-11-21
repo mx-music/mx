@@ -41,25 +41,22 @@ defmodule Salsa do
   # Each pass is four bars of Am7, D7, Fmaj7 and E7, with the son clave running 2-3 across every
   # two bars.
   def song do
-    sections =
-      for {section, count} <- [
-            intro: 1,
-            band: 1,
-            stabs: 2,
-            piano_solo: 2,
-            mambo: 2,
-            horn_solo: 2,
-            mambo_again: 1,
-            stabs_again: 1
-          ],
-          _ <- 1..count,
-          do: section
-
-    played =
-      for {section, coming} <- Enum.zip(sections, tl(sections) ++ [hd(sections)]),
-          do: section(section, coming)
-
-    repeat(seq(played))
+    repeat(
+      form(
+        [
+          intro: 1,
+          band: 1,
+          stabs: 2,
+          piano_solo: 2,
+          mambo: 2,
+          horn_solo: 2,
+          mambo_again: 1,
+          stabs_again: 1
+        ],
+        fn section, %{coming: coming} -> section(section, coming) end,
+        round: true
+      )
+    )
   end
 
   # A section, with a timbale fill at its end when the stabs, the mambo or the horn solo first

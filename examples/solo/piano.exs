@@ -9,17 +9,13 @@ defmodule Piano do
   part :piano, synth: :piano
 
   def song do
-    repeat(seq(form()))
+    repeat(form())
   end
 
   # The form, each of its passes a section.
   defp form do
-    sections =
-      for {section, count} <- [sweep: 1, soft_chords: 1, loud_chords: 1, runs: 2, extremes: 1],
-          _ <- 1..count,
-          do: section
-
-    Enum.with_index(sections, fn section, pass ->
+    form([sweep: 1, soft_chords: 1, loud_chords: 1, runs: 2, extremes: 1], fn section,
+                                                                              %{pass: pass} ->
       part(:piano, piano(section, pass))
     end)
   end

@@ -9,15 +9,12 @@ defmodule Organ do
   part :organ, synth: :organ
 
   def song do
-    repeat(seq(form()))
+    repeat(form())
   end
 
   # The form, each of its passes a section.
   defp form do
-    sections =
-      for {section, count} <- [quiet: 2, loud: 2, both: 1, quiet: 1], _ <- 1..count, do: section
-
-    Enum.with_index(sections, fn section, pass ->
+    form([quiet: 2, loud: 2, both: 1, quiet: 1], fn section, %{pass: pass} ->
       part(:organ, organ(section, pass))
     end)
   end

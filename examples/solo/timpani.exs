@@ -12,17 +12,12 @@ defmodule Timpani do
   part :timpani, synth: :timpani, defaults: [amp: 0.5]
 
   def song do
-    repeat(seq(form()))
+    repeat(form())
   end
 
   # The form, each of its passes a section.
   defp form do
-    sections =
-      for {section, count} <- [swell: 1, pounding: 1, melody: 1, soft: 1, ending: 1],
-          _ <- 1..count,
-          do: section
-
-    Enum.with_index(sections, fn section, pass ->
+    form([swell: 1, pounding: 1, melody: 1, soft: 1, ending: 1], fn section, %{pass: pass} ->
       part(:timpani, timpani(section, pass))
     end)
   end

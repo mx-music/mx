@@ -11,17 +11,12 @@ defmodule Pandeiro do
   part :pandeiro_slap, synth: :pandeiro_slap
 
   def song do
-    repeat(seq(form()))
+    repeat(form())
   end
 
   # The form, each of its passes a section.
   defp form do
-    sections =
-      for {section, count} <- [choro: 4, samba_de_roda: 2, baiao: 2, forro: 2, coco: 4],
-          _ <- 1..count,
-          do: section
-
-    Enum.with_index(sections, fn section, pass ->
+    form([choro: 4, samba_de_roda: 2, baiao: 2, forro: 2, coco: 4], fn section, %{pass: pass} ->
       together([
         part(:pandeiro_thumb, pandeiro_thumb(section, pass)),
         part(:pandeiro_heel, pandeiro_heel(section, pass)),

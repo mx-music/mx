@@ -16,17 +16,12 @@ defmodule Tambourine do
   part :tambourine_shake, synth: :tambourine_shake, defaults: [amp: 0.5]
 
   def song do
-    repeat(seq(form()))
+    repeat(form())
   end
 
   # The form, each of its passes a section.
   defp form do
-    sections =
-      for {section, count} <- [roll: 1, backbeat: 2, tarantella: 3, soft: 1, ending: 1],
-          _ <- 1..count,
-          do: section
-
-    Enum.with_index(sections, fn section, pass ->
+    form([roll: 1, backbeat: 2, tarantella: 3, soft: 1, ending: 1], fn section, %{pass: pass} ->
       together([
         part(:tambourine, tambourine(section, pass)),
         part(:tambourine_shake, tambourine_shake(section, pass))

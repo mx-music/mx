@@ -242,6 +242,22 @@ song(tempo: 72, music: repeat(seq([first, second])))
 - When you save the file while the song plays, the new version takes over at the end of the current section.
 - A song whose music is not a `seq` is one section.
 
+`form` writes the order of the sections and how many times each plays, and makes each section's music with a function:
+
+```elixir
+def song do
+  repeat(form([a: 2, b: 2, a: 1], &strain/2, round: true))
+end
+
+defp strain(section, %{coming: coming}), do: together(melody: melody(section), bass: bass(section, coming))
+```
+
+- `form([a: 2, b: 1], fun)` plays a, a and b, each a section; `form([:a, :b], fun)` plays each once.
+- A function of one argument takes the section's name.
+- A function of two also takes a map: `pass` counts the sections played before this one, from 0, `time` counts the times a section of this name played before, from 0, and `coming` is the name of the section that follows, nil for the last.
+- `round: true` gives the last section the first one's name as `coming`, for a form that repeats.
+- A count below 1, and a name that is not an atom, are refused.
+
 ### Changing the tempo
 
 `tempo(140)` changes the tempo for every part from the beat where it is written, and takes no time.

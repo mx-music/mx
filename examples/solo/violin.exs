@@ -14,17 +14,12 @@ defmodule Violin do
   part :violin, synth: :violin, fx: [reverb: [room: 0.5, mix: 0.25]]
 
   def song do
-    repeat(seq(form()))
+    repeat(form())
   end
 
   # The form, each of its passes a section.
   defp form do
-    sections =
-      for {section, count} <- [cantabile: 1, bariolage: 2, scales: 1, pizz: 1, ending: 1],
-          _ <- 1..count,
-          do: section
-
-    Enum.with_index(sections, fn section, pass ->
+    form([cantabile: 1, bariolage: 2, scales: 1, pizz: 1, ending: 1], fn section, %{pass: pass} ->
       part(:violin, section(section, pass))
     end)
   end

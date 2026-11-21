@@ -9,14 +9,12 @@ defmodule Harp do
   part :harp, synth: :harp
 
   def song do
-    repeat(seq(form()))
+    repeat(form())
   end
 
   # The form, each of its passes a section.
   defp form do
-    sections = for {section, count} <- [joropo: 4, ring: 1, ending: 1], _ <- 1..count, do: section
-
-    Enum.with_index(sections, fn section, pass ->
+    form([joropo: 4, ring: 1, ending: 1], fn section, %{pass: pass} ->
       part(:harp, harp(section, pass))
     end)
   end

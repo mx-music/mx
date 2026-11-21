@@ -10,17 +10,12 @@ defmodule Clarinet do
   part :clarinet, synth: :clarinet
 
   def song do
-    repeat(seq(form()))
+    repeat(form())
   end
 
   # The form, each of its passes a section.
   defp form do
-    sections =
-      for {section, count} <- [low: 1, arpeggios: 2, melody: 1, high: 1],
-          _ <- 1..count,
-          do: section
-
-    Enum.with_index(sections, fn section, pass ->
+    form([low: 1, arpeggios: 2, melody: 1, high: 1], fn section, %{pass: pass} ->
       part(:clarinet, clarinet(section, pass))
     end)
   end

@@ -10,15 +10,12 @@ defmodule ElectricBass do
   part :electric_bass, synth: :electric_bass
 
   def song do
-    repeat(seq(form()))
+    repeat(form())
   end
 
   # The form, each of its passes a section of four bars.
   defp form do
-    sections =
-      for {section, count} <- [funk: 2, walk: 2, ballad: 1, ending: 1], _ <- 1..count, do: section
-
-    Enum.with_index(sections, fn section, pass ->
+    form([funk: 2, walk: 2, ballad: 1, ending: 1], fn section, %{pass: pass} ->
       part(:electric_bass, electric_bass(section, pass))
     end)
   end

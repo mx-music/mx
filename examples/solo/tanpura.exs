@@ -14,15 +14,12 @@ defmodule Tanpura do
   part :tanpura, synth: :tanpura, defaults: [amp: 0.5]
 
   def song do
-    repeat(seq(form()))
+    repeat(form())
   end
 
   # The form, each of its passes a section.
   defp form do
-    sections =
-      for {section, count} <- [slow: 1, quick: 1, low: 2, long: 1], _ <- 1..count, do: section
-
-    Enum.with_index(sections, fn section, pass ->
+    form([slow: 1, quick: 1, low: 2, long: 1], fn section, %{pass: pass} ->
       part(:tanpura, tanpura(section, pass))
     end)
   end
