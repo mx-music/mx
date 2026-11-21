@@ -415,6 +415,78 @@ defmodule Mx.Music do
     end)
   end
 
+  @doc "The music with the parts named left out, one name or a list, each as long a silence as it played, its tempo changes kept."
+  def without(music, names), do: leave_out("without", music, List.wrap(names), &(&1 in &2))
+
+  @doc "The music with every part but those named left out, one name or a list, each as long a silence as it played, its tempo changes kept."
+  def only(music, names), do: leave_out("only", music, List.wrap(names), &(&1 not in &2))
+
+  defp leave_out(word, music, names, out?) do
+    music = item(music)
+    have = part_names(music)
+
+    case Enum.find(names, &(&1 not in have)) do
+      nil -> :ok
+      name -> raise ArgumentError, "#{word} names part #{name}, which the music does not have"
+    end
+
+    left_out(music, &out?.(&1, names)) || %Seq{items: []}
+  end
+
+  # nil for music that is gone, as a part left out that never ends is.
+  defp left_out(%Part{name: name, music: music} = part, out?) do
+    if out?.(name), do: silence(music), else: %{part | music: left_out(music, out?)}
+  end
+
+  defp left_out(%Seq{items: items} = seq, out?),
+    do: %{seq | items: kept(items, &left_out(&1, out?))}
+
+  defp left_out(%Together{items: items} = together, out?) do
+    %{together | items: kept(items, &left_out(&1, out?))}
+  end
+
+  defp left_out(%At{entries: entries} = at, out?) do
+    %{at | entries: kept_entries(entries, &left_out(&1, out?))}
+  end
+
+  defp left_out(%Repeat{music: music} = repeat, out?), do: kept_in(repeat, left_out(music, out?))
+  defp left_out(%Swing{music: music} = swing, out?), do: kept_in(swing, left_out(music, out?))
+
+  defp left_out(%Loop{fun: fun} = loop, out?) do
+    %{loop | fun: fn pass, inputs -> left_out(returned(fun.(pass, inputs)), out?) || %Seq{} end}
+  end
+
+  defp left_out(music, _out?), do: music
+
+  # A part's music as silence of its length, with its tempo changes where they were.
+  defp silence(%TempoChange{} = change), do: change
+  defp silence(%Rest{} = rest), do: rest
+  defp silence(%Part{music: music}), do: silence(music)
+  defp silence(%Seq{items: items} = seq), do: %{seq | items: kept(items, &silence/1)}
+
+  defp silence(%Together{items: items} = together),
+    do: %{together | items: kept(items, &silence/1)}
+
+  defp silence(%At{entries: entries} = at), do: %{at | entries: kept_entries(entries, &silence/1)}
+  defp silence(%Repeat{music: music} = repeat), do: kept_in(repeat, silence(music))
+  defp silence(%Swing{music: music}), do: silence(music)
+
+  defp silence(music) do
+    case beats(music) do
+      beats when is_number(beats) -> %Rest{beats: beats}
+      :infinity -> nil
+    end
+  end
+
+  defp kept(items, fun), do: items |> Enum.map(fun) |> Enum.reject(&is_nil/1)
+
+  defp kept_entries(entries, fun) do
+    for {beat, music} <- entries, kept = fun.(music), do: {beat, kept}
+  end
+
+  defp kept_in(_container, nil), do: nil
+  defp kept_in(container, music), do: %{container | music: music}
+
   @doc "Music lasting some beats whose items start at their beats from its start, given as `{beat, music}`."
   def at(entries, beats) when is_list(entries) do
     check_beats("at", beats)

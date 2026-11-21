@@ -130,6 +130,29 @@ defmodule Mx do
   defdelegate transpose(music, semitones), to: Mx.Music
 
   @doc """
+  The music with the parts named left out, one name or a list: each plays nothing there, and leaves a silence as long as it played, so every other part plays as before.
+  A tempo change written in a part left out stays, and a part that plays a loop until the music beside it ends is left out with its loop.
+  A name that no part of the music has is refused.
+
+      # The mambo without the cáscara, which the bell takes over.
+      without(band(), :cascara)
+
+      iex> beats(without(together([part(:kick, steps("x...", 1)), part(:bass, note(:c2, 4))]), :kick))
+      4
+  """
+  defdelegate without(music, names), to: Mx.Music
+
+  @doc """
+  The music with every part but those named left out, one name or a list, as `without/2` leaves them out.
+
+      only(band(), [:kick, :bass])
+
+      iex> beats(only(together([part(:kick, steps("x...", 1)), part(:bass, note(:c2, 4))]), :kick))
+      4
+  """
+  defdelegate only(music, names), to: Mx.Music
+
+  @doc """
   Music lasting some beats whose items start at their beats from its start, given as `{beat, music}`, so strokes at known beats need no rests between them.
   An item placed at or past the length is refused.
 

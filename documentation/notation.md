@@ -258,6 +258,21 @@ defp strain(section, %{coming: coming}), do: together(melody: melody(section), b
 - `round: true` gives the last section the first one's name as `coming`, for a form that repeats.
 - A count below 1, and a name that is not an atom, are refused.
 
+`without` and `only` leave parts out of some music, so a section can say who sits out instead of each part saying where it rests:
+
+```elixir
+@silent [intro: [:bass, :congas], mambo: [:cascara], solo: []]
+
+defp section(section) do
+  without(band(), @silent[section])
+end
+```
+
+- `without(music, :cascara)` is the music with that part left out, and `without(music, [:kick, :bass])` with both; `only(music, [:kick, :bass])` leaves out every other part.
+- A part left out plays nothing in that music, and is silent for as long as it would have played, so the music lasts as long and every other part plays as before.
+- A tempo change written in a part left out stays, and a part that plays a loop is left out with its loop.
+- A name that no part of the music has is refused.
+
 ### Changing the tempo
 
 `tempo(140)` changes the tempo for every part from the beat where it is written, and takes no time.

@@ -150,6 +150,51 @@ defmodule Mx.MusicTest do
     end
 
     @tag :tmp_dir
+    test "without and only leave parts out, and the music lasts as long as before", ctx do
+      music = """
+      together([
+        part(:kick, at([{0, hit()}, {1, hit()}], 4), synth: :kick),
+        part(:bass, note(:c2, 4), synth: :saw)
+      ])
+      """
+
+      music = String.trim(music)
+
+      for {call, expected} <- [
+            {"without(#{music}, :kick)", [bass: [{0, 36}]]},
+            {"only(#{music}, [:kick])", [kick: [{0, :own_note}, {1, :own_note}]]},
+            {"without(#{music}, [:kick, :bass])", []}
+          ] do
+        {:ok, song} =
+          load(ctx, "song(music: seq([#{call}, part(:bass, note(:e2, 1), synth: :saw)]))")
+
+        assert {Code.eval_string("import Mx\n" <> call) |> elem(0) |> Mx.beats(), call} ==
+                 {4, call}
+
+        for {name, notes} <- expected, do: assert(played(events(song, name)) == notes)
+        assert Enum.map(song.loops, & &1.name) -- [:bass] == Keyword.keys(expected) -- [:bass]
+      end
+    end
+
+    @tag :tmp_dir
+    test "without and only keep the tempo changes of the parts they leave out, and leave out a part's loop",
+         ctx do
+      {:ok, song} =
+        load(ctx, """
+        music = together([
+          part(:kick, seq([rest(2), tempo(90), rest(2)]), synth: :kick),
+          part(:hats, loop(1, fn _pass, _ -> steps("x", 1) end), synth: :closed_hihat),
+          part(:bass, note(:c2, 4), synth: :saw)
+        ])
+
+        song(tempo: 120, music: seq([without(music, [:kick, :hats]), only(music, :bass)]))
+        """)
+
+      assert song.tempos.sections == {[{2, 90, 0}], [{2, 90, 0}]}
+      assert Enum.map(song.loops, & &1.name) == [:bass]
+    end
+
+    @tag :tmp_dir
     test "swing moves each note to the beat its function returns, and leaves the length", ctx do
       {:ok, song} =
         load(
@@ -337,6 +382,20 @@ defmodule Mx.MusicTest do
       assert_raise ArgumentError,
                    ~s(form takes section names, or names with counts from 1 up, not "a"),
                    fn -> Mx.form(["a"], fn _ -> Mx.rest(1) end) end
+    end
+
+    test "without and only refuse a name the music does not have" do
+      music = Mx.together([Mx.part(:kick, Mx.steps("x", 1), synth: :kick)])
+
+      assert_raise ArgumentError,
+                   "without names part cowbel, which the music does not have",
+                   fn ->
+                     Mx.without(music, :cowbel)
+                   end
+
+      assert_raise ArgumentError, "only names part cowbel, which the music does not have", fn ->
+        Mx.only(music, [:kick, :cowbel])
+      end
     end
 
     @tag :tmp_dir

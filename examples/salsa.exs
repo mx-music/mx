@@ -59,26 +59,52 @@ defmodule Salsa do
     )
   end
 
+  # The parts silent in each section: the rhythm section comes in after the intro, the bell takes
+  # over from the cáscara and the bongos in the mambo and the horn solo, and the güiro plays while
+  # the piano leads.
+  @silent [
+    intro: [
+      :bass,
+      :baby_bass,
+      :high_conga,
+      :low_conga,
+      :cascara,
+      :cowbell,
+      :high_bongo,
+      :low_bongo,
+      :maracas,
+      :guiro
+    ],
+    band: [:cowbell],
+    stabs: [:cowbell],
+    piano_solo: [:cowbell],
+    mambo: [:cascara, :high_bongo, :low_bongo, :guiro],
+    horn_solo: [:cascara, :high_bongo, :low_bongo, :guiro],
+    mambo_again: [:cascara, :high_bongo, :low_bongo, :guiro],
+    stabs_again: [:cowbell]
+  ]
+
   # A section, with a timbale fill at its end when the stabs, the mambo or the horn solo first
   # come next.
   defp section(section, coming) do
     together([
       part(:clave, clave()),
-      part(:bass, bass(section)),
-      part(:baby_bass, baby_bass(section)),
+      part(:bass, bass()),
+      part(:baby_bass, baby_bass()),
       part(:piano, loop(16, fn pass, _ -> piano(section, pass) end)),
       part(:horns, loop(16, fn pass, _ -> horns(section, pass) end)),
-      part(:high_conga, high_conga(section)),
-      part(:low_conga, low_conga(section)),
-      part(:cascara, cascara(section)),
-      part(:cowbell, cowbell(section)),
-      part(:high_bongo, high_bongo(section)),
-      part(:low_bongo, low_bongo(section)),
-      part(:maracas, maracas(section)),
+      part(:high_conga, high_conga()),
+      part(:low_conga, low_conga()),
+      part(:cascara, cascara()),
+      part(:cowbell, cowbell()),
+      part(:high_bongo, high_bongo()),
+      part(:low_bongo, low_bongo()),
+      part(:maracas, maracas()),
       part(:fill_high, fill_high(section, coming)),
       part(:fill_low, fill_low(section, coming)),
-      part(:guiro, guiro(section))
+      part(:guiro, guiro())
     ])
+    |> without(@silent[section])
   end
 
   # The son clave, 2-3, in eighths.
@@ -86,9 +112,7 @@ defmodule Salsa do
 
   # The tumbao: the fifth on the and of two, and the next chord's root on four, held over the bar
   # line.
-  defp bass(:intro), do: rest(16)
-
-  defp bass(_section) do
+  defp bass do
     bars =
       for {fifth, next_root} <- [{40, 38}, {45, 41}, {36, 40}, {35, 33}] do
         seq([
@@ -105,9 +129,7 @@ defmodule Salsa do
 
   # The same tumbao on the plucked double bass, as the baby bass under the band: its weight, where
   # the pluck above is its attack.
-  defp baby_bass(:intro), do: rest(16)
-
-  defp baby_bass(_section) do
+  defp baby_bass do
     bars =
       for {fifth, next_root} <- [{40, 38}, {45, 41}, {36, 40}, {35, 33}] do
         seq([
@@ -328,21 +350,16 @@ defmodule Salsa do
 
   # The conga tumbao in eighths: t a soft tip, S a slap on two, and o two open tones on four, the
   # second on the low drum every other bar.
-  defp high_conga(:intro), do: rest(16)
-
-  defp high_conga(_section) do
+  defp high_conga do
     strokes = [t: [amp: 0.12, slap: 0.3], S: [amp: 0.45, slap: 1], o: [amp: 0.45, slap: 0]]
     steps(List.duplicate([~MX"ttSt ttoo"s, ~MX"ttSt tto."s], 2), 0.5, strokes: strokes)
   end
 
-  defp low_conga(:intro), do: rest(16)
-  defp low_conga(_section), do: steps(~MX"........ .......x ........ .......x"s, 0.5, amp: 0.55)
+  defp low_conga, do: steps(~MX"........ .......x ........ .......x"s, 0.5, amp: 0.55)
 
   # Cáscara on the timbale's shell in eighths, louder on the beat, until the mambo and the brass
   # solo, where the bell takes over.
-  defp cascara(section) when section in [:intro, :mambo, :horn_solo, :mambo_again], do: rest(16)
-
-  defp cascara(_section) do
+  defp cascara do
     strokes = [X: [amp: 0.3], x: [amp: 0.22]]
     steps(List.duplicate(~MX"X.X.Xx.x X.Xx.x.x"s, 2), 0.5, strokes: strokes)
   end
@@ -350,7 +367,7 @@ defmodule Salsa do
   # The campana, the bongocero's bell, in its third gear over the clave's two bars, a cell to each
   # eighth: O is an open stroke on the bell's mouth played hard, o an open stroke and c a closed
   # one, muted by the hand.
-  defp cowbell(section) when section in [:mambo, :horn_solo, :mambo_again] do
+  defp cowbell do
     strokes = [
       O: [amp: 0.3, vel: 1],
       o: [amp: 0.3, vel: 0.8],
@@ -360,30 +377,20 @@ defmodule Salsa do
     steps(List.duplicate(~MX"O.c.o.cc o.cco.cc"s, 2), 0.5, strokes: strokes)
   end
 
-  defp cowbell(_section), do: rest(16)
-
   # Until the bell, the bongocero plays the martillo in eighths, M t o t M t H t: M is a muted
   # stroke on the small drum with the index finger, t a soft one with the thumb, o its open tone
   # and H the large drum's open tone.
-  defp high_bongo(section) when section in [:intro, :mambo, :horn_solo, :mambo_again] do
-    rest(16)
-  end
-
-  defp high_bongo(_section) do
+  defp high_bongo do
     strokes = [M: [muted: 1, vel: 0.8], t: [muted: 1, vel: 0.4], o: [muted: 0, vel: 0.7]]
     steps(List.duplicate(~MX"Mtot Mt.t"s, 4), 0.5, strokes: strokes)
   end
 
-  defp low_bongo(section) when section in [:intro, :mambo, :horn_solo, :mambo_again], do: rest(16)
-
-  defp low_bongo(_section) do
+  defp low_bongo do
     steps(List.duplicate(~MX".... ..H."s, 4), 0.5, strokes: [H: [muted: 0, vel: 0.8]])
   end
 
   # The maracas in eighths, the beat stronger than the stroke after it.
-  defp maracas(:intro), do: rest(16)
-
-  defp maracas(_section) do
+  defp maracas do
     strokes = [d: [vel: 0.5, up: 0], u: [vel: 0.35, up: 1]]
     steps(List.duplicate(~MX"du"s, 16), 0.5, strokes: strokes)
   end
@@ -410,12 +417,10 @@ defmodule Salsa do
   end
 
   # The güiro, long and two short, while the piano leads.
-  defp guiro(section) when section in [:band, :stabs, :piano_solo, :stabs_again] do
+  defp guiro do
     strokes = [L: [amp: 0.3, sustain: 0.6], s: [amp: 0.22, sustain: 0.18]]
     steps(List.duplicate(~MX"L.ss"s, 8), 0.5, strokes: strokes)
   end
-
-  defp guiro(_section), do: rest(16)
 
   # Whether a pass ends leading into the first stabs, mambo or horn solo, which a timbale fill
   # marks.
