@@ -14,19 +14,30 @@ defmodule Virtuoso do
   part :pandeiro_jingles, synth: :pandeiro_jingles
   part :pandeiro_slap, synth: :pandeiro_slap
 
+  # o is an open bass with the thumb, ox a closed one, h the heel of the hand, f the fingertips
+  # and s a slap.
+  kit :pandeiro,
+    o: [part: :pandeiro_thumb, vel: 0.75],
+    ox: [part: :pandeiro_thumb, vel: 0.4],
+    h: [part: :pandeiro_heel, vel: 0.5],
+    f: [part: :pandeiro_jingles, vel: 0.4],
+    s: [part: :pandeiro_slap, vel: 0.8]
+
   # The form, each of its passes a section; a beat is a quarter note of 2/4, so a pass is two
   # bars.
   def song do
-    repeat(
-      form([groove: 2, ruffs: 2, threes: 6, fives: 5, sextuplets: 4, groove: 2], fn section,
-                                                                                    %{time: time} ->
-        together(
-          pandeiro_thumb: hits(section, time, ["o", "ox"]),
-          pandeiro_heel: hits(section, time, ["h"]),
-          pandeiro_jingles: hits(section, time, ["f"]),
-          pandeiro_slap: hits(section, time, ["s"])
-        )
-      end)
+    repeat(form([groove: 2, ruffs: 2, threes: 6, fives: 5, sextuplets: 4, groove: 2], &pass/2))
+  end
+
+  defp pass(section, _) when section in [:groove, :ruffs],
+    do: kit(:pandeiro, cells(section), 0.25)
+
+  defp pass(section, %{time: time}) do
+    together(
+      pandeiro_thumb: hits(section, time, ["o", "ox"]),
+      pandeiro_heel: hits(section, time, ["h"]),
+      pandeiro_jingles: hits(section, time, ["f"]),
+      pandeiro_slap: hits(section, time, ["s"])
     )
   end
 
@@ -42,14 +53,6 @@ defmodule Virtuoso do
 
   # Every stroke of a section's pass, as {beat, stroke, vel}, given how many of the section's
   # passes came before it.
-  defp strokes(section, _time) when section in [:groove, :ruffs] do
-    for {cell, index} <- section |> cells() |> String.split() |> Enum.with_index(),
-        strokes = List.flatten(Regex.scan(~r/ox|[ofhs]/, cell)),
-        {stroke, half} <- Enum.with_index(strokes) do
-      {index * 0.25 + half * 0.25 / length(strokes), stroke, vel(stroke)}
-    end
-  end
-
   defp strokes(section, time) do
     hand = hand(section)
     size = length(hand)
@@ -69,10 +72,9 @@ defmodule Virtuoso do
     end
   end
 
-  # o is an open bass with the thumb, ox a closed one, h the heel of the hand, f the fingertips
-  # and s a slap; a cell of two splits its sixteenth in two.
-  defp cells(:groove), do: "o f h o  f s h o  o f h s  h o o f"
-  defp cells(:ruffs), do: "o f h fh  f o fh f  o o fh o  o o fh o"
+  # A stroke to each sixteenth; two in brackets split it in two.
+  defp cells(:groove), do: ~MX"o f h o | f s h o | o f h s | h o o f"
+  defp cells(:ruffs), do: ~MX"o f h [f h] | f o [f h] f | o o [f h] o | o o [f h] o"
 
   # mx's thumb has no closed bass, so ox is the thumb played softly.
   defp vel("o"), do: 0.75
