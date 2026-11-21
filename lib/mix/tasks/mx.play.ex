@@ -18,6 +18,7 @@ defmodule Mix.Tasks.Mx.Play do
   `--no-ring-out` with `--render` leaves out the notes still sounding when the music ends, which a render otherwise lets fade for up to four seconds, so the file ends where the music ends.
   A render ends as those notes fade and says which part's effect it cuts short, such as `cutting short the reverb of part flute, which rings 5.5 seconds on`; `--ring-out` keeps that ring, as `Mx.Render.ring_out/2` gives it.
   A MusicXML score, a MIDI file or an ABC tune plays as the song `mx import` would write from it, without writing it, taking `--part`, `--tempo`, `--grid` and `--tune` as `mx import` does.
+  `--mute` with `--render` leaves a part out of the render and `--solo` renders only the parts it names, each given once for each part, such as `--mute bass --mute keys`.
   `--share` plays or renders the song at that share of its tempo, from 0.25 to 4, so `--share 0.5` plays it at half speed.
 
   `--output` and `--input` name the devices to play through and to read live audio from, `--rate` the sample rate in Hz, and `--buffer` the frames the device asks for at a time; each is the device's default when not given, and `mix mx.devices` lists what each device takes.

@@ -23,6 +23,7 @@
   * [mx] A `defsynth` saturates, clips and folds a sound with `saturate/2`, `clip/2` and `fold/2`, filters it through a four-pole `ladder/2`, glides a filter's `q:`, and takes `dc_block/2`'s `hz:`
   * [mx] `mx play` plays or renders a score, a MIDI file or an ABC tune as the song `mx import` would write, without writing it, and `Mx.Import.load/2` gives that song to a session
   * [mx] `mx play --render` takes `--no-ring-out`, which ends the file where the music ends
+  * [mx] `mx play --render` takes `--mute` and `--solo`, each naming a part, and `Mx.Render.render/3` takes `mute:` and `solo:`, so a render holds what a session that mutes and solos those parts plays
   * [mx] A render says which part's effect it cuts short as the last notes fade, `--ring-out` keeps that ring, and `Mx.Render.ring_out/2` says how long it lasts before a render starts
   * [mx] `mix mx.measure --hits` splits a file of several hits given its first note into the notes of its run, as `mix mx.fit` does, names each hit by its note, and with `--synth` renders the synth at each of them
   * [mx] A sampled instrument of a list of files is named by the folder its files share, and the page data names a part that plays only samples by its samples

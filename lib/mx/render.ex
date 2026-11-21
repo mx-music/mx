@@ -6,6 +6,7 @@ defmodule Mx.Render do
   At each step every loop is ticked in turn by name and waited for, so its passes reach the engine in the same order on every run, and the engine renders up to that time.
   The render starts at the song's first beat, and ends once its music has ended or `seconds:` have passed, and the notes still sounding have faded, for four seconds at most.
   With `ring_out: false` it leaves that ring out, so the file ends where the music ends.
+  With `mute:` it leaves out the parts named, and with `solo:` it hears only those parts, as `Mx.Session.mute/3` and `Mx.Session.solo/2` do while a song plays.
   With `ring_out: true` it keeps the ring for as long as the effects ring after those notes have faded, as `ring_out/2` gives it.
   Without `ring_out:` the render ends as those notes fade, and says which part's effect it cuts short and how long it would ring.
   MIDI and OSC are not sent, and a loop that waits for input plays nothing; each part left out is named once, a part that sends MIDI or OSC the first time it does.
@@ -21,7 +22,7 @@ defmodule Mx.Render do
   @fade_us 4_000_000
   @progress_ms 250
 
-  @doc "Renders the song at `path` to the WAV file `out`, with `seconds:`, `force:`, `ring_out:` and `share:`, the share of its tempo to play it at, 1 unless given, and returns `:ok` once written, or `{:error, message}`; the process given as `follow:` is sent where the beat is, as `Mx.Beat` describes, in the render's own time."
+  @doc "Renders the song at `path` to the WAV file `out`, with `seconds:`, `force:`, `ring_out:`, `mute:`, `solo:` and `share:`, the share of its tempo to play it at, 1 unless given, and returns `:ok` once written, or `{:error, message}`; the process given as `follow:` is sent where the beat is, as `Mx.Beat` describes, in the render's own time."
   def render(path, out, opts) when is_binary(path) and is_binary(out) and is_list(opts) do
     seconds = opts[:seconds]
     share = Keyword.get(opts, :share, 1)
@@ -33,14 +34,26 @@ defmodule Mx.Render do
          {:ok, _apps} <- Application.ensure_all_started(:mx),
          {:ok, song} <- load(path, opts),
          :ok <- check(song, seconds),
+         :ok <- check_parts(song, opts),
          playing = %{song | loops: Enum.filter(song.loops, &(&1.on == nil))},
          {:ok, total} <- total(playing, seconds, share),
          {:ok, ring} <- ring(playing, seconds, share) do
       Enum.each(left_out(song), &IO.puts/1)
       follow = List.wrap(opts[:follow])
-      run(playing, out, seconds, follow, share, total, {ring_out, ring})
+      heard = Keyword.take(opts, [:mute, :solo])
+      run(playing, out, seconds, follow, share, total, {ring_out, ring}, heard)
       if ring_out == nil and ring, do: IO.puts(cut_short(ring))
       Enum.each(Recording.report(out), &IO.puts/1)
+    end
+  end
+
+  defp check_parts(song, opts) do
+    names = Enum.map(song.loops, &Atom.to_string(&1.name))
+    asked = Enum.map(Keyword.get(opts, :mute, []) ++ Keyword.get(opts, :solo, []), &to_string/1)
+
+    case Enum.find(asked, &(&1 not in names)) do
+      nil -> :ok
+      unknown -> {:error, "the song has no part named #{unknown}"}
     end
   end
 
@@ -196,7 +209,7 @@ defmodule Mx.Render do
   # Every render starts at the same time, so each beat's time rounds the same way on every run.
   @start_us 0
 
-  defp run(song, out, seconds, follow, share, total, {ring_out, ring}) do
+  defp run(song, out, seconds, follow, share, total, {ring_out, ring}, heard) do
     start_us = @start_us
     Clock.start_render(start_us)
     Process.flag(:trap_exit, true)
@@ -224,6 +237,8 @@ defmodule Mx.Render do
           cut: &Mxs.cut/2,
           place_beats: &Mxs.place_beats/1,
           set_tempo: &Mxs.set_tempo/2,
+          mute: &Mxs.mute/2,
+          solo: &Mxs.solo/2,
           out: fn _at_us, message -> send(render, {:sent, self(), elem(message, 0)}) end,
           inputs: &Inputs.snapshot_at(inputs, &1, &2),
           set: &Inputs.put(inputs, &1, &2, &3, &4),
@@ -231,6 +246,8 @@ defmodule Mx.Render do
           on_end: fn -> send(render, :song_ended) end
         )
 
+      for name <- Keyword.get(heard, :mute, []), do: :ok = Band.mute(band, name)
+      :ok = Band.solo(band, Keyword.get(heard, :solo, []))
       stop_us = if seconds, do: start_us + round(seconds * 1_000_000)
       progress = %{start_us: start_us, total: total, printed_ms: now_ms()}
       last_us = play(band, start_us, stop_us, MapSet.new(), progress)

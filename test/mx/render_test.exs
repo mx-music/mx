@@ -54,6 +54,45 @@ defmodule Mx.RenderTest do
     assert_in_delta clicks(whole), 3.5, 0.001
   end
 
+  test "a render leaves out the parts muted and hears only those soloed, and refuses a part the song does not have",
+       %{tmp_dir: dir} do
+    both =
+      write(dir, "both.exs", """
+      song(tempo: 120, music: together([
+        part(:low, seq(c3: 2, g3: 2), synth: :fm),
+        part(:high, seq(e5: 1, g5: 3), synth: :fm)
+      ]))
+      """)
+
+    low =
+      write(
+        dir,
+        "low.exs",
+        "song(tempo: 120, music: part(:low, seq(c3: 2, g3: 2), synth: :fm))\n"
+      )
+
+    out = &Path.join(dir, &1)
+
+    assert {:ok, _} = render(low, out.("low.wav"))
+    assert {:ok, _} = render(both, out.("soloed.wav"), solo: ["low"])
+    assert {:ok, _} = render(both, out.("muted.wav"), mute: ["high"])
+    assert File.read!(out.("soloed.wav")) == File.read!(out.("low.wav"))
+    assert File.read!(out.("muted.wav")) == File.read!(out.("low.wav"))
+
+    assert {:ok, _} = render(both, out.("silent.wav"), mute: ["low", "high"])
+    {:ok, %{samples: samples}} = Mx.Audio.read(out.("silent.wav"))
+    assert Enum.all?(samples, &(&1 == 0.0))
+
+    assert render(both, out.("drums.wav"), mute: ["drums"]) ==
+             {{:error, "the song has no part named drums"}, ""}
+
+    assert {_opts, [_path]} =
+             Player.parse(["both.exs", "--render", "o.wav", "--mute", "low", "--solo", "high"])
+
+    assert with_io(fn -> Player.play(both, mute: ["low"]) end) ==
+             {{:error, "--mute and --solo go with --render"}, ""}
+  end
+
   test "writes a song to a stereo WAV file faster than it plays, and reports it", %{tmp_dir: dir} do
     path =
       write(

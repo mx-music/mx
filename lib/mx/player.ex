@@ -12,6 +12,8 @@ defmodule Mx.Player do
     force: :boolean,
     share: :float,
     ring_out: :boolean,
+    mute: :keep,
+    solo: :keep,
     part: :keep,
     tempo: :string,
     grid: :string,
@@ -56,11 +58,15 @@ defmodule Mx.Player do
         Mx.Render.render(
           path,
           out,
-          Keyword.take(opts, [:seconds, :force, :share, :ring_out | @import])
+          Keyword.take(opts, [:seconds, :force, :share, :ring_out | @import]) ++
+            [mute: Keyword.get_values(opts, :mute), solo: Keyword.get_values(opts, :solo)]
         )
 
       Keyword.has_key?(opts, :ring_out) ->
         {:error, "--ring-out goes with --render"}
+
+      Keyword.has_key?(opts, :mute) or Keyword.has_key?(opts, :solo) ->
+        {:error, "--mute and --solo go with --render"}
 
       true ->
         play_aloud(path, opts)
