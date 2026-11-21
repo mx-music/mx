@@ -38,7 +38,7 @@ It is the opening of Erik Satie's first Gymnopédie, of 1888.
 `note` plays a pitch or a chord for a number of beats, `seq` plays notes one after another, and `together` starts its items at once.
 In each bar of the left hand, `delay` starts the chord a beat after the bass note.
 `part` gives music to a synth, through effects, and `repeat` plays the whole again until mx stops.
-[The notation](documentation/notation.md) describes every function a song is written with.
+[From a note to a song](documentation/first_song.md) builds a first song in eight steps, and [the cheatsheet](documentation/cheatsheet.cheatmd) shows everything a song can say on one page.
 
 Play the file with the `mx` command, which [Install](#install) sets up:
 
@@ -151,6 +151,10 @@ A checkout of mx always compiles mxs with Rust, and `mix mx.play path/to/song.ex
 
 ## Guides
 
+Read the first two to start, and the others when you need them.
+
+- [From a note to a song](documentation/first_song.md): one song built in eight steps, each a file to play.
+- [Cheatsheet](documentation/cheatsheet.cheatmd): everything the notation can do, a line of code for each.
 - [Playing, recording and rendering](documentation/playing.md): `mx play` and its options.
 - [The notation](documentation/notation.md): every function a song is written with.
 - [Instruments](documentation/instruments.md): the synths and effects with their options, how to write a synth, and how to measure one against recordings.

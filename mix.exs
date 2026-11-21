@@ -80,6 +80,8 @@ defmodule Mx.MixProject do
       extras: [
         "README.md",
         "CHANGELOG.md",
+        "documentation/first_song.md",
+        "documentation/cheatsheet.cheatmd",
         "documentation/playing.md",
         "documentation/notation.md",
         "documentation/instruments.md",
@@ -90,8 +92,8 @@ defmodule Mx.MixProject do
       ],
       groups_for_extras: [
         Guides:
-          ~w(playing notation instruments scores examples)
-          |> Enum.map(&"documentation/#{&1}.md"),
+          ["documentation/first_song.md", "documentation/cheatsheet.cheatmd"] ++
+            Enum.map(~w(playing notation instruments scores examples), &"documentation/#{&1}.md"),
         Internals: ["documentation/architecture.md", "documentation/development.md"]
       ],
       assets: %{"documentation/assets" => "assets"},
