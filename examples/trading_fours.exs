@@ -618,15 +618,4 @@ defmodule TradingFours do
 
   # The chart every player reads, a chord to each bar of four beats, played round.
   defp chart, do: ~MX"Dm7 G7 Cmaj7 A7"
-
-  # The chord written at a beat of a chart read a word to every step beats, going round past its
-  # end.
-  defp chord_at(chart, step, beat) do
-    length = Enum.sum(Enum.map(chart, & &1.steps)) * step
-    beat = beat - length * Float.floor(beat / length)
-
-    Enum.reduce_while(chart, 0, fn %{tokens: [name], steps: steps}, start ->
-      if beat < start + steps * step, do: {:halt, name}, else: {:cont, start + steps * step}
-    end)
-  end
 end

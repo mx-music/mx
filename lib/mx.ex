@@ -457,12 +457,20 @@ defmodule Mx do
   defdelegate pitch(pitch), to: Mx.Music
 
   @doc """
-  The notes of a chord, from a root note given as a name or a number.
+  The notes of a chord, from a root note given as a name or a number, or from a chord's name as a chart writes it, such as `"C#dim7"`, its root the lowest of its letter at or above `from:`.
 
       iex> chord(:c4, :major)
       [60, 64, 67]
   """
   defdelegate chord(root, name), to: Mx.Notes
+
+  @doc """
+  The chord written at a beat of a chart, a `~MX` pattern of chord names read a word to every `step` beats; a beat past the chart's end goes round to its start, and two charts joined with `++` read as one.
+
+      iex> chord_at(~MX"D7 G Am:1/2 C#dim7:1/2", 2, 5)
+      "C#dim7"
+  """
+  defdelegate chord_at(chart, step, beat), to: Mx.Notes
 
   @doc """
   The notes of a scale, from a root note up to its octave, over `octaves:` octaves.

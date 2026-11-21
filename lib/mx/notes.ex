@@ -73,6 +73,75 @@ defmodule Mx.Notes do
     Enum.map(fetch!(@chords, name, "chord"), &(root + &1))
   end
 
+  @kinds %{
+    "" => :major,
+    "m" => :minor,
+    "7" => :dom7,
+    "m7" => :minor7,
+    "maj7" => :major7,
+    "dim7" => :dim7,
+    "dim" => :dim,
+    "aug" => :aug,
+    "sus2" => :sus2,
+    "sus4" => :sus4,
+    "m7b5" => :half_dim7,
+    "6" => :major6,
+    "m6" => :minor6,
+    "7b9" => :dom7_flat9,
+    "9" => :dom9
+  }
+
+  def chord(name, opts) when is_binary(name) and is_list(opts) do
+    from = note(Keyword.fetch!(opts, :from))
+    {class, kind} = chord_name(name)
+    chord(from + Integer.mod(class - from, 12), kind)
+  end
+
+  @doc false
+  def chord_name(name) do
+    with [_, letter, accidental, kind] <- Regex.run(~r/^([A-G])([#b]?)(.*)$/, name),
+         {:ok, kind} <- Map.fetch(@kinds, kind) do
+      shift = %{"" => 0, "#" => 1, "b" => -1}[accidental]
+      {@letters[String.downcase(letter)] + shift, kind}
+    else
+      _ ->
+        raise ArgumentError,
+              "#{name} is no chord; a chord is a capital letter from A to G, # or b, and a kind such as m7, maj7 or dim7"
+    end
+  end
+
+  @doc "The chord written at a beat of a chart, a pattern read a word to every step beats, going round past its end."
+  def chord_at(chart, step, beat) when is_list(chart) and is_number(beat) do
+    if not (is_number(step) and step > 0) do
+      step = inspect(step)
+      raise ArgumentError, "chord_at takes a step above 0, not step: #{step}"
+    end
+
+    length = Enum.sum(Enum.map(chart, & &1.steps)) * step
+    beat = beat - length * Float.floor(beat / length)
+
+    name =
+      Enum.reduce_while(chart, 0, fn %{steps: steps} = cell, start ->
+        if beat < start + steps * step,
+          do: {:halt, chart_word(cell)},
+          else: {:cont, start + steps * step}
+      end)
+
+    chord_name(name)
+    name
+  end
+
+  defp chart_word(%{tokens: [name]}) when is_binary(name), do: name
+
+  defp chart_word(%{tokens: []}) do
+    raise ArgumentError, "a chart takes one chord to a step, not a rest"
+  end
+
+  defp chart_word(%{tokens: tokens}) do
+    tokens = Enum.join(tokens, " ")
+    raise ArgumentError, "a chart takes one chord to a step, not #{tokens}"
+  end
+
   @doc "The notes of a scale from a root, ending on the octave above it, over `octaves:` octaves (1 by default)."
   def scale(root, name, opts \\ [])
       when (is_number(root) or is_atom(root)) and is_atom(name) and is_list(opts) do

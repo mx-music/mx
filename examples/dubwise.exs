@@ -450,7 +450,7 @@ defmodule Dubwise do
   end
 
   # A riddim bar's chord, its bars counted from 1 and wrapping every four.
-  defp harmony(bar), do: ring(chords(), bar - 1)
+  defp harmony(bar), do: chord(chord_at(chart(), 4, (bar - 1) * 4), from: :d3)
 
   defp kick(:one_drop), do: steps(~MX"..x."s, 1)
   defp kick(:rockers), do: steps(~MX"x.x."s, 1)
@@ -533,8 +533,7 @@ defmodule Dubwise do
   end
 
   defp voicing(bar) do
-    {root, quality} = harmony(bar)
-    voice(chord(root, quality), from: 62, to: 74, limit: 4)
+    voice(harmony(bar), from: 62, to: 74, limit: 4)
   end
 
   # The skank on 2 and 4, chopped twice on the last bar of the riddim.
@@ -548,8 +547,8 @@ defmodule Dubwise do
   # The bubble's left hand: the root and fifth on every offbeat, with the skank's chord on 2 and
   # 4.
   defp bubble(bar) do
-    {root, _} = harmony(bar)
-    root = pitch(root) - 12
+    [root | _] = harmony(bar)
+    root = root - 12
 
     entries =
       for beat <- [0.5, 1.5, 2.5, 3.5] do
@@ -672,6 +671,6 @@ defmodule Dubwise do
     ]
   end
 
-  # Each bar's chord, as its root and quality.
-  defp chords, do: [{:a3, :minor7}, {:d3, :dom9}, {:a3, :minor7}, {:g3, :major}]
+  # The chart, a chord to each bar of four beats, played round.
+  defp chart, do: ~MX"Am7 D9 Am7 G"
 end

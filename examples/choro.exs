@@ -301,7 +301,7 @@ defmodule Choro do
     # Each tone of the chord placed between D4 and C#5, as the four strings reach; a five-note
     # chord leaves out its root.
     voicing = fn beat ->
-      voice(named(chord_at(chart(section), 2, beat), :d4), from: 62, to: 73, limit: 4)
+      voice(chord(chord_at(chart(section), 2, beat), from: :d4), from: 62, to: 73, limit: 4)
     end
 
     pattern = [
@@ -342,7 +342,7 @@ defmodule Choro do
   defp guitar(section, coming) do
     # The chord at a beat, reading on into the strain that follows, its root between B1 and A#2,
     # so the low B string of the 7-string guitar gets used.
-    chord = fn beat -> named(chord_at(chart(section) ++ chart(coming), 2, beat), :b1) end
+    chord = fn beat -> chord(chord_at(chart(section) ++ chart(coming), 2, beat), from: :b1) end
 
     bars =
       for bar <- 0..15 do
@@ -498,35 +498,6 @@ defmodule Choro do
   end
 
   defp chart(:c), do: ~MX"C D#dim7 G7 C E7 Am D7 G7  C D#dim7 G7 E7 Am Dm G7 C"
-
-  # The chord written at a beat of a chart read a word to every step beats, going round past its
-  # end.
-  defp chord_at(chart, step, beat) do
-    length = Enum.sum(Enum.map(chart, & &1.steps)) * step
-    beat = beat - length * Float.floor(beat / length)
-
-    Enum.reduce_while(chart, 0, fn %{tokens: [name], steps: steps}, start ->
-      if beat < start + steps * step, do: {:halt, name}, else: {:cont, start + steps * step}
-    end)
-  end
-
-  # A chord's pitches from its name as a chart writes it, such as C#dim7, its root the lowest of
-  # its letter at or above from.
-  defp named(name, from) do
-    [_, letter, accidental, kind] = Regex.run(~r/^([A-G])([#b]?)(.*)$/, name)
-    letters = %{"C" => 0, "D" => 2, "E" => 4, "F" => 5, "G" => 7, "A" => 9, "B" => 11}
-    class = letters[letter] + %{"" => 0, "#" => 1, "b" => -1}[accidental]
-    from = pitch(from)
-    root = from + Integer.mod(class - from, 12)
-    chord(root, kind(kind))
-  end
-
-  defp kind(""), do: :major
-  defp kind("m"), do: :minor
-  defp kind("7"), do: :dom7
-  defp kind("m7"), do: :minor7
-  defp kind("maj7"), do: :major7
-  defp kind("dim7"), do: :dim7
 
   defp key(:a), do: scale(:g1, :major, octaves: 5)
   defp key(:b), do: scale(:e1, :harmonic_minor, octaves: 5)

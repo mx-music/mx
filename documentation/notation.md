@@ -913,6 +913,23 @@ motif = [60, 64, 67, 65]
 melody(:d4, intervals(motif))
 ```
 
+### Chord charts
+
+A band reads a chart, a chord to each bar, and a song writes it as a `~MX` pattern of chord names read a word to a bar:
+
+```elixir
+defp chart(:a), do: ~MX"D7 G B7 Em Am:1/2 C#dim7:1/2 G D7 G"
+
+# the guitar's root from B1 up, at the start of the next bar, reading on into the next strain
+[target | _] = chord(chord_at(chart(section) ++ chart(coming), 2, bar * 2 + 2), from: :b1)
+```
+
+- A chord name is a capital letter from A to G, then `#` for a sharp or `b` for a flat, then its kind: nothing for major, `m`, `7`, `m7`, `maj7`, `dim7`, `dim`, `aug`, `sus2`, `sus4`, `m7b5`, `6`, `m6`, `7b9` and `9`. A sharp is `#`, since `Cs` would read as C and `sus`.
+- `chord_at(chart, step, beat)` is the name written at the beat, each word lasting its steps times `step` beats, so two chords in a bar are `Am:1/2 C#dim7:1/2`, or `[Am C#dim7]`. A `|` is a bar line and is skipped.
+- A beat past the chart's end goes round to its start, so a chart of four bars plays round, and two charts joined with `++` read as one.
+- `chord(name, from: pitch)` is the chord's pitches, its root the lowest pitch of its letter at or above `from:`, and the other tones stacked above it, so each part places the chart's chord where it plays: `chord("Am7", from: :d4)` is `[69, 72, 76, 79]`.
+- A word that is no chord, and a step that holds a rest, are refused, naming them.
+
 ### Fitting notes to a chord
 
 | Call | Is | Which is |

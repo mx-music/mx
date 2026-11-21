@@ -420,34 +420,5 @@ defmodule Salsa do
   defp chart, do: ~MX"Am7 D7 Fmaj7 E7"
 
   # The chord at a beat of the chart, its root from D4 up.
-  defp chord_on(beat), do: named(chord_at(chart(), 4, beat), :d4)
-
-  # The chord written at a beat of a chart read a word to every step beats, going round past its
-  # end.
-  defp chord_at(chart, step, beat) do
-    length = Enum.sum(Enum.map(chart, & &1.steps)) * step
-    beat = beat - length * Float.floor(beat / length)
-
-    Enum.reduce_while(chart, 0, fn %{tokens: [name], steps: steps}, start ->
-      if beat < start + steps * step, do: {:halt, name}, else: {:cont, start + steps * step}
-    end)
-  end
-
-  # A chord's pitches from its name as a chart writes it, such as C#dim7, its root the lowest of
-  # its letter at or above from.
-  defp named(name, from) do
-    [_, letter, accidental, kind] = Regex.run(~r/^([A-G])([#b]?)(.*)$/, name)
-    letters = %{"C" => 0, "D" => 2, "E" => 4, "F" => 5, "G" => 7, "A" => 9, "B" => 11}
-    class = letters[letter] + %{"" => 0, "#" => 1, "b" => -1}[accidental]
-    from = pitch(from)
-    root = from + Integer.mod(class - from, 12)
-    chord(root, kind(kind))
-  end
-
-  defp kind(""), do: :major
-  defp kind("m"), do: :minor
-  defp kind("7"), do: :dom7
-  defp kind("m7"), do: :minor7
-  defp kind("maj7"), do: :major7
-  defp kind("dim7"), do: :dim7
+  defp chord_on(beat), do: chord(chord_at(chart(), 4, beat), from: :d4)
 end

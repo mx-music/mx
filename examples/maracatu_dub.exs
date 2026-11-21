@@ -289,8 +289,9 @@ defmodule MaracatuDub do
   defp skank(bars) do
     seq(
       for bar <- bars do
-        {root, quality} = ring(chords(), bar - 1)
-        chord = voice(chord(root, quality), from: 62, to: 74, limit: 4)
+        chord =
+          voice(chord(chord_at(chart(), 4, (bar - 1) * 4), from: :d3), from: 62, to: 74, limit: 4)
+
         beats = if rem(bar, 4) == 0, do: [1, 3, 3.25], else: [1, 3]
         hits = for beat <- beats, do: {beat, note(chord, 0.25)}
         at(hits, 4)
@@ -298,7 +299,8 @@ defmodule MaracatuDub do
     )
   end
 
-  defp chords, do: [{:d3, :minor7}, {:d3, :minor7}, {:g3, :minor7}, {:a3, :minor7}]
+  # The chart, a chord to each bar of four beats, played round.
+  defp chart, do: ~MX"Dm7 Dm7 Gm7 Am7"
 
   # The trombone's two phrases over the four bars of the riddim, each note with its beats.
   # The first and the third bar come in on the second sixteenth, as the alfaias' accents do.

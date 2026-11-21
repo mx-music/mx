@@ -4,6 +4,8 @@ defmodule Mx.NotesTest do
   import Mx,
     only: [
       chord: 2,
+      chord_at: 3,
+      sigil_MX: 2,
       scale: 2,
       scale: 3,
       ring: 2,
@@ -43,6 +45,61 @@ defmodule Mx.NotesTest do
     for name <- ~w(major minor dim aug dom7 major7 minor7 sus2 sus4)a do
       assert [60 | _] = chord(:c4, name)
     end
+  end
+
+  test "a chord's pitches from its name as a chart writes it, its root the lowest of its letter at or above from" do
+    assert chord("Am7", from: :d4) == [69, 72, 76, 79]
+    assert chord("D7", from: :d4) == [62, 66, 69, 72]
+    assert chord("C#dim7", from: :b1) == [37, 40, 43, 46]
+    assert chord("Bb7", from: :a2) == [46, 50, 53, 56]
+    assert chord(:a4, :minor7) == [69, 72, 76, 79]
+
+    kinds = %{
+      "C" => :major,
+      "Cm" => :minor,
+      "C7" => :dom7,
+      "Cm7" => :minor7,
+      "Cmaj7" => :major7,
+      "Cdim7" => :dim7,
+      "Cdim" => :dim,
+      "Caug" => :aug,
+      "Csus2" => :sus2,
+      "Csus4" => :sus4,
+      "Cm7b5" => :half_dim7,
+      "C6" => :major6,
+      "Cm6" => :minor6,
+      "C7b9" => :dom7_flat9,
+      "C9" => :dom9
+    }
+
+    for {name, kind} <- kinds, do: assert(chord(name, from: :c4) == chord(:c4, kind), name)
+  end
+
+  test "a chord name that is no chord is refused, naming it" do
+    for name <- ["Hm7", "Cs", "am7", "Cmaj9"] do
+      error = assert_raise ArgumentError, fn -> chord(name, from: :c4) end
+      assert error.message =~ name
+    end
+  end
+
+  test "the chord written at a beat of a chart, going round past its end" do
+    choro = ~MX"D7 G B7 Em Am:1/2 C#dim7:1/2 G D7 G"
+    assert chord_at(choro, 2, 9) == "C#dim7"
+    assert chord_at(choro, 2, 8.5) == "Am"
+    assert chord_at(~MX"Am7 D7 Fmaj7 E7", 4, 16) == "Am7"
+    assert chord_at(~MX"Am7 D7 Fmaj7 E7", 4, 15.5) == "E7"
+    assert chord_at(~MX"D7 | G", 2, 2) == "G"
+    assert chord_at(~MX"G D7" ++ ~MX"Em", 2, 4) == "Em"
+    assert chord_at(~MX"G [C E]", 4, 6) == "E"
+  end
+
+  test "chord_at refuses a word that is no chord, a step not above 0, and a step of no single word" do
+    error = assert_raise ArgumentError, fn -> chord_at(~MX"G Hx", 4, 4) end
+    assert error.message =~ "Hx"
+    error = assert_raise ArgumentError, fn -> chord_at(~MX"G", 0, 0) end
+    assert error.message =~ "step: 0"
+    error = assert_raise ArgumentError, fn -> chord_at(~MX"G _", 4, 4) end
+    assert error.message =~ "one chord"
   end
 
   test "chords for choro: diminished, half-diminished, sixths and extended dominants" do
