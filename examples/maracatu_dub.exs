@@ -92,7 +92,7 @@ defmodule MaracatuDub do
       part(
         :trombone,
         together([
-          seq([slur(Enum.take(phrase(:a), 10)), rest(24)]),
+          seq([legato(Enum.take(phrase(:a), 10)), rest(24)]),
           throw(:trombone, :echo, 0, 12, 0.5, 0.15)
         ])
       ),
@@ -116,7 +116,7 @@ defmodule MaracatuDub do
       part(:bass, bass(1..8)),
       part(:sub, bass(1..8)),
       part(:skank, together([skank(1..8), throw(:skank, :echo, 12, 17, 0.5, 0.15)])),
-      part(:trombone, slur(phrase(:a) ++ phrase(:b)))
+      part(:trombone, legato(phrase(:a) ++ phrase(:b)))
     ])
   end
 
@@ -173,7 +173,7 @@ defmodule MaracatuDub do
       part(
         :trombone,
         together([
-          at([{16, slur(Enum.take(phrase(:a), 6))}], 32),
+          at([{16, legato(Enum.take(phrase(:a), 6))}], 32),
           throw(:trombone, :echo, 16, 30, 0.6, 0.15),
           at(
             [
@@ -210,7 +210,7 @@ defmodule MaracatuDub do
           at([{28, change({:skank, :echo}, mix: 0.55)}], 32)
         ])
       ),
-      part(:trombone, slur(phrase(:b) ++ phrase(:a)))
+      part(:trombone, legato(phrase(:b) ++ phrase(:a)))
     ])
   end
 
@@ -317,7 +317,7 @@ defmodule MaracatuDub do
   end
 
   # Each run of different notes slurred into one held note that slides between them.
-  defp slur(notes) do
+  defp legato(notes) do
     {notes, _} =
       Enum.map_reduce(notes, 0, fn {name, beats}, onset ->
         {{name, beats, onset}, onset + beats}

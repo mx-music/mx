@@ -31,7 +31,7 @@ defmodule Paganini do
           do: {token, i == 0}
 
     {notes, _} = Enum.map_reduce(tokens, {0, 0}, &read/2)
-    Enum.chunk_while(notes, [], &slur/2, fn [] -> {:cont, []} end)
+    Enum.chunk_while(notes, [], &in_slur/2, fn [] -> {:cont, []} end)
   end
 
   defp score(:theme_a) do
@@ -109,10 +109,10 @@ defmodule Paganini do
      }, {length, louder}}
   end
 
-  defp slur(%{open: true} = note, []), do: {:cont, [note]}
-  defp slur(note, []), do: {:cont, [note], []}
-  defp slur(%{close: true} = note, slur), do: {:cont, Enum.reverse([note | slur]), []}
-  defp slur(note, slur), do: {:cont, [note | slur]}
+  defp in_slur(%{open: true} = note, []), do: {:cont, [note]}
+  defp in_slur(note, []), do: {:cont, [note], []}
+  defp in_slur(%{close: true} = note, slur), do: {:cont, Enum.reverse([note | slur]), []}
+  defp in_slur(note, slur), do: {:cont, [note | slur]}
 
   # Louder on the first note of a bar and through a crescendo.
   defp vel(note) do

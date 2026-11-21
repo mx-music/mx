@@ -359,6 +359,64 @@ defmodule Mx.MusicTest do
     end
 
     @tag :tmp_dir
+    test "slur plays notes one after another as one note whose pitch changes, as a pattern's ~ does",
+         ctx do
+      events = fn music, synth ->
+        {:ok, song} = load(ctx, "song(music: part(:a, #{music}, synth: :#{synth}))")
+        events(song, :a)
+      end
+
+      slurred = events.("slur(seq(g4: 0.5, bb4: 0.5), slide: 0.05)", :flute)
+      assert slurred == events.(~s|steps(~MX"g4:2 ~bb4:2", 0.25, slide: 0.05)|, :flute)
+
+      assert [{0, 67, [sustain: 1.0]}, {0.5, {:control, _, :flute}, [note: 70, note_slide: 0.05]}] =
+               slurred
+
+      assert [
+               {0, 60, [vel: 0.5, vibrato: 0.08, sustain: 2]},
+               {1, {:control, _, :cello}, [note: 64]}
+             ] =
+               events.(
+                 "slur(seq([note(:c4, 1, vel: 0.5), note(:e4, 1, vel: 0.9)]), vibrato: 0.08)",
+                 :cello
+               )
+    end
+
+    test "slur changes pitch at each later note's beat, holds a repeated pitch on, and keeps the slur's options" do
+      assert %Mx.Music.Note{
+               pitch: 60,
+               beats: 4,
+               opts: [changes: [{1, [note: 64]}, {2, [note: 67]}]]
+             } =
+               Mx.slur(Mx.seq(c4: 1, e4: 1, g4: 2))
+
+      assert %Mx.Music.Note{opts: [changes: [{2, [note: 64]}]]} =
+               Mx.slur(Mx.seq(c4: 1, c4: 1, e4: 1))
+
+      slide = fn from, to -> if(abs(to - from) > 4, do: 0.1, else: 0.01) end
+
+      assert %Mx.Music.Note{
+               opts: [
+                 changes: [{1, [note: 67, note_slide: 0.1]}, {2, [note: 69, note_slide: 0.01]}]
+               ]
+             } =
+               Mx.slur(Mx.seq(c4: 1, g4: 1, a4: 1), slide: slide)
+
+      assert %Mx.Music.Note{opts: [changes: [{1, [note: 64]}, {1, [amp: 0.5]}]]} =
+               Mx.slur(Mx.seq(c4: 1, e4: 1), changes: [{1, amp: 0.5}])
+
+      assert %Mx.Music.Note{opts: [changes: [{1, [note: 64]}, {2.0, [note: 67]}]]} =
+               Mx.slur(Mx.seq([Mx.seq(c4: 1), Mx.repeat(Mx.seq(e4: 0.5), 2), Mx.note(:g4, 1)]))
+
+      assert Mx.slur(Mx.seq(c4: 2)) == Mx.note(:c4, 2)
+
+      assert %Mx.Music.Note{opts: [amp: 0.5, vel: 0.3, changes: [{1, [note: 64]}]]} =
+               Mx.slur(Mx.seq([Mx.note(:c4, 1, vel: 0.5, amp: 0.5), Mx.note(:e4, 1, amp: 0.1)]),
+                 vel: 0.3
+               )
+    end
+
+    @tag :tmp_dir
     test "random numbers drawn while the music is built are the same on every load", ctx do
       path =
         write(
@@ -604,6 +662,18 @@ defmodule Mx.MusicTest do
 
       assert {:error, message} = Song.load(path)
       assert message =~ "feel cannot hold a loop"
+    end
+
+    test "slur refuses anything but notes one after another" do
+      for music <- [
+            Mx.seq(c4: 1, r: 1, e4: 1),
+            Mx.seq([Mx.note([60, 64], 1), Mx.note(:e4, 1)]),
+            Mx.seq([Mx.hit(), Mx.note(:e4, 1)]),
+            Mx.together([Mx.note(:c4, 1), Mx.note(:e4, 1)])
+          ] do
+        error = assert_raise ArgumentError, fn -> Mx.slur(music) end
+        assert error.message =~ ~r/^slur takes notes one after another, not /
+      end
     end
 
     @tag :tmp_dir

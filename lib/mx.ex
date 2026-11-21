@@ -143,6 +143,19 @@ defmodule Mx do
   defdelegate each(music, opts), to: Mx.Music
 
   @doc """
+  Notes one after another as one note whose pitch changes while it sounds, as `~` writes in a pattern: it starts on the first note, with its options, lasts as long as all of them, and changes to each later note's pitch at the beat that note starts.
+  A note that repeats the pitch before it is held on, with no change, and a later note's options are left out.
+  `slide:` glides each change over that many beats, or over what a function of the pitch left and the pitch reached returns; every other option goes to the note, and `changes:` are kept beside the slur's own.
+  The music is notes in a seq, with seqs and repeats inside it.
+
+      slur(seq(g4: 0.5, bb4: 0.5, c5: 1), slide: 0.05, vibrato: 0.08)
+
+      iex> slur(seq(c4: 1, e4: 1))
+      %Mx.Music.Note{pitch: 60, beats: 2, opts: [changes: [{1, [note: 64]}]]}
+  """
+  defdelegate slur(music, opts \\ []), to: Mx.Music
+
+  @doc """
   The music played with a feel: a note that starts on a step of `step:` beats, counted from the start of the music, comes later by its step's number in `push:`, or earlier by a number below 0, and its vel is multiplied by its step's number in `lean:`.
   The tables go round, so four numbers with a step of 0.25 cover a beat, and a note between two steps is left as it is.
   `loose:` moves every start by a random amount of at most that many beats either way, and `touch:` multiplies every vel by a random number from 1 less it to 1 more, the same on every load.

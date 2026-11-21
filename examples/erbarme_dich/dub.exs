@@ -464,7 +464,7 @@ defmodule Dub do
 
   # The ritornello on the trombone an octave down, each run of different notes slurred into one
   # held note that slides between them.
-  defp lead(bar), do: slur(ritornello(bar))
+  defp lead(bar), do: legato(ritornello(bar))
 
   # The alto's first phrase, "Erbarme dich, mein Gott, um meiner Zähren willen", bars 9 to 12,
   # over the ritornello's first four bars.
@@ -574,7 +574,7 @@ defmodule Dub do
     ]
   end
 
-  defp slur(notes) do
+  defp legato(notes) do
     {notes, _} =
       Enum.map_reduce(notes, 0, fn {name, beats}, onset ->
         {{name, beats, onset}, onset + beats}

@@ -107,20 +107,12 @@ defmodule Viola do
   # than a third slides audibly, as a player's finger does.
   # A swelled stroke grows louder to its middle and eases off to its end, and a stroke across the
   # strings changes note without sliding.
-  defp bow([{first, held} | rest] = notes, vel, opts) do
+  defp bow(notes, vel, opts) do
     beats = Enum.sum(Enum.map(notes, &elem(&1, 1)))
 
-    {fingers, _} =
-      Enum.map_reduce(rest, {held, first}, fn {note, held}, {beat, previous} ->
-        slide = if abs(note - previous) > 4 and !opts[:across], do: 0.08, else: 0.01
-        {{beat, note: note, note_slide: slide}, {beat + held, note}}
-      end)
-
-    # A note repeated in a slur is held on, with no change.
-    fingers =
-      for {{beat, change}, previous} <- Enum.zip(fingers, Enum.map(notes, &elem(&1, 0))),
-          change[:note] != previous,
-          do: {beat, change}
+    slide = fn previous, note ->
+      if abs(note - previous) > 4 and !opts[:across], do: 0.08, else: 0.01
+    end
 
     {start, swell} =
       if opts[:swell] do
@@ -130,16 +122,16 @@ defmodule Viola do
         {[], []}
       end
 
-    note(
-      first,
-      beats,
+    slur(
+      seq(notes),
       [vel: vel] ++
         start ++
         [
           sustain: beats - 0.1,
           release: 0.15,
           vibrato: Keyword.get(opts, :vibrato, 0),
-          changes: Enum.sort_by(fingers ++ swell, &elem(&1, 0))
+          changes: swell,
+          slide: slide
         ]
     )
   end

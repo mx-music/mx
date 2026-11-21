@@ -842,6 +842,18 @@ part(:lead, note(:a4, 4, changes: [{1, note: :c5, note_slide: 0.1}]), synth: :fl
 
 Each entry is a beat into the note and the options that change there.
 
+`slur` writes those changes from notes one after another, as `~` does in a pattern:
+
+```elixir
+part(:lead, slur(seq(a4: 1, c5: 1, e5: 2), slide: 0.1, vibrato: 0.08), synth: :flute)
+```
+
+- The slur is one note: it starts on the first note, with its options, lasts as long as all of them, and changes to each later note's pitch at the beat that note starts.
+- A note that repeats the pitch before it writes no change, so the note is held on, and a later note's options are left out.
+- `slide:` glides each change over that many beats, and without it a change jumps; given a function, it is called with the pitch left and the pitch reached, as numbers, and returns the beats, so `slide: fn from, to -> if(abs(to - from) > 4, do: 0.1, else: 0.01) end` slides audibly only on a shift of more than a third.
+- Every other option goes to the note, over the first note's own, and `changes:` are kept beside the slur's own, which come first at one beat.
+- The music is notes in a `seq`, with seqs and repeats inside it; a rest, a chord, a hit, a sample, notes together or a part is refused.
+
 ## Live audio
 
 A song can play what a microphone or an instrument sends to the sound card, through mx's effects, while its parts play.

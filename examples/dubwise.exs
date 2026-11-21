@@ -134,7 +134,7 @@ defmodule Dubwise do
       part(
         :melodica,
         together([
-          seq([slur(Enum.take(phrase(:a), 11)), rest(8)]),
+          seq([legato(Enum.take(phrase(:a), 11)), rest(8)]),
           throw(:melodica, 0, 12, 16, 0.5)
         ])
       ),
@@ -159,7 +159,7 @@ defmodule Dubwise do
         hands(1..8) ++
         band(1..8) ++
         [
-          part(:melodica, slur(phrase(:a) ++ phrase(:b))),
+          part(:melodica, legato(phrase(:a) ++ phrase(:b))),
           part(:vibes, vibes([{15, [:e5, :a5]}, {30, [:a4, :c5, :e5]}], 32))
         ]
     )
@@ -176,7 +176,7 @@ defmodule Dubwise do
           part(:electric_bass, seq(1..8, &bass/1)),
           part(:skank, together([seq(1..8, &skank/1), throw(:skank, 12, 17, 32)])),
           part(:organ, seq(1..8, &bubble/1)),
-          part(:melodica, slur(phrase(:b) ++ phrase(:a))),
+          part(:melodica, legato(phrase(:b) ++ phrase(:a))),
           part(:vibes, vibes([{14, [:a4, :e5]}, {31, [:g4, :b4, :d5]}], 32)),
           part(:siren, at([{28, siren()}], 32))
         ]
@@ -275,7 +275,7 @@ defmodule Dubwise do
         part(
           :melodica,
           together([
-            at([{16, slur(Enum.take(phrase(:a), 5))}], 32),
+            at([{16, legato(Enum.take(phrase(:a), 5))}], 32),
             throw(:melodica, 16, 28, 32, 0.6),
             at(
               [
@@ -368,7 +368,7 @@ defmodule Dubwise do
           :skank,
           together([delay(seq(7..8, &skank/1), 24), throw(:skank, 24, 31, 32)])
         ),
-        part(:melodica, at([{24, slur(Enum.drop(phrase(:b), 12))}], 32)),
+        part(:melodica, at([{24, legato(Enum.drop(phrase(:b), 12))}], 32)),
         part(:siren, at([{26, siren()}], 32))
       ] ++ hands(1..8)
     )
@@ -405,8 +405,8 @@ defmodule Dubwise do
             :organ,
             together([seq(1..8, &bubble/1), at([{0, change({:organ, :slicer}, mix: 0)}], 32)])
           ),
-          part(:melodica, slur(lead)),
-          part(:trombone, slur(lead, -12)),
+          part(:melodica, legato(lead)),
+          part(:trombone, legato(lead, -12)),
           part(:vibes, vibes([{15, [:e5, :a5]}, {30, [:a4, :c5, :e5]}], 32)),
           part(:siren, at([{24, siren()}], 32))
         ]
@@ -579,7 +579,7 @@ defmodule Dubwise do
 
   # Each run of different notes slurred into one held note that slides between them, moved by some
   # semitones.
-  defp slur(notes, shift \\ 0) do
+  defp legato(notes, shift \\ 0) do
     {notes, _} =
       Enum.map_reduce(notes, 0, fn {name, beats}, onset ->
         {{name, beats, onset}, onset + beats}

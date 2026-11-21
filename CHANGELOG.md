@@ -39,7 +39,8 @@
   * [mx] In a module that uses `Mx.Song`, `kit/2` declares a kit of strokes, each played by a declared part, and `kit/3` and `kit/4` play one pattern on all of them
   * [mx] `each/2` gives every note and hit of some music options it does not give itself, or those a function of its beat returns
   * [mx] `feel/2` plays a groove's feel as tables of how late and how loud each step comes, with `loose:` and `touch:` for a little randomness that is the same on every load
-  * [mx] A song that defines a function of its own named `seq`, `together`, `at`, `form`, `without`, `only`, `kit`, `each` or `feel`, at the arity of one of those above, no longer compiles, and must rename it; four examples renamed a `kit` helper to `drums`
+  * [mx] `slur/2` plays notes one after another as one note whose pitch changes while it sounds, as `~` writes in a pattern, gliding over `slide:` beats or what a function of the two pitches returns
+  * [mx] A song that defines a function of its own named `seq`, `together`, `at`, `form`, `without`, `only`, `kit`, `each`, `feel` or `slur`, at the arity of one of those above, no longer compiles, and must rename it; four examples renamed a `kit` helper to `drums`, and four a `slur` helper to `legato` or `in_slur`
 
 ## v0.2.2 (2026-11-16)
 

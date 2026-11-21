@@ -542,6 +542,68 @@ defmodule Mx.Music do
   @doc "The music with each note started at the beat the function returns for the beat it was written on, its length unchanged."
   def swing(music, fun) when is_function(fun, 1), do: %Swing{music: item(music), fun: fun}
 
+  @doc "Notes one after another as one note, of the first note's pitch and options, lasting them all and changing to each later note's pitch at its beat, gliding over slide: beats."
+  def slur(music, opts \\ []) do
+    check_keyword("slur", opts)
+    [first | rest] = notes = slurred(item(music))
+    {slide, opts} = Keyword.pop(opts, :slide)
+    beats = Enum.sum(Enum.map(notes, & &1.beats))
+
+    {own, _} =
+      Enum.map_reduce(rest, {first.beats, first.pitch}, fn note, {beat, previous} ->
+        change =
+          if note.pitch == previous,
+            do: [],
+            else: [{beat, [note: note.pitch] ++ slid(slide, previous, note.pitch)}]
+
+        {change, {beat + note.beats, note.pitch}}
+      end)
+
+    merged = Keyword.merge(first.opts, opts)
+    changes = Enum.sort_by(Enum.concat(own) ++ Keyword.get(merged, :changes, []), &elem(&1, 0))
+
+    merged =
+      cond do
+        Keyword.has_key?(merged, :changes) ->
+          Enum.map(merged, fn
+            {:changes, _} -> {:changes, changes}
+            other -> other
+          end)
+
+        changes != [] ->
+          merged ++ [changes: changes]
+
+        true ->
+          merged
+      end
+
+    note(first.pitch, beats, merged)
+  end
+
+  defp slurred(%Seq{items: items}), do: Enum.flat_map(items, &slurred/1)
+
+  defp slurred(%Repeat{music: music, times: times}) when is_integer(times),
+    do: Enum.flat_map(1..times//1, fn _ -> slurred(music) end)
+
+  defp slurred(%Note{pitch: pitch} = note) when is_number(pitch), do: [note]
+
+  defp slurred(other) do
+    found =
+      case other do
+        %struct{} = written when struct in [Note, Sample, MIDI, Message] -> written(written)
+        %Rest{beats: beats} -> "a rest of #{beats} beats"
+        %Together{} -> "notes together"
+        %Part{name: name} -> "the part #{name}"
+        other -> inspect(other)
+      end
+
+    raise ArgumentError, "slur takes notes one after another, not #{found}"
+  end
+
+  defp slid(nil, _from, _to), do: []
+  defp slid(slide, from, to) when is_function(slide, 2), do: [note_slide: slide.(from, to)]
+  defp slid(slide, _from, _to), do: [note_slide: slide]
+
   @feel_options [:step, :push, :lean, :loose, :touch]
 
   @doc "The music with each note on a step pushed and leaned by the tables given, and moved a little at random by loose: and touch:."
