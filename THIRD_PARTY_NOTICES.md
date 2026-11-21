@@ -70,7 +70,7 @@ The texts of the licences follow the list, each with the crates it covers and th
 - microfft 0.6.0, MIT, https://crates.io/crates/microfft/0.6.0
 - miniz_oxide 0.9.1, MIT OR Zlib OR Apache-2.0, https://crates.io/crates/miniz_oxide/0.9.1
 - multiversion_no_op 1.0.0, Apache-2.0 OR MIT, https://crates.io/crates/multiversion_no_op/1.0.0
-- mxs 0.3.0, MIT, https://crates.io/crates/mxs/0.3.0
+- mxs 0.3.1, MIT, https://crates.io/crates/mxs/0.3.1
 - nalgebra 0.32.6, BSD-3-Clause, https://crates.io/crates/nalgebra/0.32.6
 - nalgebra 0.35.0, Apache-2.0, https://crates.io/crates/nalgebra/0.35.0
 - nalgebra-macros 0.2.2, Apache-2.0, https://crates.io/crates/nalgebra-macros/0.2.2
@@ -3189,7 +3189,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 ```
 ### MIT License
 
-Used by mxs 0.3.0.
+Used by mxs 0.3.1.
 
 ```text
 MIT License
