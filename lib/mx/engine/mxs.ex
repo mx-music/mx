@@ -289,8 +289,25 @@ defmodule Mx.Engine.Mxs do
 
   @doc "The seconds each of a part's effects sounds on after its input stops, with the options declared in beats in beats at `bpm`, or `{:error, message}`; it needs no engine started."
   def effect_tails(effects, bpm) when is_list(effects) and is_number(bpm) do
+    written = for {name, _specs} <- effect_specs(), into: MapSet.new(), do: name
     effects = for {effect, opts} <- effects, do: {Atom.to_string(effect), options(opts)}
-    Native.effect_tails(effects, bpm / 1)
+    native = Enum.reject(effects, fn {name, _opts} -> name in written end)
+
+    with {:ok, tails} <- Native.effect_tails(native, bpm / 1) do
+      {:ok, written_tails(effects, tails, written)}
+    end
+  end
+
+  # The NIF asks an engine that holds only mxs's own effects, and an effect written with defeffect
+  # rings a second in mxs.
+  defp written_tails([], [], _written), do: []
+
+  defp written_tails([{name, _opts} | effects], tails, written) do
+    if name in written do
+      [1.0 | written_tails(effects, tails, written)]
+    else
+      [hd(tails) | written_tails(effects, tl(tails), written)]
+    end
   end
 
   @doc """

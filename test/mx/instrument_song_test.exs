@@ -97,6 +97,24 @@ defmodule Mx.InstrumentSongTest do
     assert {:ok, _song} = Mx.Song.load(path)
   end
 
+  test "a song file that defines a defeffect renders through it", ctx do
+    render = fn name, fx ->
+      path = Path.join(ctx.tmp_dir, name <> ".exs")
+      out = Path.join(ctx.tmp_dir, name <> ".wav")
+      music = "part(:x, note(:c4, 2), synth: :saw#{fx})"
+      File.write!(path, "import Mx\n" <> @quieter <> "song(tempo: 120, music: #{music})\n")
+      capture_io(fn -> refute match?({:error, _}, Mx.Render.render(path, out, [])) end)
+      Mx.Recording.level(out).peak
+    end
+
+    dry = render.("dry", "")
+    assert_in_delta render.("half", ", fx: [quieter: []]"), dry - 6.02, 0.1
+    assert_in_delta render.("quarter", ", fx: [quieter: [level: 0.25]]"), dry - 12.04, 0.1
+
+    {:ok, song} = Mx.Song.load(Path.join(ctx.tmp_dir, "half.exs"))
+    assert Mx.Render.ring_out(song) == {:ok, %{seconds: 1.0, part: :x, effect: :quieter}}
+  end
+
   test "a defeffect's option given a value outside the range its attr declares is refused when the song loads",
        ctx do
     path = Path.join(ctx.tmp_dir, "loud_bells.exs")
