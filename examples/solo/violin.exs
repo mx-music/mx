@@ -14,14 +14,12 @@ defmodule Violin do
   part :violin, synth: :violin, fx: [reverb: [room: 0.5, mix: 0.25]]
 
   def song do
-    repeat(form())
-  end
-
-  # The form, each of its passes a section.
-  defp form do
-    form([cantabile: 1, bariolage: 2, scales: 1, pizz: 1, ending: 1], fn section, %{pass: pass} ->
-      part(:violin, section(section, pass))
-    end)
+    repeat(
+      form([cantabile: 1, bariolage: 2, scales: 1, pizz: 1, ending: 1], fn section,
+                                                                           %{pass: pass} ->
+        part(:violin, section(section, pass))
+      end)
+    )
   end
 
   defp section(:cantabile, _pass) do

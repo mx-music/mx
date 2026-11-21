@@ -11,14 +11,11 @@ defmodule DeepBass do
   part :deep_bass, synth: :deep_bass
 
   def song do
-    repeat(form())
-  end
-
-  # The form, each of its passes a section of four bars.
-  defp form do
-    form([ballad: 2, groove: 2, high: 1, ending: 1], fn section, %{pass: pass} ->
-      part(:deep_bass, deep_bass(section, pass))
-    end)
+    repeat(
+      form([ballad: 2, groove: 2, high: 1, ending: 1], fn section, %{pass: pass} ->
+        part(:deep_bass, deep_bass(section, pass))
+      end)
+    )
   end
 
   # A pass of the form as its 16 beats: each note at its beat, lasting its sustain.

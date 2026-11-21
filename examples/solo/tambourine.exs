@@ -16,17 +16,14 @@ defmodule Tambourine do
   part :tambourine_shake, synth: :tambourine_shake, defaults: [amp: 0.5]
 
   def song do
-    repeat(form())
-  end
-
-  # The form, each of its passes a section.
-  defp form do
-    form([roll: 1, backbeat: 2, tarantella: 3, soft: 1, ending: 1], fn section, %{pass: pass} ->
-      together([
-        part(:tambourine, tambourine(section, pass)),
-        part(:tambourine_shake, tambourine_shake(section, pass))
-      ])
-    end)
+    repeat(
+      form([roll: 1, backbeat: 2, tarantella: 3, soft: 1, ending: 1], fn section, %{pass: pass} ->
+        together([
+          part(:tambourine, tambourine(section, pass)),
+          part(:tambourine_shake, tambourine_shake(section, pass))
+        ])
+      end)
+    )
   end
 
   # A pass of tambourine, as 4 beats.

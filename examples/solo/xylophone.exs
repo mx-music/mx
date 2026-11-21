@@ -9,14 +9,11 @@ defmodule Xylophone do
   part :xylophone, synth: :xylophone
 
   def song do
-    repeat(form())
-  end
-
-  # The form, each of its passes a section.
-  defp form do
-    form([runs: 2, repeats: 1, bright: 1, ending: 1], fn section, %{pass: pass} ->
-      part(:xylophone, xylophone(section, pass))
-    end)
+    repeat(
+      form([runs: 2, repeats: 1, bright: 1, ending: 1], fn section, %{pass: pass} ->
+        part(:xylophone, xylophone(section, pass))
+      end)
+    )
   end
 
   # A pass of xylophone, as 8 beats.

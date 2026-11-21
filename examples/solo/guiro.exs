@@ -14,14 +14,12 @@ defmodule Guiro do
   part :guiro, synth: :guiro, defaults: [amp: 0.6]
 
   def song do
-    repeat(form())
-  end
-
-  # The form, each of its passes a section.
-  defp form do
-    form([slow: 1, chacha: 4, son: 2, bomba: 2, again: 2, ending: 1], fn section, %{pass: pass} ->
-      part(:guiro, guiro(section, pass))
-    end)
+    repeat(
+      form([slow: 1, chacha: 4, son: 2, bomba: 2, again: 2, ending: 1], fn section,
+                                                                           %{pass: pass} ->
+        part(:guiro, guiro(section, pass))
+      end)
+    )
   end
 
   # A pass of guiro, as 4 beats.

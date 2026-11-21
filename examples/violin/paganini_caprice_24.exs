@@ -15,14 +15,11 @@ defmodule Paganini do
   part :violin, synth: :violin, fx: [reverb: [room: 0.5, mix: 0.3]]
 
   def song do
-    repeat(form())
-  end
-
-  # The form, each of its passes a section, each section's notes bowed phrase by phrase.
-  defp form do
-    form([theme_a: 2, theme_b: 2, variation_a: 2, variation_b: 2], fn section ->
-      part(:violin, seq(Enum.map(phrases(score(section)), &bow/1)))
-    end)
+    repeat(
+      form([theme_a: 2, theme_b: 2, variation_a: 2, variation_b: 2], fn section ->
+        part(:violin, seq(Enum.map(phrases(score(section)), &bow/1)))
+      end)
+    )
   end
 
   # The notes of a score, each slur gathered into one list and every other note in a list of its

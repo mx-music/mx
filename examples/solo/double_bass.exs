@@ -10,14 +10,11 @@ defmodule DoubleBass do
   part :double_bass, synth: :double_bass
 
   def song do
-    repeat(form())
-  end
-
-  # The form, each of its passes a section.
-  defp form do
-    form([walk: 3, bowed: 1, ending: 1], fn section, %{pass: pass} ->
-      part(:double_bass, double_bass(section, pass))
-    end)
+    repeat(
+      form([walk: 3, bowed: 1, ending: 1], fn section, %{pass: pass} ->
+        part(:double_bass, double_bass(section, pass))
+      end)
+    )
   end
 
   # A pass of the form as its 16 beats: each stroke at its beat, lasting its sustain.

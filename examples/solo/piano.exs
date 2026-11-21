@@ -9,15 +9,12 @@ defmodule Piano do
   part :piano, synth: :piano
 
   def song do
-    repeat(form())
-  end
-
-  # The form, each of its passes a section.
-  defp form do
-    form([sweep: 1, soft_chords: 1, loud_chords: 1, runs: 2, extremes: 1], fn section,
-                                                                              %{pass: pass} ->
-      part(:piano, piano(section, pass))
-    end)
+    repeat(
+      form([sweep: 1, soft_chords: 1, loud_chords: 1, runs: 2, extremes: 1], fn section,
+                                                                                %{pass: pass} ->
+        part(:piano, piano(section, pass))
+      end)
+    )
   end
 
   # A pass of piano, as 8 beats.

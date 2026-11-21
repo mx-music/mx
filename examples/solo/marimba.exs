@@ -9,14 +9,11 @@ defmodule Marimba do
   part :marimba, synth: :marimba
 
   def song do
-    repeat(form())
-  end
-
-  # The form, each of its passes a section.
-  defp form do
-    form([sweep: 1, melody: 2, low_high: 1, ending: 1], fn section, %{pass: pass} ->
-      part(:marimba, marimba(section, pass))
-    end)
+    repeat(
+      form([sweep: 1, melody: 2, low_high: 1, ending: 1], fn section, %{pass: pass} ->
+        part(:marimba, marimba(section, pass))
+      end)
+    )
   end
 
   # A pass of marimba, as 8 beats.

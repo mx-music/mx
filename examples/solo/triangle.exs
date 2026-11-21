@@ -15,14 +15,11 @@ defmodule Triangle do
   part :triangle, synth: :triangle, defaults: [amp: 0.5]
 
   def song do
-    repeat(form())
-  end
-
-  # The form, each of its passes a section.
-  defp form do
-    form([ringing: 2, damped: 1, roll: 1, baiao: 3, ending: 1], fn section, %{pass: pass} ->
-      part(:triangle, triangle(section, pass))
-    end)
+    repeat(
+      form([ringing: 2, damped: 1, roll: 1, baiao: 3, ending: 1], fn section, %{pass: pass} ->
+        part(:triangle, triangle(section, pass))
+      end)
+    )
   end
 
   # A pass of triangle, as 4 beats.

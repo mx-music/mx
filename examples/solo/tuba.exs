@@ -10,14 +10,12 @@ defmodule Tuba do
   part :tuba, synth: :tuba
 
   def song do
-    repeat(form())
-  end
-
-  # The form, each of its passes a section.
-  defp form do
-    form([oompah: 1, walking: 1, melody: 1, extremes: 1, ending: 1], fn section, %{pass: pass} ->
-      part(:tuba, tuba(section, pass))
-    end)
+    repeat(
+      form([oompah: 1, walking: 1, melody: 1, extremes: 1, ending: 1], fn section,
+                                                                          %{pass: pass} ->
+        part(:tuba, tuba(section, pass))
+      end)
+    )
   end
 
   # A pass of the form as its 16 beats: each stroke at its beat, lasting its sustain.

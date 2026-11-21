@@ -14,14 +14,11 @@ defmodule Tanpura do
   part :tanpura, synth: :tanpura, defaults: [amp: 0.5]
 
   def song do
-    repeat(form())
-  end
-
-  # The form, each of its passes a section.
-  defp form do
-    form([slow: 1, quick: 1, low: 2, long: 1], fn section, %{pass: pass} ->
-      part(:tanpura, tanpura(section, pass))
-    end)
+    repeat(
+      form([slow: 1, quick: 1, low: 2, long: 1], fn section, %{pass: pass} ->
+        part(:tanpura, tanpura(section, pass))
+      end)
+    )
   end
 
   # A pass of the drone: Sa plucked and held, then 4 beats of its ring.

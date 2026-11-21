@@ -11,14 +11,11 @@ defmodule ElectricGuitar do
   part :electric_guitar, synth: :electric_guitar
 
   def song do
-    repeat(form())
-  end
-
-  # The form, each of its passes a section of four bars.
-  defp form do
-    form([strum: 2, line: 2, muted: 1, high: 1], fn section, %{pass: pass} ->
-      part(:electric_guitar, electric_guitar(section, pass))
-    end)
+    repeat(
+      form([strum: 2, line: 2, muted: 1, high: 1], fn section, %{pass: pass} ->
+        part(:electric_guitar, electric_guitar(section, pass))
+      end)
+    )
   end
 
   # A pass of the form as its 16 beats: each note at its beat, lasting its sustain.

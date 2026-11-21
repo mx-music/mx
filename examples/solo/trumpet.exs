@@ -10,14 +10,11 @@ defmodule Trumpet do
   part :trumpet, synth: :trumpet
 
   def song do
-    repeat(form())
-  end
-
-  # The form, each of its passes a section.
-  defp form do
-    form([fanfare: 2, lyrical: 1, echo: 1, ending: 1], fn section, %{pass: pass} ->
-      part(:trumpet, trumpet(section, pass))
-    end)
+    repeat(
+      form([fanfare: 2, lyrical: 1, echo: 1, ending: 1], fn section, %{pass: pass} ->
+        part(:trumpet, trumpet(section, pass))
+      end)
+    )
   end
 
   # A pass of the form as its 16 beats: each stroke at its beat, lasting its sustain.

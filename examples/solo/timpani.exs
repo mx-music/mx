@@ -12,14 +12,11 @@ defmodule Timpani do
   part :timpani, synth: :timpani, defaults: [amp: 0.5]
 
   def song do
-    repeat(form())
-  end
-
-  # The form, each of its passes a section.
-  defp form do
-    form([swell: 1, pounding: 1, melody: 1, soft: 1, ending: 1], fn section, %{pass: pass} ->
-      part(:timpani, timpani(section, pass))
-    end)
+    repeat(
+      form([swell: 1, pounding: 1, melody: 1, soft: 1, ending: 1], fn section, %{pass: pass} ->
+        part(:timpani, timpani(section, pass))
+      end)
+    )
   end
 
   # A pass of timpani, as 16 beats.

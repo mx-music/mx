@@ -9,14 +9,11 @@ defmodule Vibraphone do
   part :vibraphone, synth: :vibraphone
 
   def song do
-    repeat(form())
-  end
-
-  # The form, each of its passes a section.
-  defp form do
-    form([chords: 1, motor: 1, damped: 2, ending: 1], fn section, %{pass: pass} ->
-      part(:vibraphone, vibraphone(section, pass))
-    end)
+    repeat(
+      form([chords: 1, motor: 1, damped: 2, ending: 1], fn section, %{pass: pass} ->
+        part(:vibraphone, vibraphone(section, pass))
+      end)
+    )
   end
 
   # A pass of vibraphone, as 8 beats.

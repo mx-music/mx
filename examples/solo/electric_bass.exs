@@ -10,14 +10,11 @@ defmodule ElectricBass do
   part :electric_bass, synth: :electric_bass
 
   def song do
-    repeat(form())
-  end
-
-  # The form, each of its passes a section of four bars.
-  defp form do
-    form([funk: 2, walk: 2, ballad: 1, ending: 1], fn section, %{pass: pass} ->
-      part(:electric_bass, electric_bass(section, pass))
-    end)
+    repeat(
+      form([funk: 2, walk: 2, ballad: 1, ending: 1], fn section, %{pass: pass} ->
+        part(:electric_bass, electric_bass(section, pass))
+      end)
+    )
   end
 
   # A pass of the form as its 16 beats: each note at its beat, lasting its sustain.

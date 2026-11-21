@@ -10,28 +10,25 @@ defmodule Agogo do
   part :high_agogo, synth: :high_agogo
 
   def song do
-    repeat(form())
-  end
-
-  # The form, each of its passes a section.
-  defp form do
-    form(
-      [
-        samba: 4,
-        partido: 4,
-        maracatu: 4,
-        accents: 2,
-        one: 2,
-        two: 2,
-        three: 2,
-        four: 2
-      ],
-      fn section, %{pass: pass} ->
-        together([
-          part(:low_agogo, low_agogo(section, pass)),
-          part(:high_agogo, high_agogo(section, pass))
-        ])
-      end
+    repeat(
+      form(
+        [
+          samba: 4,
+          partido: 4,
+          maracatu: 4,
+          accents: 2,
+          one: 2,
+          two: 2,
+          three: 2,
+          four: 2
+        ],
+        fn section, %{pass: pass} ->
+          together([
+            part(:low_agogo, low_agogo(section, pass)),
+            part(:high_agogo, high_agogo(section, pass))
+          ])
+        end
+      )
     )
   end
 

@@ -10,14 +10,11 @@ defmodule Horn do
   part :horn, synth: :horn
 
   def song do
-    repeat(form())
-  end
-
-  # The form, each of its passes a section.
-  defp form do
-    form([melody: 2, calls: 1, extremes: 1, ending: 1], fn section, %{pass: pass} ->
-      part(:horn, horn(section, pass))
-    end)
+    repeat(
+      form([melody: 2, calls: 1, extremes: 1, ending: 1], fn section, %{pass: pass} ->
+        part(:horn, horn(section, pass))
+      end)
+    )
   end
 
   # A pass of the form as its 16 beats: each stroke at its beat, lasting its sustain.

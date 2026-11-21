@@ -9,14 +9,11 @@ defmodule Glockenspiel do
   part :glockenspiel, synth: :glockenspiel
 
   def song do
-    repeat(form())
-  end
-
-  # The form, each of its passes a section.
-  defp form do
-    form([melody: 2, ring: 1, ending: 1], fn section, %{pass: pass} ->
-      part(:glockenspiel, glockenspiel(section, pass))
-    end)
+    repeat(
+      form([melody: 2, ring: 1, ending: 1], fn section, %{pass: pass} ->
+        part(:glockenspiel, glockenspiel(section, pass))
+      end)
+    )
   end
 
   # A pass of glockenspiel, as 8 beats.

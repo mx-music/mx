@@ -10,14 +10,11 @@ defmodule TenorSax do
   part :tenor_sax, synth: :tenor_sax
 
   def song do
-    repeat(form())
-  end
-
-  # The form, each of its passes a section.
-  defp form do
-    form([choro: 2, slow: 1, extremes: 1, ending: 1], fn section, %{pass: pass} ->
-      part(:tenor_sax, tenor_sax(section, pass))
-    end)
+    repeat(
+      form([choro: 2, slow: 1, extremes: 1, ending: 1], fn section, %{pass: pass} ->
+        part(:tenor_sax, tenor_sax(section, pass))
+      end)
+    )
   end
 
   # A pass of the form as its 16 beats: each stroke at its beat, lasting its sustain.

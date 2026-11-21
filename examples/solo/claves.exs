@@ -13,15 +13,12 @@ defmodule Claves do
   part :clave, synth: :clave, defaults: [amp: 0.5]
 
   def song do
-    repeat(form())
-  end
-
-  # The form, each of its passes a section.
-  defp form do
-    form([son: 2, son_2_3: 1, rumba: 2, bossa: 2, bembe: 2, ending: 1], fn section,
-                                                                           %{pass: pass} ->
-      part(:clave, clave(section, pass))
-    end)
+    repeat(
+      form([son: 2, son_2_3: 1, rumba: 2, bossa: 2, bembe: 2, ending: 1], fn section,
+                                                                             %{pass: pass} ->
+        part(:clave, clave(section, pass))
+      end)
+    )
   end
 
   # A pass of clave, as 8 beats.

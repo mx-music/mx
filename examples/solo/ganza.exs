@@ -9,17 +9,14 @@ defmodule Ganza do
   part :shaker, synth: :shaker
 
   def song do
-    repeat(form())
-  end
-
-  # The form, each of its passes a section.
-  defp form do
-    form([one: 4, two: 2, three: 2, four: 4], fn section, %{pass: pass} ->
-      together([
-        part(:ganza, ganza(section, pass)),
-        part(:shaker, shaker(section, pass))
-      ])
-    end)
+    repeat(
+      form([one: 4, two: 2, three: 2, four: 4], fn section, %{pass: pass} ->
+        together([
+          part(:ganza, ganza(section, pass)),
+          part(:shaker, shaker(section, pass))
+        ])
+      end)
+    )
   end
 
   # A pass of ganza, as 4 beats.

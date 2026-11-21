@@ -10,14 +10,11 @@ defmodule Clarinet do
   part :clarinet, synth: :clarinet
 
   def song do
-    repeat(form())
-  end
-
-  # The form, each of its passes a section.
-  defp form do
-    form([low: 1, arpeggios: 2, melody: 1, high: 1], fn section, %{pass: pass} ->
-      part(:clarinet, clarinet(section, pass))
-    end)
+    repeat(
+      form([low: 1, arpeggios: 2, melody: 1, high: 1], fn section, %{pass: pass} ->
+        part(:clarinet, clarinet(section, pass))
+      end)
+    )
   end
 
   # A pass of the form as its 16 beats: each stroke at its beat, lasting its sustain.

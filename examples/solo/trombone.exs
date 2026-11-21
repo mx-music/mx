@@ -10,14 +10,11 @@ defmodule Trombone do
   part :trombone, synth: :trombone
 
   def song do
-    repeat(form())
-  end
-
-  # The form, each of its passes a section.
-  defp form do
-    form([legato: 2, march: 1, extremes: 1, ending: 1], fn section, %{pass: pass} ->
-      part(:trombone, trombone(section, pass))
-    end)
+    repeat(
+      form([legato: 2, march: 1, extremes: 1, ending: 1], fn section, %{pass: pass} ->
+        part(:trombone, trombone(section, pass))
+      end)
+    )
   end
 
   # A pass of the trombone, as 16 beats; each legato phrase is one note its changes move, as the

@@ -9,14 +9,11 @@ defmodule Harp do
   part :harp, synth: :harp
 
   def song do
-    repeat(form())
-  end
-
-  # The form, each of its passes a section.
-  defp form do
-    form([joropo: 4, ring: 1, ending: 1], fn section, %{pass: pass} ->
-      part(:harp, harp(section, pass))
-    end)
+    repeat(
+      form([joropo: 4, ring: 1, ending: 1], fn section, %{pass: pass} ->
+        part(:harp, harp(section, pass))
+      end)
+    )
   end
 
   # A pass of harp, as 12 beats.

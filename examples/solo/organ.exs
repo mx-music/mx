@@ -9,14 +9,11 @@ defmodule Organ do
   part :organ, synth: :organ
 
   def song do
-    repeat(form())
-  end
-
-  # The form, each of its passes a section.
-  defp form do
-    form([quiet: 2, loud: 2, both: 1, quiet: 1], fn section, %{pass: pass} ->
-      part(:organ, organ(section, pass))
-    end)
+    repeat(
+      form([quiet: 2, loud: 2, both: 1, quiet: 1], fn section, %{pass: pass} ->
+        part(:organ, organ(section, pass))
+      end)
+    )
   end
 
   # A pass of organ, as 16 beats.

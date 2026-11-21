@@ -18,14 +18,11 @@ defmodule Cabasa do
   part :cabasa, synth: :cabasa, defaults: [amp: 0.6]
 
   def song do
-    repeat(form())
-  end
-
-  # The form, each of its passes a section.
-  defp form do
-    form([turns: 1, pulse: 2, bossa: 4, spinning: 2, bossa: 2, ending: 1], fn section ->
-      part(:cabasa, cabasa(section))
-    end)
+    repeat(
+      form([turns: 1, pulse: 2, bossa: 4, spinning: 2, bossa: 2, ending: 1], fn section ->
+        part(:cabasa, cabasa(section))
+      end)
+    )
   end
 
   # A pass of cabasa, as 8 beats.

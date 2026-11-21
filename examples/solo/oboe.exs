@@ -10,14 +10,11 @@ defmodule Oboe do
   part :oboe, synth: :oboe
 
   def song do
-    repeat(form())
-  end
-
-  # The form, each of its passes a section.
-  defp form do
-    form([melody: 1, dance: 2, range: 1, ending: 1], fn section, %{pass: pass} ->
-      part(:oboe, oboe(section, pass))
-    end)
+    repeat(
+      form([melody: 1, dance: 2, range: 1, ending: 1], fn section, %{pass: pass} ->
+        part(:oboe, oboe(section, pass))
+      end)
+    )
   end
 
   # A pass of the form as its 16 beats: each stroke at its beat, lasting its sustain.

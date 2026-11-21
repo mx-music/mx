@@ -11,14 +11,11 @@ defmodule ElectricPiano do
   part :electric_piano, synth: :electric_piano
 
   def song do
-    repeat(form())
-  end
-
-  # The form, each of its passes a section of four bars.
-  defp form do
-    form([chords: 2, melody: 2, low: 1, high: 1], fn section, %{pass: pass} ->
-      part(:electric_piano, electric_piano(section, pass))
-    end)
+    repeat(
+      form([chords: 2, melody: 2, low: 1, high: 1], fn section, %{pass: pass} ->
+        part(:electric_piano, electric_piano(section, pass))
+      end)
+    )
   end
 
   # A pass of the form as its 16 beats: each note at its beat, lasting its sustain.

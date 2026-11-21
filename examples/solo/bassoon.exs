@@ -10,14 +10,11 @@ defmodule Bassoon do
   part :bassoon, synth: :bassoon
 
   def song do
-    repeat(form())
-  end
-
-  # The form, each of its passes a section.
-  defp form do
-    form([tenor: 1, bass: 1, detached: 2, ending: 1], fn section, %{pass: pass} ->
-      part(:bassoon, bassoon(section, pass))
-    end)
+    repeat(
+      form([tenor: 1, bass: 1, detached: 2, ending: 1], fn section, %{pass: pass} ->
+        part(:bassoon, bassoon(section, pass))
+      end)
+    )
   end
 
   # A pass of the form as its 16 beats: each stroke at its beat, lasting its sustain.

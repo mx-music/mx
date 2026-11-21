@@ -19,20 +19,17 @@ defmodule Tabla do
   part :tabla_ghe, synth: :tabla_ghe
 
   def song do
-    repeat(form())
-  end
-
-  # The form, each of its passes a section.
-  defp form do
-    form([theka: 2, variation: 2, bends: 2, theka: 1], fn section, %{pass: pass} ->
-      together([
-        part(:tabla_na, tabla_na(section, pass)),
-        part(:tabla_tun, tabla_tun(section, pass)),
-        part(:tabla_te, tabla_te(section, pass)),
-        part(:tabla_ke, tabla_ke(section, pass)),
-        part(:tabla_ghe, tabla_ghe(section, pass))
-      ])
-    end)
+    repeat(
+      form([theka: 2, variation: 2, bends: 2, theka: 1], fn section, %{pass: pass} ->
+        together([
+          part(:tabla_na, tabla_na(section, pass)),
+          part(:tabla_tun, tabla_tun(section, pass)),
+          part(:tabla_te, tabla_te(section, pass)),
+          part(:tabla_ke, tabla_ke(section, pass)),
+          part(:tabla_ghe, tabla_ghe(section, pass))
+        ])
+      end)
+    )
   end
 
   # A pass of tabla_na, as 16 beats.
