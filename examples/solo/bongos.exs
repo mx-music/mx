@@ -34,19 +34,12 @@ defmodule Bongos do
   part :high_bongo, synth: :high_bongo, defaults: [amp: 1.5]
   part :low_bongo, synth: :low_bongo, defaults: [amp: 1.05]
 
-  def song do
-    repeat(seq(form()))
-  end
-
   # The form, each of its passes a bar.
-  defp form do
-    for cells <- bars() do
-      together(
-        for drum <- [:high_bongo, :low_bongo] do
-          part(drum, bar(Keyword.get(cells, drum, "")))
-        end
-      )
-    end
+  def song, do: repeat(seq(bars(), &drums/1))
+
+  # A bar of the two drums, each silent where the bar gives it no cells.
+  defp drums(cells) do
+    together([:high_bongo, :low_bongo], &part(&1, bar(Keyword.get(cells, &1, ""))))
   end
 
   defp bars do

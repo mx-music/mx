@@ -14,19 +14,14 @@ defmodule Harmonium do
   part :melody, synth: :harmonium
   part :sa, synth: :harmonium, defaults: [amp: 0.6]
 
-  def song do
-    repeat(seq(form()))
-  end
-
   # The form, each section with the time it plays in a row: the ascent and descent, the melody
   # twice, the high phrase and the ending.
-  defp form do
-    for {section, time} <- [ascent: 0, melody: 0, melody: 1, high: 0, ending: 0] do
-      together([
-        part(:melody, right_hand(section, time)),
-        part(:sa, left_hand())
-      ])
-    end
+  def song do
+    repeat(
+      form([ascent: 1, melody: 2, high: 1, ending: 1], fn section, %{time: time} ->
+        together(melody: right_hand(section, time), sa: left_hand())
+      end)
+    )
   end
 
   # The right hand's line, each token a note held a little short of its length.

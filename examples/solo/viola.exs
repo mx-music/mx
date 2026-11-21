@@ -12,17 +12,13 @@ defmodule Viola do
 
   part :viola, synth: :viola, fx: [reverb: [room: 0.5, mix: 0.25]]
 
-  def song do
-    repeat(seq(form()))
-  end
-
   # The form, each of its passes a section.
-  defp form do
-    sections = [:cantabile, :tremolo, :arpeggios, :pizz, :ending]
-
-    Enum.with_index(sections, fn section, pass ->
-      part(:viola, section(section, pass))
-    end)
+  def song do
+    repeat(
+      form([:cantabile, :tremolo, :arpeggios, :pizz, :ending], fn section, %{pass: pass} ->
+        part(:viola, section(section, pass))
+      end)
+    )
   end
 
   defp section(:cantabile, _pass), do: seq(melody(-12))

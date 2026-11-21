@@ -21,12 +21,8 @@ defmodule Berimbau do
 
   part :berimbau, synth: :berimbau, fx: [reverb: [room: 0.35, mix: 0.1]]
 
-  def song do
-    repeat(seq(form()))
-  end
-
   # The form, each of its passes a section, and the tempo each toque is played at between them.
-  defp form do
+  def song do
     angola =
       ~w(angola angola angola variation_1 angola angola variation_2 angola angola variation_3 angola angola)a
 
@@ -39,21 +35,16 @@ defmodule Berimbau do
         List.duplicate(:sao_bento_grande, 12) ++
         [tempo(108)] ++ List.duplicate(:benguela, 6)
 
-    {music, _pass} =
-      Enum.map_reduce(sections, 0, fn
-        section, pass when is_atom(section) -> {pass(section, pass), pass + 1}
-        change, pass -> {change, pass}
+    repeat(
+      seq(sections, fn
+        section when is_atom(section) -> part(:berimbau, berimbau(section))
+        change -> change
       end)
-
-    music
-  end
-
-  defp pass(section, pass) do
-    part(:berimbau, berimbau(section, pass))
+    )
   end
 
   # A pass of the berimbau, as 8 beats.
-  defp berimbau(section, _pass) do
+  defp berimbau(section) do
     hits =
       for {bar, first} <- Enum.zip(bars(section), [0, 4]),
           {beat, opts} <- strokes(bar),

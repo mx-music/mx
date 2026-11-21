@@ -59,20 +59,12 @@ defmodule Drums do
   part :low_tom, synth: :low_tom, defaults: [amp: 0.5]
   part :crash, synth: :crash, defaults: [amp: 0.5]
 
-  def song do
-    repeat(seq(form()))
-  end
-
   # The form, each of its passes a bar.
-  defp form do
-    for patterns <- bars() do
-      together(
-        for drum <- @kit do
-          pattern = Keyword.get(patterns, drum, "")
-          part(drum, bar(drum, pattern))
-        end
-      )
-    end
+  def song, do: repeat(seq(bars(), &kit_bar/1))
+
+  # A bar of the whole kit, each drum silent where the bar gives it no pattern.
+  defp kit_bar(patterns) do
+    together(@kit, &part(&1, bar(&1, Keyword.get(patterns, &1, ""))))
   end
 
   defp bars do

@@ -12,17 +12,13 @@ defmodule Cello do
 
   part :cello, synth: :cello, fx: [reverb: [room: 0.5, mix: 0.25]]
 
-  def song do
-    repeat(seq(form()))
-  end
-
   # The form, each of its passes a section.
-  defp form do
-    sections = [:prelude, :cantabile, :pizz, :ending]
-
-    Enum.with_index(sections, fn section, pass ->
-      part(:cello, section(section, pass))
-    end)
+  def song do
+    repeat(
+      form([:prelude, :cantabile, :pizz, :ending], fn section, %{pass: pass} ->
+        part(:cello, section(section, pass))
+      end)
+    )
   end
 
   # Each bar's eight notes played twice, over the open G: G major, C over G, D seven over G and G

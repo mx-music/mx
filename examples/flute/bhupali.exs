@@ -17,18 +17,16 @@ defmodule Bhupali do
   part :tabla_ghe, synth: :tabla_ghe, defaults: [amp: 0.5]
 
   def song do
-    repeat(seq(form()))
-  end
-
-  defp form do
-    for section <- [:alap, :gat, :gat, :taans, :tihai, :sam] do
-      together([
-        part(:flute, flute(section, 0)),
-        part(:tabla_na, tabla(section, :tabla_na)),
-        part(:tabla_tun, tabla(section, :tabla_tun)),
-        part(:tabla_ghe, tabla(section, :tabla_ghe))
-      ])
-    end
+    repeat(
+      form([:alap, :gat, :gat, :taans, :tihai, :sam], fn section ->
+        together(
+          flute: flute(section, 0),
+          tabla_na: tabla(section, :tabla_na),
+          tabla_tun: tabla(section, :tabla_tun),
+          tabla_ghe: tabla(section, :tabla_ghe)
+        )
+      end)
+    )
   end
 
   # A section's breaths one after another from its first beat, at the vel given.

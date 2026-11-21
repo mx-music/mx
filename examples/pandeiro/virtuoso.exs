@@ -14,22 +14,20 @@ defmodule Virtuoso do
   part :pandeiro_jingles, synth: :pandeiro_jingles
   part :pandeiro_slap, synth: :pandeiro_slap
 
-  def song do
-    repeat(seq(form()))
-  end
-
   # The form, each of its passes a section; a beat is a quarter note of 2/4, so a pass is two
   # bars.
-  defp form do
-    for {section, count} <- [groove: 2, ruffs: 2, threes: 6, fives: 5, sextuplets: 4, groove: 2],
-        time <- 0..(count - 1) do
-      together([
-        part(:pandeiro_thumb, hits(section, time, ["o", "ox"])),
-        part(:pandeiro_heel, hits(section, time, ["h"])),
-        part(:pandeiro_jingles, hits(section, time, ["f"])),
-        part(:pandeiro_slap, hits(section, time, ["s"]))
-      ])
-    end
+  def song do
+    repeat(
+      form([groove: 2, ruffs: 2, threes: 6, fives: 5, sextuplets: 4, groove: 2], fn section,
+                                                                                    %{time: time} ->
+        together(
+          pandeiro_thumb: hits(section, time, ["o", "ox"]),
+          pandeiro_heel: hits(section, time, ["h"]),
+          pandeiro_jingles: hits(section, time, ["f"]),
+          pandeiro_slap: hits(section, time, ["s"])
+        )
+      end)
+    )
   end
 
   # A pass of one hand's sound, as 4 beats.

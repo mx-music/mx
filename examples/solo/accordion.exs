@@ -15,19 +15,12 @@ defmodule Accordion do
   part :chords, synth: :accordion, defaults: [amp: 0.6]
   part :ending, synth: :accordion
 
-  def song do
-    repeat(form())
-  end
+  def song, do: repeat(form([:theme, :high, :chords, :theme, :ending], &accordion/1))
 
-  defp form do
-    seq([
-      part(:theme, line(theme(), [])),
-      part(:high, line(theme(), octaves: 1, held: 0.45, detune: 0)),
-      part(:chords, chords()),
-      part(:theme, line(theme(), [])),
-      part(:ending, line(ending(), []))
-    ])
-  end
+  defp accordion(:theme), do: part(:theme, line(theme(), []))
+  defp accordion(:high), do: part(:high, line(theme(), octaves: 1, held: 0.45, detune: 0))
+  defp accordion(:chords), do: part(:chords, chords())
+  defp accordion(:ending), do: part(:ending, line(ending(), []))
 
   # Each token is a note and its length in beats, held `held` of its length, shifted by `octaves`.
   defp line(tokens, opts) do

@@ -14,15 +14,14 @@ defmodule Sitar do
 
   part :sitar, synth: :sitar, defaults: [sa: 49]
 
-  def song do
-    repeat(seq(form()))
-  end
-
   # The alap's three lines, then the gat's five parts.
-  defp form do
-    alap = for time <- 0..2, do: part(:sitar, alap(time))
-    gat = for time <- 0..4, do: part(:sitar, gat(time))
-    alap ++ gat
+  def song do
+    repeat(
+      form([alap: 3, gat: 5], fn
+        :alap, %{time: time} -> part(:sitar, alap(time))
+        :gat, %{time: time} -> part(:sitar, gat(time))
+      end)
+    )
   end
 
   # An alap line as its plucks: one pluck lasts through every note glided into after it, and moves
