@@ -75,9 +75,9 @@ defmodule Virtuosity do
     guiro_short: {"guiro/Guiro_Fast", [""], 8, {1, 0.5}, 0.45, 0.5}
   ]
 
-  @clave "..7.7... 7..7..7."
-  @cascara "5.8.85.5 8.58.5.5"
-  @bell "5.9.95.5 9.59.5.5"
+  @clave ~MX"..7.7... 7..7..7."s
+  @cascara ~MX"5.8.85.5 8.58.5.5"s
+  @bell ~MX"5.9.95.5 9.59.5.5"s
 
   @walk [
     ~w(d2 f2 a2 ab2)a,
@@ -90,29 +90,29 @@ defmodule Virtuosity do
     ~w(a2 g2 e2 cs2)a
   ]
 
-  @ride "5..8.45..8.4"
-  @feet [pedal: "...5.....5..", kick: "3..3..3..3.."]
+  @ride ~MX"5..8.45..8.4"s
+  @feet [pedal: ~MX"...5.....5.."s, kick: ~MX"3..3..3..3.."s]
 
   @comping [
-    "........3...",
-    ".....4......",
-    "..3.........",
-    "........5..3",
-    "........3...",
-    ".....4.....3",
-    "..3.....4...",
-    ".....5..3..."
+    ~MX"........3..."s,
+    ~MX".....4......"s,
+    ~MX"..3........."s,
+    ~MX"........5..3"s,
+    ~MX"........3..."s,
+    ~MX".....4.....3"s,
+    ~MX"..3.....4..."s,
+    ~MX".....5..3..."s
   ]
 
   @busier [
-    "..3.....4..3",
-    ".....5......",
-    "..4..3.....4",
-    "........6..3",
-    "..3..4......",
-    ".....3..5..3",
-    "..4.....3..5",
-    "...3.45.67.8"
+    ~MX"..3.....4..3"s,
+    ~MX".....5......"s,
+    ~MX"..4..3.....4"s,
+    ~MX"........6..3"s,
+    ~MX"..3..4......"s,
+    ~MX".....3..5..3"s,
+    ~MX"..4.....3..5"s,
+    ~MX"...3.45.67.8"s
   ]
 
   # A drum's files through one microphone, at each strength and take recorded.
@@ -164,19 +164,19 @@ defmodule Virtuosity do
       intro(),
       mambo(),
       mambo_bell(setup()),
-      swing(Enum.to_list(0..7), @comping, feathered(8, %{0 => "7..3..3..3.."})),
+      swing(Enum.to_list(0..7), @comping, feathered(8, %{0 => ~MX"7..3..3..3.."s})),
       swing(
         Enum.to_list(0..7),
         @busier,
-        feathered(8, %{0 => "7..3..3..3..", 3 => "3..3....6..3", 5 => "3....6.3..3."})
+        feathered(8, %{0 => ~MX"7..3..3..3.."s, 3 => ~MX"3..3....6..3"s, 5 => ~MX"3....6.3..3."s})
       ),
       first_four(),
-      swing(Enum.to_list(0..3), Enum.take(@comping, 4), feathered(4, %{0 => "8..3..3..3.."})),
+      swing(Enum.to_list(0..3), Enum.take(@comping, 4), feathered(4, %{0 => ~MX"8..3..3..3.."s})),
       second_four(),
       swing(
         Enum.to_list(4..7),
-        List.replace_at(Enum.take(@busier, 4), 3, "......6..7.8"),
-        feathered(4, %{0 => "8..3..3..3.."})
+        List.replace_at(Enum.take(@busier, 4), 3, ~MX"......6..7.8"s),
+        feathered(4, %{0 => ~MX"8..3..3..3.."s})
       ),
       mambo_bell([]),
       ending()
@@ -189,12 +189,12 @@ defmodule Virtuosity do
     play(
       [
         rim: repeat(eighths(@cascara), 4),
-        pedal: repeat(eighths("..5...5."), 8),
+        pedal: repeat(eighths(~MX"..5...5."s), 8),
         cross_stick: seq([rest(8), repeat(eighths(@clave), 3)]),
-        kick: seq([rest(8), repeat(eighths("...5..3."), 6)]),
+        kick: seq([rest(8), repeat(eighths(~MX"...5..3."s), 6)]),
         claves: seq([rest(16), repeat(eighths(@clave), 2)]),
-        rimshot: seq([rest(28), eighths("....8...")]),
-        buzz: seq([rest(28), eighths(".....468")])
+        rimshot: seq([rest(28), eighths(~MX"....8..."s)]),
+        buzz: seq([rest(28), eighths(~MX".....468"s)])
       ] ++ later(16, tumbao(2)) ++ later(24, guiro(2))
     )
   end
@@ -203,11 +203,11 @@ defmodule Virtuosity do
   defp mambo do
     play(
       [
-        crash: eighths("8......."),
+        crash: eighths(~MX"8......."s),
         rim: repeat(eighths(@cascara), 4),
         cross_stick: repeat(eighths(@clave), 4),
-        kick: seq([eighths("8..6..4."), repeat(eighths("...6..4."), 7)]),
-        pedal: repeat(eighths("..5...5."), 8),
+        kick: seq([eighths(~MX"8..6..4."s), repeat(eighths(~MX"...6..4."s), 7)]),
+        pedal: repeat(eighths(~MX"..5...5."s), 8),
         claves: repeat(eighths(@clave), 4),
         bass: bass_tumbao(2)
       ] ++ tumbao(4) ++ guiro(8)
@@ -219,14 +219,14 @@ defmodule Virtuosity do
   defp mambo_bell(ending) do
     play(
       [
-        crash: eighths("8......."),
+        crash: eighths(~MX"8......."s),
         bell: repeat(eighths(@bell), 4),
-        cowbell: repeat(eighths("9.4.7.447.447.44"), 4),
-        cross_stick: repeat(eighths("..7....."), 8),
-        high_tom: seq([repeat(eighths("......6."), 7), rest(4)]),
-        low_tom: seq([repeat(eighths(".......6"), 7), rest(4)]),
-        kick: seq([eighths("8..6..4."), repeat(eighths("...6..4."), 7)]),
-        pedal: repeat(eighths("..5...5."), 8),
+        cowbell: repeat(eighths(~MX"9.4.7.447.447.44"s), 4),
+        cross_stick: repeat(eighths(~MX"..7....."s), 8),
+        high_tom: seq([repeat(eighths(~MX"......6."s), 7), rest(4)]),
+        low_tom: seq([repeat(eighths(~MX".......6"s), 7), rest(4)]),
+        kick: seq([eighths(~MX"8..6..4."s), repeat(eighths(~MX"...6..4."s), 7)]),
+        pedal: repeat(eighths(~MX"..5...5."s), 8),
         claves: repeat(eighths(@clave), 4),
         bass: bass_tumbao(2)
       ] ++ ending ++ tumbao(4) ++ guiro(8)
@@ -235,7 +235,10 @@ defmodule Virtuosity do
 
   # The fill out of the mambo, on the last bar's three and four.
   defp setup do
-    [flam: seq([rest(28), eighths("....8...")]), snare: seq([rest(28), eighths("......68")])]
+    [
+      flam: seq([rest(28), eighths(~MX"....8..."s)]),
+      snare: seq([rest(28), eighths(~MX"......68"s)])
+    ]
   end
 
   # The swing: the ride's beat, the hi-hat on two and four, the bass drum feathered, and the snare
@@ -244,7 +247,7 @@ defmodule Virtuosity do
     bars = length(walk_bars)
 
     play(
-      crash: triplets("7..........."),
+      crash: triplets(~MX"7..........."s),
       ride: repeat(triplets(@ride), bars),
       pedal: repeat(triplets(@feet[:pedal]), bars),
       kick: triplets(kicks),
@@ -263,14 +266,40 @@ defmodule Virtuosity do
     play(
       pedal: repeat(triplets(@feet[:pedal]), 4),
       snare:
-        triplets(["833 833 833 8..", ".44 .44 8.. ...", "844 484 448 444", "678 ... ... ..."]),
+        triplets([
+          ~MX"833 833 833 8.."s,
+          ~MX".44 .44 8.. ..."s,
+          "844 484 448 444",
+          ~MX"678 ... ... ..."s
+        ]),
       high_tom:
-        triplets(["... ... ... ...", "8.. 8.. ... ...", "... ... ... ...", "... 678 ... ..."]),
+        triplets([
+          ~MX"... ... ... ..."s,
+          ~MX"8.. 8.. ... ..."s,
+          ~MX"... ... ... ..."s,
+          ~MX"... 678 ... ..."s
+        ]),
       low_tom:
-        triplets(["... ... ... ...", "... ... .88 8..", "... ... ... ...", "... ... 789 ..."]),
+        triplets([
+          ~MX"... ... ... ..."s,
+          ~MX"... ... .88 8.."s,
+          ~MX"... ... ... ..."s,
+          ~MX"... ... 789 ..."s
+        ]),
       kick:
-        triplets(["... ... ... ..6", "... ... ... ...", "7.. ... ... ...", "... ... ... 9.."]),
-      flam: triplets(["... ... ... ...", "... ... ... ...", "... ... ... ...", "... ... ... 9.."])
+        triplets([
+          ~MX"... ... ... ..6"s,
+          ~MX"... ... ... ..."s,
+          ~MX"7.. ... ... ..."s,
+          ~MX"... ... ... 9.."s
+        ]),
+      flam:
+        triplets([
+          ~MX"... ... ... ..."s,
+          ~MX"... ... ... ..."s,
+          ~MX"... ... ... ..."s,
+          ~MX"... ... ... 9.."s
+        ])
     )
   end
 
@@ -280,14 +309,40 @@ defmodule Virtuosity do
     play(
       pedal: repeat(triplets(@feet[:pedal]), 3),
       low_tom:
-        triplets(["7.. ... ... ...", "7.. ... ... ...", "... 7.. ... 8..", "... ... ... ..."]),
+        triplets([
+          ~MX"7.. ... ... ..."s,
+          ~MX"7.. ... ... ..."s,
+          ~MX"... 7.. ... 8.."s,
+          ~MX"... ... ... ..."s
+        ]),
       snares_off:
-        triplets(["... ..6 ... 6..", "... ..6 ... 6.6", "..7 ... ..7 ...", "... ... ... ..."]),
+        triplets([
+          ~MX"... ..6 ... 6.."s,
+          ~MX"... ..6 ... 6.6"s,
+          ~MX"..7 ... ..7 ..."s,
+          ~MX"... ... ... ..."s
+        ]),
       high_tom:
-        triplets(["... ... 7.. ...", "... ... 7.7 ...", "8.. ... 8.. ...", "... ... ... ..."]),
+        triplets([
+          ~MX"... ... 7.. ..."s,
+          ~MX"... ... 7.7 ..."s,
+          ~MX"8.. ... 8.. ..."s,
+          ~MX"... ... ... ..."s
+        ]),
       kick:
-        triplets(["... ... ... ...", "... ... ... ...", "... 6.. ... .6.", "7.. ... ... ..."]),
-      buzz: triplets(["... ... ... ...", "... ... ... ...", "... ... ... ...", "234 456 678 899"])
+        triplets([
+          ~MX"... ... ... ..."s,
+          ~MX"... ... ... ..."s,
+          ~MX"... 6.. ... .6."s,
+          ~MX"7.. ... ... ..."s
+        ]),
+      buzz:
+        triplets([
+          ~MX"... ... ... ..."s,
+          ~MX"... ... ... ..."s,
+          ~MX"... ... ... ..."s,
+          "234 456 678 899"
+        ])
     )
   end
 
@@ -316,7 +371,7 @@ defmodule Virtuosity do
       )
     end
 
-    last = seq([rest(8), eighths("8.......")])
+    last = seq([rest(8), eighths(~MX"8......."s)])
 
     together([
       roll.(:roll_snaremic, "snaremic", 1.5),
@@ -352,17 +407,17 @@ defmodule Virtuosity do
   # tumba every other bar.
   defp tumbao(cycles) do
     [
-      conga_muted: repeat(eighths("338333.. 338333.."), cycles),
-      conga: repeat(eighths("......77 ......7."), cycles),
-      tumba: repeat(eighths("........ .......8"), cycles)
+      conga_muted: repeat(eighths(~MX"338333.. 338333.."s), cycles),
+      conga: repeat(eighths(~MX"......77 ......7."s), cycles),
+      tumba: repeat(eighths(~MX"........ .......8"s), cycles)
     ]
   end
 
   # The güiro: a long scrape on each beat and two short ones after it.
   defp guiro(bars) do
     [
-      guiro_long: repeat(eighths("6...6..."), bars),
-      guiro_short: repeat(eighths("..44..44"), bars)
+      guiro_long: repeat(eighths(~MX"6...6..."s), bars),
+      guiro_short: repeat(eighths(~MX"..44..44"s), bars)
     ]
   end
 
@@ -408,29 +463,20 @@ defmodule Virtuosity do
 
   # Bars of strokes, a character to each step: a digit is a stroke of that strength, a dot is
   # silence, and spaces are left out.
+  defp strokes(patterns, per_beat)
+
+  defp strokes([%{} | _] = pattern, per_beat), do: strokes([pattern], per_beat)
+
   defp strokes(patterns, per_beat) do
-    seq(
-      for pattern <- List.wrap(patterns) do
-        cells = pattern |> String.replace(" ", "") |> String.graphemes()
-
-        hits =
-          for {cell, index} <- Enum.with_index(cells),
-              cell != ".",
-              do: {index / per_beat, stroke(String.to_integer(cell))}
-
-        if hits == [] do
-          rest(length(cells) / per_beat)
-        else
-          at(hits, length(cells) / per_beat)
-        end
-      end
-    )
+    seq(for pattern <- patterns, do: steps(pattern, 1 / per_beat, strokes: strengths()))
   end
 
   # A stroke from 1, the softest, to 9: the strength picks the recording, and the level is left
   # nearly as recorded.
-  defp stroke(strength) do
-    vel = strength / 9
-    hit(vel: vel, amp: :math.pow(vel, -0.7))
+  defp strengths do
+    for strength <- 1..9 do
+      vel = strength / 9
+      {:"#{strength}", [vel: vel, amp: :math.pow(vel, -0.7)]}
+    end
   end
 end

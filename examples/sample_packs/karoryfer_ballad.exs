@@ -201,7 +201,7 @@ defmodule SmallHours do
   defp intro do
     play(
       stir: stir(2),
-      foot: drum("...2.....2..", 2),
+      foot: drum(~MX"...2.....2.."s, 2),
       bass: in_two([{:d2, :a1}, {:e2, :a1, :cs2}]),
       guitar: comp([[:dm6], [:em7b5, :a7]])
     )
@@ -214,7 +214,7 @@ defmodule SmallHours do
         sax: line(@tune ++ @falling, 0.4),
         guitar: comp(@tune_chords),
         bass: in_two(@tune_bass),
-        dig: drum(["............", "...........3"], 4)
+        dig: drum([~MX"............"s, ~MX"...........3"s], 4)
       ] ++ brushes(8)
     )
   end
@@ -235,7 +235,7 @@ defmodule SmallHours do
             [f3: 4, g3: 4, f3: 4, f3: 2, e3: 2, e3: 4, d3: 4, d3: 2, cs3: 2, d3: 4],
             0.3
           ),
-        ride: drum("4..3.24..3.2", 8)
+        ride: drum(~MX"4..3.24..3.2"s, 8)
       ] ++ brushes(8)
     )
   end
@@ -276,8 +276,8 @@ defmodule SmallHours do
             note([:g2, :cs3], 2, dyn(0.4))
           ]),
         bass: walk(~w(g1 bb1 d2 cs2 c2 e2 g2 fs2 f2 c2 a1 f1 e2 bb1 a1 cs2)a),
-        ride: drum("4..3.24..3.2", 4),
-        kick: drum("2.....2.....", 4)
+        ride: drum(~MX"4..3.24..3.2"s, 4),
+        kick: drum(~MX"2.....2....."s, 4)
       ] ++ brushes(4)
     )
   end
@@ -306,9 +306,9 @@ defmodule SmallHours do
         ]),
       cello: seq([rest(20), note([:d2, :a2], 8, dyn(0.3) ++ [release: 2])]),
       stir: stir(6),
-      tap: seq([drum("...4.....5..", 5), rest(8)]),
-      foot: seq([drum("...3.....3..", 5), rest(8)]),
-      sizzle: seq([rest(20), drum("3..........."), rest(4)])
+      tap: seq([drum(~MX"...4.....5.."s, 5), rest(8)]),
+      foot: seq([drum(~MX"...3.....3.."s, 5), rest(8)]),
+      sizzle: seq([rest(20), drum(~MX"3..........."s), rest(4)])
     )
     |> then(&together([&1, part(:slowing, seq([rest(16), tempo(54, over: 6)]))]))
   end
@@ -324,17 +324,13 @@ defmodule SmallHours do
 
   # Bars of a drum in triplets, a character to each third of a beat: a digit is a stroke of that
   # strength, a dot is silence.
-  defp drum(patterns, bars \\ 1) do
-    bar = fn pattern ->
-      hits =
-        for {cell, index} <- Enum.with_index(String.graphemes(pattern)),
-            cell != ".",
-            do: {index / 3, hit(dyn(String.to_integer(cell) / 9))}
+  defp drum(patterns, bars \\ 1)
 
-      at(hits, 4)
-    end
+  defp drum([%{} | _] = pattern, bars), do: drum([pattern], bars)
 
-    repeat(seq(Enum.map(List.wrap(patterns), bar)), bars)
+  defp drum(patterns, bars) do
+    bar = fn pattern -> steps(pattern, 4 / length(pattern), strokes: strokes()) end
+    repeat(seq(Enum.map(patterns, bar)), bars)
   end
 
   # The bass in two: a note on one and on three, and now and then a short one leading into the
@@ -391,8 +387,8 @@ defmodule SmallHours do
   defp brushes(bars) do
     [
       stir: stir(bars),
-      tap: drum("...4.....5..", bars),
-      foot: drum("...3.....3..", bars)
+      tap: drum(~MX"...4.....5.."s, bars),
+      foot: drum(~MX"...3.....3.."s, bars)
     ]
   end
 
@@ -401,5 +397,7 @@ defmodule SmallHours do
 
   # A note at a strength from 0 to 1: the strength picks the recording, and the level is left
   # nearly as recorded.
+  defp strokes, do: for(strength <- 1..9, do: {:"#{strength}", dyn(strength / 9)})
+
   defp dyn(vel), do: [vel: vel, amp: :math.pow(vel, -0.7)]
 end

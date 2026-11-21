@@ -110,8 +110,8 @@ defmodule Parade do
   # A bar of sticks, two of the field drum alone and two with the cymbals and the bass drum.
   defp call do
     play(
-      field_drum: seq([rows(click: "8...8..."), street_beat(2)]),
-      metal: seq([rest(6), rows(cymbals: ["8.......", "8...8..."])])
+      field_drum: seq([rows(click: ~MX"8...8..."s), street_beat(2)]),
+      metal: seq([rest(6), rows(cymbals: [~MX"8......."s, ~MX"8...8..."s])])
     )
   end
 
@@ -119,17 +119,17 @@ defmodule Parade do
     play(
       field_drum: street_beat(8),
       timpani: timpani(:first, 2),
-      metal: rows([cymbals: ["8.......", "........", "........", "........"]], 4),
+      metal: rows([cymbals: [~MX"8......."s, ~MX"........"s, ~MX"........"s, ~MX"........"s]], 4),
       glockenspiel: tune(@first, 2)
     )
   end
 
   defp trio do
     play(
-      field_drum: rows([tap: ["6.446.44", "6.446464"]], 8),
+      field_drum: rows([tap: [~MX"6.446.44"s, ~MX"6.446464"s]], 8),
       timpani: timpani(:trio, 2),
-      metal: rows([triangle: "..7...7.", sleigh_bells: "6.6.6.6."], 16),
-      toys: rows([tambourine: "....7...", shake: "3.3...3."], 16),
+      metal: rows([triangle: ~MX"..7...7."s, sleigh_bells: ~MX"6.6.6.6."s], 16),
+      toys: rows([tambourine: ~MX"....7..."s, shake: ~MX"3.3...3."s], 16),
       glockenspiel: tune(@trio, 2)
     )
   end
@@ -139,13 +139,13 @@ defmodule Parade do
     play(
       toys:
         seq([
-          rows(ratchet: "8...8.8."),
-          rows(slapstick: "....9..."),
+          rows(ratchet: ~MX"8...8.8."s),
+          rows(slapstick: ~MX"....9..."s),
           sample(@flexatone, 2, amp: 3.0),
-          rows(slapstick: "9.......")
+          rows(slapstick: ~MX"9......."s)
         ]),
-      metal: seq([rest(6), rows(anvil: "..7.7.77", high_anvil: "....7...")]),
-      field_drum: seq([rest(6), rows(accent: "....6789", tap: "9999....")])
+      metal: seq([rest(6), rows(anvil: ~MX"..7.7.77"s, high_anvil: ~MX"....7..."s)]),
+      field_drum: seq([rest(6), rows(accent: ~MX"....6789"s, tap: ~MX"9999...."s)])
     )
   end
 
@@ -153,8 +153,12 @@ defmodule Parade do
     play(
       field_drum: street_beat(8),
       timpani: timpani(:first, 2),
-      metal: rows([cymbals: ["8.......", "8......."], anvil: ["..6...6.", "..6...66"]], 8),
-      toys: rows([tambourine: "....7...", sleigh_bells: "5.5.5.5."], 16),
+      metal:
+        rows(
+          [cymbals: [~MX"8......."s, ~MX"8......."s], anvil: [~MX"..6...6."s, ~MX"..6...66"s]],
+          8
+        ),
+      toys: rows([tambourine: ~MX"....7..."s, sleigh_bells: ~MX"5.5.5.5."s], 16),
       glockenspiel: tune(@first, 2)
     )
   end
@@ -165,15 +169,15 @@ defmodule Parade do
       timpani:
         seq([
           sample(@timpani_roll, 4, amp: 1.5, sustain: 4, release: 0.2),
-          rows(timpani_g: "9.......", timpani_d: "9......."),
+          rows(timpani_g: ~MX"9......."s, timpani_d: ~MX"9......."s),
           rest(2)
         ]),
-      field_drum: seq([rows([tap: "99999999"], 2), rows(accent: "9......."), rest(2)]),
+      field_drum: seq([rows([tap: ~MX"99999999"s], 2), rows(accent: ~MX"9......."s), rest(2)]),
       metal: seq([rest(4), sample(@long_crash, 4, amp: 0.5, sustain: 4, release: 3)]),
       toys:
         seq([
           sample(@bass_drum_roll, 4, amp: 0.9, sustain: 4, release: 0.2),
-          rows(anvil: "9......."),
+          rows(anvil: ~MX"9......."s),
           rest(2)
         ]),
       glockenspiel: seq([rest(4), note([:g6, :d7, :g7], 4)])
@@ -188,14 +192,14 @@ defmodule Parade do
     early.(
       seq([
         rest(6),
-        rows([bass_drum: "8...8..."], 2),
-        rows([bass_drum: "8...8..."], 32),
-        rows([bass_drum: "5......."], 16),
+        rows([bass_drum: ~MX"8...8..."s], 2),
+        rows([bass_drum: ~MX"8...8..."s], 32),
+        rows([bass_drum: ~MX"5......."s], 16),
         rest(6),
-        rows(bass_drum: "....8.8."),
-        rows([bass_drum: "9...9..."], 16),
+        rows(bass_drum: ~MX"....8.8."s),
+        rows([bass_drum: ~MX"9...9..."s], 16),
         rest(4),
-        rows(bass_drum: "9......."),
+        rows(bass_drum: ~MX"9......."s),
         rest(2)
       ])
     )
@@ -212,16 +216,13 @@ defmodule Parade do
       for {sound, patterns} <- rows do
         {file, gain} = @sounds[sound]
 
-        bars =
-          for pattern <- List.wrap(patterns) do
-            hits =
-              for {cell, index} <- Enum.with_index(String.graphemes(pattern)), cell != "." do
-                amp = gain * String.to_integer(cell) / 9
-                {index * 0.25, sample(file, 0, amp: amp, sustain: 3, release: 1)}
-              end
+        strokes =
+          for strength <- 1..9,
+              do: {:"#{strength}", [amp: gain * strength / 9, sustain: 3, release: 1]}
 
-            at(hits, 2)
-          end
+        bars =
+          for pattern <- if(match?([%{} | _], patterns), do: [patterns], else: patterns),
+              do: steps(pattern, 2 / length(pattern), sample: file, strokes: strokes)
 
         repeat(seq(bars), times)
       end
@@ -230,8 +231,10 @@ defmodule Parade do
 
   # The street beat, two bars of it.
   defp street_beat(times, level \\ 1.0) do
-    accents = if level < 1, do: ["6...6...", "6...6.6."], else: ["9...9...", "9...9.9."]
-    rows([accent: accents, tap: ["..66..66", "..66.6.6"]], times)
+    accents =
+      if level < 1, do: [~MX"6...6..."s, ~MX"6...6.6."s], else: [~MX"9...9..."s, ~MX"9...9.9."s]
+
+    rows([accent: accents, tap: [~MX"..66..66"s, ~MX"..66.6.6"s]], times)
   end
 
   # The timpani under the first strain, G and D, and under the trio.
@@ -239,24 +242,24 @@ defmodule Parade do
     rows(
       [
         timpani_g: [
-          "8.......",
-          "8.......",
-          "........",
-          "8...8...",
-          "8.......",
-          "8.......",
-          "........",
-          "8...6.8."
+          ~MX"8......."s,
+          ~MX"8......."s,
+          ~MX"........"s,
+          ~MX"8...8..."s,
+          ~MX"8......."s,
+          ~MX"8......."s,
+          ~MX"........"s,
+          ~MX"8...6.8."s
         ],
         timpani_d: [
-          "....6...",
-          "....6...",
-          "8...6.6.",
-          "........",
-          "....6...",
-          "....6...",
-          "8...8...",
-          "........"
+          ~MX"....6..."s,
+          ~MX"....6..."s,
+          ~MX"8...6.6."s,
+          ~MX"........"s,
+          ~MX"....6..."s,
+          ~MX"....6..."s,
+          ~MX"8...8..."s,
+          ~MX"........"s
         ]
       ],
       times
@@ -267,24 +270,24 @@ defmodule Parade do
     rows(
       [
         timpani_g: [
-          "5.......",
-          "5.......",
-          "........",
-          "5.......",
-          "5.......",
-          "5.......",
-          "........",
-          "5......."
+          ~MX"5......."s,
+          ~MX"5......."s,
+          ~MX"........"s,
+          ~MX"5......."s,
+          ~MX"5......."s,
+          ~MX"5......."s,
+          ~MX"........"s,
+          ~MX"5......."s
         ],
         timpani_d: [
-          "........",
-          "........",
-          "5.......",
-          "........",
-          "........",
-          "........",
-          "5...5...",
-          "........"
+          ~MX"........"s,
+          ~MX"........"s,
+          ~MX"5......."s,
+          ~MX"........"s,
+          ~MX"........"s,
+          ~MX"........"s,
+          ~MX"5...5..."s,
+          ~MX"........"s
         ]
       ],
       times

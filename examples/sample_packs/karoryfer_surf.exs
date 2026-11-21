@@ -196,7 +196,7 @@ defmodule RustWave do
     ds3: 4
   ]
 
-  @surf_beat [kick: "9...97..", snare: "..97..8.", hat: "75757575"]
+  @surf_beat [kick: ~MX"9...97.."s, snare: ~MX"..97..8."s, hat: ~MX"75757575"s]
 
   def song do
     seq([intro(), tune(), tune_in_thirds(), bridge(), tune_again(), ending()])
@@ -206,10 +206,13 @@ defmodule RustWave do
   defp intro do
     play(
       floor_tom:
-        seq([eighths(["5.5.5.5.", "6.6.6.6.", "66666666", "77778899"]), eighths("9.7.9.7.", 8)]),
-      kick: seq([rest(16), eighths("9...9...", 8)]),
-      snare: seq([rest(16), eighths("......8.", 8)]),
-      crash: seq([rest(16), eighths("8.......")]),
+        seq([
+          eighths([~MX"5.5.5.5."s, ~MX"6.6.6.6."s, ~MX"66666666"s, ~MX"77778899"s]),
+          eighths(~MX"9.7.9.7."s, 8)
+        ]),
+      kick: seq([rest(16), eighths(~MX"9...9..."s, 8)]),
+      snare: seq([rest(16), eighths(~MX"......8."s, 8)]),
+      crash: seq([rest(16), eighths(~MX"8......."s)]),
       riff: seq([rest(16), riff(1)]),
       bass: seq([rest(16), bass(1)])
     )
@@ -234,10 +237,10 @@ defmodule RustWave do
       riff: riff(1),
       rhythm: strums(1),
       bass: bass(1),
-      floor_tom: eighths("9.7.9.7.", 8),
-      kick: eighths("9...9...", 8),
-      rimshot: eighths("..8...8.", 8),
-      crash: eighths("8.......")
+      floor_tom: eighths(~MX"9.7.9.7."s, 8),
+      kick: eighths(~MX"9...9..."s, 8),
+      rimshot: eighths(~MX"..8...8."s, 8),
+      crash: eighths(~MX"8......."s)
     )
   end
 
@@ -252,11 +255,11 @@ defmodule RustWave do
   # A bar of drums alone, the last chord, and its ring.
   defp ending do
     play(
-      snare: seq([sixteenths("9.779.77........"), rest(12)]),
-      high_tom: seq([sixteenths("........8.88...."), rest(12)]),
-      floor_tom: seq([sixteenths("............8899"), sixteenths("9..."), rest(11)]),
-      kick: seq([rest(4), sixteenths("9..."), rest(11)]),
-      crash: seq([rest(4), sixteenths("9..."), rest(11)]),
+      snare: seq([sixteenths(~MX"9.779.77........"s), rest(12)]),
+      high_tom: seq([sixteenths(~MX"........8.88...."s), rest(12)]),
+      floor_tom: seq([sixteenths(~MX"............8899"s), sixteenths(~MX"9..."s), rest(11)]),
+      kick: seq([rest(4), sixteenths(~MX"9..."s), rest(11)]),
+      crash: seq([rest(4), sixteenths(~MX"9..."s), rest(11)]),
       rhythm:
         seq([
           rest(4),
@@ -348,8 +351,8 @@ defmodule RustWave do
     [
       kick: eighths(@surf_beat[:kick], bars),
       snare: eighths(@surf_beat[:snare], bars),
-      crash: eighths("8.......")
-    ] ++ [{cymbal, eighths(if(cymbal == :hat, do: "75757575", else: "85858585"), bars)}]
+      crash: eighths(~MX"8......."s)
+    ] ++ [{cymbal, eighths(if(cymbal == :hat, do: ~MX"75757575"s, else: ~MX"85858585"s), bars)}]
   end
 
   # A note at a strength from 0 to 1, likewise.
@@ -357,26 +360,15 @@ defmodule RustWave do
 
   # Bars of a drum, a character to each step: a digit is a stroke of that strength, a dot is
   # silence.
+  defp drum(patterns, per_beat)
+
+  defp drum([%{} | _] = pattern, per_beat), do: drum([pattern], per_beat)
+
   defp drum(patterns, per_beat) do
-    seq(
-      for pattern <- List.wrap(patterns) do
-        cells = pattern |> String.replace(" ", "") |> String.graphemes()
-
-        hits =
-          for {cell, index} <- Enum.with_index(cells),
-              cell != ".",
-              do: {index / per_beat, hit(stroke(String.to_integer(cell)))}
-
-        if hits == [] do
-          rest(length(cells) / per_beat)
-        else
-          at(hits, length(cells) / per_beat)
-        end
-      end
-    )
+    seq(for pattern <- patterns, do: steps(pattern, 1 / per_beat, strokes: strokes()))
   end
 
   # A stroke from 1, the softest, to 9: the strength picks the recording, and the level is left
   # nearly as recorded.
-  defp stroke(strength), do: dyn(strength / 9)
+  defp strokes, do: for(strength <- 1..9, do: {:"#{strength}", dyn(strength / 9)})
 end

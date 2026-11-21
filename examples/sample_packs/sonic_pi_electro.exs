@@ -59,16 +59,16 @@ defmodule DialTone do
           sample({:sonic_pi, :mehackit_phone4}, 4),
           sample({:sonic_pi, :mehackit_phone3}, 4)
         ]),
-      hats: seq([rest(8), strokes(:hat_cab, "7353735373537353", 2)]),
-      clicks: seq([rest(8), strokes(:elec_tick, "9..9..9..9..9.9.", 2)])
+      hats: seq([rest(8), strokes(:hat_cab, ~MX"7353735373537353"s, 2)]),
+      clicks: seq([rest(8), strokes(:elec_tick, ~MX"9..9..9..9..9.9."s, 2)])
     )
   end
 
   # The kick and the bass.
   defp build do
     play(
-      [bass: bass(1), clicks: strokes(:elec_tick, "9..9..9..9..9.9.", 4)] ++
-        beat(4) ++ [snare: seq([rest(12), strokes(:elec_hi_snare, "....5.5.5.667789")])]
+      [bass: bass(1), clicks: strokes(:elec_tick, ~MX"9..9..9..9..9.9."s, 4)] ++
+        beat(4) ++ [snare: seq([rest(12), strokes(:elec_hi_snare, ~MX"....5.5.5.667789"s)])]
     )
   end
 
@@ -79,7 +79,7 @@ defmodule DialTone do
         bass: bass(2),
         arp: arp(2),
         pads: pads(2),
-        bells: strokes(:drum_cowbell, ["..6..6....6.6...", "..6..6....6..6.6"], 4),
+        bells: strokes(:drum_cowbell, [~MX"..6..6....6.6..."s, ~MX"..6..6....6..6.6"s], 4),
         voices: voices(~w(mehackit_robot1 mehackit_robot3 mehackit_robot2 mehackit_robot5)a)
       ] ++ beat(8) ++ backbeat(8)
     )
@@ -93,11 +93,12 @@ defmodule DialTone do
       voices: voices(~w(glitch_robot1 glitch_robot2)a),
       clicks:
         seq([
-          strokes(:glitch_perc2, "9.......7......."),
-          strokes(:glitch_perc4, "....9.......9..."),
-          strokes(:tbd_perc_blip, "9.9.9.9.99999999", 2)
+          strokes(:glitch_perc2, ~MX"9.......7......."s),
+          strokes(:glitch_perc4, ~MX"....9.......9..."s),
+          strokes(:tbd_perc_blip, ~MX"9.9.9.9.99999999"s, 2)
         ]),
-      snare: seq([rest(8), strokes(:elec_hi_snare, ["4...4...4...4.4.", "5.5.5.5.66667789"])])
+      snare:
+        seq([rest(8), strokes(:elec_hi_snare, [~MX"4...4...4...4.4."s, ~MX"5.5.5.5.66667789"s])])
     )
   end
 
@@ -108,8 +109,8 @@ defmodule DialTone do
         bass: bass(3),
         arp: seq([arp(1), arp(2, 12)]),
         pads: pads(3),
-        bells: strokes(:drum_cowbell, ["..6..6....6.6...", "..6..6....6..6.6"], 6),
-        clicks: strokes(:elec_twip, "......6.......6.", 12),
+        bells: strokes(:drum_cowbell, [~MX"..6..6....6.6..."s, ~MX"..6..6....6..6.6"s], 6),
+        clicks: strokes(:elec_twip, ~MX"......6.......6."s, 12),
         voices:
           voices(
             ~w(mehackit_robot4 mehackit_robot6 mehackit_robot1 mehackit_robot5 mehackit_robot3 mehackit_robot2)a
@@ -146,28 +147,25 @@ defmodule DialTone do
 
   # Bars of one sample in sixteenths, a character to each: a digit is a stroke of that level, a
   # dot is silence.
-  defp strokes(name, patterns, bars \\ 1) do
-    bar = fn pattern ->
-      hits =
-        for {cell, index} <- Enum.with_index(String.graphemes(pattern)),
-            cell != ".",
-            do: {index / 4, sample({:sonic_pi, name}, 0, amp: String.to_integer(cell) / 9)}
+  defp strokes(name, patterns, bars \\ 1)
 
-      at(hits, 4)
-    end
+  defp strokes(name, [%{} | _] = pattern, bars), do: strokes(name, [pattern], bars)
 
-    repeat(seq(Enum.map(List.wrap(patterns), bar)), bars)
+  defp strokes(name, patterns, bars) do
+    levels = for strength <- 1..9, do: {:"#{strength}", [amp: strength / 9]}
+    bar = fn pattern -> steps(pattern, 0.25, sample: {:sonic_pi, name}, strokes: levels) end
+    repeat(seq(Enum.map(patterns, bar)), bars)
   end
 
   defp bass(times), do: repeat(seq(for bar <- @bass, do: line(:bass_trance_c, bar)), times)
 
   defp beat(bars) do
     [
-      kick: strokes(:bd_808, ["9..7..9.....9...", "9..7..9...7.9..."], div(bars, 2)),
+      kick: strokes(:bd_808, [~MX"9..7..9.....9..."s, ~MX"9..7..9...7.9..."s], div(bars, 2)),
       hats:
         together([
-          strokes(:hat_cab, "7353735373537353", bars),
-          strokes(:hat_gnu, ["..............5.", "......5.......5."], div(bars, 2))
+          strokes(:hat_cab, ~MX"7353735373537353"s, bars),
+          strokes(:hat_gnu, [~MX"..............5."s, ~MX"......5.......5."s], div(bars, 2))
         ])
     ]
   end
@@ -188,8 +186,8 @@ defmodule DialTone do
     [
       snare:
         together([
-          strokes(:elec_snare, "....8.......8...", bars),
-          strokes(:perc_snap, "....6.......6..3", bars)
+          strokes(:elec_snare, ~MX"....8.......8..."s, bars),
+          strokes(:perc_snap, ~MX"....6.......6..3"s, bars)
         ])
     ]
   end

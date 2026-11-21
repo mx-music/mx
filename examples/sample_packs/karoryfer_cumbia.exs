@@ -217,13 +217,13 @@ defmodule Cosmonauta do
   # The percussion one by one, then the bass and the chords.
   defp intro do
     play(
-      cowbell: drum("7...5...7...5...", 6),
-      guiro: seq([rest(4), drum("7.557.557.557.55", 5)]),
-      djembe: seq([rest(8), drum("....7.......7.6.", 4)]),
-      kick: seq([rest(8), drum("7.......6.......", 4)]),
+      cowbell: drum(~MX"7...5...7...5..."s, 6),
+      guiro: seq([rest(4), drum(~MX"7.557.557.557.55"s, 5)]),
+      djembe: seq([rest(8), drum(~MX"....7.......7.6."s, 4)]),
+      kick: seq([rest(8), drum(~MX"7.......6......."s, 4)]),
       bass: seq([rest(8), bass(~w(am am e7 am)a)]),
       chords: seq([rest(8), skank(~w(am am e7 am)a)]),
-      snare: seq([rest(20), drum("........6.66.6.7")])
+      snare: seq([rest(20), drum(~MX"........6.66.6.7"s)])
     )
   end
 
@@ -237,7 +237,7 @@ defmodule Cosmonauta do
         lead: line(tune),
         bass: bass(@verse),
         chords: skank(@verse),
-        snare: seq([rest(28), drum("........6.66.6.7")])
+        snare: seq([rest(28), drum(~MX"........6.66.6.7"s)])
       ] ++
         percussion(8) ++ bongos(8)
     )
@@ -250,8 +250,8 @@ defmodule Cosmonauta do
         second: repeat(line(@chorus_thirds), 2),
         bass: bass(@chorus),
         chords: skank(@chorus),
-        crash: drum("7..............."),
-        snare: seq([rest(28), drum("....6.6.7.77.7.8")])
+        crash: drum(~MX"7..............."s),
+        snare: seq([rest(28), drum(~MX"....6.6.7.77.7.8"s)])
       ] ++ percussion(8) ++ bongos(8)
     )
   end
@@ -261,10 +261,10 @@ defmodule Cosmonauta do
     play(
       [
         bass: bass(~w(am am e7 am)a),
-        high_bongo: drum(["5.55.5.55.5.5.55", "5.5.55.5.55.5555"], 2),
-        low_bongo: drum(["...6...6...6..6.", "..6...6..6..6.66"], 2),
-        crash: drum("7..............."),
-        snare: seq([rest(12), drum("6.6.6.667.777788")])
+        high_bongo: drum([~MX"5.55.5.55.5.5.55"s, ~MX"5.5.55.5.55.5555"s], 2),
+        low_bongo: drum([~MX"...6...6...6..6."s, ~MX"..6...6..6..6.66"s], 2),
+        crash: drum(~MX"7..............."s),
+        snare: seq([rest(12), drum(~MX"6.6.6.667.777788"s)])
       ] ++ percussion(4)
     )
   end
@@ -275,10 +275,10 @@ defmodule Cosmonauta do
       lead: line(e5: 0.5, gs5: 0.5, b5: 0.5, d6: 0.5, c6: 1, a5: 3, r: 2),
       chords: seq([note([:e4, :gs4, :d5], 2), note([:e4, :a4, :c5], 4, sustain: 3), rest(2)]),
       bass: seq([note(:e2, 2, dyn(0.8)), note(:a2, 6, dyn(0.9))]),
-      cowbell: drum("7...5...7......."),
-      kick: drum(["7.......8.......", "................"]),
-      crash: seq([rest(2), drum("8.......")]),
-      snare: drum("7.77.7.7........")
+      cowbell: drum(~MX"7...5...7......."s),
+      kick: drum([~MX"7.......8......."s, ~MX"................"s]),
+      crash: seq([rest(2), drum(~MX"8......."s)]),
+      snare: drum(~MX"7.77.7.7........"s)
     )
   end
 
@@ -288,17 +288,13 @@ defmodule Cosmonauta do
 
   # Bars of a drum in sixteenths, a character to each: a digit is a stroke of that strength, a dot
   # is silence.
-  defp drum(patterns, bars \\ 1) do
-    bar = fn pattern ->
-      hits =
-        for {cell, index} <- Enum.with_index(String.graphemes(pattern)),
-            cell != ".",
-            do: {index / 4, hit(stroke(String.to_integer(cell)))}
+  defp drum(patterns, bars \\ 1)
 
-      at(hits, 4)
-    end
+  defp drum([%{} | _] = pattern, bars), do: drum([pattern], bars)
 
-    repeat(seq(Enum.map(List.wrap(patterns), bar)), bars)
+  defp drum(patterns, bars) do
+    bar = fn pattern -> steps(pattern, 4 / length(pattern), strokes: strokes()) end
+    repeat(seq(Enum.map(patterns, bar)), bars)
   end
 
   # The bass: the root for two beats, then the fifth and the root.
@@ -333,22 +329,22 @@ defmodule Cosmonauta do
 
   defp percussion(bars) do
     [
-      cowbell: drum("7...5...7...5...", bars),
-      guiro: drum("7.557.557.557.55", bars),
-      djembe: drum("....7.......7.6.", bars),
-      kick: drum("7.......6.......", bars)
+      cowbell: drum(~MX"7...5...7...5..."s, bars),
+      guiro: drum(~MX"7.557.557.557.55"s, bars),
+      djembe: drum(~MX"....7.......7.6."s, bars),
+      kick: drum(~MX"7.......6......."s, bars)
     ]
   end
 
   defp bongos(bars) do
     [
-      high_bongo: drum(["..5...5...5...55", "..5...5...5.5.5."], div(bars, 2)),
-      low_bongo: drum(["............6...", "..........6....6"], div(bars, 2))
+      high_bongo: drum([~MX"..5...5...5...55"s, ~MX"..5...5...5.5.5."s], div(bars, 2)),
+      low_bongo: drum([~MX"............6..."s, ~MX"..........6....6"s], div(bars, 2))
     ]
   end
 
   # A stroke from 1, the softest, to 9: the strength picks the recording, and the level is left
   # nearly as recorded.
-  defp stroke(strength), do: dyn(strength / 9)
+  defp strokes, do: for(strength <- 1..9, do: {:"#{strength}", dyn(strength / 9)})
   defp dyn(vel), do: [vel: vel, amp: :math.pow(vel, -0.7)]
 end

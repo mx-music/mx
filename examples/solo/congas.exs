@@ -20,18 +20,18 @@ defmodule Congas do
   # cells to a drum; the roll is written as thirty-two.
   # The letters are the articles': H is the heel of the hand, T its tip, S a slap and O an open
   # tone; h and t are the heel and tip played softly.
-  @one_drum [mid_conga: "HTSTHTOO HTSTHTOO"]
-  @two_drums [mid_conga: "HTS..TOO HTSTHTOO", low_conga: "...OO... ........"]
-  @two_drums_again [mid_conga: "HTS.HTOO HTS.HTOO", low_conga: "...O.... ...O...."]
+  @one_drum [mid_conga: ~MX"HTSTHTOO HTSTHTOO"s]
+  @two_drums [mid_conga: ~MX"HTS..TOO HTSTHTOO"s, low_conga: ~MX"...OO... ........"s]
+  @two_drums_again [mid_conga: ~MX"HTS.HTOO HTS.HTOO"s, low_conga: ~MX"...O.... ...O...."s]
 
   # The lock is the quinto's own; which strokes are tones and which are slaps, and the strokes
   # doubled and left out, are written for mx.
-  @lock [".O..S..S ...O.O..", ".S..O..O ...S.S.."]
-  @varied [".OO.S..S S..O.O..", ".S..O..O ...SS..."]
-  @cross [".S..S..S ..S..S..", "S..S..S. .S..S..S", "..S..S.. S..S..S."]
+  @lock [~MX".O..S..S ...O.O.."s, ~MX".S..O..O ...S.S.."s]
+  @varied [~MX".OO.S..S S..O.O.."s, ~MX".S..O..O ...SS..."s]
+  @cross [~MX".S..S..S ..S..S.."s, ~MX"S..S..S. .S..S..S"s, ~MX"..S..S.. S..S..S."s]
 
   # The phrase that ends on the sixteenth after the third beat is written for mx.
-  @resolution "..O.OO.S .O......"
+  @resolution ~MX"..O.OO.S .O......"s
 
   # The tumba is the quietest of the three drums and the conga the loudest, so each plays at the
   # level that brings their open tones together.
@@ -48,7 +48,7 @@ defmodule Congas do
     for cells <- bars() do
       together(
         for drum <- [:low_conga, :mid_conga, :high_conga] do
-          part(drum, bar(Keyword.get(cells, drum, "")))
+          part(drum, bar(Keyword.get(cells, drum, ~MX"."s)))
         end
       )
     end
@@ -64,42 +64,35 @@ defmodule Congas do
       answers ++
       [
         [
-          mid_conga: "hthththt hthtHTHT HTHTHTHT ....O...",
-          high_conga: "........ ....OO..",
-          low_conga: "........ .......O"
+          mid_conga: ~MX"hthththt hthtHTHT HTHTHTHT ....O..."s,
+          high_conga: ~MX"........ ....OO.."s,
+          low_conga: ~MX"........ .......O"s
         ],
         @two_drums,
         @two_drums,
         [
-          mid_conga: "HTSTHTOO HTS.....",
-          high_conga: "........ ...OO.O.",
-          low_conga: "........ .....O.O"
+          mid_conga: ~MX"HTSTHTOO HTS....."s,
+          high_conga: ~MX"........ ...OO.O."s,
+          low_conga: ~MX"........ .....O.O"s
         ],
-        [high_conga: "S", low_conga: "O"]
+        [high_conga: ~MX"S"s, low_conga: ~MX"O"s]
       ]
   end
 
   # A bar of one drum, as 4 beats.
-  defp bar(cells) do
-    letters = cells |> String.replace(" ", "") |> String.graphemes()
-    per_beat = length(letters) / 4
-
-    hits =
-      for {letter, index} <- Enum.with_index(letters), letter != "." do
-        beat = index / per_beat
-        {beat, hit(stroke(letter))}
-      end
-
-    if hits == [], do: rest(4), else: at(hits, 4)
-  end
+  defp bar(pattern), do: steps(pattern, 4 / length(pattern), strokes: strokes())
 
   # mx's conga has no stroke of the heel, so the heel is a soft tone, low as the palm's stroke is.
   # The tip is a muted stroke, far quieter than a tone, as on the recordings, so it plays at twice
   # the conga's level.
-  defp stroke("H"), do: [vel: 0.35]
-  defp stroke("T"), do: [vel: 0.4, mute: 1, amp: 0.7]
-  defp stroke("h"), do: [vel: 0.2]
-  defp stroke("t"), do: [vel: 0.25, mute: 1, amp: 0.7]
-  defp stroke("S"), do: [vel: 0.9, slap: 1]
-  defp stroke("O"), do: [vel: 0.9]
+  defp strokes do
+    [
+      H: [vel: 0.35],
+      T: [vel: 0.4, mute: 1, amp: 0.7],
+      h: [vel: 0.2],
+      t: [vel: 0.25, mute: 1, amp: 0.7],
+      S: [vel: 0.9, slap: 1],
+      O: [vel: 0.9]
+    ]
+  end
 end

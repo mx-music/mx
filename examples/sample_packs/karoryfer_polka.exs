@@ -225,15 +225,15 @@ defmodule SquidPolka do
   # count four bars.
   defp intro do
     play(
-      bass_drum: drum("7.....6.", 8),
-      tenor_drum: drum("..5.5...", 8),
-      treble_drum: drum(["4.44..4.", "4.44.444"], 4),
-      low_block: drum("6...6...", 8),
-      high_block: drum("..5...55", 8),
+      bass_drum: drum(~MX"7.....6."s, 8),
+      tenor_drum: drum(~MX"..5.5..."s, 8),
+      treble_drum: drum([~MX"4.44..4."s, ~MX"4.44.444"s], 4),
+      low_block: drum(~MX"6...6..."s, 8),
+      high_block: drum(~MX"..5...55"s, 8),
       drone: drone(8),
       tuba: seq([rest(8), oom(~w(am g am em)a)]),
       tagelharpa: seq([rest(8), pah(~w(am g am em)a)]),
-      kick: seq([rest(8), drum("7...7...", 4)]),
+      kick: seq([rest(8), drum(~MX"7...7..."s, 4)]),
       orks:
         seq([
           rest(8),
@@ -260,7 +260,7 @@ defmodule SquidPolka do
     )
   end
 
-  defp march(bars), do: [kick: drum("8...8...", bars), snare: drum("..6...66", bars)]
+  defp march(bars), do: [kick: drum(~MX"8...8..."s, bars), snare: drum(~MX"..6...66"s, bars)]
 
   defp hey(bars) do
     [orks: seq([rest(bars * 2 - 1.5), shout("hey_rr1", 1.5)])]
@@ -280,30 +280,30 @@ defmodule SquidPolka do
         tuba: low,
         tagelharpa: pah(@first_chords),
         drone: drone(8),
-        bass_drum: drum("7.....6.", 8),
-        tenor_drum: drum("..5.5...", 8),
-        treble_drum: drum(["4.44..4.", "4.44.444"], 4),
-        low_block: drum("6...6...", 8),
-        high_block: drum("..5...55", 8)
+        bass_drum: drum(~MX"7.....6."s, 8),
+        tenor_drum: drum(~MX"..5.5..."s, 8),
+        treble_drum: drum([~MX"4.44..4."s, ~MX"4.44.444"s], 4),
+        low_block: drum(~MX"6...6..."s, 8),
+        high_block: drum(~MX"..5...55"s, 8)
       ] ++ hey(8)
     )
   end
 
   defp full(bars) do
     [
-      kick: drum("9...9...", bars),
-      snare: drum(["..7.7.77", "..7.7777"], div(bars, 2)),
-      big_snare: drum(["9.......", "........"], div(bars, 2)),
-      high_block: drum("..5...5.", bars)
+      kick: drum(~MX"9...9..."s, bars),
+      snare: drum([~MX"..7.7.77"s, ~MX"..7.7777"s], div(bars, 2)),
+      big_snare: drum([~MX"9......."s, ~MX"........"s], div(bars, 2)),
+      high_block: drum(~MX"..5...5."s, bars)
     ]
   end
 
   # A roll, a last A from everyone and a last shout.
   defp ending do
     play(
-      snare: seq([drum("56667788"), drum("9......."), rest(4)]),
-      big_snare: seq([rest(2), drum("9......."), rest(4)]),
-      kick: seq([drum("8...8..."), drum("9......."), rest(4)]),
+      snare: seq([drum(~MX"56667788"s), drum(~MX"9......."s), rest(4)]),
+      big_snare: seq([rest(2), drum(~MX"9......."s), rest(4)]),
+      kick: seq([drum(~MX"8...8..."s), drum(~MX"9......."s), rest(4)]),
       chanter: seq([rest(2), note([:a4, :e5, :a5], 6, sustain: 5, release: 1)]),
       drone: seq([rest(2), note([:a2, :a3], 6, sustain: 5, release: 1)]),
       held_tuba: seq([rest(2), note([:a1, :a2], 6, sustain: 5, release: 1)]),
@@ -323,17 +323,13 @@ defmodule SquidPolka do
 
   # Bars of a drum in sixteenths, a character to each: a digit is a stroke of that strength, a dot
   # is silence.
-  defp drum(patterns, bars \\ 1) do
-    bar = fn pattern ->
-      hits =
-        for {cell, index} <- Enum.with_index(String.graphemes(pattern)),
-            cell != ".",
-            do: {index / 4, hit(dyn(String.to_integer(cell) / 9))}
+  defp drum(patterns, bars \\ 1)
 
-      if hits == [], do: rest(2), else: at(hits, 2)
-    end
+  defp drum([%{} | _] = pattern, bars), do: drum([pattern], bars)
 
-    repeat(seq(Enum.map(List.wrap(patterns), bar)), bars)
+  defp drum(patterns, bars) do
+    bar = fn pattern -> steps(pattern, 2 / length(pattern), strokes: strokes()) end
+    repeat(seq(Enum.map(patterns, bar)), bars)
   end
 
   # The drone, two octaves of A: a recording of four seconds started again every four bars, each
@@ -395,5 +391,7 @@ defmodule SquidPolka do
 
   # A note at a strength from 0 to 1: the strength picks the recording, and the level is left
   # nearly as recorded.
+  defp strokes, do: for(strength <- 1..9, do: {:"#{strength}", dyn(strength / 9)})
+
   defp dyn(vel), do: [vel: vel, amp: :math.pow(vel, -0.7)]
 end

@@ -22,26 +22,26 @@ defmodule Cajon do
   # Each pass is written as its beats and its cells: B is the bass tone, S the slap, s a softer
   # slap, g a ghost stroke, a slap at its softest, X the bass tone at its hardest and . a rest;
   # spaces are left out.
-  @festejo [{4, "B.g S.g Bg. S.g"}, {4, "Bgg Sgg Bgg SgS"}]
-  @rumba [{4, "B.SB ..S."}, {4, "B.gg S.B. g.gg S.gg"}]
+  @festejo [{4, ~MX"B.g S.g Bg. S.g"s}, {4, ~MX"Bgg Sgg Bgg SgS"s}]
+  @rumba [{4, ~MX"B.SB ..S."s}, {4, ~MX"B.gg S.B. g.gg S.gg"s}]
 
   # Which accents of the bulerías are bass tones and which are slaps, and the cycle that closes on
   # 10, are written for mx.
   @bulerias [
-    {6, "Bgg Bgg Bg Bg Bg"},
-    {6, "Bgg Bgg Sg Sg Sg"},
-    {6, "Bgg Bgg gS Sg Sg"},
-    {6, "B.g.g. B.gggg sgsg SgSS X..."}
+    {6, ~MX"Bgg Bgg Bg Bg Bg"s},
+    {6, ~MX"Bgg Bgg Sg Sg Sg"s},
+    {6, ~MX"Bgg Bgg gS Sg Sg"s},
+    {6, ~MX"B.g.g. B.gggg sgsg SgSS X..."s}
   ]
 
   @rock [
-    {4, "B... S... B.B. S..."},
-    {4, "B.g. S.g. B.B. S.g."},
-    {4, "Bggg Sggg BgBg Sggg"},
-    {4, "Bggg Sggg BgBg SsSS"}
+    {4, ~MX"B... S... B.B. S..."s},
+    {4, ~MX"B.g. S.g. B.B. S.g."s},
+    {4, ~MX"Bggg Sggg BgBg Sggg"s},
+    {4, ~MX"Bggg Sggg BgBg SsSS"s}
   ]
 
-  @ending [{4, "gggggggg ggggssss ssssSSSS X......."}, {4, "X"}]
+  @ending [{4, ~MX"gggggggg ggggssss ssssSSSS X......."s}, {4, ~MX"X"s}]
 
   part :cajon, synth: :cajon
 
@@ -59,23 +59,18 @@ defmodule Cajon do
     twice.(@festejo) ++ twice.(@rumba) ++ @bulerias ++ @rock ++ @ending
   end
 
-  # A pass of cajon.
-  defp cajon({beats, cells}) do
-    letters = cells |> String.replace(" ", "") |> String.graphemes()
-    step = beats / length(letters)
-
-    hits =
-      for {letter, index} <- Enum.with_index(letters), letter != "." do
-        beat = Float.round(index * step, 3)
-        {beat, hit(stroke(letter))}
-      end
-
-    at(hits, beats)
+  # A pass of cajon, each stroke on the nearest thousandth of a beat.
+  defp cajon({beats, pattern}) do
+    pattern
+    |> steps(beats / length(pattern),
+      strokes: [
+        B: [slap: 0, vel: 0.8],
+        X: [slap: 0, vel: 0.95],
+        S: [slap: 1, vel: 0.9],
+        s: [slap: 1, vel: 0.6],
+        g: [slap: 1, vel: 0.35]
+      ]
+    )
+    |> swing(&Float.round(&1 / 1, 3))
   end
-
-  defp stroke("B"), do: [slap: 0, vel: 0.8]
-  defp stroke("X"), do: [slap: 0, vel: 0.95]
-  defp stroke("S"), do: [slap: 1, vel: 0.9]
-  defp stroke("s"), do: [slap: 1, vel: 0.6]
-  defp stroke("g"), do: [slap: 1, vel: 0.35]
 end

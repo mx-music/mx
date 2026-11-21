@@ -20,18 +20,18 @@ defmodule Cowbell do
   # muted by the hand.
   # The second gear: closed strokes on the 2 side, and the 3 side's first two strokes strongly
   # open.
-  @second_gear "c... ...c O..O ...c"
+  @second_gear ~MX"c... ...c O..O ...c"s
 
   # The third gear: open on each half bar, closed between, with a rest on the 2 side's second
   # beat.
-  @third_gear "O.c. o.cc o.cc o.cc"
+  @third_gear ~MX"O.c. o.cc o.cc o.cc"s
 
   # The page writes the contracampana's strokes alike; the harder ones on the four beats are mx's
   # own.
-  @contracampana "O.o. Oooo .ooo O.oo"
-  @changuito ".oo. .ooo .ooo .ooo"
+  @contracampana ~MX"O.o. Oooo .ooo O.oo"s
+  @changuito ~MX".oo. .ooo .ooo .ooo"s
 
-  @standard "O.o.oo.o.o.o O.o.oo.o.o.o"
+  @standard ~MX"O.o.oo.o.o.o O.o.oo.o.o.o"s
 
   # The contracampana sounds a fourth above the campana, and a little under it.
   part :campana, synth: :cowbell, defaults: [amp: 0.4]
@@ -46,7 +46,7 @@ defmodule Cowbell do
     for cells <- passes() do
       together(
         for name <- [:campana, :contracampana] do
-          part(name, bell(Keyword.get(cells, name, "")))
+          part(name, bell(Keyword.get(cells, name, ~MX"."s)))
         end
       )
     end
@@ -70,25 +70,14 @@ defmodule Cowbell do
       [campana: @standard],
       [campana: @third_gear, contracampana: @contracampana],
       [campana: @third_gear, contracampana: @contracampana],
-      [campana: "O", contracampana: "O"]
+      [campana: ~MX"O"s, contracampana: ~MX"O"s]
     ]
   end
 
-  # A pass of one bell, as 8 beats.
-  defp bell(cells) do
-    letters = cells |> String.replace(" ", "") |> String.graphemes()
-    per_beat = length(letters) / 8
-
-    hits =
-      for {letter, index} <- Enum.with_index(letters), letter != "." do
-        beat = Float.round(index / per_beat, 3)
-        {beat, hit(stroke(letter))}
-      end
-
-    if hits == [], do: rest(8), else: at(hits, 8)
+  # A pass of one bell, as 8 beats, each stroke on the nearest thousandth of a beat.
+  defp bell(pattern) do
+    pattern
+    |> steps(8 / length(pattern), strokes: [O: [vel: 1], o: [vel: 0.8], c: [vel: 0.6, muted: 1]])
+    |> swing(&Float.round(&1 / 1, 3))
   end
-
-  defp stroke("O"), do: [vel: 1]
-  defp stroke("o"), do: [vel: 0.8]
-  defp stroke("c"), do: [vel: 0.6, muted: 1]
 end

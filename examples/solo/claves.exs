@@ -30,35 +30,23 @@ defmodule Claves do
 
   # A pass of clave, as 8 beats.
   defp clave(section, _pass) do
-    hits = for {beat, opts} <- strokes(section), do: {beat, hit(opts)}
-    at(hits, 8)
-  end
-
-  # The strokes of a pass, as {beat, options}.
-  defp strokes(section) do
-    {per_beat, cells} = cells(section)
-
-    for {letter, index} <- Enum.with_index(String.graphemes(cells)),
-        letter != ".",
-        do: {index / per_beat, [vel: vel(letter)]}
+    pattern = cells(section)
+    steps(pattern, 8 / length(pattern), strokes: [x: [vel: 0.75], X: [vel: 1]])
   end
 
   # The son clave: three strokes in the first bar and two in the second.
-  defp cells(:son), do: {2, "x..x..x...x.x..."}
-  defp cells(:son_2_3), do: {2, "..x.x...x..x..x."}
+  defp cells(:son), do: ~MX"x..x..x...x.x..."s
+  defp cells(:son_2_3), do: ~MX"..x.x...x..x..x."s
 
   # The rumba clave delays the third stroke by an eighth.
-  defp cells(:rumba), do: {2, "x..x...x..x.x..."}
+  defp cells(:rumba), do: ~MX"x..x...x..x.x..."s
 
   # The bossa nova clave delays the son clave's last stroke by an eighth.
-  defp cells(:bossa), do: {2, "x..x..x...x..x.."}
+  defp cells(:bossa), do: ~MX"x..x..x...x..x.."s
 
   # The 6/8 standard bell, twice to a pass.
-  defp cells(:bembe), do: {3, String.duplicate("x.x.xx.x.x.x", 2)}
+  defp cells(:bembe), do: ~MX"x.x.xx.x.x.x x.x.xx.x.x.x"s
 
   # Son clave 3-2, its last stroke the hardest.
-  defp cells(:ending), do: {2, "x..x..x...x.X..."}
-
-  defp vel("x"), do: 0.75
-  defp vel("X"), do: 1
+  defp cells(:ending), do: ~MX"x..x..x...x.X..."s
 end

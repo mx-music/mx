@@ -244,12 +244,12 @@ defmodule TwelveBars do
       drums:
         seq([
           rest(8),
-          kit(hat: "7.47.47.47.4"),
+          kit(hat: ~MX"7.47.47.47.4"s),
           kit(
-            hat: "7.47.4......",
-            snare: "......666...",
-            high_tom: ".........77.",
-            low_tom: "...........8"
+            hat: ~MX"7.47.4......"s,
+            snare: ~MX"......666..."s,
+            high_tom: ~MX".........77."s,
+            low_tom: ~MX"...........8"s
           )
         ])
     )
@@ -300,7 +300,7 @@ defmodule TwelveBars do
       {:bass, bass(eleven)},
       {:drums,
        together([
-         kit([ride: "7.47.47.47.4", kick: "8.....7....4", snare: "...7.....7.."], 11),
+         kit([ride: ~MX"7.47.47.47.4"s, kick: ~MX"8.....7....4"s, snare: ~MX"...7.....7.."s], 11),
          sample(@kit.crash, 4, amp: 0.8)
        ])},
       harp_c,
@@ -323,9 +323,9 @@ defmodule TwelveBars do
       bass: seq([line(c3: 2, r: 10), note([:c2, :c3], 8, release: 2)]),
       drums:
         seq([
-          kit(kick: "6...........", snare: "6...........", hat: "6..........."),
+          kit(kick: ~MX"6..........."s, snare: ~MX"6..........."s, hat: ~MX"6..........."s),
           together([
-            kit(kick: "6...........", low_tom: "6..........."),
+            kit(kick: ~MX"6..........."s, low_tom: ~MX"6..........."s),
             sample(@kit.crash, 8, amp: 1.0, sustain: 8, release: 3)
           ])
         ])
@@ -383,17 +383,14 @@ defmodule TwelveBars do
   # Bars of the kit in pulses, a row to each piece and a character to each pulse: a digit is a
   # stroke of that level, a dot is silence.
   defp kit(rows, bars \\ 1) do
+    strokes =
+      for strength <- 1..9,
+          do: {:"#{strength}", [amp: strength / 9, sustain: 1.5, release: 0.5]}
+
     repeat(
       together(
-        for {piece, pattern} <- rows do
-          hits =
-            for {cell, index} <- Enum.with_index(String.graphemes(pattern)), cell != "." do
-              amp = String.to_integer(cell) / 9
-              {index * @pulse, sample(@kit[piece], 0, amp: amp, sustain: 1.5, release: 0.5)}
-            end
-
-          at(hits, 4)
-        end
+        for {piece, pattern} <- rows,
+            do: steps(pattern, @pulse, sample: @kit[piece], strokes: strokes)
       ),
       bars
     )
@@ -411,13 +408,16 @@ defmodule TwelveBars do
   # Eleven bars of the shuffle on the cymbal given, and a bar that ends on the toms.
   defp shuffle(cymbal) do
     seq([
-      kit([{cymbal, "7.47.47.47.4"}, kick: "8.....7....4", snare: "...7.....7.."], 11),
+      kit(
+        [{cymbal, ~MX"7.47.47.47.4"s}, kick: ~MX"8.....7....4"s, snare: ~MX"...7.....7.."s],
+        11
+      ),
       kit([
-        {cymbal, "7.47.4......"},
-        kick: "8.....7.....",
-        snare: "...7..666...",
-        high_tom: ".........77.",
-        low_tom: "...........8"
+        {cymbal, ~MX"7.47.4......"s},
+        kick: ~MX"8.....7....."s,
+        snare: ~MX"...7..666..."s,
+        high_tom: ~MX".........77."s,
+        low_tom: ~MX"...........8"s
       ])
     ])
   end
