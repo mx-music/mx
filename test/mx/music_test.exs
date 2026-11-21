@@ -393,6 +393,27 @@ defmodule Mx.MusicTest do
       path = write(ctx, ":ok")
       assert Song.load(path) == {:error, "#{path} does not end with a song"}
     end
+
+    @tag :tmp_dir
+    test "a file that defines a module and no song reads as a module, and loads as no song", ctx do
+      path = write(ctx, "defmodule MusicTest.Notes do\n  def bar, do: [60, 62]\nend")
+      assert Song.read(path) == :module
+      assert Song.load(path) == {:error, "#{path} does not end with a song"}
+      assert apply(MusicTest.Notes, :bar, []) == [60, 62]
+    end
+
+    @tag :tmp_dir
+    test "a module that does not compile is refused, naming its line", ctx do
+      path = write(ctx, "defmodule MusicTest.Broken do\n  def bar, do: [60, 62\nend")
+      assert {:error, message} = Song.read(path)
+      assert message =~ Path.basename(path)
+    end
+
+    @tag :tmp_dir
+    test "a file that defines no module and no song does not read as a module", ctx do
+      path = write(ctx, "x = 1")
+      assert Song.read(path) == {:error, "#{path} does not end with a song"}
+    end
   end
 
   describe "effects" do

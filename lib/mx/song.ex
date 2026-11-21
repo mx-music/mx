@@ -134,6 +134,14 @@ defmodule Mx.Song do
 
   @doc "Loads a song file, or with `source:` that text as though it were the file at `path`, which need not exist, and returns `{:ok, song}` or `{:error, message}` naming the file and line."
   def load(path, opts \\ []) when is_binary(path) and is_list(opts) do
+    case read(path, opts) do
+      :module -> {:error, "#{path} does not end with a song"}
+      read -> read
+    end
+  end
+
+  @doc "Reads a song file as `load/2` does, but returns `:module` for a file that compiles, ends with a module and describes no song, as a file of modules other songs use does."
+  def read(path, opts \\ []) when is_binary(path) and is_list(opts) do
     Process.put(@key, %__MODULE__{})
 
     try do
@@ -141,17 +149,15 @@ defmodule Mx.Song do
       # every load.
       :rand.seed(:exsss, {:erlang.phash2(Path.expand(path)), 0, 0})
 
-      case eval_file(path, opts[:source]) do
-        %Mx.Music.Song{} = song -> Mx.Music.load(song)
-        _ -> :ok
-      end
+      value = eval_file(path, opts[:source])
+      if match?(%Mx.Music.Song{}, value), do: Mx.Music.load(value)
 
       song = Process.get(@key)
       loops = Enum.map(Enum.reverse(song.loops), &%{&1 | file: path, osc_to: song.osc_to})
 
       live = Enum.reverse(song.live)
 
-      with :ok <- check(loops, path, live),
+      with :ok <- check(loops, path, live, value),
            {:ok, live} <- check_live(live, path),
            {:ok, loops} <- find_effects(loops),
            {:ok, loops} <- find_samples(loops) do
@@ -314,9 +320,10 @@ defmodule Mx.Song do
     update(&%{&1 | live: [live | &1.live]})
   end
 
-  defp check([], path, []), do: {:error, "#{path} does not end with a song"}
+  defp check([], _path, [], {:module, _, _, _}), do: :module
+  defp check([], path, [], _value), do: {:error, "#{path} does not end with a song"}
 
-  defp check(loops, path, _live) do
+  defp check(loops, path, _live, _value) do
     names = Enum.map(loops, & &1.name)
     duplicate = List.first(names -- Enum.uniq(names))
     unknown = Enum.find(loops, &(not Synths.exists?(&1.synth)))
