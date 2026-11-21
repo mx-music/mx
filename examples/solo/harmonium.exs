@@ -38,19 +38,19 @@ defmodule Harmonium do
   # The left hand's Sa an octave down, held through the 16 beats.
   defp left_hand, do: note(sa() - 12, 16, vel: 0.5, sustain: 15.5, release: 0.5)
 
-  # Each word is a note and its length in beats.
-  defp line(:ascent, _), do: ~MX"S:1 r:1 G:1 M:1 P:1 d:1 N:1 S':2 N:1 d:1 P:1 M:1 G:1 r:1 S:1"
-  defp line(:melody, 0), do: ~MX"G:1 M:1 d:1 d:1 P:2 G:1 M:1 r:1 r:1 S:2 .N:0.5 S:0.5 r:1 S:2"
+  # Each word is a note a beat long, or as many beats as its length.
+  defp line(:ascent, _), do: ~MX"S r G M P d N S':2 N d P M G r S"
+  defp line(:melody, 0), do: ~MX"G M d d P:2 G M r r S:2 .N:0.5 S:0.5 r S:2"
 
   defp line(:melody, 1) do
-    ~MX"S:0.5 r:0.5 G:0.5 M:0.5 P:2 d:0.5 P:0.5 M:0.5 G:0.5 M:2 G:0.5 M:0.5 r:1 S:1 .d:1 .N:1 S:3"
+    ~MX"S:0.5 r:0.5 G:0.5 M:0.5 P:2 d:0.5 P:0.5 M:0.5 G:0.5 M:2 G:0.5 M:0.5 r S .d .N S:3"
   end
 
   defp line(:high, _) do
-    ~MX"P:1 d:1 N:1 S':1 r':1 G':1 M':2 G':0.5 r':0.5 S':1 N:1 d:1 P:1 d:0.5 N:0.5 S':2"
+    ~MX"P d N S' r' G' M':2 G':0.5 r':0.5 S' N d P d:0.5 N:0.5 S':2"
   end
 
-  defp line(:ending, _), do: ~MX"G:1 M:1 d:2 P:2 G:1 M:1 r:2 S:6"
+  defp line(:ending, _), do: ~MX"G M d:2 P:2 G M r:2 S:6"
 
   # Each note's cents above Sa, as just intervals; r and d are the flat Re and Dha, a dot before a
   # note is the octave below and a quote after it the octave above.

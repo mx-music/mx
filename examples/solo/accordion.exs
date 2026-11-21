@@ -20,7 +20,8 @@ defmodule Accordion do
   defp accordion(:chords), do: part(:chords, chords())
   defp accordion(:ending), do: part(:ending, line(ending(), []))
 
-  # Each word is a note and its length in beats, held `held` of its length, shifted by `octaves`.
+  # Each word is a note a beat long, or as many beats as its length, held `held` of its length,
+  # shifted by `octaves`.
   defp line(pattern, opts) do
     held = Keyword.get(opts, :held, 0.9)
     extra = Keyword.take(opts, [:detune])
@@ -37,7 +38,7 @@ defmodule Accordion do
   # Eight bars climbing from the low E to the D above, turning on a chromatic D# and falling home
   # to A.
   defp theme do
-    ~MX"e3:1 a3:1 c4:1 b3:2 a3:1 gs3:1 b3:1 e4:1 d4:2 c4:1 b3:1 c4:1 d4:1 e4:1 f4:0.5 e4:0.5 ds4:1 e4:1 b3:1 gs3:1 a3:3"
+    ~MX"e3 a3 c4 b3:2 a3 gs3 b3 e4 d4:2 c4 b3 c4 d4 e4 f4:0.5 e4:0.5 ds4 e4 b3 gs3 a3:3"
   end
 
   # The waltz's chords in the right hand: struck on the first beat and short on the second and
@@ -56,5 +57,5 @@ defmodule Accordion do
     end)
   end
 
-  defp ending, do: ~MX"e3:1 a3:1 c4:1 b3:2 a3:1 gs3:1 b3:1 e4:1 a3:6"
+  defp ending, do: ~MX"e3 a3 c4 b3:2 a3 gs3 b3 e4 a3:6"
 end
