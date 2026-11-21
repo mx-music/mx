@@ -39,19 +39,15 @@ defmodule Congas do
   part :mid_conga, synth: :mid_conga, defaults: [amp: 0.35]
   part :high_conga, synth: :high_conga, defaults: [amp: 0.55]
 
-  def song do
-    repeat(seq(form()))
-  end
-
   # The form, each of its passes a bar.
-  defp form do
-    for cells <- bars() do
-      together(
-        for drum <- [:low_conga, :mid_conga, :high_conga] do
-          part(drum, bar(Keyword.get(cells, drum, ~MX"."s)))
-        end
-      )
-    end
+  def song, do: repeat(seq(bars(), &drums/1))
+
+  # A bar of the three drums, each silent where the bar gives it no cells.
+  defp drums(cells) do
+    together(
+      [:low_conga, :mid_conga, :high_conga],
+      &part(&1, bar(Keyword.get(cells, &1, ~MX"."s)))
+    )
   end
 
   defp bars do

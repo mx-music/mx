@@ -37,19 +37,12 @@ defmodule Cowbell do
   part :campana, synth: :cowbell, defaults: [amp: 0.4]
   part :contracampana, synth: :cowbell, defaults: [amp: 0.3, note: 75]
 
-  def song do
-    repeat(seq(form()))
-  end
-
   # The form, each of its passes a clave.
-  defp form do
-    for cells <- passes() do
-      together(
-        for name <- [:campana, :contracampana] do
-          part(name, bell(Keyword.get(cells, name, ~MX"."s)))
-        end
-      )
-    end
+  def song, do: repeat(seq(passes(), &bells/1))
+
+  # A clave of the two bells, each silent where the pass gives it no cells.
+  defp bells(cells) do
+    together([:campana, :contracampana], &part(&1, bell(Keyword.get(cells, &1, ~MX"."s))))
   end
 
   defp passes do

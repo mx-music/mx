@@ -24,21 +24,16 @@ defmodule Surdos do
   part :segunda, synth: :surdo
   part :terceira, synth: :surdo
 
+  # Each section brings in one more drum.
   def song do
-    repeat(form())
-  end
-
-  defp form do
-    seq([
-      section(primeira: primeira()),
-      section(primeira: primeira(), segunda: segunda()),
-      section(primeira: primeira(), segunda: segunda(), terceira: terceira(false)),
-      section(primeira: primeira(), segunda: segunda(), terceira: terceira(true))
-    ])
-  end
-
-  defp section(parts) do
-    together(for {name, music} <- parts, do: part(name, music))
+    repeat(
+      seq([
+        together(primeira: primeira()),
+        together(primeira: primeira(), segunda: segunda()),
+        together(primeira: primeira(), segunda: segunda(), terceira: terceira(false)),
+        together(primeira: primeira(), segunda: segunda(), terceira: terceira(true))
+      ])
+    )
   end
 
   # Eight bars of the marcação: muted on the first beat, open on the second, the last bar's open

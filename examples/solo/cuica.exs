@@ -53,38 +53,34 @@ defmodule Cuica do
   part :cuica, synth: :cuica
 
   def song do
-    repeat(form())
-  end
-
-  defp form do
     base = List.duplicate(:base, 8)
 
-    seq([
-      play(base),
-      play([:roda, :roda, :roda, :roda]),
-      play([:variation, :roda, :variation]),
-      play([:roda, :roda, :roda]),
-      play(base),
-      play([:variation, :roda])
-    ])
+    repeat(
+      seq([
+        played(base),
+        played([:roda, :roda, :roda, :roda]),
+        played([:variation, :roda, :variation]),
+        played([:roda, :roda, :roda]),
+        played(base),
+        played([:variation, :roda])
+      ])
+    )
   end
 
-  # The patterns named, one after another, each stroke lasting until its sixteenths are up.
-  defp play(names) do
-    {strokes, beats} =
-      Enum.reduce(names, {[], 0}, fn name, {strokes, from} ->
-        {pattern, beats} = pattern(name)
+  # The patterns named, one after another.
+  defp played(names), do: part(:cuica, seq(names, &pass/1))
 
-        played =
-          for {sixteenth, sound, sixteenths} <- pattern do
-            length = Float.round(beat(sixteenth + sixteenths) - beat(sixteenth), 2)
-            {from + beat(sixteenth), hit(sound(sound, sixteenth) ++ [sustain: length])}
-          end
+  # A pattern, each stroke lasting until its sixteenths are up.
+  defp pass(name) do
+    {pattern, beats} = pattern(name)
 
-        {strokes ++ played, from + beats}
-      end)
+    strokes =
+      for {sixteenth, sound, sixteenths} <- pattern do
+        length = Float.round(beat(sixteenth + sixteenths) - beat(sixteenth), 2)
+        {beat(sixteenth), hit(sound(sound, sixteenth) ++ [sustain: length])}
+      end
 
-    part(:cuica, at(strokes, beats))
+    at(strokes, beats)
   end
 
   defp pattern(:base), do: {@base, 1}

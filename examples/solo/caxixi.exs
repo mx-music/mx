@@ -26,20 +26,9 @@ defmodule Caxixi do
 
   part :caxixi, synth: :caxixi
 
-  def song do
-    repeat(form())
-  end
+  def song, do: repeat(form([angola: 2, sao_bento_grande: 2], &part(:caxixi, caxixi(&1))))
 
-  defp form do
-    seq([
-      part(:caxixi, angola()),
-      part(:caxixi, angola()),
-      part(:caxixi, sao_bento_grande()),
-      part(:caxixi, sao_bento_grande())
-    ])
-  end
-
-  defp angola do
+  defp caxixi(:angola) do
     strokes =
       for cycle <- 0..7, {beat, stroke} <- @angola do
         {2 * cycle + beat, hit(vel: if(stroke == :open, do: 0.85, else: 0.5))}
@@ -48,7 +37,7 @@ defmodule Caxixi do
     at(strokes, 16)
   end
 
-  defp sao_bento_grande do
+  defp caxixi(:sao_bento_grande) do
     strokes =
       for cycle <- 0..3, {beat, _stroke} <- @sao_bento_grande do
         accented = beat in [0, 2, 3.5]

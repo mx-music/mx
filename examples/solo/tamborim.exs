@@ -17,19 +17,15 @@ defmodule Tamborim do
   part :tamborim, synth: :tamborim
 
   def song do
-    repeat(form())
+    repeat(
+      form(
+        [teleco_teco: 1, carreteiro: 1, virada: 1, carreteiro: 1],
+        &part(:tamborim, tamborim(&1))
+      )
+    )
   end
 
-  defp form do
-    seq([
-      part(:tamborim, teleco_teco()),
-      part(:tamborim, carreteiro()),
-      part(:tamborim, virada()),
-      part(:tamborim, carreteiro())
-    ])
-  end
-
-  defp teleco_teco do
+  defp tamborim(:teleco_teco) do
     strokes =
       for repeat <- 0..3, sixteenth <- @teleco_teco do
         {4 * repeat + sixteenth / 4,
@@ -40,7 +36,7 @@ defmodule Tamborim do
   end
 
   # Every sixteenth, the teleco-teco's strokes accented and the rest soft.
-  defp carreteiro do
+  defp tamborim(:carreteiro) do
     strokes =
       for repeat <- 0..3, sixteenth <- 0..15 do
         vel = if sixteenth in @teleco_teco, do: 0.8, else: 0.4
@@ -52,7 +48,7 @@ defmodule Tamborim do
 
   # Three repeats of the teleco-teco, then a bar of thirty-seconds that swells into an accent on
   # the next downbeat.
-  defp virada do
+  defp tamborim(:virada) do
     figure =
       for repeat <- 0..2, sixteenth <- @teleco_teco do
         {4 * repeat + sixteenth / 4, hit(note: @note, vel: 0.7)}

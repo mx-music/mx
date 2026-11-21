@@ -45,14 +45,8 @@ defmodule Cajon do
 
   part :cajon, synth: :cajon
 
-  def song do
-    repeat(seq(form()))
-  end
-
   # The form, each of its passes a bar or, in the bulerías, a cycle of twelve counts.
-  defp form do
-    for pass <- passes(), do: part(:cajon, cajon(pass))
-  end
+  def song, do: repeat(seq(passes(), &part(:cajon, cajon(&1))))
 
   defp passes do
     twice = fn passes -> Enum.flat_map(passes, &[&1, &1]) end
