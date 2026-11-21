@@ -35,30 +35,24 @@ defmodule Tambourine do
     )
   end
 
-  # A pass of tambourine_shake, as 4 beats.
+  # A pass of tambourine_shake, as 4 beats; the ending's shakes grow from soft to loud.
   defp tambourine_shake(section, pass) do
-    hits = for {beat, opts} <- shakes(section, pass), do: {beat, hit(opts)}
-    at(hits, 4)
-  end
-
-  # The shakes of a pass, as {beat, options}; the ending's grow from soft to loud.
-  defp shakes(section, pass) do
     {per_beat, drums} = cells(section, pass)
-    found = Regex.scan(~r/s-*/, Keyword.get(drums, :shake, ""), return: :index) |> List.flatten()
+    vel = fn step -> if section == :ending, do: 0.3 + step / 4 * 0.2, else: 0.45 end
 
-    for {{start, length}, index} <- Enum.with_index(found) do
-      vel = if section == :ending, do: 0.3 + index * 0.2, else: 0.45
-      {start / per_beat, [vel: vel, sustain: length / per_beat]}
+    case drums[:shake] do
+      nil -> rest(4)
+      shakes -> steps(shakes, 1 / per_beat, strokes: [s: []], each: &[vel: vel.(&1)])
     end
   end
 
   # A pass is four beats, written as cells: sixteenths for most sections, and for the tarantella
   # triplet eighths, so a beat is a dotted quarter of 6/8.
-  # A letter is a stroke, s starts a shake, and each - after it holds the shake a cell longer.
-  defp cells(:roll, _pass), do: {4, [hit: ~MX"x.............x."s, shake: "s-------------.."]}
+  # A letter is a stroke, and s a shake as long as its length in cells.
+  defp cells(:roll, _pass), do: {4, [hit: ~MX"x.............x."s, shake: ~MX"s:14 _:2"]}
 
   defp cells(:backbeat, _pass) do
-    {4, [hit: ~MX"....X.......X..."s, shake: "s.s.s.s.s.s.s.s."]}
+    {4, [hit: ~MX"....X.......X..."s, shake: ~MX"s _ s _ s _ s _ s _ s _ s _ s _"]}
   end
 
   # DA-da-da on every beat, then DA-da DA-da-da, the tarantella's two figures, and the first
@@ -71,5 +65,5 @@ defmodule Tambourine do
   defp cells(:soft, _pass), do: {4, [hit: ~MX"g...g...g.g.g..."s]}
 
   # A roll in three shakes, each harder than the last, into the flat hand.
-  defp cells(:ending, _pass), do: {4, [hit: ~MX"............X..."s, shake: "s---s---s---...."]}
+  defp cells(:ending, _pass), do: {4, [hit: ~MX"............X..."s, shake: ~MX"s:4 s:4 s:4 _:4"]}
 end
