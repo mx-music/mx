@@ -501,9 +501,7 @@ defmodule Sgubhu do
 
   # The second and fourth sixteenths of each beat come 0.03 of a beat late, which is the groove's
   # swing.
-  defp swung(music) do
-    swing(music, fn beat -> if rem(round(beat * 4), 2) == 1, do: beat + 0.03, else: beat end)
-  end
+  defp swung(music), do: feel(music, step: 0.25, push: [0, 0.03])
 
   # Each bar's chord: its root for the pad, and the FM piano's four notes.
   defp chords do
