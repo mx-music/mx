@@ -197,7 +197,7 @@ defmodule TranquilityBase do
       ocean: ocean(48),
       glass: seq([glasses(32, 0.16), glasses(16, 0.16)]),
       sputnik: seq([beeps(16, 0.25), beeps(32, 0.12)]),
-      bowed: delay(cycle(&pad/1), 16),
+      bowed: delay(seq(chords(), &pad/1), 16),
       vibes:
         at(
           [
@@ -229,11 +229,11 @@ defmodule TranquilityBase do
         voice: sample(@liftoff, 16, amp: 0.85),
         sputnik: beeps(64, 0.1),
         glass: repeat(glasses(32, 0.12), 2),
-        bass: repeat(cycle(&bass/1), 2),
-        vibes: seq([cycle(&held/1), cycle(&comp/1)]),
+        bass: repeat(seq(chords(), &bass/1), 2),
+        vibes: seq([seq(chords(), &held/1), seq(chords(), &comp/1)]),
         marimba:
           together([
-            delay(cycle(&ostinato/1), 32),
+            delay(seq(chords(), &ostinato/1), 32),
             at([{32, change({:marimba, :rlpf}, cutoff: 112, cutoff_slide: 24)}], 64)
           ]),
         shaker: delay(shaker(8), 32),
@@ -342,10 +342,10 @@ defmodule TranquilityBase do
         sputnik: beeps(64, 0.1),
         glass: glasses(32, 0.12),
         gate: delay(glasses(32, 0.2), 32),
-        bass: repeat(cycle(&bass/1), 2),
-        vibes: repeat(cycle(&comp/1), 2),
-        marimba: delay(cycle(&ostinato/1), 32),
-        lead: delay(cycle(&lead/1), 32),
+        bass: repeat(seq(chords(), &bass/1), 2),
+        vibes: repeat(seq(chords(), &comp/1), 2),
+        marimba: delay(seq(chords(), &ostinato/1), 32),
+        lead: delay(seq(chords(), &lead/1), 32),
         shaker: shaker(16),
         claps: claps(16),
         open_hat: delay(open_hat(8), 32),
@@ -540,7 +540,6 @@ defmodule TranquilityBase do
   end
 
   # The four chords, two bars each, played by the function.
-  defp cycle(fun), do: seq(Enum.map(chords(), fun))
 
   # Each chord's bass notes, as root, fifth, octave and the note that leads to the next chord, the
   # root and the leading note doubled an octave up, then its voicings.

@@ -133,6 +133,15 @@ seq(c4: 1, e4: 1, g4: 2, r: 1)
 together([seq(c5: 2, b4: 2), seq(e4: 4)])
 ```
 
+Either takes a collection and a function instead, and plays the music the function returns for each item: a list, a range or any other enumerable.
+What the function returns can be anything a list item can be, so a `{name, beats}` pair is a note:
+
+```elixir
+seq(1..72, &bar/1)
+seq([:c4, :e4, :g4], fn name -> {name, 1} end)
+together([:c4, :e4, :g4], fn name -> note(name, 2) end)
+```
+
 The two nest, so a song is built from small pieces with names:
 
 ```elixir
@@ -313,6 +322,7 @@ part(:cajon, at([{0, hit(slap: 1, vel: 0.8)}, {1.5, hit(vel: 0.5)}], 2), synth: 
 
 - `hit(vel: 0.5)` is one hit of a drum at its own pitch, taking no time.
 - `at([{0.5, music}, {1.5, music}], 2)` is music of 2 beats that starts each item at its beat, so hits at known beats need no rests between them.
+- `at([{0, 0.4}, {1.5, 0.8}], 2, fn vel -> hit(vel: vel) end)` takes a value at each beat instead of music, and places there the music the function returns for it.
 - `swing(music, fun)` starts each note at the beat the function returns for the beat it was written on, so some notes can be pushed late and others early.
 
 ## Patterns
@@ -495,7 +505,7 @@ amen = {:sonic_pi, :loop_amen}
 piece = fn number -> sample(amen, 0.5, slices: 8, slice: number, beats: 0.5) end
 
 whole = sample(amen, 4, beats: 4)
-chopped = seq(Enum.map([0, 1, 2, 3, 0, 0, 6, 7], piece))
+chopped = seq([0, 1, 2, 3, 0, 0, 6, 7], piece)
 
 song(tempo: 136, music: repeat(part(:drums, seq([whole, chopped]))))
 ```

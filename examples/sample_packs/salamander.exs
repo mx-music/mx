@@ -34,7 +34,7 @@ defmodule Salamander do
     fx: [level: [amp: 0.85], reverb: [room: 0.75, damp: 0.5, mix: 0.25]]
 
   def song do
-    part(:piano, seq(Enum.map(1..72, &bar/1)))
+    part(:piano, seq(1..72, &bar/1))
   end
 
   # A bar of the piece, each note's velocity choosing its recording and nothing more.

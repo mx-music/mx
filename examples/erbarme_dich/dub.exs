@@ -130,7 +130,7 @@ defmodule Dub do
   @horns [:trumpet, :tenor_sax, :trombone]
 
   def song do
-    seq(Enum.map([:intro, :riddim, :verse, :dub, :horn_verse, :horn_dub, :outro], &section/1))
+    seq([:intro, :riddim, :verse, :dub, :horn_verse, :horn_dub, :outro], &section/1)
   end
 
   # The siren and the hand drums, then the one drop and the bass in the echo, the horns' motto,
@@ -139,16 +139,16 @@ defmodule Dub do
     together(
       [
         part(:siren, at([{0, siren()}, {18, siren()}], 24)),
-        part(:thunder, bars(1..4, fn _ -> thunder() end)),
-        part(:funde, bars(1..4, fn _ -> funde() end)),
-        part(:repeater, seq([rest(6), bars(2..4, &repeater/1)])),
+        part(:thunder, seq(1..4, fn _ -> thunder() end)),
+        part(:funde, seq(1..4, fn _ -> funde() end)),
+        part(:repeater, seq([rest(6), seq(2..4, &repeater/1)])),
         part(:tabla, boom()),
-        part(:kick, seq([rest(6), bars(2..4, fn _ -> kick(:one_drop) end)])),
+        part(:kick, seq([rest(6), seq(2..4, fn _ -> kick(:one_drop) end)])),
         part(
           :rimshot,
-          together([seq([rest(6), bars(2..4, &rimshot/1)]), throw([:rimshot], 6, 21, 24)])
+          together([seq([rest(6), seq(2..4, &rimshot/1)]), throw([:rimshot], 6, 21, 24)])
         ),
-        part(:hihat, seq([rest(12), bars(3..4, fn _ -> hihat() end)])),
+        part(:hihat, seq([rest(12), seq(3..4, fn _ -> hihat() end)])),
         part(:open_hihat, seq([rest(12), open_hihat(2), rest(6)])),
         part(:tom, seq([rest(18), roll()])),
         part(:bass, seq([rest(6), bass(1), bass(1), bass(8)])),
@@ -159,7 +159,7 @@ defmodule Dub do
   end
 
   defp section(:riddim) do
-    together(riddim() ++ [part(:lead, bars(1..8, &lead/1)), part(:harmonium, pickup(:fs4, 48))])
+    together(riddim() ++ [part(:lead, seq(1..8, &lead/1)), part(:harmonium, pickup(:fs4, 48))])
   end
 
   # The harmonium sings the alto's phrase and the lead trombone answers with the ritornello's
@@ -169,7 +169,7 @@ defmodule Dub do
       riddim() ++
         [
           part(:harmonium, seq([alto(), rest(24)])),
-          part(:lead, seq([rest(24), bars(5..8, &lead/1)]))
+          part(:lead, seq([rest(24), seq(5..8, &lead/1)]))
         ]
     )
   end
@@ -179,7 +179,7 @@ defmodule Dub do
     together(
       riddim(:steppers) ++
         horns(seq([alto(), rest(24)])) ++
-        [part(:lead, seq([rest(24), bars(5..8, &lead/1)]))]
+        [part(:lead, seq([rest(24), seq(5..8, &lead/1)]))]
     )
   end
 
@@ -194,12 +194,12 @@ defmodule Dub do
         part(
           :kick,
           seq([
-            bars(1..4, fn _ -> kick(:one_drop) end),
+            seq(1..4, fn _ -> kick(:one_drop) end),
             rest(12),
-            bars(7..8, fn _ -> kick(:steppers) end)
+            seq(7..8, fn _ -> kick(:steppers) end)
           ])
         ),
-        part(:rimshot, together([bars(1..8, &rimshot/1), throw([:rimshot], 0, 42, 48)])),
+        part(:rimshot, together([seq(1..8, &rimshot/1), throw([:rimshot], 0, 42, 48)])),
         part(
           :snare,
           at(
@@ -213,20 +213,20 @@ defmodule Dub do
           )
         ),
         part(:tom, seq([rest(42), roll()])),
-        part(:hihat, out.(&bars(&1, fn _ -> hihat() end))),
-        part(:open_hihat, out.(&bars(&1, fn bar -> open_hihat(bar) end))),
+        part(:hihat, out.(&seq(&1, fn _ -> hihat() end))),
+        part(:open_hihat, out.(&seq(&1, fn bar -> open_hihat(bar) end))),
         part(:crash, at([{36, hit()}], 48)),
-        part(:thunder, bars(1..8, fn _ -> thunder() end)),
-        part(:funde, bars(1..8, fn _ -> funde() end)),
-        part(:repeater, bars(1..8, &repeater/1)),
-        part(:shaker, seq([rest(24), bars(5..8, fn _ -> shaker() end)])),
-        part(:guiro, seq([rest(36), bars(7..8, fn _ -> guiro() end)])),
-        part(:bass, out.(&bars(&1, fn bar -> bass(bar) end))),
-        part(:electric_bass, out.(&bars(&1, fn bar -> bass(bar) end))),
+        part(:thunder, seq(1..8, fn _ -> thunder() end)),
+        part(:funde, seq(1..8, fn _ -> funde() end)),
+        part(:repeater, seq(1..8, &repeater/1)),
+        part(:shaker, seq([rest(24), seq(5..8, fn _ -> shaker() end)])),
+        part(:guiro, seq([rest(36), seq(7..8, fn _ -> guiro() end)])),
+        part(:bass, out.(&seq(&1, fn bar -> bass(bar) end))),
+        part(:electric_bass, out.(&seq(&1, fn bar -> bass(bar) end))),
         part(
           :organ,
           together([
-            seq([rest(36), bars(7..8, &bubble/1)]),
+            seq([rest(36), seq(7..8, &bubble/1)]),
             at(
               [
                 {35, change({:organ, :hpf}, cutoff: 100, cutoff_slide: 0)},
@@ -239,7 +239,7 @@ defmodule Dub do
         part(
           :harp,
           together([
-            seq([rest(12), bars(3..8, &skank(&1, 0.25))]),
+            seq([rest(12), seq(3..8, &skank(&1, 0.25))]),
             throw([:harp], 12, 36, 48),
             at(
               [
@@ -257,7 +257,7 @@ defmodule Dub do
             throw([:harmonium], 6, 18, 48)
           ])
         ),
-        part(:tabla, seq([bars(1..6, fn _ -> boom() end), rest(12)])),
+        part(:tabla, seq([seq(1..6, fn _ -> boom() end), rest(12)])),
         part(:tanpura, seq([rest(24), note(:b2, 12), rest(12)])),
         part(:siren, at([{28, siren()}], 48)),
         part(:marimba, at([{25.5, sigh()}, {31.5, sigh()}], 48))
@@ -272,17 +272,17 @@ defmodule Dub do
 
     together(
       [
-        part(:kick, bars(range, fn _ -> kick(:steppers) end)),
-        part(:rimshot, together([bars(range, &rimshot/1), throw([:rimshot], 0, 21, 24)])),
-        part(:tom, bars(range, &tom/1)),
-        part(:hihat, bars(range, fn _ -> hihat() end)),
-        part(:open_hihat, bars(range, &open_hihat/1)),
+        part(:kick, seq(range, fn _ -> kick(:steppers) end)),
+        part(:rimshot, together([seq(range, &rimshot/1), throw([:rimshot], 0, 21, 24)])),
+        part(:tom, seq(range, &tom/1)),
+        part(:hihat, seq(range, fn _ -> hihat() end)),
+        part(:open_hihat, seq(range, &open_hihat/1)),
         part(:bass, seq([bass(5), bass(6), rest(6), bass(8)])),
         part(:electric_bass, seq([bass(5), bass(6), rest(6), bass(8)])),
         part(
           :organ,
           together([
-            bars(range, &bubble/1),
+            seq(range, &bubble/1),
             at(
               [
                 {0, change({:organ, :hpf}, cutoff: 96, cutoff_slide: 12)},
@@ -292,7 +292,7 @@ defmodule Dub do
             )
           ])
         ),
-        part(:harp, bars(range, &skank(&1, 0.25))),
+        part(:harp, seq(range, &skank(&1, 0.25))),
         part(:siren, together([at([{18, siren()}], 24), throw(@horns, 0, 22, 24)]))
       ] ++
         hand_drums(range) ++
@@ -341,8 +341,6 @@ defmodule Dub do
 
     note(:b4, 4, changes: [{0.1, note: :b6} | wail] ++ [{3.5, note: :b4}])
   end
-
-  defp bars(range, fun), do: seq(Enum.map(range, fun))
 
   defp thunder, do: at([{0, hit(vel: 0.6)}, {3, hit(vel: 0.4, mute: 1)}], 6)
 
@@ -545,11 +543,11 @@ defmodule Dub do
 
   defp hand_drums(range) do
     [
-      part(:thunder, bars(range, fn _ -> thunder() end)),
-      part(:funde, bars(range, fn _ -> funde() end)),
-      part(:repeater, bars(range, &repeater/1)),
-      part(:shaker, bars(range, fn _ -> shaker() end)),
-      part(:guiro, bars(range, fn _ -> guiro() end))
+      part(:thunder, seq(range, fn _ -> thunder() end)),
+      part(:funde, seq(range, fn _ -> funde() end)),
+      part(:repeater, seq(range, &repeater/1)),
+      part(:shaker, seq(range, fn _ -> shaker() end)),
+      part(:guiro, seq(range, fn _ -> guiro() end))
     ]
   end
 
@@ -557,22 +555,22 @@ defmodule Dub do
 
   defp kit(range, kick) do
     [
-      part(:kick, bars(range, fn _ -> kick(kick) end)),
-      part(:rimshot, bars(range, &rimshot/1)),
-      part(:snare, bars(range, &snare/1)),
-      part(:tom, bars(range, &tom/1)),
-      part(:hihat, bars(range, fn _ -> hihat() end)),
-      part(:open_hihat, bars(range, &open_hihat/1)),
+      part(:kick, seq(range, fn _ -> kick(kick) end)),
+      part(:rimshot, seq(range, &rimshot/1)),
+      part(:snare, seq(range, &snare/1)),
+      part(:tom, seq(range, &tom/1)),
+      part(:hihat, seq(range, fn _ -> hihat() end)),
+      part(:open_hihat, seq(range, &open_hihat/1)),
       part(:crash, at([{0, hit()}], 6 * Enum.count(range)))
     ]
   end
 
   defp band(range) do
     [
-      part(:bass, bars(range, &bass/1)),
-      part(:electric_bass, bars(range, &bass/1)),
-      part(:organ, bars(range, &bubble/1)),
-      part(:harp, bars(range, &skank(&1, 0.25)))
+      part(:bass, seq(range, &bass/1)),
+      part(:electric_bass, seq(range, &bass/1)),
+      part(:organ, seq(range, &bubble/1)),
+      part(:harp, seq(range, &skank(&1, 0.25)))
     ]
   end
 
@@ -587,8 +585,7 @@ defmodule Dub do
       [] -> {:cont, []}
       run -> {:cont, Enum.reverse(run), []}
     end)
-    |> Enum.map(&held/1)
-    |> seq()
+    |> seq(&held/1)
   end
 
   # The ritornello's melody, bar by bar, with each bar's pickup into the next at its end.

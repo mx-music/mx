@@ -286,6 +286,9 @@ defmodule Mx.Music do
   @doc "Music played one item after another; an item given as `{name, beats}` is a note, and as `{:r, beats}` a rest."
   def seq(items) when is_list(items), do: %Seq{items: Enum.map(items, &item/1)}
 
+  @doc "Music played one item after another, each the music the function returns for an item of the collection."
+  def seq(collection, fun), do: seq(collected("seq", collection, fun))
+
   @doc "Music whose items all start at once, as long as the longest, refusing two parts of one name among them."
   def together(items) when is_list(items) do
     items = Enum.map(items, &item/1)
@@ -300,6 +303,18 @@ defmodule Mx.Music do
       nil -> %Together{items: items}
       {name, _} -> raise ArgumentError, "two parts named #{name} play together"
     end
+  end
+
+  @doc "Music whose items all start at once, each the music the function returns for an item of the collection."
+  def together(collection, fun), do: together(collected("together", collection, fun))
+
+  defp collected(_name, collection, fun) when is_function(fun, 1), do: Enum.map(collection, fun)
+
+  defp collected(name, _collection, other) do
+    other = inspect(other)
+
+    raise ArgumentError,
+          "#{name} takes a list of music, or a collection and a function of one argument that makes each item, not #{other}"
   end
 
   @doc "The music after some beats of silence."
@@ -353,6 +368,24 @@ defmodule Mx.Music do
       end)
 
     %At{entries: entries, beats: beats}
+  end
+
+  @doc "Music lasting some beats with, at each beat of the entries given as `{beat, value}`, the music the function returns for the value."
+  def at(entries, beats, fun) when is_function(fun, 1) do
+    entries =
+      Enum.map(entries, fn
+        {beat, value} -> {beat, fun.(value)}
+        entry -> entry
+      end)
+
+    at(entries, beats)
+  end
+
+  def at(_entries, _beats, other) do
+    other = inspect(other)
+
+    raise ArgumentError,
+          "at takes {beat, value} entries, a length and a function of one argument that makes the music at each beat, not #{other}"
   end
 
   @doc "The music with each note started at the beat the function returns for the beat it was written on, its length unchanged."

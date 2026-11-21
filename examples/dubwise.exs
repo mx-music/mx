@@ -101,8 +101,6 @@ defmodule Dubwise do
     )
   end
 
-  defp bars(range, fun), do: seq(Enum.map(range, fun))
-
   # The part's echo opened to a mix at one beat and closed again at another, within music of the
   # given length.
   defp throw(name, from, back, length, mix \\ 0.55) do
@@ -174,10 +172,10 @@ defmodule Dubwise do
       kit(1..8, :rockers) ++
         hands(1..8) ++
         [
-          part(:bass, bars(1..8, &bass/1)),
-          part(:electric_bass, bars(1..8, &bass/1)),
-          part(:skank, together([bars(1..8, &skank/1), throw(:skank, 12, 17, 32)])),
-          part(:organ, bars(1..8, &bubble/1)),
+          part(:bass, seq(1..8, &bass/1)),
+          part(:electric_bass, seq(1..8, &bass/1)),
+          part(:skank, together([seq(1..8, &skank/1), throw(:skank, 12, 17, 32)])),
+          part(:organ, seq(1..8, &bubble/1)),
           part(:melodica, slur(phrase(:b) ++ phrase(:a))),
           part(:vibes, vibes([{14, [:a4, :e5]}, {31, [:g4, :b4, :d5]}], 32)),
           part(:siren, at([{28, siren()}], 32))
@@ -195,15 +193,15 @@ defmodule Dubwise do
         part(
           :kick,
           seq([
-            bars(1..4, fn _ -> kick(:one_drop) end),
+            seq(1..4, fn _ -> kick(:one_drop) end),
             rest(8),
-            bars(7..8, fn _ -> kick(:rockers) end)
+            seq(7..8, fn _ -> kick(:rockers) end)
           ])
         ),
         part(
           :rimshot,
           together([
-            bars(1..8, &rimshot/1),
+            seq(1..8, &rimshot/1),
             throw(:rimshot, 4, 8, 32),
             throw(:rimshot, 28, 31, 32)
           ])
@@ -234,7 +232,7 @@ defmodule Dubwise do
         part(
           :hihat,
           together([
-            bars(1..8, &hihat/1),
+            seq(1..8, &hihat/1),
             at(
               [
                 {8, change({:hihat, :flanger}, mix: 0.75, mix_slide: 8)},
@@ -244,13 +242,13 @@ defmodule Dubwise do
             )
           ])
         ),
-        part(:open_hihat, bars(1..8, &open_hihat/1)),
-        part(:bass, out.(&bars(&1, fn bar -> bass(bar) end))),
-        part(:electric_bass, out.(&bars(&1, fn bar -> bass(bar) end))),
+        part(:open_hihat, seq(1..8, &open_hihat/1)),
+        part(:bass, out.(&seq(&1, fn bar -> bass(bar) end))),
+        part(:electric_bass, out.(&seq(&1, fn bar -> bass(bar) end))),
         part(
           :skank,
           together([
-            delay(bars(3..8, &skank/1), 8),
+            delay(seq(3..8, &skank/1), 8),
             throw(:skank, 8, 24, 32),
             at(
               [
@@ -264,7 +262,7 @@ defmodule Dubwise do
         part(
           :organ,
           together([
-            delay(bars(5..8, &bubble/1), 16),
+            delay(seq(5..8, &bubble/1), 16),
             at(
               [
                 {15, change({:organ, :hpf}, cutoff: 100, cutoff_slide: 0)},
@@ -337,13 +335,13 @@ defmodule Dubwise do
             )
           ])
         ),
-        part(:kick, delay(bars(5..8, fn _ -> kick(:one_drop) end), 16)),
-        part(:rimshot, delay(bars(5..8, &rimshot/1), 16)),
+        part(:kick, delay(seq(5..8, fn _ -> kick(:one_drop) end), 16)),
+        part(:rimshot, delay(seq(5..8, &rimshot/1), 16)),
         part(:tom, delay(roll(), 28)),
         part(
           :hihat,
           together([
-            bars(1..8, &hihat/1),
+            seq(1..8, &hihat/1),
             at(
               [
                 {0, change({:hihat, :flanger}, mix: 0.85, feedback: 0.6)},
@@ -357,18 +355,18 @@ defmodule Dubwise do
           :vibes,
           vibes([{2, [:a4, :e5]}, {7, [:g4, :d5]}, {10.5, [:c5, :g5]}, {14, [:b4, :fs5]}], 32)
         ),
-        part(:bass, delay(bars(5..8, &bass/1), 16)),
-        part(:electric_bass, delay(bars(5..8, &bass/1), 16)),
+        part(:bass, delay(seq(5..8, &bass/1), 16)),
+        part(:electric_bass, delay(seq(5..8, &bass/1), 16)),
         part(
           :organ,
           together([
-            delay(bars(5..8, &note(voicing(&1), 4)), 16),
+            delay(seq(5..8, &note(voicing(&1), 4)), 16),
             at([{16, change({:organ, :slicer}, mix: 1)}], 32)
           ])
         ),
         part(
           :skank,
-          together([delay(bars(7..8, &skank/1), 24), throw(:skank, 24, 31, 32)])
+          together([delay(seq(7..8, &skank/1), 24), throw(:skank, 24, 31, 32)])
         ),
         part(:melodica, at([{24, slur(Enum.drop(phrase(:b), 12))}], 32)),
         part(:siren, at([{26, siren()}], 32))
@@ -393,19 +391,19 @@ defmodule Dubwise do
       kit(1..8, :steppers) ++
         hands(1..8) ++
         [
-          part(:bass, bars(1..8, &bass/1)),
-          part(:electric_bass, bars(1..8, &bass/1)),
+          part(:bass, seq(1..8, &bass/1)),
+          part(:electric_bass, seq(1..8, &bass/1)),
           part(
             :skank,
             together([
-              bars(1..8, &skank/1),
+              seq(1..8, &skank/1),
               throw(:skank, 14, 16, 32),
               throw(:skank, 30, 31.5, 32)
             ])
           ),
           part(
             :organ,
-            together([bars(1..8, &bubble/1), at([{0, change({:organ, :slicer}, mix: 0)}], 32)])
+            together([seq(1..8, &bubble/1), at([{0, change({:organ, :slicer}, mix: 0)}], 32)])
           ),
           part(:melodica, slur(lead)),
           part(:trombone, slur(lead, -12)),
@@ -592,8 +590,7 @@ defmodule Dubwise do
       [] -> {:cont, []}
       run -> {:cont, Enum.reverse(run), []}
     end)
-    |> Enum.map(&held(&1, shift))
-    |> seq()
+    |> seq(&held(&1, shift))
   end
 
   # A rest, a repeated note or a note on the beat starts a new note, as the player tongues it.
@@ -648,30 +645,30 @@ defmodule Dubwise do
 
   defp kit(range, style) do
     [
-      part(:kick, bars(range, fn _ -> kick(style) end)),
-      part(:rimshot, bars(range, &rimshot/1)),
-      part(:snare, bars(range, &snare(&1, style))),
-      part(:tom, bars(range, &tom/1)),
-      part(:hihat, bars(range, &hihat/1)),
-      part(:open_hihat, bars(range, &open_hihat/1)),
+      part(:kick, seq(range, fn _ -> kick(style) end)),
+      part(:rimshot, seq(range, &rimshot/1)),
+      part(:snare, seq(range, &snare(&1, style))),
+      part(:tom, seq(range, &tom/1)),
+      part(:hihat, seq(range, &hihat/1)),
+      part(:open_hihat, seq(range, &open_hihat/1)),
       part(:crash, at([{0, hit()}], 4 * Enum.count(range)))
     ]
   end
 
   defp hands(range) do
     [
-      part(:thunder, bars(range, fn _ -> thunder() end)),
-      part(:funde, bars(range, fn _ -> funde() end)),
-      part(:shaker, bars(range, fn _ -> shaker() end))
+      part(:thunder, seq(range, fn _ -> thunder() end)),
+      part(:funde, seq(range, fn _ -> funde() end)),
+      part(:shaker, seq(range, fn _ -> shaker() end))
     ]
   end
 
   defp band(range) do
     [
-      part(:bass, bars(range, &bass/1)),
-      part(:electric_bass, bars(range, &bass/1)),
-      part(:skank, bars(range, &skank/1)),
-      part(:organ, bars(range, &bubble/1))
+      part(:bass, seq(range, &bass/1)),
+      part(:electric_bass, seq(range, &bass/1)),
+      part(:skank, seq(range, &skank/1)),
+      part(:organ, seq(range, &bubble/1))
     ]
   end
 

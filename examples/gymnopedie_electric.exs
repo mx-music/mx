@@ -28,7 +28,7 @@ defmodule GymnopedieElectric do
 
   # Bars 1 to 39 with the first ending, all on the electric piano.
   defp first_time do
-    part(:electric_piano, seq(Enum.map(1..39, &both_hands/1)))
+    part(:electric_piano, seq(1..39, &both_hands/1))
   end
 
   # Bars 1 to 31 again and the second ending, the melody on the electric guitar.
@@ -36,8 +36,8 @@ defmodule GymnopedieElectric do
     bars = Enum.concat(1..31, 40..47)
 
     together([
-      part(:electric_piano, seq(Enum.map(bars, &left_hand/1))),
-      part(:electric_guitar, seq(Enum.map(bars, &tune(&1, 0.6))))
+      part(:electric_piano, seq(bars, &left_hand/1)),
+      part(:electric_guitar, seq(bars, &tune(&1, 0.6)))
     ])
   end
 

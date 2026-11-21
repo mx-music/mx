@@ -394,9 +394,11 @@ defmodule Salsa do
   # A timbale fill in the last bar before the stabs, the mambo and the horn solo first come in.
   defp fill_high(section, coming) do
     if fill?(section, coming) do
-      hits = [{12, 0.35}, {12.5, 0.3}, {13, 0.4}, {14, 0.3}, {14.25, 0.3}, {14.5, 0.5}]
-      strokes = for {beat, amp} <- hits, do: {beat, hit(amp: amp)}
-      at(strokes, 16)
+      at(
+        [{12, 0.35}, {12.5, 0.3}, {13, 0.4}, {14, 0.3}, {14.25, 0.3}, {14.5, 0.5}],
+        16,
+        &hit(amp: &1)
+      )
     else
       rest(16)
     end
@@ -404,9 +406,7 @@ defmodule Salsa do
 
   defp fill_low(section, coming) do
     if fill?(section, coming) do
-      hits = [{13.5, 0.4}, {14.5, 0.4}, {14.75, 0.4}, {15.5, 0.55}]
-      strokes = for {beat, amp} <- hits, do: {beat, hit(amp: amp)}
-      at(strokes, 16)
+      at([{13.5, 0.4}, {14.5, 0.4}, {14.75, 0.4}, {15.5, 0.55}], 16, &hit(amp: &1))
     else
       rest(16)
     end

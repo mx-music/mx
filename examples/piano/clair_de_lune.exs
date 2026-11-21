@@ -20,7 +20,7 @@ defmodule ClairDeLune.Piano do
     fx: [reverb: [room: 0.75, damp: 0.5, mix: 0.3]]
 
   def song do
-    part(:piano, seq(Enum.map(1..72, &bar/1)))
+    part(:piano, seq(1..72, &bar/1))
   end
 
   # Each bar's strokes at their beats, the bar lasting as long as its nine eighths take at its

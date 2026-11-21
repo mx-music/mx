@@ -46,6 +46,18 @@ defmodule Mx do
   defdelegate seq(items), to: Mx.Music
 
   @doc """
+  Music played one item after another, each the music the function returns for an item of the collection, a list, a range or any other enumerable.
+  It is `seq(Enum.map(collection, fun))`, so the function may return a `{name, beats}` note.
+
+      seq(1..72, &bar/1)
+      seq(@tune, fn {name, beats} -> note(name, beats, vel: 0.6) end)
+
+      iex> beats(seq(1..3, fn n -> note(60 + n, 1) end))
+      3
+  """
+  defdelegate seq(collection, fun), to: Mx.Music
+
+  @doc """
   Music whose items all start at once, as long as the longest.
 
       together([
@@ -57,6 +69,16 @@ defmodule Mx do
       4
   """
   defdelegate together(items), to: Mx.Music
+
+  @doc """
+  Music whose items all start at once, each the music the function returns for an item of the collection.
+
+      together([:c4, :e4, :g4], fn name -> note(name, 2) end)
+
+      iex> beats(together([:c4, :e4], fn name -> note(name, 2) end))
+      2
+  """
+  defdelegate together(collection, fun), to: Mx.Music
 
   @doc """
   The music after some beats of silence, so it starts that many beats into the music it plays together with.
@@ -107,6 +129,17 @@ defmodule Mx do
       2
   """
   defdelegate at(entries, beats), to: Mx.Music
+
+  @doc """
+  Music lasting some beats with, at each beat of the entries given as `{beat, value}`, the music the function returns for the value.
+
+      # A fill, each stroke at its beat and its level.
+      at([{0, 0.4}, {1.5, 0.8}, {3, 1}], 4, fn vel -> hit(vel: vel) end)
+
+      iex> beats(at([{0, 0.4}, {1.5, 0.8}], 4, fn vel -> hit(vel: vel) end))
+      4
+  """
+  defdelegate at(entries, beats, fun), to: Mx.Music
 
   @doc """
   The music with each note started at the beat the function returns for the beat it was written on, its length unchanged, so some notes can be pushed late and others early.

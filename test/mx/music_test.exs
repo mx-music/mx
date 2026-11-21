@@ -90,6 +90,32 @@ defmodule Mx.MusicTest do
     end
 
     @tag :tmp_dir
+    test "seq, together and at take a collection and a function that makes each item", ctx do
+      {:ok, song} =
+        load(ctx, """
+        song(music: together([
+          part(:rising, seq(1..3, fn n -> note(60 + n, 1) end)),
+          part(:chord, together([:c4, :e4], fn name -> note(name, 2) end)),
+          part(:strokes, at([{0, 0.4}, {1.5, 0.8}], 4, fn vel -> hit(vel: vel) end), synth: :kick),
+          part(:pairs, seq([:c4, :e4], fn name -> {name, 1} end))
+        ]))
+        """)
+
+      assert played(events(song, :rising)) == [{0, 61}, {1, 62}, {2, 63}]
+      assert played(events(song, :chord)) == [{0, 60}, {0, 64}]
+
+      assert [{0, :own_note, [vel: 0.4]}, {1.5, :own_note, [vel: 0.8]}] =
+               events(song, :strokes)
+
+      assert played(events(song, :pairs)) == [{0, 60}, {1, 64}]
+
+      assert Mx.beats(Mx.seq(1..3, fn n -> Mx.note(60 + n, 1) end)) == 3
+      assert Mx.beats(Mx.together([:c4, :e4], fn name -> Mx.note(name, 2) end)) == 2
+      assert Mx.beats(Mx.at([{0, 0.4}, {1.5, 0.8}], 4, fn vel -> Mx.hit(vel: vel) end)) == 4
+      assert Mx.beats(Mx.seq([:c4, :e4], fn name -> {name, 1} end)) == 2
+    end
+
+    @tag :tmp_dir
     test "swing moves each note to the beat its function returns, and leaves the length", ctx do
       {:ok, song} =
         load(
@@ -255,6 +281,20 @@ defmodule Mx.MusicTest do
       assert Song.load(path) == {:error, "#{path}:3: two parts named soprano play together"}
     end
 
+    test "seq, together or at given a second argument that is no function of one argument is refused" do
+      assert_raise ArgumentError,
+                   "seq takes a list of music, or a collection and a function of one argument that makes each item, not :oops",
+                   fn -> Mx.seq([1, 2], :oops) end
+
+      assert_raise ArgumentError,
+                   ~r/^together takes a list of music, or a collection and a function of one argument/,
+                   fn -> Mx.together([1, 2], fn a, b -> a + b end) end
+
+      assert_raise ArgumentError,
+                   ~r/^at takes \{beat, value\} entries, a length and a function of one argument/,
+                   fn -> Mx.at([{0, 1}], 4, :oops) end
+    end
+
     @tag :tmp_dir
     test "music placed past the length of at is refused", ctx do
       path = write(ctx, "song(music: part(:offbeats, at([{2.5, note(:c4, 1)}], 2)))")
@@ -395,7 +435,8 @@ defmodule Mx.MusicTest do
     end
 
     @tag :tmp_dir
-    test "a file that defines a module and no song reads as a module, and loads as no song", ctx do
+    test "a file that defines a module and no song reads as a module, and loads as no song",
+         ctx do
       path = write(ctx, "defmodule MusicTest.Notes do\n  def bar, do: [60, 62]\nend")
       assert Song.read(path) == :module
       assert Song.load(path) == {:error, "#{path} does not end with a song"}

@@ -127,18 +127,16 @@ defmodule Prelude do
 
   def song do
     seq([
-      play(italian: bars(1..11)),
-      play(french: bars(12..19), organ: held(12..19)),
-      play(english: bars(20..23), organ: held(20..23)),
-      play(flemish: bars(24..34), organ: held(24..34), pedal: bass(24..34))
+      play(italian: seq(1..11, &bar/1)),
+      play(french: seq(12..19, &bar/1), organ: held(12..19)),
+      play(english: seq(20..23, &bar/1), organ: held(20..23)),
+      play(flemish: seq(24..34, &bar/1), organ: held(24..34), pedal: bass(24..34))
     ])
   end
 
   defp play(voices) do
     together(for {name, music} <- voices, do: part(name, music))
   end
-
-  defp bars(range), do: seq(Enum.map(range, &bar/1))
 
   # The two held notes of each bar, for the whole bar.
   defp held(range) do
