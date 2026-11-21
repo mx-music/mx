@@ -35,9 +35,7 @@ defmodule Maracatu do
     fx: @room
 
   def song do
-    [:marcacao, :arrasto, :imale, :martelo]
-    |> Enum.map(&baque/1)
-    |> seq()
+    seq([:marcacao, :arrasto, :imale, :martelo], &baque/1)
     |> repeat()
   end
 

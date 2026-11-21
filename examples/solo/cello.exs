@@ -50,8 +50,7 @@ defmodule Cello do
       {[{66, 1}, {64, 0.5}, {62, 0.5}], false},
       {[{62, 2}], true}
     ]
-    |> Enum.map(fn {notes, swell} -> bow(notes, 0.6, swell: swell, vibrato: 0.08) end)
-    |> seq()
+    |> seq(fn {notes, swell} -> bow(notes, 0.6, swell: swell, vibrato: 0.08) end)
   end
 
   # G, E minor, C and D seven, walking in quarters, each bar's root louder, every note left to

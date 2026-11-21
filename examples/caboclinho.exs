@@ -27,9 +27,7 @@ defmodule Caboclinho do
   def song do
     toques = [:guerra, :guerra, :perre, :perre, :baiao, :baiao, :macumba, :macumba]
 
-    toques
-    |> Enum.map(&toque/1)
-    |> seq()
+    seq(toques, &toque/1)
     |> repeat()
   end
 

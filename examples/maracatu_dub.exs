@@ -57,9 +57,7 @@ defmodule MaracatuDub do
     fx: @tape ++ [reverb: [room: 0.8, mix: 0.3]]
 
   def song do
-    [:call, :riddim, :dub, :martelo]
-    |> Enum.map(&section/1)
-    |> seq()
+    seq([:call, :riddim, :dub, :martelo], &section/1)
     |> repeat()
   end
 
@@ -328,8 +326,7 @@ defmodule MaracatuDub do
       [] -> {:cont, []}
       run -> {:cont, Enum.reverse(run), []}
     end)
-    |> Enum.map(&held/1)
-    |> seq()
+    |> seq(&held/1)
   end
 
   # A rest, a repeated note or a note on the beat starts a new note, as the player tongues it.
