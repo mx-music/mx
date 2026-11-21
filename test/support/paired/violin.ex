@@ -1,15 +1,15 @@
 defmodule Mx.Paired.Violin do
   @moduledoc """
-  mxs's violin written with defsynth, node for node, so the two can be compared and timed.
+  mxs's violin written with defsynth, node for node, so the two can be compared and timed; it was modelled here first, fitted to the University of Iowa's arco violin, then ported.
   """
 
   use Mx.Instrument
 
   @bands [113, 200, 316, 502, 794, 1265, 2000, 3162]
   @gains [
-    [0.0, 0.0, 12.2, -3.9, 5.1, -11.6, 4.5, 5.0],
-    [0.0, 0.0, 7.2, 2.1, 1.4, -1.5, 8.0, 6.1],
-    [0.0, 0.0, 3.8, 2.0, 3.4, -3.2, 3.5, 11.5]
+    [0.0, 0.0, 12.2, -0.8, 8.0, -1.0, 4.5, 5.0],
+    [0.0, 0.0, 7.2, 1.5, 1.4, -1.5, 8.0, 6.1],
+    [0.0, 0.0, 3.8, -3.4, 3.4, -3.2, 3.5, 11.5]
   ]
 
   @doc "A violin note, bowed or plucked."
@@ -39,6 +39,50 @@ defmodule Mx.Paired.Violin do
     range: 0.05..0.5,
     doc: "Where the bow meets the string, as a fraction of its length from the bridge."
 
+  attr :cutoff_hz, :float,
+    range: 1000..20000,
+    doc: "The lowpass after the body, in place of the fitted one; for fitting."
+
+  attr :swell, :float,
+    range: 0.01..4,
+    doc: "The seconds a note rises from silence, in place of the fitted one; for fitting."
+
+  attr :shelf_hz, :float,
+    range: 1000..16000,
+    doc: "The air shelf's corner, in place of the fitted one; for fitting."
+
+  attr :shelf_db, :float,
+    range: -24..24,
+    doc: "The air shelf's gain, in place of the fitted one; for fitting."
+
+  attr :scratch_db, :float,
+    range: -80..20,
+    doc:
+      "The level of the bow's scratch as it starts the string, in place of the fitted one; for fitting."
+
+  attr :scratch_s, :float,
+    range: 0.001..0.5,
+    doc:
+      "The seconds the scratch takes to fall by a factor of e, in place of the fitted one; for fitting."
+
+  attr :wander_cents, :float,
+    range: 0..50,
+    doc:
+      "How far the pitch drifts while a note holds, in cents, in place of the fitted one; for fitting."
+
+  attr :wander_db, :float,
+    range: 0..12,
+    doc:
+      "How far each band of the body drifts while a note holds, in dB, in place of the fitted one; for fitting."
+
+  attr :hiss_hz, :float,
+    range: 200..12000,
+    doc: "The centre of the bow's hiss, in place of the fitted one; for fitting."
+
+  attr :hiss_db, :float,
+    range: -80..0,
+    doc: "The bow's hiss level, in place of the fitted one; for fitting."
+
   for band <- 0..7 do
     attr :"eq#{band}", :float,
       range: -60..60,
@@ -67,12 +111,12 @@ defmodule Mx.Paired.Violin do
 
     string =
       bowed_string(
-        note: follow(bowed.note),
+        note: follow(bowed.note) + wander(bowed, 0) * (bowed.wander_cents || 2) / 100,
         speed: speed,
         force: 1.8 * low * speed * bowed.bow_force,
         position: bowed.bow_position,
         takes: 0.03 - 0.01 * legato,
-        rosin: bowed.rosin || by_vel.(0.6, 0.23, 0.35)
+        rosin: bowed.rosin || by_vel.(0.15, 0.23, 0.35)
       )
 
     body = bowed.body_hz || 384.3
@@ -82,31 +126,58 @@ defmodule Mx.Paired.Violin do
       Enum.reduce(Enum.with_index(@bands), shaped, fn {centre, band}, sound ->
         [pp, mf, ff] = Enum.map(@gains, &Enum.at(&1, band))
         gain = Map.fetch!(bowed, :"eq#{band}") || by_vel.(pp, mf, ff)
-        peak(sound, hz: centre, q: 1.4, db: gain)
+
+        peak(sound,
+          hz: centre,
+          q: 1.4,
+          db: gain + wander(bowed, band + 1) * (bowed.wander_db || 4.5)
+        )
       end)
 
     # A delay that swings after the string gives the vibrato, which grows in after 0.3 seconds.
     depth = bowed.vibrato * :math.log(2) / 12 / (2 * :math.pi() * 5.4)
     grown = clamp(time() - 0.3, 0, 1) ** 2
     swing = 0.002 + sin(2 * :math.pi() * 5.4 * time() + :math.pi() / 2) * depth * grown
-    cutoff = 2000 + vel * vel * 7000
+    cutoff = bowed.cutoff_hz || 16_000
 
     sound =
       shaped
+      |> highshelf(hz: bowed.shelf_hz || 6000, db: bowed.shelf_db || by_vel.(6, 17, 16), q: 0.707)
       |> delay(seconds: swing, max: 0.01)
       |> lowpass(hz: cutoff, q: 0.541)
       |> lowpass(hz: cutoff, q: 1.307)
 
     hiss =
       noise(:pink)
-      |> highpass(hz: 1800 - vel * 400, q: 0.707)
-      |> gain(db(by_vel.(-35.5, -35.5, -30.5)))
+      |> bandpass(hz: bowed.hiss_hz || 3000, q: 0.7)
+      |> gain(db(bowed.hiss_db || by_vel.(0, -35.5, -30.5)))
 
-    from_silence = min(by_vel.(0.875, 0.65, 0.35), bowed.sustain * 0.4)
+    from_silence = min(bowed.swell || by_vel.(1.3, 1.0, 0.45), bowed.sustain * 0.4)
     swell = max(from_silence + (min(0.06, from_silence) - from_silence) * legato, 1.0e-3)
     rising = 1 - (1 - min(time() / swell, 1)) ** 2
 
-    dc_block(sound + hiss) * rising * (vel ** 0.6 * db(by_vel.(-25.05, -28.90, -30.45)))
+    # The bow catching the string scratches before the string speaks, unless it changes bow from a sounding note.
+    scratch =
+      noise(:white)
+      |> highpass(hz: 400, q: 0.707)
+      |> gain(
+        db(bowed.scratch_db || -8) * (1 - exp(-time() / 0.004)) *
+          exp(-time() / (bowed.scratch_s || 0.03)) * (1 - legato)
+      )
+
+    (dc_block(sound + hiss) * rising + scratch) *
+      (vel ** 0.6 * db(by_vel.(-25.05, -28.90, -30.45)))
+  end
+
+  # A slow drift of a standard deviation near 1: three sines at unrelated rates, their phases set by `which` and the note.
+  # mxs's filters stop at 20 Hz, so noise cannot be slowed this far; mx-00231's drift would replace this.
+  defsoundp wander(bowed, which) do
+    mix(
+      for {rate, k} <- Enum.with_index([0.23, 0.41, 0.67]) do
+        phase = bowed.note * (1.7 + k) + which * (2.3 + 0.9 * k)
+        sin(2 * :math.pi() * rate * (1 + 0.05 * which) * time() + phase) * 0.816
+      end
+    )
   end
 
   defsoundp plucked(bowed, pizz) do

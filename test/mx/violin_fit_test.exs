@@ -1,4 +1,4 @@
-defmodule Mx.ViolinModelTest do
+defmodule Mx.ViolinFitTest do
   use ExUnit.Case, async: true
 
   alias Mx.Engine.Mxs.Native
@@ -64,8 +64,8 @@ defmodule Mx.ViolinModelTest do
 
   defp render(options, seconds) do
     {:ok, engine} = Native.start(false, false)
-    :ok = Mx.Instrument.register(engine, Mx.Instruments.ViolinModel)
-    event = Mx.Engine.Mxs.event({:note, nil, :violin_model, nil, options, nil})
+    :ok = Mx.Instrument.register(engine, Mx.Paired.Violin)
+    event = Mx.Engine.Mxs.event({:note, nil, :violin, nil, options, nil})
     :ok = Native.play(engine, [{0.0, event}])
     {:ok, {left, _right}} = Native.render(engine, seconds)
     for <<x::float-32-native <- left>>, do: x
@@ -74,7 +74,7 @@ defmodule Mx.ViolinModelTest do
   defp midi(name), do: Mx.pitch(name)
 
   for {vel, %{notes: notes, attack: attack, bands: bands}} <- @recordings do
-    test "the violin model at vel #{vel} speaks and holds its harmonics and noise as Iowa's arco notes do" do
+    test "the violin at vel #{vel} speaks and holds its harmonics and noise as Iowa's arco notes do" do
       notes =
         unquote(notes)
         |> Task.async_stream(
@@ -110,7 +110,7 @@ defmodule Mx.ViolinModelTest do
 
   # Iowa's mf A4 on the A string, held 5.9 seconds, wanders slowly by 1.6 cents in pitch and by 1.8 to 2.9 dB in its
   # 1st, 2nd, 4th and 8th harmonics, as standard deviations of their averages over 0.4 seconds.
-  test "the violin model's held A4 wanders in pitch and level as slowly and as far as Iowa's mf A4" do
+  test "the violin's held A4 wanders in pitch and level as slowly and as far as Iowa's mf A4" do
     sound = render([note: 69, vel: 0.6, sustain: 5.5, vibrato: 0], 6)
     %{strokes: [_ | _]} = recording = Strokes.strokes(sound, @rate)
     %{cents: cents, levels: levels} = Strokes.tracks(recording, 0)
