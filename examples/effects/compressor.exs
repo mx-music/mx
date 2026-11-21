@@ -11,7 +11,7 @@ defmodule Effects.Compressor do
      turns only the hardest notes down, by about 1 dB;
   3. `threshold: 0.05`, which catches the soft notes too, with `amp: 2` to bring the line back up;
   4. `slope_above: 0` at that threshold, where nothing rises above it and every note is as loud;
-  5. `relax_time: 0.3`, which takes 300 ms to let go, so a soft note after a hard one stays down.
+  5. `relax_ms: 300`, which takes 300 ms to let go, so a soft note after a hard one stays down.
   """
 
   use Mx.Song, tempo: 96
@@ -28,7 +28,7 @@ defmodule Effects.Compressor do
   defp set(:defaults), do: [{0, compressor(mix: 1)}]
   defp set(:low), do: [{0, compressor(threshold: 0.05, amp: 2)}]
   defp set(:flat), do: [{0, compressor(slope_above: 0, amp: 4)}]
-  defp set(:slow), do: [{0, compressor(relax_time: 0.3)}]
+  defp set(:slow), do: [{0, compressor(relax_ms: 300)}]
 
   defp compressor(opts), do: change({:bass, :compressor}, opts)
 

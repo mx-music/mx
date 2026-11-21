@@ -4,6 +4,7 @@
 
 ### 1. Enhancements
 
+  * [effects] An effect's time that is not in beats names its unit, from the next mxs: slicer's `smooth` is `smooth_ms`, flanger's `delay`, `depth` and `max_delay` are `delay_ms`, `depth_ms` and `max_delay_ms`, and compressor's `clamp_time` and `relax_time` are `clamp_ms` and `relax_ms`, all in milliseconds; a `defeffect` declares such an option with `attr :gap_ms, :ms`
   * [examples] Add `examples/effects`, a short song for each effect that plays one phrase dry, then through the effect as it comes, then with one option moved at a time, and `order.exs`, which plays two effects in both orders
   * [synths] Add `deep_bass`, a darker bass played with the fingers, from mxs 0.1.2, with its solo `examples/solo/deep_bass.exs`
   * [synths] Add alpha versions of `electric_piano` and `electric_guitar`, from mxs 0.1.2, with their solos; both will be refitted

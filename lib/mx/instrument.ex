@@ -71,7 +71,7 @@ defmodule Mx.Instrument do
   The synth's documentation lists them under "Options", so a `@doc` written above the first `attr` line gains that section.
 
   `name` is an atom, the key the synth reads from its map: `played.vel` reads the option `:vel`.
-  `type` says what the value means: `:float`, `:note` for a MIDI note number, `:beats` for a length in beats, or `:atom` for a choice among names.
+  `type` says what the value means: `:float`, `:note` for a MIDI note number, `:beats` for a length in beats, `:ms` or `:seconds` for a time that does not follow the tempo, whose name ends in `_ms` or `_seconds`, or `:atom` for a choice among names.
 
   ## Options
 

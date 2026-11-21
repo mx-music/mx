@@ -37,7 +37,7 @@ defmodule Midnight do
     synth: :organ,
     defaults: [amp: 0.5],
     fx: [
-      slicer: [phase: 0.5, amp_min: 0.2, smooth: 0.03],
+      slicer: [phase: 0.5, amp_min: 0.2, smooth_ms: 30],
       wobble: [phase: 24, cutoff_min: 70, cutoff_max: 115, res: 0.4, wave: 3],
       reverb: [room: 0.9, mix: 0.45]
     ]

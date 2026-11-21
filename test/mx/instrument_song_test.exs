@@ -129,6 +129,26 @@ defmodule Mx.InstrumentSongTest do
     assert message =~ "part a: effect quieter takes level from 0 to 1, not 2"
   end
 
+  test "a defeffect declares an option in milliseconds as it declares one in beats" do
+    Code.eval_string("""
+    defmodule Mx.InstrumentSongTest.Late do
+      use Mx.Instrument
+      attr :gap_ms, :ms, default: 20, range: 0..100
+
+      defeffect late(sound, opts), do: sound |> delay(seconds: opts.gap_ms / 1000)
+    end
+    """)
+
+    assert %{kind: "ms", default: 20.0} =
+             Enum.find(
+               Mx.Instrument.specs(hd(apply(Mx.InstrumentSongTest.Late, :__effects__, []))),
+               &(&1.name == "gap_ms")
+             )
+
+    assert Mx.Synths.check_value({:effect, :late}, :gap_ms, 200) ==
+             {:error, "effect late takes gap_ms from 0 to 100, not 200"}
+  end
+
   test "a defeffect that ends a note fails when its module compiles" do
     source = """
     defmodule Mx.InstrumentSongTest.Ringing do

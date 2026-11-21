@@ -138,13 +138,13 @@ defmodule Mx.EffectsTest do
 
   test "every new effect slides each option it can change while it plays" do
     for {effect, options} <- [
-          compressor: ~w(threshold clamp_time slope_above slope_below relax_time)a,
+          compressor: ~w(threshold clamp_ms slope_above slope_below relax_ms)a,
           chorus: ~w(phase decay)a,
           bitcrusher: ~w(sample_rate bits cutoff)a,
           tremolo: ~w(phase depth)a,
           rlpf: ~w(cutoff res)a,
           bpf: ~w(centre res)a,
-          flanger: ~w(phase delay depth decay feedback)a,
+          flanger: ~w(phase delay_ms depth_ms decay feedback)a,
           wobble: ~w(phase cutoff_min cutoff_max res pulse_width)a,
           ping_pong: ~w(phase feedback)a
         ],

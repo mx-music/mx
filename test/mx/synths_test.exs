@@ -25,7 +25,30 @@ defmodule Mx.SynthsTest do
       assert guide =~ "`#{effect}`", "the guide has no line for #{effect}"
     end
 
+    assert guide =~ "An effect's time is in beats and follows the tempo unless its name ends in"
+    assert guide =~ "`amp`, `pre_amp` and `mix` are plain factors, not decibels"
+    assert guide =~ "is a MIDI note number.\n"
+
     assert guide =~
              "- `pitch_shift` takes `pitch`, how many semitones the sound is shifted by, from -24 to 24, and delays the sound by up to 40 ms."
+  end
+
+  test "an effect's time that is not in beats names its unit" do
+    {_synths, _note, _sample, native, _effect, _input} = Mx.Engine.Mxs.Native.catalog()
+
+    for {effect, specs} <- native, %{name: name, kind: kind} <- specs do
+      unit =
+        cond do
+          String.ends_with?(name, "_ms") -> "ms"
+          String.ends_with?(name, "_seconds") -> "seconds"
+          true -> nil
+        end
+
+      assert (kind in ["ms", "seconds"] and kind == unit) or
+               (kind not in ["ms", "seconds"] and unit == nil),
+             "#{effect}'s #{name} is declared in #{kind}"
+
+      refute String.ends_with?(name, "_time"), "#{effect}'s #{name} names no unit"
+    end
   end
 end

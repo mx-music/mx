@@ -180,7 +180,7 @@ defmodule ColdFront do
     synth: @psaltery,
     defaults: [amp: 3, attack: 0.5, release: 1.5],
     fx: [
-      slicer: [phase: 0.25, pulse_width: 0.6, smooth: 0.01, mix: 0],
+      slicer: [phase: 0.25, pulse_width: 0.6, smooth_ms: 10, mix: 0],
       lpf: [cutoff: 95],
       reverb: [room: 0.9, mix: 0.4]
     ]

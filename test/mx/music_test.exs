@@ -581,6 +581,13 @@ defmodule Mx.MusicTest do
                {:error, "#{path}:3: part x: effect reverb takes room from 0 to 1, not 5"}
 
       assert {:ok, _song} = Song.load(fx.("[reverb: [room: 1]]"))
+      assert {:ok, _song} = Song.load(fx.("[slicer: [smooth_ms: 20], flanger: [delay_ms: 5]]"))
+
+      path = fx.("[slicer: [smooth: 0.02]]")
+      assert Song.load(path) == {:error, "#{path}:3: part x: effect slicer has no option smooth"}
+
+      path = fx.("[flanger: [delay: 5]]")
+      assert Song.load(path) == {:error, "#{path}:3: part x: effect flanger has no option delay"}
     end
 
     @tag :tmp_dir

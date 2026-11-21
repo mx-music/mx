@@ -166,7 +166,7 @@ defmodule TranquilityBase do
 
   part :gate,
     fx: [
-      slicer: [phase: 0.5, pulse_width: 0.5, amp_min: 0.05, smooth: 0.01],
+      slicer: [phase: 0.5, pulse_width: 0.5, amp_min: 0.05, smooth_ms: 10],
       ping_pong: [phase: 0.75, feedback: 0.5, mix: 0.3],
       reverb: [room: 0.8, mix: 0.3]
     ]
