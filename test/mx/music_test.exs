@@ -273,6 +273,92 @@ defmodule Mx.MusicTest do
     end
 
     @tag :tmp_dir
+    test "feel pushes the notes on each step by its number in push:, and leaves a note between steps",
+         ctx do
+      beats = fn music ->
+        {:ok, song} = load(ctx, "song(music: part(:a, #{music}, synth: :kick))")
+        for {beat, _note, _opts} <- events(song, :a), do: beat
+      end
+
+      close = fn played, expected ->
+        assert length(played) == length(expected)
+        for {beat, want} <- Enum.zip(played, expected), do: assert_in_delta(beat, want, 1.0e-9)
+      end
+
+      push = "push: [0, 0.035, 0, 0.035]"
+
+      close.(beats.(~s|feel(steps(~MX"xxxx"s, 0.25), step: 0.25, #{push})|), [
+        0,
+        0.285,
+        0.5,
+        0.785
+      ])
+
+      at = "at([{0, hit()}, {0.125, hit()}, {0.25, hit()}], 1)"
+      close.(beats.("feel(#{at}, step: 0.25, #{push})"), [0, 0.125, 0.285])
+      assert beats.(~s|feel(steps(~MX"x"s, 1), step: 1, push: [-0.1])|) == [0]
+
+      close.(beats.(~s|seq([rest(1), feel(steps(~MX"xx"s, 0.5), step: 0.5, push: [0.1])])|), [
+        1.1,
+        1.6
+      ])
+
+      assert Mx.beats(Mx.feel(Mx.seq(c4: 1, e4: 2), step: 1, push: [0.2])) == 3
+    end
+
+    @tag :tmp_dir
+    test "feel multiplies the vel of the notes on each step by its number in lean:, the note's own or its part's",
+         ctx do
+      vels = fn music, defaults ->
+        {:ok, song} = load(ctx, "song(music: part(:a, #{music}, synth: :kick#{defaults}))")
+        for {_beat, _note, opts} <- events(song, :a), do: opts[:vel]
+      end
+
+      assert vels.(~s|feel(steps(~MX"xxxx"s, 0.25, vel: 0.8), step: 0.25, lean: [1, 0.5])|, "") ==
+               [0.8, 0.4, 0.8, 0.4]
+
+      assert vels.(~s|feel(steps(~MX"xx"s, 0.25, vel: 0.8), step: 0.25, lean: [2])|, "") == [1, 1]
+
+      assert vels.(
+               ~s|feel(steps(~MX"xx"s, 0.25), step: 0.25, lean: [0.5])|,
+               ", defaults: [vel: 0.6]"
+             ) == [
+               0.3,
+               0.3
+             ]
+
+      assert vels.(
+               ~s|feel(steps(~MX"xxx"s, 0.25, vel: 0.8), step: 0.25, push: [0, 0.01], lean: [1, 0.5, 0.25])|,
+               ""
+             ) == [0.8, 0.4, 0.2]
+    end
+
+    @tag :tmp_dir
+    test "feel's loose: and touch: move each start and vel a little, the same on every load",
+         ctx do
+      path =
+        write(
+          ctx,
+          ~s|song(music: part(:a, feel(steps(~MX"xxxxxxxx"s, 0.25, vel: 0.5), step: 0.25, loose: 0.01, touch: 0.1), synth: :kick))|
+        )
+
+      :rand.seed(:exsss, 1)
+      {:ok, first} = Song.load(path)
+      :rand.seed(:exsss, 2)
+      {:ok, second} = Song.load(path)
+
+      assert events(first, :a) == events(second, :a)
+
+      felt = for {beat, _note, opts} <- events(first, :a), do: {beat, opts[:vel]}
+      assert Enum.uniq(felt) |> length() == 8
+
+      for {{beat, vel}, step} <- Enum.with_index(felt) do
+        assert abs(beat - step * 0.25) <= 0.01
+        assert abs(vel - 0.5) <= 0.05
+      end
+    end
+
+    @tag :tmp_dir
     test "random numbers drawn while the music is built are the same on every load", ctx do
       path =
         write(
@@ -477,6 +563,47 @@ defmodule Mx.MusicTest do
 
       assert {:error, message} = Song.load(path)
       assert message =~ "each's function returns a list of options, not 0.5"
+    end
+
+    @tag :tmp_dir
+    test "feel refuses a note with no vel to lean, and options, tables and steps it cannot use",
+         ctx do
+      path =
+        write(
+          ctx,
+          ~s|song(music: part(:kick, feel(steps(~MX"xx"s, 0.25), step: 0.25, lean: [0.5]), synth: :kick))|
+        )
+
+      assert {:error, message} = Song.load(path)
+      assert message =~ "part kick"
+      assert message =~ "vel"
+
+      for {opts, refusal} <- [
+            {"push: [0, 0.1]", "feel takes step:"},
+            {"step: 0, push: [0]", "step: 0"},
+            {"step: 0.25, push: []", "push: []"},
+            {"step: 0.25, lean: [1, :a]", "lean: [1, :a]"},
+            {"step: 0.25, shove: [1]", "shove"},
+            {"step: 0.25, loose: :a", "loose: :a"}
+          ] do
+        path =
+          write(
+            ctx,
+            ~s|song(music: part(:kick, feel(steps(~MX"xx"s, 0.25), #{opts}), synth: :kick))|
+          )
+
+        assert {:error, message} = Song.load(path)
+        assert message =~ refusal
+      end
+
+      path =
+        write(
+          ctx,
+          "song(music: part(:a, feel(loop(1, fn _, _ -> seq(c4: 1) end), step: 0.25, push: [0]), synth: :piano))"
+        )
+
+      assert {:error, message} = Song.load(path)
+      assert message =~ "feel cannot hold a loop"
     end
 
     @tag :tmp_dir

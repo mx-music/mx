@@ -385,6 +385,7 @@ part(:cajon, at([{0, hit(slap: 1, vel: 0.8)}, {1.5, hit(vel: 0.5)}], 2), synth: 
 - `at([{0.5, music}, {1.5, music}], 2)` is music of 2 beats that starts each item at its beat, so hits at known beats need no rests between them.
 - `at([{0, 0.4}, {1.5, 0.8}], 2, fn vel -> hit(vel: vel) end)` takes a value at each beat instead of music, and places there the music the function returns for it.
 - `swing(music, fun)` starts each note at the beat the function returns for the beat it was written on, so some notes can be pushed late and others early.
+- `feel(music, step: 0.25, push: [0, 0.035, 0, 0.035], lean: [1, 0.7, 0.85, 0.7])` plays a groove's feel as tables, a number to each step of `step:` beats counted from the start of the music: a note on a step comes later by its number in `push:`, or earlier by a number below 0, and its vel, its own or else its part's, is multiplied by its number in `lean:`, kept from 0 to 1. The tables go round, each on its own length, so four numbers with a step of 0.25 cover a beat; a note between two steps is left as it is. `loose: 0.01` moves every start by a random amount of at most that many beats either way, and `touch: 0.1` multiplies every vel by a random number from 0.9 to 1.1, the same on every load. No note starts before the music does, the music lasts as long as before, and feel cannot hold a loop.
 
 ## Patterns
 

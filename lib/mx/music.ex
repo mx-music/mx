@@ -46,6 +46,11 @@ defmodule Mx.Music do
     defstruct [:music, :fun]
   end
 
+  defmodule Feel do
+    @moduledoc "Music whose notes on each step come early or late and louder or softer by tables, and a little at random."
+    defstruct [:music, :step, push: nil, lean: nil, loose: nil, touch: nil]
+  end
+
   defmodule Each do
     @moduledoc "Music whose notes take the options given, or those a function of their beat returns, where they give none of their own."
     defstruct [:music, :opts]
@@ -457,6 +462,7 @@ defmodule Mx.Music do
   defp left_out(%Repeat{music: music} = repeat, out?), do: kept_in(repeat, left_out(music, out?))
   defp left_out(%Swing{music: music} = swing, out?), do: kept_in(swing, left_out(music, out?))
   defp left_out(%Each{music: music} = each, out?), do: kept_in(each, left_out(music, out?))
+  defp left_out(%Feel{music: music} = feel, out?), do: kept_in(feel, left_out(music, out?))
 
   defp left_out(%Loop{fun: fun} = loop, out?) do
     %{loop | fun: fn pass, inputs -> left_out(returned(fun.(pass, inputs)), out?) || %Seq{} end}
@@ -477,6 +483,7 @@ defmodule Mx.Music do
   defp silence(%Repeat{music: music} = repeat), do: kept_in(repeat, silence(music))
   defp silence(%Swing{music: music}), do: silence(music)
   defp silence(%Each{music: music}), do: silence(music)
+  defp silence(%Feel{music: music}), do: silence(music)
 
   defp silence(music) do
     case beats(music) do
@@ -534,6 +541,57 @@ defmodule Mx.Music do
 
   @doc "The music with each note started at the beat the function returns for the beat it was written on, its length unchanged."
   def swing(music, fun) when is_function(fun, 1), do: %Swing{music: item(music), fun: fun}
+
+  @feel_options [:step, :push, :lean, :loose, :touch]
+
+  @doc "The music with each note on a step pushed and leaned by the tables given, and moved a little at random by loose: and touch:."
+  def feel(music, opts) do
+    check_keyword("feel", opts)
+
+    case Enum.find(Keyword.keys(opts), &(&1 not in @feel_options)) do
+      nil ->
+        :ok
+
+      name ->
+        raise ArgumentError, "feel takes step:, push:, lean:, loose: and touch:, not #{name}:"
+    end
+
+    step = Keyword.get(opts, :step)
+
+    cond do
+      step == nil ->
+        raise ArgumentError, "feel takes step:, the length of a step in beats"
+
+      not (is_number(step) and step > 0) ->
+        step = inspect(step)
+        raise ArgumentError, "feel takes a step: above 0, not step: #{step}"
+
+      true ->
+        :ok
+    end
+
+    for name <- [:push, :lean], Keyword.has_key?(opts, name) do
+      table = opts[name]
+
+      if not (is_list(table) and table != [] and Enum.all?(table, &is_number/1)) do
+        table = inspect(table)
+
+        raise ArgumentError,
+              "feel takes #{name}: as a list of numbers, a number to each step, not #{name}: #{table}"
+      end
+    end
+
+    for name <- [:loose, :touch], Keyword.has_key?(opts, name) do
+      amount = opts[name]
+
+      if not (is_number(amount) and amount >= 0) do
+        amount = inspect(amount)
+        raise ArgumentError, "feel takes #{name}: as a number from 0 up, not #{name}: #{amount}"
+      end
+    end
+
+    struct!(Feel, [music: item(music)] ++ opts)
+  end
 
   @doc "The music with each of its notes and hits taking the options given, or those the function returns for the beat it starts on, where the note gives none of its own."
   def each(music, opts) when is_list(opts) or is_function(opts, 1) do
@@ -1227,6 +1285,7 @@ defmodule Mx.Music do
   def beats(%At{beats: beats}), do: beats
   def beats(%Swing{music: music}), do: beats(music)
   def beats(%Each{music: music}), do: beats(music)
+  def beats(%Feel{music: music}), do: beats(music)
   def beats(%Part{music: music}), do: beats(music)
   def beats(%Repeat{times: :forever}), do: :infinity
   def beats(%Repeat{music: music, times: times}), do: times(beats(music), times)
@@ -1592,6 +1651,20 @@ defmodule Mx.Music do
     end
   end
 
+  defp flatten(%Feel{music: music} = feel, beat, part, cut) do
+    for {written, part, step} <- flatten(music, 0, part, cut) do
+      if is_tuple(step) do
+        raise(ArgumentError, "feel cannot hold a loop; feel the music the loop returns")
+      end
+
+      index = round(written / feel.step)
+      on = if abs(written - index * feel.step) < 0.001, do: index
+      seed = {part_name(part), written}
+      moved = written + table(feel.push, on, 0) + random(feel.loose, seed, :loose)
+      {beat + max(moved, 0), part, leaned(step, part, feel, on, seed)}
+    end
+  end
+
   defp flatten(%Each{music: music, opts: opts}, beat, part, cut) do
     for {at, part, step} <- flatten(music, beat, part, cut) do
       case step do
@@ -1612,6 +1685,47 @@ defmodule Mx.Music do
       end
     end
   end
+
+  defp table(nil, _on, none), do: none
+  defp table(_table, nil, none), do: none
+  defp table(table, on, _none), do: Enum.at(table, rem(on, length(table)))
+
+  defp random(nil, _seed, _which), do: 0
+
+  defp random(amount, seed, which) do
+    state = :rand.seed_s(:exsss, :erlang.phash2({seed, which}) + 1)
+    {draw, _state} = :rand.uniform_s(state)
+    (draw * 2 - 1) * amount
+  end
+
+  defp part_name(%Part{name: name}), do: name
+  defp part_name(_part), do: nil
+
+  defp leaned(%Note{opts: opts} = note, part, %Feel{lean: lean, touch: touch}, on, seed)
+       when lean != nil or touch != nil do
+    by = table(lean, on, 1) * (1 + random(touch, seed, :touch))
+
+    if by == 1 do
+      note
+    else
+      vel = Keyword.get(opts, :vel) || part_vel(part)
+
+      if vel == nil do
+        name = part_name(part)
+        written = written(note)
+
+        raise ArgumentError,
+              "part #{name}: feel changes a vel, and #{written} has none, nor its part's defaults"
+      end
+
+      %{note | opts: Keyword.put(opts, :vel, min(max(vel * by, 0), 1))}
+    end
+  end
+
+  defp leaned(step, _part, _feel, _on, _seed), do: step
+
+  defp part_vel(%Part{defaults: defaults}), do: Keyword.get(defaults, :vel)
+  defp part_vel(_part), do: nil
 
   # Each part once, in the order it first plays, refusing a name played with other options
   # elsewhere.
@@ -1648,6 +1762,7 @@ defmodule Mx.Music do
   defp part_names(%Repeat{music: music}), do: part_names(music)
   defp part_names(%Swing{music: music}), do: part_names(music)
   defp part_names(%Each{music: music}), do: part_names(music)
+  defp part_names(%Feel{music: music}), do: part_names(music)
   defp part_names(_music), do: []
 
   # The notes of the music that no part inside it plays.
@@ -1663,6 +1778,7 @@ defmodule Mx.Music do
     do: Enum.map(own_notes(music), &each_opts(&1, opts))
 
   defp own_notes(%Each{music: music}), do: own_notes(music)
+  defp own_notes(%Feel{music: music}), do: own_notes(music)
   defp own_notes(_music), do: []
 
   defp check_note!(%Part{name: name, synth: synth, defaults: defaults}, note) do
@@ -1737,6 +1853,7 @@ defmodule Mx.Music do
 
   defp map_notes(%Swing{music: music} = swing, fun, walk), do: %{swing | music: walk.(music, fun)}
   defp map_notes(%Each{music: music} = each, fun, walk), do: %{each | music: walk.(music, fun)}
+  defp map_notes(%Feel{music: music} = feel, fun, walk), do: %{feel | music: walk.(music, fun)}
   defp map_notes(%Part{music: music} = part, fun, walk), do: %{part | music: walk.(music, fun)}
 
   defp map_notes(%MIDI{} = midi, fun, _walk) do
@@ -1790,6 +1907,7 @@ defmodule Mx.Music do
               At,
               Swing,
               Each,
+              Feel,
               Part,
               Loop,
               Sample,

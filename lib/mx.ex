@@ -143,6 +143,19 @@ defmodule Mx do
   defdelegate each(music, opts), to: Mx.Music
 
   @doc """
+  The music played with a feel: a note that starts on a step of `step:` beats, counted from the start of the music, comes later by its step's number in `push:`, or earlier by a number below 0, and its vel is multiplied by its step's number in `lean:`.
+  The tables go round, so four numbers with a step of 0.25 cover a beat, and a note between two steps is left as it is.
+  `loose:` moves every start by a random amount of at most that many beats either way, and `touch:` multiplies every vel by a random number from 1 less it to 1 more, the same on every load.
+  A vel changed is the note's own, or else its part's, kept from 0 to 1; no note starts before the music does, and the music lasts as long as before.
+
+      feel(groove(), step: 0.25, push: [0, 0.035, 0, 0.035], lean: [1, 0.7, 0.85, 0.7])
+
+      iex> beats(feel(seq(c4: 1, e4: 2), step: 0.25, push: [0, 0.03]))
+      3
+  """
+  defdelegate feel(music, opts), to: Mx.Music
+
+  @doc """
   The music with the parts named left out, one name or a list: each plays nothing there, and leaves a silence as long as it played, so every other part plays as before.
   A tempo change written in a part left out stays, and a part that plays a loop until the music beside it ends is left out with its loop.
   A name that no part of the music has is refused.

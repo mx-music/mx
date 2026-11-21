@@ -172,9 +172,7 @@ defmodule Paredao do
   end
 
   # The second and fourth sixteenths of each beat come 0.035 of a beat late.
-  defp swung(music) do
-    swing(music, fn beat -> if rem(round(beat * 8), 4) == 2, do: beat + 0.035, else: beat end)
-  end
+  defp swung(music), do: feel(music, step: 0.25, push: [0, 0.035, 0, 0.035])
 
   # Bars of the hook on the keyboard, counted from 0, a sixteenth to a word: a note after a ~ is
   # slurred from the one before it.
