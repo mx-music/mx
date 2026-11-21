@@ -83,6 +83,29 @@ defmodule Mx.PatternTest do
       end
     end
 
+    test "^ makes a grace note, which takes no step" do
+      assert Pattern.parse("b5 ^d6 c6") == [
+               %{tokens: ["b5"], steps: 1},
+               %{tokens: ["d6"], steps: 0, grace: true},
+               %{tokens: ["c6"], steps: 1}
+             ]
+
+      assert [%{tokens: ["^"]}, %{tokens: ["x"]}] = ~MX"^x"s
+    end
+
+    test "refuse a grace note before a silence, a hold or a glide, with a length, or at the end" do
+      for text <- ["c4 ^d4 _", "c4 ^d4 -", "c4 ^d4 ~e4", "c4 ^d4", "c4 ^d4:2 e4"] do
+        assert_raise ArgumentError, ~r/\^d4/, fn -> Pattern.parse(text) end
+
+        error =
+          assert_raise CompileError, fn ->
+            Code.eval_string("import Mx\n\n~MX\"#{text}\"", [], file: "song.exs")
+          end
+
+        assert Exception.message(error) =~ "song.exs:3: ~MX: "
+      end
+    end
+
     test "~MX with s reads a character to a step, and refuses another modifier" do
       assert ~MX"9. x|c"s == [
                %{tokens: ["9"], steps: 1},
@@ -189,6 +212,55 @@ defmodule Mx.PatternTest do
 
       {starts, _} = Enum.map_reduce(music.items, 0, &{{&2, &1.pitch}, &2 + &1.beats})
       assert starts == [{0, 60}, {1 / 3, 62}, {2 / 3, 64}]
+    end
+
+    test "plays a grace note grace: beats before the word after it, 0.06 unless given" do
+      assert %Together{
+               items: [%Seq{items: words}, %Mx.Music.At{beats: 1.5, entries: [{beat, grace}]}]
+             } =
+               music = steps(~MX"b5 ^d6 c6 b5", 0.5)
+
+      assert beats(music) == 1.5
+
+      assert [
+               %Note{pitch: 83, beats: 0.5},
+               %Note{pitch: 84, beats: 0.5},
+               %Note{pitch: 83, beats: 0.5}
+             ] = words
+
+      assert_in_delta beat, 0.44, 1.0e-9
+      assert %Note{pitch: 86, beats: 0.06} = grace
+
+      assert %Together{items: [_, %Mx.Music.At{entries: [{beat, %Note{beats: 0.1}}]}]} =
+               steps(~MX"b5 ^d6 c6 b5", 0.5, grace: 0.1)
+
+      assert_in_delta beat, 0.4, 1.0e-9
+
+      assert %Together{
+               items: [_, %Mx.Music.At{entries: [{d4, %Note{pitch: 62}}, {e4, %Note{pitch: 64}}]}]
+             } =
+               steps(~MX"c4 ^d4 ^e4 f4", 1)
+
+      assert_in_delta d4, 0.88, 1.0e-9
+      assert_in_delta e4, 0.94, 1.0e-9
+
+      assert %Together{
+               items: [
+                 %Seq{items: [%Rest{}, %Note{opts: [vel: 0.9]}]},
+                 %Mx.Music.At{
+                   entries: [{flam, %Note{pitch: :own_note, beats: 0.05, opts: [vel: 0.3]}}]
+                 }
+               ]
+             } =
+               steps(~MX"_ ^s S", 0.25, strokes: [s: [vel: 0.3], S: [vel: 0.9]], grace: 0.05)
+
+      assert_in_delta flam, 0.2, 1.0e-9
+    end
+
+    test "refuses a grace note that would start before the pattern" do
+      assert_raise ArgumentError,
+                   "steps plays the grace note ^d6 before the pattern starts; start the pattern with a silence",
+                   fn -> steps(~MX"^d6 c6", 0.5) end
     end
 
     test "plays the words of a pattern as notes of their length, strokes and silence" do

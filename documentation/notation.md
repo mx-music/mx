@@ -383,11 +383,15 @@ Without a modifier, `~MX` reads a word to a step.
 | `eb2:2 ~g2:2` | one note of four steps that glides to G halfway |
 | `g4:1/3`, `_:3/2` | the note for a third of a step, or silence for a step and a half |
 | `>h`, `>g4` | the word accented, as `accent:` says |
+| `b5 ^d6 c6` | a grace note: D6 just before C6, taking no step |
 
 A word after `~` is not struck: the note before it glides to that pitch and lasts through it.
 Three lengths of `1/3` fill a step exactly, where three of `0.333` do not.
 An accent is what `steps` is given as `accent:`: a number is added to the sound's vel, up to 1, and a list of options takes the place of the sound's options of the same names, so `steps(~MX"f >f f f", 0.25, strokes: [f: [vel: 0.5]], accent: 0.3)` plays the second stroke at vel 0.8.
 An accented word in a pattern played without `accent:` is refused, and so is an accent on a silence, a hold or a word that glides.
+A grace note starts `grace:` beats before the word after it, 0.06 unless `steps` is given another, and lasts until that word starts; the words around it start and last as they would without it.
+Two grace notes in a row play in order, the first two lengths early, and a drummer's flam is a soft stroke as a grace note before a hard one: `steps(~MX"_ ^s S", 0.25, strokes: [s: [vel: 0.3], S: [vel: 0.9]])`.
+A grace note before a silence, a hold or a word that glides, one with a length, one that ends a pattern, and one that would start before the pattern does, are refused.
 A bar line, `|`, is only for reading.
 
 ### A character to a step

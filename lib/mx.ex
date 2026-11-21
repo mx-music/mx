@@ -216,6 +216,10 @@ defmodule Mx do
 
       steps(~MX"f >f f f", 0.25, strokes: [f: [vel: 0.5]], accent: 0.3)
 
+  A word after `^` is a grace note, which takes no step and starts `grace:` beats before the word after it, 0.06 unless given; a pattern with one is the words together with its grace notes.
+
+      steps(~MX"b5 ^d6 c6 b5", 0.5, grace: 0.08)
+
       iex> beats(steps("x..x", 0.25))
       1.0
 

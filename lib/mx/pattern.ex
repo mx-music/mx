@@ -8,11 +8,12 @@ defmodule Mx.Pattern do
   A word after `~` is not struck: the note before it glides to it and lasts through it, as in `eb2:2 ~g2:2`.
   A word after `>` is accented, as in `>h`, and `Mx.steps/3` plays it with its `accent:`.
   A length can be a fraction, as in `g4:1/3`.
+  A word after `^` is a grace note, as in `b5 ^d6 c6`: it takes no step, and `Mx.steps/3` plays it just before the word after it.
   A bar line, `|`, is only for reading.
   With the modifier `s`, as in `~MX"9..5 x..."s`, each character lasts one step instead: a dot is silence, and spaces and bar lines are left out.
 
   A pattern is a list of cells in order, each a map of its `tokens`, none for silence, and its length in `steps`, so two patterns join with `++`.
-  A cell that glides has `glide: true` as well, and an accented one `accent: true`.
+  A cell that glides has `glide: true` as well, an accented one `accent: true`, and a grace note `grace: true` and no steps.
   """
 
   @doc "The cells of a pattern's text, read a character to a step."
@@ -31,9 +32,29 @@ defmodule Mx.Pattern do
       |> Enum.reject(&(&1 == "|"))
 
     case cells(words, []) do
-      {cells, []} -> cells
+      {cells, []} -> graced(cells)
       {_cells, ["]" | _]} -> raise ArgumentError, "a ] closes no ["
     end
+  end
+
+  # Each grace note must come before a word that is struck, or before another grace note.
+  defp graced(cells) do
+    cells
+    |> Enum.chunk_every(2, 1, [nil])
+    |> Enum.each(fn
+      [%{grace: true} = grace, next] ->
+        if next == nil or next.tokens == [] or Map.has_key?(next, :glide) do
+          word = "^" <> Enum.join(grace.tokens, "/")
+
+          raise ArgumentError,
+                "#{word} comes before no word that is struck; a grace note leads into one"
+        end
+
+      _ ->
+        :ok
+    end)
+
+    cells
   end
 
   defp cells([], cells), do: {Enum.reverse(cells), []}
@@ -64,10 +85,29 @@ defmodule Mx.Pattern do
     end
   end
 
+  defp cells(["^" <> graced = word | words], cells) do
+    case cells([graced], []) do
+      {[%{tokens: [_ | _], steps: 1} = cell], []}
+      when not is_map_key(cell, :glide) and not is_map_key(cell, :accent) ->
+        if String.contains?(graced, ":") do
+          raise ArgumentError, "#{word} takes no length; a grace note takes no step"
+        end
+
+        cells(words, [%{cell | steps: 0} |> Map.put(:grace, true) | cells])
+
+      _ ->
+        raise ArgumentError, "#{word} is no grace note; ^ marks a word that sounds"
+    end
+  end
+
   defp cells([word | words], cells) do
     {name, steps} = word_length(word)
 
     case {name, cells} do
+      {"-", [%{grace: true} = grace | _]} ->
+        word = "^" <> Enum.join(grace.tokens, "/")
+        raise ArgumentError, "#{word} is held by -, and a grace note takes no step"
+
       {"-", [held | before]} ->
         cells(words, [%{held | steps: held.steps + steps} | before])
 

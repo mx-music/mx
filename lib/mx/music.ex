@@ -528,7 +528,7 @@ defmodule Mx.Music do
   @doc "The music with each note started at the beat the function returns for the beat it was written on, its length unchanged."
   def swing(music, fun) when is_function(fun, 1), do: %Swing{music: item(music), fun: fun}
 
-  @steps_options [:sample, :digit, :strokes, :notes, :each, :slide, :accent]
+  @steps_options [:sample, :digit, :strokes, :notes, :each, :slide, :accent, :grace]
 
   @doc "The sounds of a pattern, each character of a string or each word of `~MX` lasting a step of beats; a list of strings is one bar after another."
   def steps(pattern, step, opts \\ [])
@@ -537,16 +537,56 @@ defmodule Mx.Music do
     check_keyword("steps", opts)
     {own, each} = Keyword.split(opts, @steps_options)
 
+    all = pattern |> List.wrap() |> Enum.flat_map(&cells/1) |> glided()
+    {cells, graces} = Enum.split_with(all, &(not Map.get(&1, :grace, false)))
+
     {items, _} =
-      pattern
-      |> List.wrap()
-      |> Enum.flat_map(&cells/1)
-      |> glided()
-      |> Enum.map_reduce(0, fn cell, at ->
-        {cell_item(cell, at, step, own, each), at + cell.steps}
+      Enum.map_reduce(cells, 0, fn cell, at ->
+        {cell_item(cell, at, step, own, each, nil), at + cell.steps}
       end)
 
-    %Seq{items: items}
+    case graces do
+      [] -> %Seq{items: items}
+      _ -> graced(items, all, step, own, each)
+    end
+  end
+
+  # Grace notes take no step: each starts grace: beats before the next, and the last of a run
+  # grace: beats before the word that follows it, beside the words, which play as they would
+  # without them.
+  defp graced(items, cells, step, own, each) do
+    grace = own[:grace] || 0.06
+    check_beats("steps' grace:", grace)
+
+    {entries, _} =
+      cells
+      |> Enum.chunk_by(&Map.get(&1, :grace, false))
+      |> Enum.flat_map_reduce(0, fn
+        [%{grace: true} | _] = run, at ->
+          count = length(run)
+
+          entries =
+            for {cell, index} <- Enum.with_index(run) do
+              beat = at * step - (count - index) * grace
+
+              if beat < 0 do
+                word = "^" <> Enum.join(cell.tokens, "/")
+
+                raise ArgumentError,
+                      "steps plays the grace note #{word} before the pattern starts; start the pattern with a silence"
+              end
+
+              {beat, cell_item(cell, at, step, own, each, grace)}
+            end
+
+          {entries, at}
+
+        words, at ->
+          {[], at + Enum.sum(Enum.map(words, & &1.steps))}
+      end)
+
+    seq = %Seq{items: items}
+    %Together{items: [seq, %At{entries: entries, beats: beats(seq)}]}
   end
 
   defp cells(%{tokens: tokens, steps: steps} = cell) when is_list(tokens) and is_number(steps) do
@@ -580,12 +620,12 @@ defmodule Mx.Music do
     |> Enum.reverse()
   end
 
-  defp cell_item(%{tokens: [], steps: steps}, _at, step, _own, _each) do
+  defp cell_item(%{tokens: [], steps: steps}, _at, step, _own, _each, _beats) do
     %Rest{beats: steps * step}
   end
 
-  defp cell_item(%{tokens: tokens, steps: steps} = cell, at, step, own, each) do
-    beats = steps * step
+  defp cell_item(%{tokens: tokens, steps: steps} = cell, at, step, own, each, beats) do
+    beats = beats || steps * step
 
     each =
       case own[:each] do

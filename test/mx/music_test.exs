@@ -195,6 +195,20 @@ defmodule Mx.MusicTest do
     end
 
     @tag :tmp_dir
+    test "a grace note leaves the note before it its length as sustain", ctx do
+      {:ok, song} =
+        load(
+          ctx,
+          ~s|song(music: part(:flute, steps(~MX"c4 ^d4 e4", 1, vel: 0.7), synth: :flute))|
+        )
+
+      assert [{0, 60, c4}, {d4, 62, grace}, {1, 64, _}] = events(song, :flute)
+      assert c4[:sustain] == 1
+      assert_in_delta d4, 0.94, 1.0e-9
+      assert grace[:sustain] == 0.06
+    end
+
+    @tag :tmp_dir
     test "swing moves each note to the beat its function returns, and leaves the length", ctx do
       {:ok, song} =
         load(
