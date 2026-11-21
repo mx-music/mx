@@ -153,12 +153,12 @@ defmodule LowB do
       part(:kutsinhira, kutsinhira()),
       seq([
         rest(1 + 16),
-        play(hosho(1)),
-        play(hosho(2)),
-        play(hosho(2) ++ claps(2) ++ drum(2)),
-        play([bass: bass(2)] ++ hosho(2) ++ claps(2) ++ drum(2)),
-        play([bass: bass(2), soprano: soprano(2)] ++ hosho(2) ++ claps(2) ++ drum(2)),
-        play(hosho(1))
+        together(hosho(1)),
+        together(hosho(2)),
+        together(hosho(2) ++ claps(2) ++ drum(2)),
+        together([bass: bass(2)] ++ hosho(2) ++ claps(2) ++ drum(2)),
+        together([bass: bass(2), soprano: soprano(2)] ++ hosho(2) ++ claps(2) ++ drum(2)),
+        together(hosho(1))
       ])
     ])
   end
@@ -180,10 +180,6 @@ defmodule LowB do
   # its last pluck.
   defp kutsinhira do
     early(seq([rest(1 + 2 * 16 + @pulse)] ++ Enum.drop(plucks(9, 0.8), -1) ++ [rest(16 + 8)]))
-  end
-
-  defp play(voices) do
-    together(for {name, music} <- voices, do: part(name, music))
   end
 
   defp hosho(cycles) do

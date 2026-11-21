@@ -291,6 +291,15 @@ defmodule Mx.Music do
 
   @doc "Music whose items all start at once, as long as the longest, refusing two parts of one name among them."
   def together(items) when is_list(items) do
+    case Enum.find(items, &match?({name, music} when is_atom(name) and not is_number(music), &1)) do
+      nil ->
+        :ok
+
+      {name, _music} ->
+        raise ArgumentError,
+              "together takes part names only in a module that uses Mx.Song; write part(:#{name}, music, synth: ...)"
+    end
+
     items = Enum.map(items, &item/1)
 
     twice =

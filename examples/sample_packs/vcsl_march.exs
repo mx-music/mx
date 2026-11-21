@@ -109,14 +109,14 @@ defmodule Parade do
 
   # A bar of sticks, two of the field drum alone and two with the cymbals and the bass drum.
   defp call do
-    play(
+    together(
       field_drum: seq([rows(click: ~MX"8...8..."s), street_beat(2)]),
       metal: seq([rest(6), rows(cymbals: [~MX"8......."s, ~MX"8...8..."s])])
     )
   end
 
   defp first_strain do
-    play(
+    together(
       field_drum: street_beat(8),
       timpani: timpani(:first, 2),
       metal: rows([cymbals: [~MX"8......."s, ~MX"........"s, ~MX"........"s, ~MX"........"s]], 4),
@@ -125,7 +125,7 @@ defmodule Parade do
   end
 
   defp trio do
-    play(
+    together(
       field_drum: rows([tap: [~MX"6.446.44"s, ~MX"6.446464"s]], 8),
       timpani: timpani(:trio, 2),
       metal: rows([triangle: ~MX"..7...7."s, sleigh_bells: ~MX"6.6.6.6."s], 16),
@@ -136,7 +136,7 @@ defmodule Parade do
 
   # Four bars for the ratchet, the slapstick, the flexatone and the anvils.
   defp novelties do
-    play(
+    together(
       toys:
         seq([
           rows(ratchet: ~MX"8...8.8."s),
@@ -150,7 +150,7 @@ defmodule Parade do
   end
 
   defp last_strain do
-    play(
+    together(
       field_drum: street_beat(8),
       timpani: timpani(:first, 2),
       metal:
@@ -165,7 +165,7 @@ defmodule Parade do
 
   # Two bars of rolls, and the last stroke.
   defp ending do
-    play(
+    together(
       timpani:
         seq([
           sample(@timpani_roll, 4, amp: 1.5, sustain: 4, release: 0.2),
@@ -203,10 +203,6 @@ defmodule Parade do
         rest(2)
       ])
     )
-  end
-
-  defp play(voices) do
-    together(for {name, music} <- voices, do: part(name, music))
   end
 
   # Rows of sounds played together, each row one bar or several in turn, the whole played so many

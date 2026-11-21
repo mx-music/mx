@@ -137,23 +137,23 @@ defmodule ThreeTunings do
 
   defp first do
     seq([
-      play(nyunga: thumbs(1)),
-      play(nyunga: thumbs(1), balafon: figure(1), drum: drum("L.....l..l..", 4)),
-      play(
+      together(nyunga: thumbs(1)),
+      together(nyunga: thumbs(1), balafon: figure(1), drum: drum("L.....l..l..", 4)),
+      together(
         nyunga: thumbs(2),
         second_nyunga: tune(2),
         balafon: figure(2),
         drum: drum("L.....l..l..", 8)
       ),
-      play(nyunga: note([:f3, :c4, :a4, :f5], 4, strum: 0.05), balafon: note([:f4, :f5], 4))
+      together(nyunga: note([:f3, :c4, :a4, :f5], 4, strum: 0.05), balafon: note([:f4, :f5], 4))
     ])
   end
 
   # The kalimba alone, then with itself two beats later, the slit drum on every other beat.
   defp second do
     seq([
-      play(kalimba: canon(1)),
-      play(
+      together(kalimba: canon(1)),
+      together(
         kalimba: seq([canon(2), note([:b3, :fs4, :b4], 4, strum: 0.08)]),
         second_kalimba: seq([rest(2), canon(2), note([:ds5, :fs5], 2)]),
         drum: drum("H.....h.....", 9)
@@ -164,18 +164,14 @@ defmodule ThreeTunings do
   # One mbira, then two, the balafon and the drum joining after the second time round.
   defp third do
     seq([
-      play(mavembe: cycle(1)),
-      play(
+      together(mavembe: cycle(1)),
+      together(
         mavembe: seq([cycle(3), note([:eb3, :bb3, :eb4, :g4], 4, strum: 0.06)]),
         second_mavembe: seq([rest(@pulse), cycle(3)]),
         balafon: seq([rest(16), roots(1), together([roots(1), above()]), note([:eb4, :eb5], 4)]),
         drum: seq([rest(16), drum("H..h..h..h..", 8)])
       )
     ])
-  end
-
-  defp play(voices) do
-    together(for {name, music} <- voices, do: part(name, music))
   end
 
   # The thumbs' part: a bass note on every third pulse and the upper notes between.

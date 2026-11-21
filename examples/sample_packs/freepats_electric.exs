@@ -159,14 +159,16 @@ defmodule NightService do
   end
 
   # The piano alone under its tremolo, with the shaker.
-  defp intro, do: play(piano: held(1), shaker: drum(@shaker, 4))
+  defp intro, do: together(piano: held(1), shaker: drum(@shaker, 4))
 
   defp beat_in do
-    play([cymbal: drum("8"), piano: held(1), shaker: drum(@shaker, 4), bass: bass(1)] ++ beat(4))
+    together(
+      [cymbal: drum("8"), piano: held(1), shaker: drum(@shaker, 4), bass: bass(1)] ++ beat(4)
+    )
   end
 
   defp guitar_in do
-    play(
+    together(
       [
         piano: held(1),
         shaker: drum(@shaker, 4),
@@ -179,7 +181,7 @@ defmodule NightService do
 
   # The tune on the synth square, the brass answering at the end of every second bar.
   defp verse do
-    play(
+    together(
       [
         cymbal: drum("8"),
         lead: tune(),
@@ -195,7 +197,7 @@ defmodule NightService do
 
   # The drums drop to the kick, the choir holds the chords, and the toms run down into the chorus.
   defp breakdown do
-    play(
+    together(
       kick: drum(@kick, 4),
       shaker: drum(@shaker, 4),
       choir: held(1, up: 12),
@@ -211,7 +213,7 @@ defmodule NightService do
   # Everything: the piano and the brass play the chords as stabs on the clave's rhythm, and the
   # tune goes up an octave.
   defp chorus do
-    play(
+    together(
       [
         cymbal: drum("9"),
         lead: tune(12),
@@ -231,7 +233,7 @@ defmodule NightService do
   defp outro do
     last = fn notes, opts -> seq([rest(16), note(notes, 8, opts)]) end
 
-    play(
+    together(
       [
         cymbal: seq([drum("8"), rest(15.75), drum("9")]),
         bass: seq([bass(1), note(:c2, 8, sustain: 3, release: 2)]),
@@ -242,10 +244,6 @@ defmodule NightService do
         shaker: drum(@shaker, 4)
       ] ++ Keyword.delete(beat(4), :kick)
     )
-  end
-
-  defp play(voices) do
-    together(for {name, music} <- voices, do: part(name, music))
   end
 
   defp held(cycles, opts \\ []) do

@@ -49,7 +49,7 @@ defmodule DialTone do
 
   # The telephone dials over the pads, and the hats come in.
   defp intro do
-    play(
+    together(
       bed: sample({:sonic_pi, :tbd_fxbed_loop}, 16),
       pads: pads(1),
       voices:
@@ -66,7 +66,7 @@ defmodule DialTone do
 
   # The kick and the bass.
   defp build do
-    play(
+    together(
       [bass: bass(1), clicks: strokes(:elec_tick, ~MX"9..9..9..9..9.9."s, 4)] ++
         beat(4) ++ [snare: seq([rest(12), strokes(:elec_hi_snare, ~MX"....5.5.5.667789"s)])]
     )
@@ -74,7 +74,7 @@ defmodule DialTone do
 
   # Eight bars of everything, the robots answering.
   defp main do
-    play(
+    together(
       [
         bass: bass(2),
         arp: arp(2),
@@ -87,7 +87,7 @@ defmodule DialTone do
 
   # Four bars without the kick: pads, glitches and a snare that fills up.
   defp middle do
-    play(
+    together(
       pads: pads(1),
       arp: arp(1, -12),
       voices: voices(~w(glitch_robot1 glitch_robot2)a),
@@ -104,7 +104,7 @@ defmodule DialTone do
 
   # Twelve bars, the arpeggio an octave up for the last eight.
   defp last do
-    play(
+    together(
       [
         bass: bass(3),
         arp: seq([arp(1), arp(2, 12)]),
@@ -121,16 +121,12 @@ defmodule DialTone do
 
   # A last kick, a chime and a robot.
   defp ending do
-    play(
+    together(
       kick: sample({:sonic_pi, :bd_808}, 8),
       bells: sample({:sonic_pi, :elec_chime}, 8),
       pads: sample({:sonic_pi, :tbd_pad_1}, 8, release: 2),
       voices: seq([rest(1), sample({:sonic_pi, :mehackit_robot7}, 7)])
     )
-  end
-
-  defp play(voices) do
-    together(for {name, music} <- voices, do: part(name, music))
   end
 
   defp pads(times) do

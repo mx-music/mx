@@ -233,7 +233,7 @@ defmodule TwelveBars do
   defp intro do
     changes = ~w(g f c g)a
 
-    play(
+    together(
       piano:
         seq([
           triplets([:g, :f]),
@@ -256,7 +256,7 @@ defmodule TwelveBars do
   end
 
   defp head do
-    play(
+    together(
       [
         tenor: seq([riff(), line(@lead_in)]),
         piano: comping(),
@@ -267,7 +267,7 @@ defmodule TwelveBars do
   end
 
   defp chromatic_chorus do
-    play(
+    together(
       [
         chromatic: line(List.flatten(@chromatic_chorus)),
         piano: comping(),
@@ -278,7 +278,7 @@ defmodule TwelveBars do
   end
 
   defp saxello_chorus do
-    play(
+    together(
       [
         saxello: line(List.flatten(@saxello_chorus)),
         piano: triplets(),
@@ -293,7 +293,7 @@ defmodule TwelveBars do
     eleven = Enum.take(@changes, 11)
     [harp_c, harp_f] = answers()
 
-    play([
+    together([
       {:tenor, riff()},
       {:saxello, transpose(riff(), 12)},
       {:piano, comping(eleven)},
@@ -310,7 +310,7 @@ defmodule TwelveBars do
 
   # Everyone on one, the tenor alone down to the low G, and the last chord.
   defp ending do
-    play(
+    together(
       tenor: seq([line(c4: 2, r: 1, g4: 2, e4: 1, c4: 2, a3: 1, g3: 3), rest(8)]),
       tenor_vibrato: seq([rest(4), note(:c4, 8, sustain: 6)]),
       saxello: seq([line(c5: 2, r: 10), note(:bb4, 8, sustain: 6)]),
@@ -330,10 +330,6 @@ defmodule TwelveBars do
           ])
         ])
     )
-  end
-
-  defp play(voices) do
-    together(for {name, music} <- voices, do: part(name, music))
   end
 
   # The right hand in triplets, the first of each three the strong one.

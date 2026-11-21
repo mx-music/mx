@@ -274,10 +274,10 @@ defmodule Paredao do
   defp intro, do: part(:kick, kick(2))
 
   defp beat do
-    together([
-      part(:kick, kick(4)),
-      part(:bass, steps(~MX"g1:3 _ g1:3 _ bb1:3 _ d2:2 f2:2", 0.25))
-    ])
+    together(
+      kick: kick(4),
+      bass: steps(~MX"g1:3 _ g1:3 _ bb1:3 _ d2:2 f2:2", 0.25)
+    )
   end
 
   defp kick(bars), do: repeat(steps(~MX"9...9...9..59.7."s, 0.25), bars)
@@ -288,8 +288,10 @@ end
 - `song/0` returns the song's music, and mx calls it when it loads the file.
 - `part :kick, synth: :kick` in the module's body declares a part with its options, once.
 - `part(:kick, music)` in a function is that part playing the music, with the options it was declared with.
+- `together(kick: music, bass: music)` in a function plays each declared part by its name, as `together([part(:kick, music), part(:bass, music)])` does; the list can be built while the song loads, and an entry whose value is a number is still a note.
 
-A part that is not declared, and a part declared twice, do not compile, and mx names the line.
+A part that is not declared, and a part declared twice, do not compile, and mx names the line; a name `together` is given that no part declares is refused when the song loads.
+A song that ends with `song` declares no parts, so its `together` takes no part names.
 A file holds one such module; a module that uses `Mx.Instrument` can stand beside it.
 `examples/funk_br.exs` is a whole song written this way.
 

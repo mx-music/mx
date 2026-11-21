@@ -53,6 +53,73 @@ defmodule Mx.SongModuleTest do
     assert message =~ "#{path}:6: part snare is not declared"
   end
 
+  test "together takes declared parts by name, each on its declared synth, beside notes and music",
+       ctx do
+    {:ok, song} =
+      load(ctx, """
+      defmodule #{name(ctx)} do
+        use Mx.Song
+
+        part :lead, synth: :oboe
+        part :bass, synth: :bassoon
+
+        def song do
+          together([lead: seq(c4: 1)] ++ [bass: seq(c2: 1)])
+        end
+      end
+      """)
+
+    assert [%{name: :lead, synth: :oboe} = lead, %{name: :bass, synth: :bassoon} = bass] =
+             song.loops
+
+    assert {:ok, %{events: [{0, 60, _}]}} = Pass.events(lead, 0)
+    assert {:ok, %{events: [{0, 36, _}]}} = Pass.events(bass, 0)
+
+    {:ok, song} =
+      load(ctx, """
+      defmodule #{name(ctx)}Chord do
+        use Mx.Song
+
+        part :lead, synth: :oboe
+        part :bass, synth: :bassoon
+
+        def song, do: together([part(:lead, together(c4: 4, e4: 4)), bass: seq(c2: 4)])
+      end
+      """)
+
+    assert [lead, _bass] = song.loops
+    assert {:ok, %{events: [{0, 60, _}, {0, 64, _}], beats: 4}} = Pass.events(lead, 0)
+  end
+
+  test "together refuses a part name that is not declared, naming the file and line", ctx do
+    path =
+      write(ctx, """
+      defmodule #{name(ctx)} do
+        use Mx.Song
+
+        part :lead, synth: :oboe
+        part :bass, synth: :bassoon
+
+        def song do
+          together(lead: seq(c4: 1), drums: seq(c2: 1))
+        end
+      end
+      """)
+
+    assert {:error, message} = Song.load(path)
+
+    assert message ==
+             "#{path}:8: part drums is not declared; declare it with part :drums, synth: ..."
+  end
+
+  test "a script song's together refuses a part name, saying to write part", ctx do
+    path = write(ctx, "import Mx\n\nsong(music: together(lead: seq(c4: 1)))\n")
+
+    assert {:error, message} = Song.load(path)
+    assert message =~ "#{path}:3: "
+    assert message =~ "part(:lead, music, synth: ...)"
+  end
+
   test "a part declared twice, and a module with no song, do not compile", ctx do
     twice = """
     defmodule #{name(ctx)} do

@@ -144,9 +144,9 @@ defmodule SevenStrokes do
 
   def song do
     seq([
-      play(marimba: marimba(true), bass: bass(), bells: seq([note(:d4, 8), rest(24)])),
-      play(marimba: marimba(), bass: bass(), vibes: vibes(), bowed: bowed()),
-      play(
+      together(marimba: marimba(true), bass: bass(), bells: seq([note(:d4, 8), rest(24)])),
+      together(marimba: marimba(), bass: bass(), vibes: vibes(), bowed: bowed()),
+      together(
         marimba: marimba(),
         bass: bass(),
         vibes: vibes(),
@@ -155,7 +155,7 @@ defmodule SevenStrokes do
         chimes: chimes(),
         metal: metal()
       ),
-      play(
+      together(
         marimba: marimba(),
         bass: bass(),
         vibes: vibes(),
@@ -164,7 +164,7 @@ defmodule SevenStrokes do
         chimes: chimes(),
         bells: bells()
       ),
-      play(
+      together(
         vibes: note([:d4, :a4, :d5, :e5, :fs5], 16, strum: 0.1, sustain: 12, release: 4),
         bass: note(:d3, 16),
         glock: note(:d7, 16),
@@ -176,10 +176,6 @@ defmodule SevenStrokes do
           ])
       )
     ])
-  end
-
-  defp play(voices) do
-    together(for {name, music} <- voices, do: part(name, music))
   end
 
   # The marimba through the chords; when growing, each bar of the eight has one stroke more until

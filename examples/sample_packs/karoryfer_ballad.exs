@@ -199,7 +199,7 @@ defmodule SmallHours do
 
   # Two bars of brushes, bass and guitar.
   defp intro do
-    play(
+    together(
       stir: stir(2),
       foot: drum(~MX"...2.....2.."s, 2),
       bass: in_two([{:d2, :a1}, {:e2, :a1, :cs2}]),
@@ -209,7 +209,7 @@ defmodule SmallHours do
 
   # The tune, the saxophone soft.
   defp tune do
-    play(
+    together(
       [
         sax: line(@tune ++ @falling, 0.4),
         guitar: comp(@tune_chords),
@@ -222,7 +222,7 @@ defmodule SmallHours do
   # The tune again and harder, ending upward: the bass walks, the ride joins, and the cello holds
   # a line under it.
   defp tune_again do
-    play(
+    together(
       [
         sax: line(@tune ++ @rising, 0.8),
         guitar: comp(@tune_chords),
@@ -242,7 +242,7 @@ defmodule SmallHours do
 
   # The middle four bars: the guitar alone on top, the cello holding two notes of each chord.
   defp middle do
-    play(
+    together(
       [
         solo:
           line(
@@ -285,7 +285,7 @@ defmodule SmallHours do
   # The first bar of the tune, its sixth and its ending, soft again, then two chords and the last
   # one, slowing.
   defp last_time do
-    play(
+    together(
       sax:
         line(
           Enum.take(@tune, 3) ++
@@ -311,10 +311,6 @@ defmodule SmallHours do
       sizzle: seq([rest(20), drum(~MX"3..........."s), rest(4)])
     )
     |> then(&together([&1, part(:slowing, seq([rest(16), tempo(54, over: 6)]))]))
-  end
-
-  defp play(voices) do
-    together(for {name, music} <- voices, do: part(name, music))
   end
 
   # The stir, started again every two bars, each fading in under the end of the one before.

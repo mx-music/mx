@@ -44,7 +44,7 @@ defmodule Rewind do
   # The hiss, the E minor ninth and the tabla loop, then the choir and the bell, and a rewind into
   # the drums.
   defp intro do
-    play(
+    together(
       record:
         seq([
           sample({:sonic_pi, :vinyl_hiss}, 12),
@@ -66,7 +66,7 @@ defmodule Rewind do
 
   # Sixteen bars of the break and the bass.
   defp drop do
-    play(
+    together(
       breaks:
         seq([
           four(@straight, @pushed),
@@ -88,7 +88,7 @@ defmodule Rewind do
   # Eight bars without the break: the guitar's fifths, the choir and the tabla, then a roll and a
   # backspin.
   defp middle do
-    play(
+    together(
       guitar:
         seq([sample({:sonic_pi, :guit_e_fifths}, 16), sample({:sonic_pi, :guit_e_slide}, 16)]),
       choir: choir(8),
@@ -102,7 +102,7 @@ defmodule Rewind do
 
   # Sixteen bars again, the break cut harder and the bass climbing.
   defp second_drop do
-    play(
+    together(
       breaks:
         seq([
           four(@pushed, @doubled),
@@ -124,16 +124,12 @@ defmodule Rewind do
 
   # The chord again over the hiss, and a low boom.
   defp outro do
-    play(
+    together(
       guitar: sample({:sonic_pi, :guit_em9}, 20),
       record: sample({:sonic_pi, :vinyl_hiss}, 20),
       crash: sample({:sonic_pi, :drum_splash_hard}, 20),
       bass: sample({:sonic_pi, :bd_boom}, 20, rate: 0.8)
     )
-  end
-
-  defp play(voices) do
-    together(for {name, music} <- voices, do: part(name, music))
   end
 
   # The choir, a note near C sharp, moved to B and to E and held.

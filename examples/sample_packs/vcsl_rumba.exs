@@ -99,10 +99,10 @@ defmodule RumbaYMontuno do
 
   def song do
     seq([
-      play(claves: claves(4), sticks: seq([rest(8), sticks(2)])),
-      play(claves: claves(4), sticks: sticks(4), cajon: cajon(4)),
-      play(claves: claves(4), sticks: sticks(4), congas: guaguanco(4), shakers: cabasa(4)),
-      play(
+      together(claves: claves(4), sticks: seq([rest(8), sticks(2)])),
+      together(claves: claves(4), sticks: sticks(4), cajon: cajon(4)),
+      together(claves: claves(4), sticks: sticks(4), congas: guaguanco(4), shakers: cabasa(4)),
+      together(
         claves: claves(8),
         sticks: sticks(8),
         congas: guaguanco(8),
@@ -110,7 +110,7 @@ defmodule RumbaYMontuno do
         quinto: quinto()
       ),
       break(),
-      play(
+      together(
         claves: claves(4),
         congas: tumbao(4),
         bongos: martillo(4),
@@ -118,7 +118,7 @@ defmodule RumbaYMontuno do
         shakers: guiro(4),
         xylophone: montuno(4)
       ),
-      play(
+      together(
         claves: claves(8),
         congas: tumbao(8),
         bongos: martillo(8),
@@ -128,17 +128,13 @@ defmodule RumbaYMontuno do
         tune: tune(4)
       ),
       break(),
-      play(
+      together(
         congas: rows(conga_open: "8...............", tumba_open: "8..............."),
         bongos: rows(bongo_low: "8..............."),
         bells: rows(bell_open: "8...............", vibraslap: "7..............."),
         xylophone: together([note([:c5, :e5, :g5, :c6], 4), rest(8)])
       )
     ])
-  end
-
-  defp play(voices) do
-    together(for {name, music} <- voices, do: part(name, music))
   end
 
   defp claves(times), do: rows([clave: @clave], times)
@@ -183,7 +179,7 @@ defmodule RumbaYMontuno do
 
   # Everyone on the clave's five strokes, and the vibraslap after the last.
   defp break do
-    play(
+    together(
       claves: claves(1),
       sticks: rows(stick: @clave),
       congas: rows(conga_slap: @clave, tumba_open: @clave),

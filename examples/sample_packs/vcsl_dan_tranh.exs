@@ -86,7 +86,7 @@ defmodule DanTranh do
   # The prelude, without a beat: a sweep up the strings, long notes with vibrato, two in tremolo,
   # and a sweep down.
   defp prelude do
-    play(
+    together(
       sweeps: at([{0, sample(@sweep_up, 8)}, {24, sample(@sweep_down, 8, amp: 1.5)}], 31),
       vibrato:
         at(
@@ -104,19 +104,15 @@ defmodule DanTranh do
   end
 
   defp verse(phrases, long, way) do
-    play([{:thumb, thumb(phrases)} | tune(phrases, long, way)])
+    together([{:thumb, thumb(phrases)} | tune(phrases, long, way)])
   end
 
   # The last notes, and the sweep down under them.
   defp ending do
-    play(
+    together(
       sweeps: sample(@sweep_down, 12, amp: 1.5),
       vibrato: seq([rest(6), note([:b2, :fs3, :b3, :b4], 6, strum: 0.12, sustain: 6, release: 3)])
     )
-  end
-
-  defp play(voices) do
-    together(for {name, music} <- voices, do: part(name, music))
   end
 
   # The thumb on the low strings, on the first beat of each bar and a quieter fifth on the third.

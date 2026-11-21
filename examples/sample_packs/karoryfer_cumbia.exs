@@ -216,7 +216,7 @@ defmodule Cosmonauta do
 
   # The percussion one by one, then the bass and the chords.
   defp intro do
-    play(
+    together(
       cowbell: drum(~MX"7...5...7...5..."s, 6),
       guiro: seq([rest(4), drum(~MX"7.557.557.557.55"s, 5)]),
       djembe: seq([rest(8), drum(~MX"....7.......7.6."s, 4)]),
@@ -232,7 +232,7 @@ defmodule Cosmonauta do
       for {name, beats} <- @verse_tune,
           do: {if(name == :r, do: :r, else: pitch(name) + up), beats}
 
-    play(
+    together(
       [
         lead: line(tune),
         bass: bass(@verse),
@@ -244,7 +244,7 @@ defmodule Cosmonauta do
   end
 
   defp chorus do
-    play(
+    together(
       [
         lead: repeat(line(@chorus_tune), 2),
         second: repeat(line(@chorus_thirds), 2),
@@ -258,7 +258,7 @@ defmodule Cosmonauta do
 
   # Four bars for the drums over the bass.
   defp drums_alone do
-    play(
+    together(
       [
         bass: bass(~w(am am e7 am)a),
         high_bongo: drum([~MX"5.55.5.55.5.5.55"s, ~MX"5.5.55.5.55.5555"s], 2),
@@ -271,7 +271,7 @@ defmodule Cosmonauta do
 
   # Two chords and a stop.
   defp ending do
-    play(
+    together(
       lead: line(e5: 0.5, gs5: 0.5, b5: 0.5, d6: 0.5, c6: 1, a5: 3, r: 2),
       chords: seq([note([:e4, :gs4, :d5], 2), note([:e4, :a4, :c5], 4, sustain: 3), rest(2)]),
       bass: seq([note(:e2, 2, dyn(0.8)), note(:a2, 6, dyn(0.9))]),
@@ -280,10 +280,6 @@ defmodule Cosmonauta do
       crash: seq([rest(2), drum(~MX"8......."s)]),
       snare: drum(~MX"7.77.7.7........"s)
     )
-  end
-
-  defp play(voices) do
-    together(for {name, music} <- voices, do: part(name, music))
   end
 
   # Bars of a drum in sixteenths, a character to each: a digit is a stroke of that strength, a dot

@@ -19,6 +19,7 @@ defmodule Mx.Song do
   `use Mx.Song` imports `Mx` and takes the options of `Mx.song/1` but `music:`, which is what the module's `song/0` returns.
   `part/2` written in the module's body declares a part with its options, once, and written in a function it is that part playing some music, with those options.
   A part that is not declared does not compile.
+  `together/1` in a function takes declared parts by name, as `together(kick: steps("x...", 1), bass: note(:g1, 4))`.
   """
 
   alias Mx.{Samples, Synths}
@@ -62,8 +63,8 @@ defmodule Mx.Song do
 
   defmacro __using__(opts) do
     quote do
-      import Mx, except: [part: 2]
-      import Mx.Song, only: [part: 2]
+      import Mx, except: [part: 2, together: 1]
+      import Mx.Song, only: [part: 2, together: 1]
       Module.register_attribute(__MODULE__, :mx_parts, accumulate: true)
       @mx_song unquote(opts)
       @before_compile Mx.Song
@@ -91,6 +92,36 @@ defmodule Mx.Song do
       end
     end
   end
+
+  @doc "Music whose items all start at once, as `Mx.together/1`, where an item given as `{name, music}` is that declared part playing the music."
+  defmacro together(items) do
+    location = [file: String.to_charlist(__CALLER__.file), line: __CALLER__.line]
+
+    quote do
+      Mx.Song.together_parts(__mx_parts__(), unquote(items), unquote(location))
+    end
+  end
+
+  @doc false
+  def together_parts(declared, items, location) when is_list(items) do
+    items
+    |> Enum.map(fn
+      {name, music} when is_atom(name) and not is_number(music) ->
+        if not List.keymember?(declared, name, 0) do
+          message = "part #{name} is not declared; declare it with part :#{name}, synth: ..."
+          # together is often the song's last call, whose frame the stacktrace drops.
+          reraise ArgumentError, [message: message], [{__MODULE__, :together, 1, location}]
+        end
+
+        Mx.part(name, music, declared(declared, name))
+
+      item ->
+        item
+    end)
+    |> Mx.together()
+  end
+
+  def together_parts(_declared, items, _location), do: Mx.together(items)
 
   defmacro __before_compile__(env) do
     parts = env.module |> Module.get_attribute(:mx_parts) |> Enum.reverse()
