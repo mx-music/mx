@@ -160,7 +160,10 @@ defmodule Mx.Instruments.ViolinModel do
     scratch =
       noise(:white)
       |> highpass(hz: 400, q: 0.707)
-      |> gain(db(bowed.scratch_db || 6) * exp(-time() / (bowed.scratch_s || 0.03)) * (1 - legato))
+      |> gain(
+        db(bowed.scratch_db || -8) * (1 - exp(-time() / 0.004)) *
+          exp(-time() / (bowed.scratch_s || 0.03)) * (1 - legato)
+      )
 
     (dc_block(sound + hiss) * rising + scratch) *
       (vel ** 0.6 * db(by_vel.(-25.05, -28.90, -30.45)))
