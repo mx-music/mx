@@ -72,21 +72,15 @@ defmodule Paganini do
 
   # A slur is one stroke whose pitch the fingers change, sliding audibly only on a shift of more
   # than a third.
-  defp bow([first | rest] = slur) do
-    beats = Enum.sum(Enum.map(slur, & &1.beats))
+  defp bow([first | _] = notes) do
+    beats = Enum.sum(Enum.map(notes, & &1.beats))
 
-    {changes, _} =
-      Enum.map_reduce(rest, {first.beats, first.note}, fn note, {beat, previous} ->
-        slide = if abs(pitch(note.note) - pitch(previous)) > 4, do: 0.06, else: 0.01
-        {{beat, note: note.note, note_slide: slide}, {beat + note.beats, note.note}}
-      end)
-
-    note(first.note, beats,
+    slur(seq(notes, &note(&1.note, &1.beats)),
       vel: vel(first),
       sustain: beats - 0.1,
       release: 0.1,
       vibrato: 0,
-      changes: changes
+      slide: fn from, to -> if abs(to - from) > 4, do: 0.06, else: 0.01 end
     )
   end
 

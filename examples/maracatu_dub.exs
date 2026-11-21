@@ -342,12 +342,5 @@ defmodule MaracatuDub do
 
   defp held([{:r, length, _}]), do: rest(length)
 
-  defp held([{first, length, _} | others]) do
-    {changes, total} =
-      Enum.map_reduce(others, length, fn {name, beats, _}, beat ->
-        {{beat, note: pitch(name)}, beat + beats}
-      end)
-
-    note(first, total, changes: changes)
-  end
+  defp held(run), do: slur(seq(run, fn {name, beats, _} -> note(pitch(name), beats) end))
 end

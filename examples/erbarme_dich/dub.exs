@@ -772,12 +772,5 @@ defmodule Dub do
 
   defp held([{:r, length, _}]), do: rest(length)
 
-  defp held([{first, length, _} | others]) do
-    {changes, total} =
-      Enum.map_reduce(others, length, fn {name, beats, _}, beat ->
-        {{beat, note: pitch(name) - 12}, beat + beats}
-      end)
-
-    note(pitch(first) - 12, total, changes: changes)
-  end
+  defp held(run), do: slur(seq(run, fn {name, beats, _} -> note(pitch(name) - 12, beats) end))
 end

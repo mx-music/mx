@@ -603,14 +603,8 @@ defmodule Dubwise do
 
   defp held([{:r, length, _}], _shift), do: rest(length)
 
-  defp held([{first, length, _} | others], shift) do
-    {changes, total} =
-      Enum.map_reduce(others, length, fn {name, beats, _}, beat ->
-        {{beat, note: pitch(name) + shift}, beat + beats}
-      end)
-
-    note(pitch(first) + shift, total, changes: changes)
-  end
+  defp held(run, shift),
+    do: slur(seq(run, fn {name, beats, _} -> note(pitch(name) + shift, beats) end))
 
   # The siren: a swoop up from A4 to A6, then a wail between A6 and E6, and down again.
   defp siren do
