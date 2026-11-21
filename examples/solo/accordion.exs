@@ -8,8 +8,6 @@ defmodule Accordion do
 
   use Mx.Song, tempo: 168
 
-  @steps %{"C" => 0, "D" => 2, "E" => 4, "F" => 5, "G" => 7, "A" => 9, "B" => 11}
-
   part :theme, synth: :accordion
   part :high, synth: :accordion
   part :chords, synth: :accordion, defaults: [amp: 0.6]
@@ -22,37 +20,33 @@ defmodule Accordion do
   defp accordion(:chords), do: part(:chords, chords())
   defp accordion(:ending), do: part(:ending, line(ending(), []))
 
-  # Each token is a note and its length in beats, held `held` of its length, shifted by `octaves`.
-  defp line(tokens, opts) do
-    octaves = Keyword.get(opts, :octaves, 0)
+  # Each word is a note and its length in beats, held `held` of its length, shifted by `octaves`.
+  defp line(pattern, opts) do
     held = Keyword.get(opts, :held, 0.9)
     extra = Keyword.take(opts, [:detune])
 
-    seq(String.split(tokens), fn token ->
-      [name, beats] = String.split(token, ":")
-      {beats, _} = Float.parse(beats)
-
-      note(
-        midi(name) + 12 * octaves,
-        beats,
+    pattern
+    |> steps(1,
+      each: fn _step, beats ->
         [vel: if(beats < 1, do: 0.5, else: 0.6), sustain: beats * held, release: 0.1] ++ extra
-      )
-    end)
+      end
+    )
+    |> transpose(12 * Keyword.get(opts, :octaves, 0))
   end
 
   # Eight bars climbing from the low E to the D above, turning on a chromatic D# and falling home
   # to A.
   defp theme do
-    "E3:1 A3:1 C4:1 B3:2 A3:1 G#3:1 B3:1 E4:1 D4:2 C4:1 B3:1 C4:1 D4:1 E4:1 F4:0.5 E4:0.5 D#4:1 E4:1 B3:1 G#3:1 A3:3"
+    ~MX"e3:1 a3:1 c4:1 b3:2 a3:1 gs3:1 b3:1 e4:1 d4:2 c4:1 b3:1 c4:1 d4:1 e4:1 f4:0.5 e4:0.5 ds4:1 e4:1 b3:1 gs3:1 a3:3"
   end
 
   # The waltz's chords in the right hand: struck on the first beat and short on the second and
   # third, two bars each of A minor and E7, then D minor, A minor, E7 and A minor.
   defp chords do
-    voicings = %{am: ~w(A3 C4 E4), e7: ~w(G#3 D4 E4), dm: ~w(A3 D4 F4)}
+    voicings = %{am: ~w(a3 c4 e4)a, e7: ~w(gs3 d4 e4)a, dm: ~w(a3 d4 f4)a}
 
     seq([:am, :am, :e7, :e7, :dm, :am, :e7, :am], fn name ->
-      chord = Enum.map(voicings[name], &midi/1)
+      chord = Enum.map(voicings[name], &pitch/1)
 
       seq([
         note(chord, 1, vel: 0.6, sustain: 0.9, release: 0.1),
@@ -62,11 +56,5 @@ defmodule Accordion do
     end)
   end
 
-  defp ending, do: "E3:1 A3:1 C4:1 B3:2 A3:1 G#3:1 B3:1 E4:1 A3:6"
-
-  # A note name such as G#3 as its MIDI note.
-  defp midi(name) do
-    [_, letter, sharp, octave] = Regex.run(~r/^([A-G])(#?)(\d)$/, name)
-    12 * (String.to_integer(octave) + 1) + @steps[letter] + if(sharp == "#", do: 1, else: 0)
-  end
+  defp ending, do: ~MX"e3:1 a3:1 c4:1 b3:2 a3:1 gs3:1 b3:1 e4:1 a3:6"
 end

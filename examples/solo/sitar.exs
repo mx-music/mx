@@ -64,17 +64,12 @@ defmodule Sitar do
 
   # A gat part's notes over teentaal's 16 beats, the short ones softer.
   defp gat(time) do
-    notes =
-      for {beat, token, length} <- notes(time) do
-        {beat,
-         note(swara(token), length,
-           vel: if(length < 0.5, do: 0.5, else: 0.65),
-           sustain: length * 0.9,
-           release: 0.25
-         )}
+    steps(cells(time), 1,
+      words: for(name <- ~w(.N D G G' M N P R R' S S'), do: {String.to_atom(name), swara(name)}),
+      each: fn _step, length ->
+        [vel: if(length < 0.5, do: 0.5, else: 0.65), sustain: length * 0.9, release: 0.25]
       end
-
-    at(notes, 16)
+    )
   end
 
   # The alap's unmetered lines: each token is a note and its length in beats, ~ glides into it
@@ -98,114 +93,19 @@ defmodule Sitar do
     Float.round(sa() + octave + cents(steps[name]), 2)
   end
 
-  # The notes of a gat part as {beat, token, length}, a held cell lengthening the note before it.
-  defp notes(part) do
-    part
-    |> cells()
-    |> Enum.with_index()
-    |> Enum.flat_map(fn {cell, beat} ->
-      tokens = String.split(cell)
-
-      Enum.with_index(tokens, fn token, index ->
-        {beat + index / length(tokens), token, 1 / length(tokens)}
-      end)
-    end)
-    |> Enum.reduce([], fn
-      {_, "-", length}, [{beat, token, held} | rest] -> [{beat, token, held + length} | rest]
-      note, notes -> [note | notes]
-    end)
-    |> Enum.reverse()
-  end
-
   defp sa, do: 49
 
-  # The gat, one cell to each beat: a cell of several notes divides its beat evenly, and - holds
+  # The gat, a word to each beat: the words in brackets divide their beat evenly, and - holds
   # the note before.
-  defp cells(0) do
-    [
-      "G",
-      "R",
-      "G",
-      "M",
-      "P",
-      "-",
-      "M G",
-      "R S",
-      ".N",
-      "R",
-      "G",
-      "-",
-      "M D",
-      "N S'",
-      "N D",
-      "P"
-    ]
-  end
+  defp cells(0), do: ~MX"G R G M P - [M G] [R S] .N R G - [M D] [N S'] [N D] P"
 
-  defp cells(1) do
-    [
-      "P",
-      "M G",
-      "M",
-      "D",
-      "N",
-      "S'",
-      "-",
-      "S'",
-      "N R'",
-      "G'",
-      "R'",
-      "S'",
-      "N D",
-      "P",
-      "M G",
-      "R S"
-    ]
-  end
+  defp cells(1), do: ~MX"P [M G] M D N S' - S' [N R'] G' R' S' [N D] P [M G] [R S]"
 
-  defp cells(2) do
-    [
-      "N R G M",
-      "D N S' N",
-      "D P M G",
-      "R S .N R",
-      "G M P M",
-      "G R S .N",
-      "R G M D",
-      "N S' N D",
-      "P M G R",
-      "S .N R G",
-      "M G R S",
-      "-",
-      ".N R G R",
-      "S",
-      "P M",
-      "G R"
-    ]
-  end
+  defp cells(2),
+    do:
+      ~MX"[N R G M] [D N S' N] [D P M G] [R S .N R] [G M P M] [G R S .N] [R G M D] [N S' N D] [P M G R] [S .N R G] [M G R S] - [.N R G R] S [P M] [G R]"
 
-  defp cells(3) do
-    [
-      "G",
-      "R",
-      "G",
-      "M",
-      "P",
-      "-",
-      "M G",
-      "R S",
-      ".N",
-      "R",
-      "G",
-      "-",
-      "M D",
-      "N S'",
-      "N D",
-      "P"
-    ]
-  end
+  defp cells(3), do: ~MX"G R G M P - [M G] [R S] .N R G - [M D] [N S'] [N D] P"
 
-  defp cells(4) do
-    ["G", "R", "G", "M", "P", "-", "M G", "R S", ".N", "R", "G", "R", "S", "-", "-", "-"]
-  end
+  defp cells(4), do: ~MX"G R G M P - [M G] [R S] .N R G R S - - -"
 end
