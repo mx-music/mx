@@ -82,8 +82,8 @@ defmodule RumbaYMontuno do
 
   @pulse 0.25
 
-  @clave "8..8...8..8.8..."
-  @sticks "7.57.5.75.7.57.5"
+  @clave ~MX"8..8...8..8.8..."s
+  @sticks ~MX"7.57.5.75.7.57.5"s
 
   # The quinto's eight cycles, o its open tone and s its slap.
   @quinto [
@@ -129,24 +129,24 @@ defmodule RumbaYMontuno do
       ),
       break(),
       together(
-        congas: rows(conga_open: "8...............", tumba_open: "8..............."),
-        bongos: rows(bongo_low: "8..............."),
-        bells: rows(bell_open: "8...............", vibraslap: "7..............."),
+        congas: rows(conga_open: [~MX"8..............."s], tumba_open: [~MX"8..............."s]),
+        bongos: rows(bongo_low: [~MX"8..............."s]),
+        bells: rows(bell_open: [~MX"8..............."s], vibraslap: [~MX"7..............."s]),
         xylophone: together([note([:c5, :e5, :g5, :c6], 4), rest(8)])
       )
     ])
   end
 
-  defp claves(times), do: rows([clave: @clave], times)
-  defp sticks(times), do: rows([stick: @sticks], times)
+  defp claves(times), do: rows([clave: [@clave]], times)
+  defp sticks(times), do: rows([stick: [@sticks]], times)
 
   # The guaguancó's melody on the cajón: the bass, and two tones that answer it.
   defp cajon(times) do
     rows(
       [
-        cajon_bass: "......8.......5.",
-        cajon_tone: "...........78...",
-        cajon_slap: "..3.....3......."
+        cajon_bass: [~MX"......8.......5."s],
+        cajon_tone: [~MX"...........78..."s],
+        cajon_slap: [~MX"..3.....3......."s]
       ],
       times
     )
@@ -156,18 +156,18 @@ defmodule RumbaYMontuno do
   defp guaguanco(times) do
     rows(
       [
-        tumba_open: "......8.......5.",
-        tumba_mute: "3..3......3.....",
-        conga_open: "...........78...",
-        conga_mute: "2.2.2...2.....2.",
-        conga_slap: "....4..........."
+        tumba_open: [~MX"......8.......5."s],
+        tumba_mute: [~MX"3..3......3....."s],
+        conga_open: [~MX"...........78..."s],
+        conga_mute: [~MX"2.2.2...2.....2."s],
+        conga_slap: [~MX"....4..........."s]
       ],
       times
     )
   end
 
   defp cabasa(times) do
-    rows([cabasa_hit: "6...6...6...6...", cabasa_rub: "..4...4...4...4."], times)
+    rows([cabasa_hit: [~MX"6...6...6...6..."s], cabasa_rub: [~MX"..4...4...4...4."s]], times)
   end
 
   defp quinto do
@@ -181,10 +181,10 @@ defmodule RumbaYMontuno do
   defp break do
     together(
       claves: claves(1),
-      sticks: rows(stick: @clave),
-      congas: rows(conga_slap: @clave, tumba_open: @clave),
-      quinto: rows(quinto_slap: @clave),
-      bells: rows(vibraslap: "..............7.")
+      sticks: rows(stick: [@clave]),
+      congas: rows(conga_slap: [@clave], tumba_open: [@clave]),
+      quinto: rows(quinto_slap: [@clave]),
+      bells: rows(vibraslap: [~MX"..............7."s])
     )
   end
 
@@ -193,10 +193,10 @@ defmodule RumbaYMontuno do
   defp tumbao(times) do
     rows(
       [
-        conga_mute: "33.333..33.333..",
-        conga_slap: "..6.......6.....",
-        conga_open: "......77........",
-        tumba_open: "..............77"
+        conga_mute: [~MX"33.333..33.333.."s],
+        conga_slap: [~MX"..6.......6....."s],
+        conga_open: [~MX"......77........"s],
+        tumba_open: [~MX"..............77"s]
       ],
       times
     )
@@ -207,20 +207,20 @@ defmodule RumbaYMontuno do
   defp martillo(times) do
     rows(
       [
-        bongo_high: "8.5.7...8.5.7...",
-        bongo_mute: ".4.4.4.4.4.4.4.4",
-        bongo_low: "......7.......7."
+        bongo_high: [~MX"8.5.7...8.5.7..."s],
+        bongo_mute: [~MX".4.4.4.4.4.4.4.4"s],
+        bongo_low: [~MX"......7.......7."s]
       ],
       times
     )
   end
 
   defp bell(times) do
-    rows([bell_open: "8...8...8...8...", bell_closed: "..55..55..5...55"], times)
+    rows([bell_open: [~MX"8...8...8...8..."s], bell_closed: [~MX"..55..55..5...55"s]], times)
   end
 
   defp guiro(times) do
-    rows([guiro_long: "7...7...7...7...", guiro_short: "..55..55..55..55"], times)
+    rows([guiro_long: [~MX"7...7...7...7..."s], guiro_short: [~MX"..55..55..55..55"s]], times)
   end
 
   # The figure a piano would play: each chord's notes, the next chord's coming a pulse early.
@@ -246,7 +246,7 @@ defmodule RumbaYMontuno do
   end
 
   defp agogo(times) do
-    rows([agogo_high: "7.7...7.7.....7.", agogo_low: "...7.7.....7.7.."], times)
+    rows([agogo_high: [~MX"7.7...7.7.....7."s], agogo_low: [~MX"...7.7.....7.7.."s]], times)
   end
 
   defp tune(times) do
@@ -289,18 +289,9 @@ defmodule RumbaYMontuno do
     together(rows, fn {sound, patterns} ->
       {file, gain} = @sounds[sound]
 
-      cycles =
-        for pattern <- List.wrap(patterns) do
-          hits =
-            for {cell, index} <- Enum.with_index(String.graphemes(pattern)), cell != "." do
-              amp = gain * String.to_integer(cell) / 9
-              {index * @pulse, sample(file, 0, amp: amp)}
-            end
-
-          at(hits, 4)
-        end
-
-      repeat(seq(cycles), times)
+      strengths = for digit <- 1..9, do: {:"#{digit}", [amp: gain * digit / 9]}
+      cycles = seq(patterns, &steps(&1, @pulse, sample: file, strokes: strengths))
+      repeat(cycles, times)
     end)
   end
 
