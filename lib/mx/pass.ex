@@ -388,7 +388,7 @@ defmodule Mx.Pass do
   defp check_control(opts, option?, fixed?, owner, subject) do
     for {option, value} <- opts do
       cond do
-        option in @envelope or fixed?.(option) ->
+        (option in @envelope and not match?({:effect, _}, subject)) or fixed?.(option) ->
           raise ArgumentError, "#{option} cannot change once a sound plays"
 
         not option?.(option) ->

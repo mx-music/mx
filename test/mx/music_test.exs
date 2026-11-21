@@ -584,6 +584,17 @@ defmodule Mx.MusicTest do
     end
 
     @tag :tmp_dir
+    test "a change to an effect's decay loads, though a note's decay cannot change", ctx do
+      path =
+        write(
+          ctx,
+          "song(music: together([part(:x, note(:c4, 2), synth: :saw, fx: [echo: []]), seq([rest(1), change({:x, :echo}, decay: 8)])]))"
+        )
+
+      assert {:ok, _song} = Song.load(path)
+    end
+
+    @tag :tmp_dir
     test "a change to an effect with a value it cannot take is refused", ctx do
       path =
         write(
