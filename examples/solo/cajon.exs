@@ -59,10 +59,9 @@ defmodule Cajon do
     twice.(@festejo) ++ twice.(@rumba) ++ @bulerias ++ @rock ++ @ending
   end
 
-  # A pass of cajon, each stroke on the nearest thousandth of a beat.
+  # A pass of cajon.
   defp cajon({beats, pattern}) do
-    pattern
-    |> steps(beats / length(pattern),
+    steps(pattern, beats / length(pattern),
       strokes: [
         B: [slap: 0, vel: 0.8],
         X: [slap: 0, vel: 0.95],
@@ -71,6 +70,5 @@ defmodule Cajon do
         g: [slap: 1, vel: 0.35]
       ]
     )
-    |> swing(&Float.round(&1 / 1, 3))
   end
 end

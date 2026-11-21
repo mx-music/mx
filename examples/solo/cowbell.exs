@@ -74,10 +74,10 @@ defmodule Cowbell do
     ]
   end
 
-  # A pass of one bell, as 8 beats, each stroke on the nearest thousandth of a beat.
+  # A pass of one bell, as 8 beats.
   defp bell(pattern) do
-    pattern
-    |> steps(8 / length(pattern), strokes: [O: [vel: 1], o: [vel: 0.8], c: [vel: 0.6, muted: 1]])
-    |> swing(&Float.round(&1 / 1, 3))
+    steps(pattern, 8 / length(pattern),
+      strokes: [O: [vel: 1], o: [vel: 0.8], c: [vel: 0.6, muted: 1]]
+    )
   end
 end
