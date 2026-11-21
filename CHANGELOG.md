@@ -4,6 +4,7 @@
 
 ### 1. Enhancements
 
+  * [examples] Add `examples/effects`, a short song for each effect that plays one phrase dry, then through the effect as it comes, then with one option moved at a time, and `order.exs`, which plays two effects in both orders
   * [synths] Add `deep_bass`, a darker bass played with the fingers, from mxs 0.1.2, with its solo `examples/solo/deep_bass.exs`
   * [synths] Add alpha versions of `electric_piano` and `electric_guitar`, from mxs 0.1.2, with their solos; both will be refitted
   * [mix mx.measure] Measure in native code, with the same figures in a tenth of the processor time or less, and strokes in a twentieth of the memory; `mix mx.fit` and `mix mx.hum` measure the same way

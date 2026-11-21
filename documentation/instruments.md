@@ -457,22 +457,23 @@ bitcrusher, bpf, chorus, compressor, distortion, echo, flanger, hpf, level, lpf,
 Every effect takes `amp`, `mix` from 0 for dry to 1 for wet, and `pre_amp`, the level going in.
 `phase`, `decay` and `max_phase` are in beats, so a tremolo with `phase: 1` pulses once a beat at any tempo.
 `wave` is the shape of a sweep: 0 saw, 1 pulse, 2 triangle, 3 sine and 4 cubic; `invert_wave: 1` turns it upside down, and `phase_offset` is where in the cycle it starts, from 0 to 1.
-- `bitcrusher` takes `sample_rate`, the rate in Hz it holds samples at, `bits`, how many it rounds each to, and `cutoff`, a MIDI note number for a low-pass after it, off at 0.
-- `bpf` takes `centre`, the MIDI note number of the band it keeps, and `res`, from 0 to 1, the higher the narrower.
-- `chorus` takes `phase`, how long the delay takes to sweep back and forth, `decay`, how long the delayed sound feeds back, and `max_phase`, the longest `phase` it can change to.
-- `compressor` takes `threshold`, the level above which it lowers the sound, `slope_above` and `slope_below`, how much the level changes above and below it, and `clamp_time` and `relax_time`, how many seconds it takes to lower and to let go.
-- `distortion` takes `distort`, from 0 to 1.
-- `echo` takes `phase`, the time between echoes, `decay`, how long they take to die away, and `max_phase`, the longest `phase` it can change to.
-- `flanger` takes `phase`, `wave`, `invert_wave` and `phase_offset` for its sweep, `stereo_invert_wave: 1` to sweep the left channel the other way, `delay` and `depth`, in milliseconds, the delay it sweeps up from and how far, `max_delay`, the longest delay in milliseconds, `feedback` from 0 to 1 and `decay` for how strongly and how long the delayed sound feeds back, and `invert_flange: 1` to subtract the delayed sound instead.
-- `hpf` and `lpf` take `cutoff`, a MIDI note number.
-- `pan` takes `pan`, from -1 for left to 1 for right.
-- `ping_pong` echoes between left and right: `phase` is the time between echoes, `feedback` how much of each echo the next keeps, `max_phase` the longest `phase` it can change to, and `pan_start` the side of the first echo, from -1 for left to 1 for right.
-- `pitch_shift` takes `pitch`, how many semitones the sound is shifted by, from -24 to 24, and delays the sound by up to 40 ms.
-- `reverb` takes `room` and `damp`, from 0 to 1.
-- `rlpf` takes `cutoff`, a MIDI note number, and `res`, from 0 to 1, how much it rings at its cutoff.
-- `slicer` turns the sound on and off: `phase` is the length of a cycle, `pulse_width` the part of it that is on, `amp_min` and `amp_max` the levels off and on, `phase_offset` where in the cycle it starts, from 0 to 1, and `smooth` how many seconds each change takes.
-- `tremolo` takes `phase`, `wave`, `invert_wave` and `phase_offset` for its sweep, and `depth`, from 0 to 1, how far it turns the sound down.
-- `wobble` sweeps a resonant filter between `cutoff_min` and `cutoff_max`, MIDI note numbers, once a `phase`, with `res`, `wave`, `invert_wave`, `phase_offset`, `pulse_width` for wave 1, and `filter`, 0 for low-pass and 1 for high-pass.
+- `bitcrusher` takes `sample_rate`, the rate in Hz it holds samples at, `bits`, how many it rounds each to, and `cutoff`, a MIDI note number for a low-pass after it, off at 0. Its song is `examples/effects/bitcrusher.exs`.
+- `bpf` takes `centre`, the MIDI note number of the band it keeps, and `res`, from 0 to 1, the higher the narrower. Its song is `examples/effects/bpf.exs`.
+- `chorus` takes `phase`, how long the delay takes to sweep back and forth, `decay`, how long the delayed sound feeds back, and `max_phase`, the longest `phase` it can change to. Its song is `examples/effects/chorus.exs`.
+- `compressor` takes `threshold`, the level above which it lowers the sound, `slope_above` and `slope_below`, how much the level changes above and below it, and `clamp_time` and `relax_time`, how many seconds it takes to lower and to let go. Its song is `examples/effects/compressor.exs`.
+- `distortion` takes `distort`, from 0 to 1. Its song is `examples/effects/distortion.exs`.
+- `echo` takes `phase`, the time between echoes, `decay`, how long they take to die away, and `max_phase`, the longest `phase` it can change to. Its song is `examples/effects/echo.exs`.
+- `flanger` takes `phase`, `wave`, `invert_wave` and `phase_offset` for its sweep, `stereo_invert_wave: 1` to sweep the left channel the other way, `delay` and `depth`, in milliseconds, the delay it sweeps up from and how far, `max_delay`, the longest delay in milliseconds, `feedback` from 0 to 1 and `decay` for how strongly and how long the delayed sound feeds back, and `invert_flange: 1` to subtract the delayed sound instead. Its song is `examples/effects/flanger.exs`.
+- `hpf` and `lpf` take `cutoff`, a MIDI note number. Their songs are `examples/effects/hpf.exs` and `examples/effects/lpf.exs`.
+- `level` takes only what every effect takes, and sets a part's level with `amp`. Its song is `examples/effects/level.exs`.
+- `pan` takes `pan`, from -1 for left to 1 for right. Its song is `examples/effects/pan.exs`.
+- `ping_pong` echoes between left and right: `phase` is the time between echoes, `feedback` how much of each echo the next keeps, `max_phase` the longest `phase` it can change to, and `pan_start` the side of the first echo, from -1 for left to 1 for right. Its song is `examples/effects/ping_pong.exs`.
+- `pitch_shift` takes `pitch`, how many semitones the sound is shifted by, from -24 to 24, and delays the sound by up to 40 ms. Its song is `examples/effects/pitch_shift.exs`.
+- `reverb` takes `room` and `damp`, from 0 to 1. Its song is `examples/effects/reverb.exs`.
+- `rlpf` takes `cutoff`, a MIDI note number, and `res`, from 0 to 1, how much it rings at its cutoff. Its song is `examples/effects/rlpf.exs`.
+- `slicer` turns the sound on and off: `phase` is the length of a cycle, `pulse_width` the part of it that is on, `amp_min` and `amp_max` the levels off and on, `phase_offset` where in the cycle it starts, from 0 to 1, and `smooth` how many seconds each change takes. Its song is `examples/effects/slicer.exs`.
+- `tremolo` takes `phase`, `wave`, `invert_wave` and `phase_offset` for its sweep, and `depth`, from 0 to 1, how far it turns the sound down. Its song is `examples/effects/tremolo.exs`.
+- `wobble` sweeps a resonant filter between `cutoff_min` and `cutoff_max`, MIDI note numbers, once a `phase`, with `res`, `wave`, `invert_wave`, `phase_offset`, `pulse_width` for wave 1, and `filter`, 0 for low-pass and 1 for high-pass. Its song is `examples/effects/wobble.exs`.
 - Every option that takes a number along a range, rather than a choice or a longest value, has a `_slide` partner; `max_phase`, `max_delay`, `phase_offset`, `smooth`, `wave`, `invert_wave`, `stereo_invert_wave`, `invert_flange`, `filter` and `pan_start` do not.
 
 ## Measuring an instrument

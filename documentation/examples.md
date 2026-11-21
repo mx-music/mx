@@ -150,3 +150,10 @@ Its files are fetched as the song loads.
 Its strokes move a little off the beat and in strength from bar to bar, as much as that recording's do.
 
 `examples/solo/tabla.exs` is the tabla on its own in teentaal: its theka, with the khali, beats 9 to 12, played without the bayan, a faster variation splitting each beat in two, and the theka with the bayan bent upwards while it rings.
+
+## Effects
+
+`examples/effects` holds one short song for each of mx's effects, named after it, such as `examples/effects/flanger.exs`.
+Each plays one phrase dry, then through the effect as it comes, then with one option moved at a time, on an instrument the effect is known on.
+Each song's description says what to listen for, section by section.
+`examples/effects/order.exs` plays one guitar through a distortion and a reverb in one order and then the other, to show that the order of `fx:` matters.
