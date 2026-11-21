@@ -216,6 +216,8 @@ defmodule Mx do
 
       steps(~MX"f >f f f", 0.25, strokes: [f: [vel: 0.5]], accent: 0.3)
 
+  `words:` gives words their pitches, as `words: [S: :d4, R: :e4]`; such a word is a note, looked up after `strokes:` and before a note's name.
+
   A word after `^` is a grace note, which takes no step and starts `grace:` beats before the word after it, 0.06 unless given; a pattern with one is the words together with its grace notes.
 
       steps(~MX"b5 ^d6 c6 b5", 0.5, grace: 0.08)
@@ -360,7 +362,11 @@ defmodule Mx do
       ~MX"9... 9..5 | x.x. x..."s
 
       iex> ~MX"9. x"s
-      [%{tokens: ["9"], steps: 1}, %{tokens: [], steps: 1}, %{tokens: ["x"], steps: 1}]
+      [
+        %{tokens: ["9"], steps: 1, char: true},
+        %{tokens: [], steps: 1, char: true},
+        %{tokens: ["x"], steps: 1, char: true}
+      ]
 
       iex> ~MX"g4:2 _ [f f]"
       [
@@ -398,10 +404,12 @@ defmodule Mx do
   defdelegate beats(music), to: Mx.Music
 
   @doc """
-  The number of a note name, or the number itself.
+  The number of a note name, given as an atom or as text, or the number itself.
 
       iex> pitch(:e5)
       76
+      iex> pitch("c4")
+      60
       iex> pitch(:fs3)
       54
       iex> pitch(60)

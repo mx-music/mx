@@ -25,7 +25,7 @@ defmodule Cosmonauta do
   file = fn collection, path -> {collection, path} end
 
   # The organ names its notes as mx does; the bass names them an octave above.
-  key = fn name, octaves -> Mx.Notes.parse(name) + 12 * octaves end
+  key = fn name, octaves -> pitch(name) + 12 * octaves end
 
   @organ_notes ~w(a3 bb3 b3 c4 db4 d4 eb4 e4 f4 gb4 g4 ab4 a4 bb4 b4 c5 db5 d5 eb5 e5 f5 gb5 g5 ab5 a5 bb5 b5 c6 db6 d6 eb6 e6 f6 gb6 g6 ab6 a6)
 

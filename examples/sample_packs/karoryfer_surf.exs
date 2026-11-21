@@ -25,7 +25,7 @@ defmodule RustWave do
 
   # Karoryfer names each note an octave above the pitch mx names it by: its e3 is the guitar's low
   # E.
-  key = fn name -> Mx.Notes.parse(name) - 12 end
+  key = fn name -> pitch(name) - 12 end
 
   @frets ~w(e3 f3 gb3 g3 ab3 a3 bb3 b3 c4 db4 d4 eb4 e4 f4 gb4 g4 ab4 a4 bb4 b4 c5 db5 d5 eb5 e5 f5 gb5 g5 ab5 a5 bb5 b5 c6 db6 d6 eb6 e6)
 

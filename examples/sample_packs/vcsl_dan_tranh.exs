@@ -23,7 +23,7 @@ defmodule DanTranh do
   # Every string recorded one way, an octave above its name.
   strings = fn way, suffix ->
     for name <- ~w(B1 C#2 D#2 F#2 G#2 B2 C#3 D#3 F#3 G#3 B3 C#4 D#4 F#4 G#4 B4) do
-      note = name |> String.downcase() |> String.replace("#", "s") |> Mx.Notes.parse()
+      note = name |> String.downcase() |> String.replace("#", "s") |> pitch()
       {vcsl.("#{way}/#{name}#{suffix}.wav"), note: pitch(note) + 12}
     end
   end

@@ -357,7 +357,7 @@ defmodule Vassourinhas do
         if name == "r" do
           {[], beat + held}
         else
-          {[{beat, Mx.Notes.parse(name), held}], beat + held}
+          {[{beat, pitch(name), held}], beat + held}
         end
       end)
 

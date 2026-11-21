@@ -1180,6 +1180,9 @@ defmodule Mx.MusicTest do
 
   test "pitch is a note's number, and note always makes a note" do
     assert Mx.pitch(:e5) == 76
+    assert Mx.pitch("c4") == 60
+    assert Mx.pitch("fs3") == 54
+    assert_raise ArgumentError, "unknown note h9", fn -> Mx.pitch("h9") end
     assert %Mx.Music.Note{pitch: 76, beats: 1} = Mx.note(:e5, 1)
   end
 

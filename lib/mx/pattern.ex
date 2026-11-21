@@ -13,13 +13,13 @@ defmodule Mx.Pattern do
   With the modifier `s`, as in `~MX"9..5 x..."s`, each character lasts one step instead: a dot is silence, and spaces and bar lines are left out.
 
   A pattern is a list of cells in order, each a map of its `tokens`, none for silence, and its length in `steps`, so two patterns join with `++`.
-  A cell that glides has `glide: true` as well, an accented one `accent: true`, and a grace note `grace: true` and no steps.
+  A cell that glides has `glide: true` as well, an accented one `accent: true`, a grace note `grace: true` and no steps, and a cell read a character to a step `char: true`.
   """
 
   @doc "The cells of a pattern's text, read a character to a step."
   def parse_steps(text) when is_binary(text) do
     for char <- String.graphemes(String.replace(text, ~r/[\s|]/, "")) do
-      %{tokens: if(char == ".", do: [], else: [char]), steps: 1}
+      %{tokens: if(char == ".", do: [], else: [char]), steps: 1, char: true}
     end
   end
 

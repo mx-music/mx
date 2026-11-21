@@ -54,7 +54,7 @@ defmodule RumbaYMontuno do
 
   xylophone = fn mallets, prefix ->
     for name <- ~w(G3 C4 G4 C5 G5 C6 G6 C7) do
-      note = name |> String.downcase() |> Mx.Notes.parse()
+      note = name |> String.downcase() |> pitch()
       path = "Xylophone/#{mallets} Mallets/Xylo_#{prefix}_#{name}_ff_01_far.wav"
       {struck.(path), note: pitch(note) + 12}
     end

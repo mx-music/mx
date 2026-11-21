@@ -23,7 +23,7 @@ defmodule Sombras do
   @keys ~w(G1:-2:14 G#1:-3:3 A1:-6:3 A#1:-3:1 B1:-2:5 C2:0:3 C#2:-1:-5 D2:0:0 D#2:-2:7 E2:-2:2 F2:0:8 G2:0:9 A2:0:5 B2:1:5 C3:0:5 D3:0:9 E3:0:7 F3:-1:4 F#3:-4:7 G3:1:4 G#3:-3:8 A3:-1:6 A#3:-2:8 B3:-2:14 C4:2:8 C#4:0:18 D4:0:8 D#4:-2:7 E4:1:-1 F4:1:3 F#4:-1:3 G4:0:4 A4:-4:6 A#4:5:1 B4:0:14 C5:5:10 C#5:-1:9 D5:0:12 D#5:5:6 E5:5:5 F5:2:-1 F#5:2:1 G5:-1:-2 G#5:0:-3 A5:0:11 A#5:2:3 B5:5:5 C6:7:8)
         |> Enum.map(fn word ->
           [name, db, cents] = String.split(word, ":")
-          key = name |> String.downcase() |> String.replace("#", "s") |> Mx.Notes.parse()
+          key = name |> String.downcase() |> String.replace("#", "s") |> pitch()
           {name, pitch(key), String.to_integer(db), String.to_integer(cents)}
         end)
 
@@ -242,7 +242,7 @@ defmodule Sombras do
         if names == "r" do
           {[], beat + held}
         else
-          pitches = for name <- String.split(names, "/"), do: Mx.Notes.parse(name)
+          pitches = for name <- String.split(names, "/"), do: pitch(name)
           {[{beat, pitches, held}], beat + held}
         end
       end)

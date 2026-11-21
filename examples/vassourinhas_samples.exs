@@ -31,7 +31,7 @@ defmodule VassourinhasSamples do
 
   # Every library names its keys an octave below the pitch mx names them by.
   key = fn name ->
-    note = name |> String.downcase() |> String.replace("#", "s") |> Mx.Notes.parse()
+    note = name |> String.downcase() |> String.replace("#", "s") |> pitch()
     note + 12
   end
 
@@ -79,7 +79,7 @@ defmodule VassourinhasSamples do
             take <- 1..2,
             do:
               {file.(@weresax, "Samples/alto/#{name}_f_rr#{take}_cnd.wav"),
-               note: Mx.Notes.parse(name) + 12, take: take}
+               note: pitch(name) + 12, take: take}
 
   @tenor for octave <- 2..4,
              name <- ~w(C D E F# G# A#),
@@ -95,7 +95,7 @@ defmodule VassourinhasSamples do
             take <- 1..3,
             do:
               {file.(@war_tuba, "Samples/#{name}_s_vl4_rr#{take}_cnd.wav"),
-               note: Mx.Notes.parse(name) + 12, take: take}
+               note: pitch(name) + 12, take: take}
 
   @drums :virtuosity_drums
 
@@ -452,7 +452,7 @@ defmodule VassourinhasSamples do
         if name == "r" do
           {[], beat + held}
         else
-          {[{beat, Mx.Notes.parse(name), held}], beat + held}
+          {[{beat, pitch(name), held}], beat + held}
         end
       end)
 

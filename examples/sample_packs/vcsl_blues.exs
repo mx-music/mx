@@ -26,7 +26,7 @@ defmodule TwelveBars do
   keys = fn folder, prefix, suffix, names ->
     for name <- names do
       key = name |> String.split("_") |> hd()
-      note = key |> String.downcase() |> String.replace("#", "s") |> Mx.Notes.parse()
+      note = key |> String.downcase() |> String.replace("#", "s") |> pitch()
       {vcsl.("#{folder}/#{prefix}#{name}#{suffix}.wav"), note: pitch(note) + 12}
     end
   end

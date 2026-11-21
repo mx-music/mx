@@ -25,7 +25,7 @@ defmodule PlanxtyIrwin do
   keys = fn folder, prefix, octave, names ->
     for name <- names do
       key = name |> String.split("_") |> hd()
-      note = key |> String.downcase() |> String.replace("#", "s") |> Mx.Notes.parse()
+      note = key |> String.downcase() |> String.replace("#", "s") |> pitch()
       {vcsl.("#{folder}/#{prefix}#{name}.wav"), note: pitch(note) + octave}
     end
   end
@@ -53,7 +53,7 @@ defmodule PlanxtyIrwin do
                      {3, ~w(E3 F#3 G3 A3 B3 C#4 D4 E4 F#4)}
                    ],
                    name <- names do
-                 note = name |> String.downcase() |> String.replace("#", "s") |> Mx.Notes.parse()
+                 note = name |> String.downcase() |> String.replace("#", "s") |> pitch()
 
                  path =
                    "Composite Chordophones/Strumstick/Finger/Strumstick_Finger_Str#{string}_Main_#{name}_vl2_rr1.wav"
@@ -64,7 +64,7 @@ defmodule PlanxtyIrwin do
   psaltery = fn way, names ->
     for name <- names do
       key = name |> String.split("_") |> hd()
-      note = key |> String.downcase() |> String.replace("#", "s") |> Mx.Notes.parse()
+      note = key |> String.downcase() |> String.replace("#", "s") |> pitch()
       path = "Zithers/Psaltery, Bowed and Plucked/#{way}/BowedPsaltery_#{name}.wav"
       {vcsl.(path), note: pitch(note) + 12}
     end

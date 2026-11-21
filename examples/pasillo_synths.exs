@@ -247,7 +247,7 @@ defmodule PasilloSynths do
         if names == "r" do
           {[], beat + held}
         else
-          pitches = for name <- String.split(names, "/"), do: Mx.Notes.parse(name)
+          pitches = for name <- String.split(names, "/"), do: pitch(name)
           {[{beat, pitches, held}], beat + held}
         end
       end)

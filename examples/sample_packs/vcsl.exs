@@ -28,7 +28,7 @@ defmodule LowB do
 
   # VCSL names each key an octave below the pitch mx names it by.
   key = fn name ->
-    name = name |> String.downcase() |> String.replace("#", "s") |> Mx.Notes.parse()
+    name = name |> String.downcase() |> String.replace("#", "s") |> pitch()
     pitch(name) + 12
   end
 

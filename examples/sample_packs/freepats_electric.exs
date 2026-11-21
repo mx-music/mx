@@ -28,7 +28,7 @@ defmodule NightService do
 
   file = fn name, path -> {@collections[name], path} end
 
-  key = fn name -> name |> String.downcase() |> String.replace("#", "s") |> Mx.Notes.parse() end
+  key = fn name -> name |> String.downcase() |> String.replace("#", "s") |> pitch() end
 
   drum = fn names ->
     for {name, take} <- Enum.with_index(names, 1),

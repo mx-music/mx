@@ -58,9 +58,9 @@ defmodule Mx.PatternTest do
              ]
 
       assert ~MX">x."s == [
-               %{tokens: [">"], steps: 1},
-               %{tokens: ["x"], steps: 1},
-               %{tokens: [], steps: 1}
+               %{tokens: [">"], steps: 1, char: true},
+               %{tokens: ["x"], steps: 1, char: true},
+               %{tokens: [], steps: 1, char: true}
              ]
     end
 
@@ -108,10 +108,10 @@ defmodule Mx.PatternTest do
 
     test "~MX with s reads a character to a step, and refuses another modifier" do
       assert ~MX"9. x|c"s == [
-               %{tokens: ["9"], steps: 1},
-               %{tokens: [], steps: 1},
-               %{tokens: ["x"], steps: 1},
-               %{tokens: ["c"], steps: 1}
+               %{tokens: ["9"], steps: 1, char: true},
+               %{tokens: [], steps: 1, char: true},
+               %{tokens: ["x"], steps: 1, char: true},
+               %{tokens: ["c"], steps: 1, char: true}
              ]
 
       assert steps(~MX"9.x"s, 0.25) == steps("9.x", 0.25)
@@ -261,6 +261,42 @@ defmodule Mx.PatternTest do
       assert_raise ArgumentError,
                    "steps plays the grace note ^d6 before the pattern starts; start the pattern with a silence",
                    fn -> steps(~MX"^d6 c6", 0.5) end
+    end
+
+    test "plays a word of words: as a note of its pitch, which glides, chords and takes marks" do
+      assert %Seq{
+               items: [%Note{pitch: 62, beats: 1}, %Note{pitch: 64}, %Note{pitch: 65}, %Rest{}]
+             } =
+               music = steps(~MX"S R g _", 1, words: [S: :d4, R: :e4, g: :f4])
+
+      assert beats(music) == 4
+
+      assert %Seq{
+               items: [
+                 %Note{
+                   pitch: 62,
+                   beats: 1.0,
+                   opts: [changes: [{0.5, [note: 64, note_slide: 0.05]}]]
+                 }
+               ]
+             } =
+               steps(~MX"S:2 ~R:2", 0.25, words: [S: :d4, R: :e4], slide: 0.05)
+
+      assert %Seq{items: [%Note{pitch: [62, 65]}]} = steps(~MX"S/g", 1, words: [S: :d4, g: :f4])
+
+      assert %Seq{items: [%Note{pitch: 74}, %Note{pitch: 61}]} =
+               steps(~MX"S' .n", 1, words: ["S'": :d5, ".n": :cs4])
+
+      assert %Seq{items: [%Note{pitch: 69}]} = steps(~MX"f", 1, words: [f: :a4])
+      assert %Seq{items: [%Note{pitch: [62, 66]}]} = steps(~MX"D", 1, words: [D: [:d4, 66]])
+    end
+
+    test "refuses a word that is in no list and no note, and words: with a pattern read a character to a step" do
+      assert_raise ArgumentError, ~r/ q$/, fn -> steps(~MX"S q", 1, words: [S: :d4]) end
+
+      assert_raise ArgumentError, ~r/words: goes with a pattern read a word to a step/, fn ->
+        steps(~MX"S.S."s, 0.25, words: [S: :d4])
+      end
     end
 
     test "plays the words of a pattern as notes of their length, strokes and silence" do

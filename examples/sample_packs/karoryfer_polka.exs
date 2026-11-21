@@ -27,7 +27,7 @@ defmodule SquidPolka do
 
   # The libraries name their notes in different octaves: the pipes and the tagelharpa an octave
   # above the pitch mx names, the tuba an octave below.
-  key = fn name, octaves -> Mx.Notes.parse(name) + 12 * octaves end
+  key = fn name, octaves -> pitch(name) + 12 * octaves end
 
   @pipe_notes ~w(g4 ab4 a4 bb4 b4 c5 db5 d5 eb5 e5 f5 gb5 g5 ab5 a5 bb5 b5 c6 db6 d6 eb6 e6 f6 gb6 g6 ab6 a6 bb6 b6 c7 db7 d7 eb7 e7 f7 gb7 g7 ab7 a7 bb7 b7 c8)
 

@@ -27,7 +27,7 @@ defmodule SmallHours do
 
   # The libraries name their notes in different octaves: the saxophone and the cello an octave
   # below the pitch mx names, the bass an octave above, the guitar the same.
-  key = fn name, octaves -> Mx.Notes.parse(String.downcase(name)) + 12 * octaves end
+  key = fn name, octaves -> pitch(String.downcase(name)) + 12 * octaves end
 
   # The saxophone through its condenser microphone: soft and hard, two takes of each.
   @alto for name <-

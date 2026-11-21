@@ -407,6 +407,7 @@ A pattern says nothing of what its words sound like; the options of `steps` do:
 steps(~MX"9...9..5"s, 0.25, sample: "kick.wav", release: 0.1)
 steps(~MX"ccoc ccoc"s, 0.25, strokes: [o: [vel: 0.75, sustain: 0.2], c: [vel: 0.5]])
 steps(~MX"..1. .5.3"s, 0.25, notes: [:g4, :a4, :bb4, :c5, :d5])
+steps(~MX"S R g:2 ~M:2 P", 0.5, words: [S: :d4, R: :e4, g: :f4, M: :g4, P: :a4])
 steps(~MX"x.xx"s, 0.25, each: fn step -> [vel: if(step == 0, do: 0.9, else: 0.5)] end)
 steps(~MX"eb2:2 ~g2:2 d2:4", 0.25, slide: 0.3)
 ```
@@ -416,6 +417,7 @@ steps(~MX"eb2:2 ~g2:2 d2:4", 0.25, slide: 0.3)
 - `sample:` plays each hit as that sample, where a digit sets `amp:`.
 - `strokes:` gives the options of other characters or words, so a drum's strokes can have their own letters.
 - `notes:` makes a digit a hit tuned to that note of the list, counted from 1.
+- `words:` gives words their pitches, a note's name, a number or a list of them for a chord, so a tradition that names its pitches otherwise can write them. Such a word is a note in every way: it takes a length, joins others with a slash, glides, and takes an accent and a grace note. A word with marks of its own is written as a quoted name, as in `words: ["S'": :d5, ".n": :cs4]`. A word is looked up in `strokes:` first, then in `words:`, and is a note's name otherwise, and `words:` goes only with a pattern read a word to a step.
 - `each:` is a function of the step a sound starts on, counted from 0, that returns more options for it. A function of two takes the sound's length in steps as well.
 - `slide:` is how many beats a glide takes.
 - Any other option goes to every sound.
@@ -848,6 +850,7 @@ Pitches are note numbers, so they are plain arithmetic: `pitch(:c4) + 7` is G4.
 | Call | Is | Which is |
 |---|---|---|
 | `pitch(:e5)` | 76 | the number of a note name |
+| `pitch("fs3")` | 54 | the number of a note name written as text |
 | `chord(:a3, :minor7)` | `[57, 60, 64, 67]` | the chord's notes from its root |
 | `scale(:e3, :minor_pentatonic)` | `[52, 55, 57, 59, 62, 64]` | the scale's notes, up to the octave |
 | `scale(:e3, :minor_pentatonic, octaves: 2)` | eleven notes, from 52 to 76 | the scale over two octaves |

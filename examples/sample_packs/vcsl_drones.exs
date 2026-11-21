@@ -62,7 +62,7 @@ defmodule StillWater do
 
   ocarina = fn folder, prefix, suffix, names ->
     for name <- names do
-      note = name |> String.downcase() |> String.replace("#", "s") |> Mx.Notes.parse()
+      note = name |> String.downcase() |> String.replace("#", "s") |> pitch()
       {blown.("#{folder}/#{prefix}#{name}#{suffix}.wav"), note: pitch(note) + 12}
     end
   end

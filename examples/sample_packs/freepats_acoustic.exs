@@ -61,7 +61,7 @@ defmodule ValseDuZinc do
              name <- names,
              do:
                {file.(@piano_collection, "samples/#{name}v#{layer}.flac"),
-                note: name |> String.downcase() |> String.replace("#", "s") |> Mx.Notes.parse(),
+                note: name |> String.downcase() |> String.replace("#", "s") |> pitch(),
                 strength: strength}
 
   # Each chord's bass notes, the root and the note that alternates with it, and its three notes on

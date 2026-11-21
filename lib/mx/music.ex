@@ -528,7 +528,7 @@ defmodule Mx.Music do
   @doc "The music with each note started at the beat the function returns for the beat it was written on, its length unchanged."
   def swing(music, fun) when is_function(fun, 1), do: %Swing{music: item(music), fun: fun}
 
-  @steps_options [:sample, :digit, :strokes, :notes, :each, :slide, :accent, :grace]
+  @steps_options [:sample, :digit, :strokes, :notes, :words, :each, :slide, :accent, :grace]
 
   @doc "The sounds of a pattern, each character of a string or each word of `~MX` lasting a step of beats; a list of strings is one bar after another."
   def steps(pattern, step, opts \\ [])
@@ -538,6 +538,12 @@ defmodule Mx.Music do
     {own, each} = Keyword.split(opts, @steps_options)
 
     all = pattern |> List.wrap() |> Enum.flat_map(&cells/1) |> glided()
+
+    if own[:words] && Enum.any?(all, &Map.get(&1, :char)) do
+      raise ArgumentError,
+            "steps' words: goes with a pattern read a word to a step, not a character to a step"
+    end
+
     {cells, graces} = Enum.split_with(all, &(not Map.get(&1, :grace, false)))
 
     {items, _} =
@@ -638,7 +644,7 @@ defmodule Mx.Music do
 
     changes =
       for {after_steps, token} <- Map.get(cell, :glides, []) do
-        {after_steps * step, [note: named(token)] ++ slide}
+        {after_steps * step, [note: pitched(token, own)] ++ slide}
       end
 
     accented = accented(cell, own[:accent])
@@ -664,7 +670,7 @@ defmodule Mx.Music do
             )
 
           {[], notes} ->
-            note(Keyword.values(notes), beats, accented.(each))
+            note(List.flatten(Keyword.values(notes)), beats, accented.(each))
 
           _ ->
             raise ArgumentError,
@@ -716,15 +722,18 @@ defmodule Mx.Music do
   defp stroke(nil, beats, opts), do: %Note{pitch: :own_note, beats: beats, opts: opts}
   defp stroke(ref, beats, opts), do: sample(ref, beats, opts)
 
-  # What a character or a word sounds: a stroke of strokes:, x, a digit as a note of notes: or as
-  # a level, or else a note's name.
+  # What a character or a word sounds: a stroke of strokes:, a pitch of words:, x, a digit as a
+  # note of notes: or as a level, or else a note's name.
   defp sound(token, own) do
-    stroke = Enum.find(own[:strokes] || [], fn {name, _opts} -> to_string(name) == token end)
+    stroke = named_in(own[:strokes], token)
     digit = if token =~ ~r/^[0-9]$/, do: String.to_integer(token)
 
     cond do
       stroke ->
         {:hit, elem(stroke, 1)}
+
+      named_in(own[:words], token) ->
+        {:note, pitched(token, own)}
 
       token == "x" ->
         {:hit, []}
@@ -746,6 +755,16 @@ defmodule Mx.Music do
     end
   end
 
+  defp named_in(list, token),
+    do: Enum.find(list || [], fn {name, _} -> to_string(name) == token end)
+
+  defp pitched(token, own) do
+    case named_in(own[:words], token) do
+      {_word, pitch} -> pitch(pitch)
+      nil -> named(token)
+    end
+  end
+
   defp named(token) do
     Notes.parse(token)
   rescue
@@ -753,7 +772,7 @@ defmodule Mx.Music do
       reraise ArgumentError,
               [
                 message:
-                  "steps takes x, a digit, a stroke of strokes: or a note's name, and . for silence, not #{token}"
+                  "steps takes x, a digit, a stroke of strokes:, a word of words: or a note's name, and . for silence, not #{token}"
               ],
               __STACKTRACE__
   end
@@ -1171,6 +1190,8 @@ defmodule Mx.Music do
       when is_number(pitch) or (is_atom(pitch) and pitch not in [nil, true, false]) do
     Notes.note(pitch)
   end
+
+  def pitch(name) when is_binary(name), do: Notes.parse(name)
 
   def pitch(pitch) do
     pitch = inspect(pitch)

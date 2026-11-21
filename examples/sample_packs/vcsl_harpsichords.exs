@@ -65,7 +65,7 @@ defmodule Prelude do
 
     files =
       for key <- keys do
-        note = key |> String.downcase() |> String.replace("#", "s") |> Mx.Notes.parse()
+        note = key |> String.downcase() |> String.replace("#", "s") |> pitch()
         path = "#{folder}/#{prefix}#{key}#{suffix}.wav"
         {{:vcsl, path}, note: note + 12}
       end

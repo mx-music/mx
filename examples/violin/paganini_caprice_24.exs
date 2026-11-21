@@ -100,7 +100,7 @@ defmodule Paganini do
     length = if value == "", do: length, else: 4 / String.to_integer(value)
     length = if dot == ".", do: length * 1.5, else: length
     louder = if crescendo == "<" or louder > 0, do: louder + 1, else: 0
-    note = if name == "r", do: nil, else: Mx.Notes.parse(name)
+    note = if name == "r", do: nil, else: pitch(name)
 
     {%{
        note: note,

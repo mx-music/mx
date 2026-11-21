@@ -165,10 +165,10 @@ defmodule Choro do
             [
               %{
                 beat: slot / 4,
-                note: Mx.Notes.parse(name),
+                note: pitch(name),
                 beats: held / 4,
                 mordent: mordent == "~",
-                grace: if(grace != "", do: Mx.Notes.parse(grace))
+                grace: if(grace != "", do: pitch(grace))
               }
             ]
           end

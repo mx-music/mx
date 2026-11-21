@@ -34,7 +34,7 @@ defmodule Consort do
 
     files =
       for key <- keys do
-        name = key |> String.downcase() |> String.replace("#", "s") |> Mx.Notes.parse()
+        name = key |> String.downcase() |> String.replace("#", "s") |> pitch()
         path = "#{@folder}/Baroque #{size} Recorder/Sustain/#{prefix}_Sus_#{key}_rr1_Main.wav"
         {{:vcsl, path}, note: name + 12}
       end

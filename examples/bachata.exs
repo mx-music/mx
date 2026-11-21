@@ -31,7 +31,7 @@ defmodule LunaDeCabarete do
                  for strength <- 1..4, take <- 1..2 do
                    path = "Samples/acoustic/#{name}_vl#{strength}_rr#{take}_1.wav"
 
-                   {{@guitar, path}, note: Mx.Notes.parse(name), strength: strength, take: take}
+                   {{@guitar, path}, note: pitch(name), strength: strength, take: take}
                  end
                end)
 
@@ -41,7 +41,7 @@ defmodule LunaDeCabarete do
               for {dynamic, strength} <- [{"p", 1}, {"f", 2}], take <- 1..2 do
                 path = "notes/#{name}_#{dynamic}_rr#{take}.wav"
 
-                {{@bass, path}, note: Mx.Notes.parse(name) - 12, strength: strength, take: take}
+                {{@bass, path}, note: pitch(name) - 12, strength: strength, take: take}
               end
             end)
 

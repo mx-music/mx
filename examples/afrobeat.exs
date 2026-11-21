@@ -53,7 +53,7 @@ defmodule Afrobeat do
   # The FM piano was recorded at three strengths on every sixth key.
   @keys for name <- ~w(F#1 C2 F#2 C3 F#3 C4 F#4 C5 F#5 C6 F#6 C7),
             {layer, strength} <- [{60, 1}, {80, 2}, {100, 3}],
-            note = name |> String.downcase() |> String.replace("#", "s") |> Mx.Notes.parse(),
+            note = name |> String.downcase() |> String.replace("#", "s") |> pitch(),
             do:
               {{:freepats_fm_piano, "samples/#{name}v#{layer}.flac"},
                note: note, strength: strength}

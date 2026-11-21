@@ -206,7 +206,7 @@ defmodule Syrinx do
     {[{:vel, {String.to_float(vel), over}, 0, false}], last}
   end
 
-  defp read("^" <> name, _stretch, last), do: {[{:grace, Mx.Notes.parse(name), 0, false}], last}
+  defp read("^" <> name, _stretch, last), do: {[{:grace, pitch(name), 0, false}], last}
 
   defp read(token, stretch, last) do
     [_, tongued, name, length, fermata, tie, breath] =
@@ -222,7 +222,7 @@ defmodule Syrinx do
         true -> :note
       end
 
-    pitch = if name == "r", do: nil, else: Mx.Notes.parse(name)
+    pitch = if name == "r", do: nil, else: pitch(name)
     breath = if breath == ",", do: [{:breath, nil, 0, false}], else: []
     {[{kind, pitch, held, tongued == "+"} | breath], beats}
   end

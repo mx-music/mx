@@ -63,7 +63,7 @@ defmodule Sgubhu do
     sampled(
       for name <- names do
         key = name |> String.split("_") |> hd()
-        note = key |> String.downcase() |> String.replace("#", "s") |> Mx.Notes.parse()
+        note = key |> String.downcase() |> String.replace("#", "s") |> pitch()
         {vcsl.("#{folder}/#{prefix}#{name}#{suffix}.wav"), note: pitch(note) + under}
       end
     )
@@ -74,7 +74,7 @@ defmodule Sgubhu do
               for octave <- 1..5, key <- ~w(C E G#), strength <- 1..3 do
                 note = "#{key}#{octave}" |> String.downcase() |> String.replace("#", "s")
                 path = "Electrophones/TX81Z/FM Piano/FMPiano_#{key}#{octave}_vl#{strength}.wav"
-                {vcsl.(path), note: Mx.Notes.parse(note), strength: strength}
+                {vcsl.(path), note: pitch(note), strength: strength}
               end
             )
 

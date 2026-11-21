@@ -24,7 +24,7 @@ defmodule Pasillo do
   @keys ~w(G1:-2 G#1:-3 A1:-6 A#1:-3 B1:-2 C2:0 C#2:-1 D2:0 D#2:-2 E2:-2 F2:0 G2:0 A2:0 B2:1 C3:0 D3:0 E3:0 F3:-1 F#3:-4 G3:1 G#3:-3 A3:-1 A#3:-2 B3:-2 C4:2 C#4:0 D4:0 D#4:-2 E4:1 F4:1 F#4:-1 G4:0 A4:-4 A#4:5 B4:0 C5:5 C#5:-1 D5:0 D#5:5 E5:5 F5:2 F#5:2 G5:-1 G#5:0 A5:0 A#5:2 B5:5 C6:7)
         |> Enum.map(fn word ->
           [name, db] = String.split(word, ":")
-          key = name |> String.downcase() |> String.replace("#", "s") |> Mx.Notes.parse()
+          key = name |> String.downcase() |> String.replace("#", "s") |> pitch()
           {name, pitch(key), String.to_integer(db)}
         end)
 
@@ -266,7 +266,7 @@ defmodule Pasillo do
         if names == "r" do
           {[], beat + held}
         else
-          pitches = for name <- String.split(names, "/"), do: Mx.Notes.parse(name)
+          pitches = for name <- String.split(names, "/"), do: pitch(name)
           {[{beat, pitches, held}], beat + held}
         end
       end)

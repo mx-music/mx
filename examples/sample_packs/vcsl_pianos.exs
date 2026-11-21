@@ -49,7 +49,7 @@ defmodule MapleLeafRag do
 
     files =
       for key <- keys do
-        note = key |> String.downcase() |> String.replace("#", "s") |> Mx.Notes.parse()
+        note = key |> String.downcase() |> String.replace("#", "s") |> pitch()
         path = "#{@folder}/#{folder}/#{prefix}#{key}#{suffix}.wav"
         {{:vcsl, path}, note: note + octave}
       end

@@ -25,7 +25,7 @@ defmodule SevenStrokes do
   vcsl = fn path -> {:vcsl, "#{@struck}/#{path}"} end
 
   key = fn name ->
-    name = name |> String.downcase() |> String.replace("#", "s") |> Mx.Notes.parse()
+    name = name |> String.downcase() |> String.replace("#", "s") |> pitch()
     pitch(name) + 12
   end
 

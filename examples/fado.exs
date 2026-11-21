@@ -32,7 +32,7 @@ defmodule Fado do
                  for strength <- 1..4, take <- 1..2 do
                    path = "Samples/acoustic/#{name}_vl#{strength}_rr#{take}_1.wav"
 
-                   {{@guitar, path}, note: Mx.Notes.parse(name), strength: strength, take: take}
+                   {{@guitar, path}, note: pitch(name), strength: strength, take: take}
                  end
                end)
 
@@ -42,7 +42,7 @@ defmodule Fado do
                 for take <- 1..2 do
                   path = "Samples/finger/sneakybass_#{name}_finger_rr#{take}.wav"
 
-                  {{@bass, path}, note: Mx.Notes.parse(name) - 12, take: take}
+                  {{@bass, path}, note: pitch(name) - 12, take: take}
                 end
               end)
 
@@ -238,7 +238,7 @@ defmodule Fado do
   end
 
   defp octave_string(name) do
-    if Mx.Notes.parse(name) < pitch(:e4) do
+    if pitch(name) < pitch(:e4) do
       String.replace(name, ~r/\d$/, fn octave ->
         Integer.to_string(String.to_integer(octave) + 1)
       end)

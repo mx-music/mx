@@ -61,7 +61,7 @@ defmodule ColdFront do
     sampled(
       for name <- names do
         key = name |> String.split("_") |> hd()
-        note = key |> String.downcase() |> String.replace("#", "s") |> Mx.Notes.parse()
+        note = key |> String.downcase() |> String.replace("#", "s") |> pitch()
         path = "#{folder}/#{prefix}#{name}#{suffix}.wav"
 
         {{:vcsl, path}, note: pitch(note) + 12}
