@@ -73,15 +73,13 @@ defmodule GymnopedieElectric do
   defp tune(number, vel) do
     {_bass, _chords, notes} = bar(number)
 
-    seq(
-      for item <- notes do
-        case item do
-          {:r, beats} -> rest(beats)
-          {pitch, beats} -> note(pitch, beats, vel: vel, sustain: last(number, beats))
-          {pitch, beats, sustain} -> note(pitch, beats, vel: vel, sustain: sustain)
-        end
+    seq(notes, fn item ->
+      case item do
+        {:r, beats} -> rest(beats)
+        {pitch, beats} -> note(pitch, beats, vel: vel, sustain: last(number, beats))
+        {pitch, beats, sustain} -> note(pitch, beats, vel: vel, sustain: sustain)
       end
-    )
+    end)
   end
 
   # The last bar's notes ring on for two more bars as the piece ends.

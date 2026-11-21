@@ -464,10 +464,7 @@ defmodule TranquilityBase do
 
   # Sputnik's beep, one stretch of four of its periods fitted to a bar.
   defp beeps(beats, amp) do
-    seq(
-      for _ <- 1..div(beats, 4),
-          do: sample(@sputnik, 4, from: 0.3, to: 2.06, beats: 4, amp: amp)
-    )
+    seq(1..div(beats, 4), fn _ -> sample(@sputnik, 4, from: 0.3, to: 2.06, beats: 4, amp: amp) end)
   end
 
   defp ocean(beats) do
@@ -508,11 +505,9 @@ defmodule TranquilityBase do
 
   # Each part's music, padded to the section's beats.
   defp section(beats, parts) do
-    together(
-      for {name, music} <- parts do
-        part(name, together([rest(beats), music]))
-      end
-    )
+    together(parts, fn {name, music} ->
+      part(name, together([rest(beats), music]))
+    end)
   end
 
   # A bar of drum hits, each character a sixth of a beat: x loud, o soft, a dot silent.

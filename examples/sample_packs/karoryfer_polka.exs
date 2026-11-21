@@ -329,34 +329,30 @@ defmodule SquidPolka do
 
   defp drum(patterns, bars) do
     bar = fn pattern -> steps(pattern, 2 / length(pattern), strokes: strokes()) end
-    repeat(seq(Enum.map(patterns, bar)), bars)
+    repeat(seq(patterns, bar), bars)
   end
 
   # The drone, two octaves of A: a recording of four seconds started again every four bars, each
   # fading in under the end of the one before.
   defp drone(bars) do
-    seq(for _ <- 1..div(bars, 4), do: note([:a2, :a3], 8, sustain: 8.6))
+    seq(1..div(bars, 4), fn _ -> note([:a2, :a3], 8, sustain: 8.6) end)
   end
 
   # The tuba on the beats: the chord's root, then its other note.
   defp oom(chords, vel \\ 0.8) do
-    seq(
-      for chord <- chords do
-        {root, other, _} = @chords[chord]
-        seq([note(root, 1, dyn(vel)), note(other, 1, dyn(vel - 0.2))])
-      end
-    )
+    seq(chords, fn chord ->
+      {root, other, _} = @chords[chord]
+      seq([note(root, 1, dyn(vel)), note(other, 1, dyn(vel - 0.2))])
+    end)
   end
 
   # The tagelharpa off the beats.
   # Its plucks start about 95 ms into their files, so the part plays that much early.
   defp pah(chords) do
-    seq(
-      for chord <- chords do
-        {_, _, notes} = @chords[chord]
-        seq([rest(0.5), note(notes, 0.5), rest(0.5), note(notes, 0.5)])
-      end
-    )
+    seq(chords, fn chord ->
+      {_, _, notes} = @chords[chord]
+      seq([rest(0.5), note(notes, 0.5), rest(0.5), note(notes, 0.5)])
+    end)
     |> Mx.swing(&(&1 - 0.23))
   end
 
@@ -364,25 +360,21 @@ defmodule SquidPolka do
 
   # A strain on the chanter, the first note of each bar starting late to leave room for its cut.
   defp chanter(strain) do
-    seq(
-      for bar <- strain do
-        [{name, beats} | others] = lengths(bar)
-        others = for {name, beats} <- others, do: note(name, beats)
-        seq([rest(@cut_length), note(name, beats - @cut_length)] ++ others)
-      end
-    )
+    seq(strain, fn bar ->
+      [{name, beats} | others] = lengths(bar)
+      others = for {name, beats} <- others, do: note(name, beats)
+      seq([rest(@cut_length), note(name, beats - @cut_length)] ++ others)
+    end)
   end
 
   # The cuts: before the first note of each bar, a short high G, or the note above when the tune
   # is that high.
   defp cuts(strain) do
-    seq(
-      for bar <- strain do
-        [{name, _} | _] = lengths(bar)
-        cut = if pitch(name) < pitch(:g5), do: pitch(:g5), else: pitch(name) + 2
-        seq([note(cut, @cut_length), rest(2 - @cut_length)])
-      end
-    )
+    seq(strain, fn bar ->
+      [{name, _} | _] = lengths(bar)
+      cut = if pitch(name) < pitch(:g5), do: pitch(:g5), else: pitch(name) + 2
+      seq([note(cut, @cut_length), rest(2 - @cut_length)])
+    end)
   end
 
   defp lengths(bar) do

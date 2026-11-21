@@ -290,22 +290,20 @@ defmodule Cosmonauta do
 
   defp drum(patterns, bars) do
     bar = fn pattern -> steps(pattern, 4 / length(pattern), strokes: strokes()) end
-    repeat(seq(Enum.map(patterns, bar)), bars)
+    repeat(seq(patterns, bar), bars)
   end
 
   # The bass: the root for two beats, then the fifth and the root.
   defp bass(chords) do
-    seq(
-      for chord <- chords do
-        {root, fifth, _} = @chords[chord]
+    seq(chords, fn chord ->
+      {root, fifth, _} = @chords[chord]
 
-        seq([
-          note(root, 2, dyn(0.8) ++ [sustain: 1.6]),
-          note(fifth, 1, dyn(0.6) ++ [sustain: 0.8]),
-          note(root, 1, dyn(0.6) ++ [sustain: 0.8])
-        ])
-      end
-    )
+      seq([
+        note(root, 2, dyn(0.8) ++ [sustain: 1.6]),
+        note(fifth, 1, dyn(0.6) ++ [sustain: 0.8]),
+        note(root, 1, dyn(0.6) ++ [sustain: 0.8])
+      ])
+    end)
   end
 
   # The flute stop's chords, short, on the second half of every beat.
@@ -320,7 +318,7 @@ defmodule Cosmonauta do
 
   # A line of notes and rests, each a name and a length in beats.
   defp line(notes) do
-    seq(for {name, beats} <- notes, do: if(name == :r, do: rest(beats), else: note(name, beats)))
+    seq(notes, fn {name, beats} -> if(name == :r, do: rest(beats), else: note(name, beats)) end)
   end
 
   defp percussion(bars) do

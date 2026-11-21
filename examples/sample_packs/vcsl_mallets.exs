@@ -203,16 +203,16 @@ defmodule SevenStrokes do
 
   defp vibes, do: seq(for chord <- @chords, _ <- 1..2, do: bar(@five, chord.vibes))
 
-  defp bowed, do: seq(for chord <- @chords, do: note(chord.bowed, 8))
+  defp bowed, do: seq(@chords, fn chord -> note(chord.bowed, 8) end)
 
   # The glockenspiel: a note at the start of each bar.
   defp glock do
-    seq(for %{glock: [first, second]} <- @chords, do: seq([note(first, 4), note(second, 4)]))
+    seq(@chords, fn %{glock: [first, second]} -> seq([note(first, 4), note(second, 4)]) end)
   end
 
   # A hand chime in each chord's second bar, a beat in.
   defp chimes do
-    seq(for chord <- @chords, do: seq([rest(5), note(chord.chime, 3)]))
+    seq(@chords, fn chord -> seq([rest(5), note(chord.chime, 3)]) end)
   end
 
   # The finger cymbals every two bars, and the cymbal's four seconds of swell ending with the
@@ -224,7 +224,7 @@ defmodule SevenStrokes do
     ])
   end
 
-  defp bells, do: seq(for chord <- @chords, do: note(chord.bell, 8))
+  defp bells, do: seq(@chords, fn chord -> note(chord.bell, 8) end)
 
   # A bar of strokes at the pulses given, going round the notes, the first pulse of the bar the
   # strong one.

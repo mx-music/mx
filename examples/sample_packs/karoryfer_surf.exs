@@ -288,15 +288,13 @@ defmodule RustWave do
 
     bars =
       for {root, _, _} <- @chords do
-        seq(
-          for {step, index} <- Enum.with_index(steps),
-              do:
-                note(
-                  pitch(root) + 12 + step,
-                  0.5,
-                  dyn(if(rem(index, 2) == 0, do: 0.9, else: 0.7))
-                )
-        )
+        seq(Enum.with_index(steps), fn {step, index} ->
+          note(
+            pitch(root) + 12 + step,
+            0.5,
+            dyn(if(rem(index, 2) == 0, do: 0.9, else: 0.7))
+          )
+        end)
       end
 
     repeat(seq(bars), cycles)
@@ -306,17 +304,17 @@ defmodule RustWave do
   defp bass(cycles) do
     bar = fn root, fifth ->
       seq(
-        for {note, vel} <- [
-              {root, 0.9},
-              {root, 0.6},
-              {root, 0.7},
-              {root, 0.6},
-              {root, 0.9},
-              {fifth, 0.7},
-              {fifth, 0.8},
-              {root, 0.6}
-            ],
-            do: note(note, 0.5, dyn(vel) ++ [sustain: 0.4])
+        [
+          {root, 0.9},
+          {root, 0.6},
+          {root, 0.7},
+          {root, 0.6},
+          {root, 0.9},
+          {fifth, 0.7},
+          {fifth, 0.8},
+          {root, 0.6}
+        ],
+        fn {note, vel} -> note(note, 0.5, dyn(vel) ++ [sustain: 0.4]) end
       )
     end
 
@@ -365,7 +363,7 @@ defmodule RustWave do
   defp drum([%{} | _] = pattern, per_beat), do: drum([pattern], per_beat)
 
   defp drum(patterns, per_beat) do
-    seq(for pattern <- patterns, do: steps(pattern, 1 / per_beat, strokes: strokes()))
+    seq(patterns, fn pattern -> steps(pattern, 1 / per_beat, strokes: strokes()) end)
   end
 
   # A stroke from 1, the softest, to 9: the strength picks the recording, and the level is left

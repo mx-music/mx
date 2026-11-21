@@ -337,21 +337,17 @@ defmodule TwelveBars do
 
   # The right hand in triplets, the first of each three the strong one.
   defp triplets(changes \\ @changes) do
-    seq(
-      for chord <- changes do
-        hits = for pulse <- 0..11, do: {pulse, 1, if(rem(pulse, 3) == 0, do: 0.75, else: 0.45)}
-        bar(@chords[chord].piano, hits)
-      end
-    )
+    seq(changes, fn chord ->
+      hits = for pulse <- 0..11, do: {pulse, 1, if(rem(pulse, 3) == 0, do: 0.75, else: 0.45)}
+      bar(@chords[chord].piano, hits)
+    end)
   end
 
   # A line as notes and their lengths in pulses, r a rest.
   defp line(steps, options \\ []) do
-    seq(
-      for {name, pulses} <- steps do
-        if name == :r, do: rest(pulses * @pulse), else: note(name, pulses * @pulse, options)
-      end
-    )
+    seq(steps, fn {name, pulses} ->
+      if name == :r, do: rest(pulses * @pulse), else: note(name, pulses * @pulse, options)
+    end)
   end
 
   # A bar of notes at the pulses given, each a pulse, a length in pulses and a level.
@@ -365,18 +361,14 @@ defmodule TwelveBars do
 
   # The boogie bass: the chord's root, third, fifth, sixth and seventh, up and down the bar.
   defp bass(changes \\ @changes) do
-    seq(
-      for chord <- changes do
-        root = pitch(@chords[chord].root)
+    seq(changes, fn chord ->
+      root = pitch(@chords[chord].root)
 
-        seq(
-          for {step, index} <- Enum.with_index([0, 4, 7, 9, 10, 9, 7, 4]) do
-            pulses = if rem(index, 2) == 0, do: 2, else: 1
-            note(root + step, pulses * @pulse, amp: if(rem(index, 2) == 0, do: 1.0, else: 0.7))
-          end
-        )
-      end
-    )
+      seq(Enum.with_index([0, 4, 7, 9, 10, 9, 7, 4]), fn {step, index} ->
+        pulses = if rem(index, 2) == 0, do: 2, else: 1
+        note(root + step, pulses * @pulse, amp: if(rem(index, 2) == 0, do: 1.0, else: 0.7))
+      end)
+    end)
   end
 
   # Bars of the kit in pulses, a row to each piece and a character to each pulse: a digit is a
@@ -387,10 +379,9 @@ defmodule TwelveBars do
           do: {:"#{strength}", [amp: strength / 9, sustain: 1.5, release: 0.5]}
 
     repeat(
-      together(
-        for {piece, pattern} <- rows,
-            do: steps(pattern, @pulse, sample: @kit[piece], strokes: strokes)
-      ),
+      together(rows, fn {piece, pattern} ->
+        steps(pattern, @pulse, sample: @kit[piece], strokes: strokes)
+      end),
       bars
     )
   end
@@ -399,9 +390,9 @@ defmodule TwelveBars do
 
   # The piano's right hand: the chord on one, on the short note after two, and on four.
   defp comping(changes \\ @changes) do
-    seq(
-      for chord <- changes, do: bar(@chords[chord].piano, [{0, 2, 0.9}, {5, 2, 1.0}, {9, 2, 0.8}])
-    )
+    seq(changes, fn chord ->
+      bar(@chords[chord].piano, [{0, 2, 0.9}, {5, 2, 1.0}, {9, 2, 0.8}])
+    end)
   end
 
   # Eleven bars of the shuffle on the cymbal given, and a bar that ends on the toms.
@@ -437,10 +428,9 @@ defmodule TwelveBars do
   defp stabs do
     for {voice, index} <- [tenor_short: 0, saxello: 1] do
       {voice,
-       seq(
-         for chord <- @changes,
-             do: bar(elem(@chords[chord].stab, index), [{5, 1, 1.0}, {9, 1, 0.8}])
-       )}
+       seq(@changes, fn chord ->
+         bar(elem(@chords[chord].stab, index), [{5, 1, 1.0}, {9, 1, 0.8}])
+       end)}
     end
   end
 
@@ -456,12 +446,10 @@ defmodule TwelveBars do
   defp harps(bars) do
     for harp <- [:harp_c, :harp_f] do
       {harp,
-       seq(
-         for {chord, number} <- Enum.with_index(@changes, 1) do
-           hits = if @chords[chord].harp == harp, do: bars.(number), else: []
-           bar(@chords[chord].blown, hits)
-         end
-       )}
+       seq(Enum.with_index(@changes, 1), fn {chord, number} ->
+         hits = if @chords[chord].harp == harp, do: bars.(number), else: []
+         bar(@chords[chord].blown, hits)
+       end)}
     end
   end
 end

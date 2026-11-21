@@ -177,24 +177,22 @@ defmodule ThreeTunings do
   # The thumbs' part: a bass note on every third pulse and the upper notes between.
   defp thumbs(times) do
     repeat(
-      seq(
-        for {[low, high], [first, second, third]} <- @song do
-          pulses([
-            low,
-            first,
-            second,
-            high,
-            third,
-            second,
-            low,
-            first,
-            second,
-            high,
-            third,
-            second
-          ])
-        end
-      ),
+      seq(@song, fn {[low, high], [first, second, third]} ->
+        pulses([
+          low,
+          first,
+          second,
+          high,
+          third,
+          second,
+          low,
+          first,
+          second,
+          high,
+          third,
+          second
+        ])
+      end),
       times
     )
   end
@@ -246,38 +244,36 @@ defmodule ThreeTunings do
   # The tune over it, a note to each three pulses.
   defp tune(times) do
     notes = ~w(f5 e5 f5 c5 d5 c5 d5 bb4 c5 a4 c5 f5 e5 d5 e5 c5)a
-    repeat(seq(for name <- notes, do: note(name, 1)), times)
+    repeat(seq(notes, fn name -> note(name, 1) end), times)
   end
 
   defp canon(times) do
-    repeat(seq(for name <- List.flatten(@round), do: note(name, 0.5)), times)
+    repeat(seq(List.flatten(@round), fn name -> note(name, 0.5) end), times)
   end
 
   # A chord in four pulses: its root, the fifth above the octave, the octave, and the fifth.
   defp cycle(times) do
     repeat(
-      seq(
-        for name <- @cycle do
-          root = pitch(name)
-          pulses([root, root + 19, root + 12, root + 7])
-        end
-      ),
+      seq(@cycle, fn name ->
+        root = pitch(name)
+        pulses([root, root + 19, root + 12, root + 7])
+      end),
       times
     )
   end
 
   # The balafon under the mbiras, a note to each chord, and then a line above them.
   defp roots(times) do
-    repeat(seq(for name <- @cycle, do: note(pitch(name) + 12, 4 * @pulse)), times)
+    repeat(seq(@cycle, fn name -> note(pitch(name) + 12, 4 * @pulse) end), times)
   end
 
   defp above do
     notes = ~w(g5 f5 eb5 g5 f5 eb5 g5 ab5 g5 f5 eb5 d5)a
-    seq(for name <- notes, do: seq([rest(2 * @pulse), note(name, 2 * @pulse)]))
+    seq(notes, fn name -> seq([rest(2 * @pulse), note(name, 2 * @pulse)]) end)
   end
 
   # Notes a pulse apart, nil a silent pulse.
   defp pulses(notes, amp \\ 1.0) do
-    seq(for name <- notes, do: if(name, do: note(name, @pulse, amp: amp), else: rest(@pulse)))
+    seq(notes, fn name -> if(name, do: note(name, @pulse, amp: amp), else: rest(@pulse)) end)
   end
 end

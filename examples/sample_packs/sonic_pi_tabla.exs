@@ -82,20 +82,18 @@ defmodule Kaida do
     words = rows |> List.wrap() |> List.flatten() |> Enum.join(" ") |> String.split()
     beats = length(words) / per_beat
 
-    together(
-      for {drum, hand} <- [dayan: 0, bayan: 1] do
-        hits =
-          for {word, index} <- Enum.with_index(words),
-              word != ".",
-              stroke = elem(Map.fetch!(@bols, word), hand),
-              stroke != nil do
-            stroke = if stroke == :tabla_te1 and rem(index, 2) == 1, do: :tabla_te2, else: stroke
-            amp = if rem(index, per_beat) == 0, do: 1.0, else: 0.65
-            {index / per_beat, sample({:sonic_pi, stroke}, 0, amp: amp)}
-          end
+    together([dayan: 0, bayan: 1], fn {drum, hand} ->
+      hits =
+        for {word, index} <- Enum.with_index(words),
+            word != ".",
+            stroke = elem(Map.fetch!(@bols, word), hand),
+            stroke != nil do
+          stroke = if stroke == :tabla_te1 and rem(index, 2) == 1, do: :tabla_te2, else: stroke
+          amp = if rem(index, per_beat) == 0, do: 1.0, else: 0.65
+          {index / per_beat, sample({:sonic_pi, stroke}, 0, amp: amp)}
+        end
 
-        part(drum, at(hits, beats))
-      end
-    )
+      part(drum, at(hits, beats))
+    end)
   end
 end

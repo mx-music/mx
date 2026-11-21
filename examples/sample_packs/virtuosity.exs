@@ -393,7 +393,7 @@ defmodule Virtuosity do
     ])
   end
 
-  defp play(voices), do: together(for {name, music} <- voices, do: on(name, music))
+  defp play(voices), do: together(voices, fn {name, music} -> on(name, music) end)
 
   # The mambo is written in eighths, eight to a bar, and the swing in triplets, twelve to a bar.
   defp eighths(patterns), do: strokes(patterns, 2)
@@ -456,7 +456,7 @@ defmodule Virtuosity do
     music = if name == :pedal, do: Mx.swing(music, &(&1 - 0.08)), else: music
 
     case @kit[name] do
-      {_, _, _, _, _, mics} -> together(for {mic_part, _, _} <- mics, do: part(mic_part, music))
+      {_, _, _, _, _, mics} -> together(mics, fn {mic_part, _, _} -> part(mic_part, music) end)
       nil -> part(name, music)
     end
   end
@@ -468,7 +468,7 @@ defmodule Virtuosity do
   defp strokes([%{} | _] = pattern, per_beat), do: strokes([pattern], per_beat)
 
   defp strokes(patterns, per_beat) do
-    seq(for pattern <- patterns, do: steps(pattern, 1 / per_beat, strokes: strengths()))
+    seq(patterns, fn pattern -> steps(pattern, 1 / per_beat, strokes: strengths()) end)
   end
 
   # A stroke from 1, the softest, to 9: the strength picks the recording, and the level is left

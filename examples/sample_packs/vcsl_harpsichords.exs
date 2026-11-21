@@ -136,23 +136,20 @@ defmodule Prelude do
 
   # The two held notes of each bar, for the whole bar.
   defp held(range) do
-    seq(
-      for number <- range do
-        case number do
-          34 -> note([:c2, :c3], 8)
-          number when number >= 32 -> note(Tuple.to_list(@runs[number]) |> Enum.take(2), 4)
-          number -> note(Enum.at(@bars, number - 1) |> Enum.take(2), 4)
-        end
+    seq(range, fn number ->
+      case number do
+        34 -> note([:c2, :c3], 8)
+        number when number >= 32 -> note(Tuple.to_list(@runs[number]) |> Enum.take(2), 4)
+        number -> note(Enum.at(@bars, number - 1) |> Enum.take(2), 4)
       end
-    )
+    end)
   end
 
   # The bass alone.
   defp bass(range) do
-    seq(
-      for number <- range,
-          do: note(if(number <= 30, do: :g2, else: :c2), if(number == 34, do: 8, else: 4))
-    )
+    seq(range, fn number ->
+      note(if(number <= 30, do: :g2, else: :c2), if(number == 34, do: 8, else: 4))
+    end)
   end
 
   # A bar as the harpsichord plays it: the figure twice, its first two notes held under the other

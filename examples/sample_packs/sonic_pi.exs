@@ -156,10 +156,9 @@ defmodule Rewind do
       {16, 9}
     ]
 
-    seq(
-      for {steps, beats} <- phrase,
-          do: sample({:sonic_pi, :elec_bell}, beats, rate: semitones(steps))
-    )
+    seq(phrase, fn {steps, beats} ->
+      sample({:sonic_pi, :elec_bell}, beats, rate: semitones(steps))
+    end)
   end
 
   # Four bars of the break: three as given and a turn.
@@ -167,15 +166,13 @@ defmodule Rewind do
 
   # The bass, as semitones from its C and beats.
   defp bass(notes) do
-    seq(
-      for {steps, beats} <- notes do
-        sample({:sonic_pi, :bass_woodsy_c}, beats,
-          rate: semitones(steps),
-          sustain: beats - 0.15,
-          release: 0.15
-        )
-      end
-    )
+    seq(notes, fn {steps, beats} ->
+      sample({:sonic_pi, :bass_woodsy_c}, beats,
+        rate: semitones(steps),
+        sustain: beats - 0.15,
+        release: 0.15
+      )
+    end)
   end
 
   # bass_dnb_f, an F brought down to E, on the first beat of every other bar.
@@ -185,25 +182,22 @@ defmodule Rewind do
 
   # A roll: one sixteenth of the break again and again, growing.
   defp roll(piece, strokes) do
-    seq(
-      for stroke <- 1..strokes do
-        sample({:sonic_pi, :loop_amen}, 0.25,
-          slices: 16,
-          slice: piece,
-          rate: @faster,
-          amp: 0.5 + 0.5 * stroke / strokes
-        )
-      end
-    )
+    seq(1..strokes, fn stroke ->
+      sample({:sonic_pi, :loop_amen}, 0.25,
+        slices: 16,
+        slice: piece,
+        rate: @faster,
+        amp: 0.5 + 0.5 * stroke / strokes
+      )
+    end)
   end
 
   # Pieces of the break in the order given, half a beat each: 0 and 1 are its kicks, 2 and 6 its
   # snares.
   defp chop(pieces) do
-    seq(
-      for piece <- pieces,
-          do: sample({:sonic_pi, :loop_amen}, 0.5, slices: 8, slice: piece, rate: @faster)
-    )
+    seq(pieces, fn piece ->
+      sample({:sonic_pi, :loop_amen}, 0.5, slices: 8, slice: piece, rate: @faster)
+    end)
   end
 
   # The rate that moves a recording by so many semitones.

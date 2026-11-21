@@ -394,25 +394,23 @@ defmodule ColdFront do
       "s" => {6, 3, -4}
     }
 
-    seq(
-      for pattern <- List.wrap(patterns) do
-        cells = pattern |> String.replace(" ", "") |> String.graphemes()
+    seq(List.wrap(patterns), fn pattern ->
+      cells = pattern |> String.replace(" ", "") |> String.graphemes()
 
-        hits =
-          for {cell, eighth} <- Enum.with_index(cells),
-              cell != ".",
-              {count, first, last} = rolls[cell],
-              stroke <- 0..(count - 1) do
-            along = if count == 1, do: 1.0, else: stroke / (count - 1)
-            level = if rem(eighth, 2) == 0, do: 1.0, else: 0.6
-            amp = if count == 1, do: level, else: 0.45 + 0.5 * along
-            note = 92 + first + (last - first) * along
-            {(eighth + stroke / count) / 2, hit(amp: amp, note: note)}
-          end
+      hits =
+        for {cell, eighth} <- Enum.with_index(cells),
+            cell != ".",
+            {count, first, last} = rolls[cell],
+            stroke <- 0..(count - 1) do
+          along = if count == 1, do: 1.0, else: stroke / (count - 1)
+          level = if rem(eighth, 2) == 0, do: 1.0, else: 0.6
+          amp = if count == 1, do: level, else: 0.45 + 0.5 * along
+          note = 92 + first + (last - first) * along
+          {(eighth + stroke / count) / 2, hit(amp: amp, note: note)}
+        end
 
-        at(hits, length(cells) / 2)
-      end
-    )
+      at(hits, length(cells) / 2)
+    end)
   end
 
   # A snare roll over the last bar of so many beats: eighths, sixteenths, then thirty-seconds,

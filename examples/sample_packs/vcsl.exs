@@ -204,14 +204,12 @@ defmodule LowB do
   # pulse.
   defp bass(cycles) do
     repeat(
-      seq(
-        for {low, _, _, _, _} <- List.flatten(@cycle) do
-          seq([
-            note(pitch(low) - 12, 2 * @pulse, vel: 0.9, amp: 1.1),
-            note(pitch(low) - 12, 2 * @pulse, vel: 0.4, amp: 1.6)
-          ])
-        end
-      ),
+      seq(List.flatten(@cycle), fn {low, _, _, _, _} ->
+        seq([
+          note(pitch(low) - 12, 2 * @pulse, vel: 0.9, amp: 1.1),
+          note(pitch(low) - 12, 2 * @pulse, vel: 0.4, amp: 1.6)
+        ])
+      end),
       cycles
     )
   end
@@ -219,14 +217,12 @@ defmodule LowB do
   # The marimba's top line: the mbira's two high keys of each pair, an octave down.
   defp soprano(cycles) do
     repeat(
-      seq(
-        for {_, high, _, second_high, _} <- List.flatten(@cycle) do
-          seq([
-            note(pitch(high) - 12, 2 * @pulse, vel: 0.9, amp: 1.1),
-            note(pitch(second_high) - 12, 2 * @pulse, vel: 0.6, amp: 1.4)
-          ])
-        end
-      ),
+      seq(List.flatten(@cycle), fn {_, high, _, second_high, _} ->
+        seq([
+          note(pitch(high) - 12, 2 * @pulse, vel: 0.9, amp: 1.1),
+          note(pitch(second_high) - 12, 2 * @pulse, vel: 0.6, amp: 1.4)
+        ])
+      end),
       cycles
     )
   end

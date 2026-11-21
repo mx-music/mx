@@ -282,19 +282,15 @@ defmodule HouseKit do
   # The voices of a section, each given as its bars, on every synth that sounds it; the bass is
   # given as music.
   defp play(voices, per_beat) do
-    together(
-      for {name, bars} <- voices do
-        if name == :bass, do: part(:bass, bars), else: on(name, bars, per_beat)
-      end
-    )
+    together(voices, fn {name, bars} ->
+      if name == :bass, do: part(:bass, bars), else: on(name, bars, per_beat)
+    end)
   end
 
   defp on(name, bars, per_beat) do
-    together(
-      for {layer, _synth, _defaults, _level, late} <- @kit[name] do
-        part(layer, strokes(name, bars, per_beat, late))
-      end
-    )
+    together(@kit[name], fn {layer, _synth, _defaults, _level, late} ->
+      part(layer, strokes(name, bars, per_beat, late))
+    end)
   end
 
   # Bars of strokes for a voice, a character to each step: a digit is a stroke of that strength, a

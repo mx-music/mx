@@ -275,7 +275,7 @@ defmodule PlanxtyIrwin do
   defp broken do
     bars =
       for name <- [:first, :first, :second, :second], chord <- @chords[name] do
-        seq(for name <- @broken[chord], do: note(name, @eighth, amp: 0.7))
+        seq(@broken[chord], fn name -> note(name, @eighth, amp: 0.7) end)
       end
 
     seq(bars)
@@ -303,10 +303,9 @@ defmodule PlanxtyIrwin do
   end
 
   defp line(steps) do
-    seq(
-      for {name, eighths} <- steps,
-          do: if(name == :r, do: rest(eighths * @eighth), else: note(name, eighths * @eighth))
-    )
+    seq(steps, fn {name, eighths} ->
+      if(name == :r, do: rest(eighths * @eighth), else: note(name, eighths * @eighth))
+    end)
   end
 
   # A strain of the tune: its eight bars, less the last eighth, where the A that leads into the
@@ -320,7 +319,7 @@ defmodule PlanxtyIrwin do
 
     bars =
       for _ <- 1..2, chord <- @chords.second do
-        seq(for [name, beats] <- Enum.chunk_every(notes[chord], 2), do: note(name, beats))
+        seq(Enum.chunk_every(notes[chord], 2), fn [name, beats] -> note(name, beats) end)
       end
 
     seq(bars)

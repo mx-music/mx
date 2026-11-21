@@ -387,10 +387,10 @@ defmodule Afrobeat do
   # The music on a voice of the kit through each of its microphones.
   defp on(voice, music) do
     {_, _, _, _, _, mics, _} = @kit[voice]
-    together(for {name, _mic, _level} <- mics, do: part(name, music))
+    together(mics, fn {name, _mic, _level} -> part(name, music) end)
   end
 
-  defp play(voices), do: together(for {name, music} <- voices, do: on(name, music))
+  defp play(voices), do: together(voices, fn {name, music} -> on(name, music) end)
 
   # Bars of strokes in sixteenths, a character to each: a digit is a stroke of that strength, a
   # dot is silence, and spaces are left out.

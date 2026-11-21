@@ -287,16 +287,14 @@ defmodule MaracatuDub do
 
   # The skank on two and four, chopped twice on the last bar of the riddim.
   defp skank(bars) do
-    seq(
-      for bar <- bars do
-        chord =
-          voice(chord(chord_at(chart(), 4, (bar - 1) * 4), from: :d3), from: 62, to: 74, limit: 4)
+    seq(bars, fn bar ->
+      chord =
+        voice(chord(chord_at(chart(), 4, (bar - 1) * 4), from: :d3), from: 62, to: 74, limit: 4)
 
-        beats = if rem(bar, 4) == 0, do: [1, 3, 3.25], else: [1, 3]
-        hits = for beat <- beats, do: {beat, note(chord, 0.25)}
-        at(hits, 4)
-      end
-    )
+      beats = if rem(bar, 4) == 0, do: [1, 3, 3.25], else: [1, 3]
+      hits = for beat <- beats, do: {beat, note(chord, 0.25)}
+      at(hits, 4)
+    end)
   end
 
   # The chart, a chord to each bar of four beats, played round.

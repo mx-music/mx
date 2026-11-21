@@ -34,9 +34,8 @@ defmodule Fingerpicking do
     # eighths.
     picks = [{bass, 0.7, 6}, {i, 0.5, 4}, {m, 0.55, 2}, {a, 0.6, 6}, {m, 0.45, 4}, {i, 0.4, 2}]
 
-    seq(
-      for {note, vel, eighths} <- picks,
-          do: note(note, 0.5, vel: vel, sustain: eighths * 0.5, release: 0.15, amp: 0.5)
-    )
+    seq(picks, fn {note, vel, eighths} ->
+      note(note, 0.5, vel: vel, sustain: eighths * 0.5, release: 0.15, amp: 0.5)
+    end)
   end
 end

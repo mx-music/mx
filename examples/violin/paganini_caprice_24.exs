@@ -17,7 +17,7 @@ defmodule Paganini do
   def song do
     repeat(
       form([theme_a: 2, theme_b: 2, variation_a: 2, variation_b: 2], fn section ->
-        part(:violin, seq(Enum.map(phrases(score(section)), &bow/1)))
+        part(:violin, seq(phrases(score(section)), &bow/1))
       end)
     )
   end

@@ -96,9 +96,7 @@ defmodule Dubwise do
   part :space, fx: [reverb: [room: 0.9, mix: 0.4]]
 
   def song do
-    seq(
-      Enum.map([:intro, :riddim, :rockers, :dub, :deep, :rewind, :steppers, :outro], &section/1)
-    )
+    seq([:intro, :riddim, :rockers, :dub, :deep, :rewind, :steppers, :outro], &section/1)
   end
 
   # The part's echo opened to a mix at one beat and closed again at another, within music of the

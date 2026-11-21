@@ -28,18 +28,16 @@ defmodule Accordion do
     held = Keyword.get(opts, :held, 0.9)
     extra = Keyword.take(opts, [:detune])
 
-    seq(
-      for token <- String.split(tokens) do
-        [name, beats] = String.split(token, ":")
-        {beats, _} = Float.parse(beats)
+    seq(String.split(tokens), fn token ->
+      [name, beats] = String.split(token, ":")
+      {beats, _} = Float.parse(beats)
 
-        note(
-          midi(name) + 12 * octaves,
-          beats,
-          [vel: if(beats < 1, do: 0.5, else: 0.6), sustain: beats * held, release: 0.1] ++ extra
-        )
-      end
-    )
+      note(
+        midi(name) + 12 * octaves,
+        beats,
+        [vel: if(beats < 1, do: 0.5, else: 0.6), sustain: beats * held, release: 0.1] ++ extra
+      )
+    end)
   end
 
   # Eight bars climbing from the low E to the D above, turning on a chromatic D# and falling home
@@ -53,17 +51,15 @@ defmodule Accordion do
   defp chords do
     voicings = %{am: ~w(A3 C4 E4), e7: ~w(G#3 D4 E4), dm: ~w(A3 D4 F4)}
 
-    seq(
-      for name <- [:am, :am, :e7, :e7, :dm, :am, :e7, :am] do
-        chord = Enum.map(voicings[name], &midi/1)
+    seq([:am, :am, :e7, :e7, :dm, :am, :e7, :am], fn name ->
+      chord = Enum.map(voicings[name], &midi/1)
 
-        seq([
-          note(chord, 1, vel: 0.6, sustain: 0.9, release: 0.1),
-          note(chord, 1, vel: 0.45, sustain: 0.35, release: 0.08),
-          note(chord, 1, vel: 0.45, sustain: 0.35, release: 0.08)
-        ])
-      end
-    )
+      seq([
+        note(chord, 1, vel: 0.6, sustain: 0.9, release: 0.1),
+        note(chord, 1, vel: 0.45, sustain: 0.35, release: 0.08),
+        note(chord, 1, vel: 0.45, sustain: 0.35, release: 0.08)
+      ])
+    end)
   end
 
   defp ending, do: "E3:1 A3:1 C4:1 B3:2 A3:1 G#3:1 B3:1 E4:1 A3:6"

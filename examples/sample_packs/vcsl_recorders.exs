@@ -68,7 +68,7 @@ defmodule Consort do
   # recorder.
   defp played(bar) do
     order = Enum.concat([1..8, 1..8, 9..18])
-    transpose(seq(Enum.map(order, bar)), 12)
+    transpose(seq(order, bar), 12)
   end
 
   defp soprano(1), do: seq(eb4: 1, g4: 1, bb4: 1.5, bb4: 0.5)

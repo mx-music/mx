@@ -208,21 +208,19 @@ defmodule Parade do
   # Rows of sounds played together, each row one bar or several in turn, the whole played so many
   # times.
   defp rows(rows, times \\ 1) do
-    together(
-      for {sound, patterns} <- rows do
-        {file, gain} = @sounds[sound]
+    together(rows, fn {sound, patterns} ->
+      {file, gain} = @sounds[sound]
 
-        strokes =
-          for strength <- 1..9,
-              do: {:"#{strength}", [amp: gain * strength / 9, sustain: 3, release: 1]}
+      strokes =
+        for strength <- 1..9,
+            do: {:"#{strength}", [amp: gain * strength / 9, sustain: 3, release: 1]}
 
-        bars =
-          for pattern <- if(match?([%{} | _], patterns), do: [patterns], else: patterns),
-              do: steps(pattern, 2 / length(pattern), sample: file, strokes: strokes)
+      bars =
+        for pattern <- if(match?([%{} | _], patterns), do: [patterns], else: patterns),
+            do: steps(pattern, 2 / length(pattern), sample: file, strokes: strokes)
 
-        repeat(seq(bars), times)
-      end
-    )
+      repeat(seq(bars), times)
+    end)
   end
 
   # The street beat, two bars of it.
@@ -291,6 +289,6 @@ defmodule Parade do
   end
 
   defp tune(bars, times) do
-    repeat(seq(for {name, beats} <- List.flatten(bars), do: note(name, beats)), times)
+    repeat(seq(List.flatten(bars), fn {name, beats} -> note(name, beats) end), times)
   end
 end

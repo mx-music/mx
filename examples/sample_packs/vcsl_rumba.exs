@@ -286,24 +286,22 @@ defmodule RumbaYMontuno do
   # Rows of sounds played together, each row one cycle or several in turn, the whole played so
   # many times.
   defp rows(rows, times \\ 1) do
-    together(
-      for {sound, patterns} <- rows do
-        {file, gain} = @sounds[sound]
+    together(rows, fn {sound, patterns} ->
+      {file, gain} = @sounds[sound]
 
-        cycles =
-          for pattern <- List.wrap(patterns) do
-            hits =
-              for {cell, index} <- Enum.with_index(String.graphemes(pattern)), cell != "." do
-                amp = gain * String.to_integer(cell) / 9
-                {index * @pulse, sample(file, 0, amp: amp)}
-              end
+      cycles =
+        for pattern <- List.wrap(patterns) do
+          hits =
+            for {cell, index} <- Enum.with_index(String.graphemes(pattern)), cell != "." do
+              amp = gain * String.to_integer(cell) / 9
+              {index * @pulse, sample(file, 0, amp: amp)}
+            end
 
-            at(hits, 4)
-          end
+          at(hits, 4)
+        end
 
-        repeat(seq(cycles), times)
-      end
-    )
+      repeat(seq(cycles), times)
+    end)
   end
 
   # A cycle of the xylophone from the notes at each pulse.

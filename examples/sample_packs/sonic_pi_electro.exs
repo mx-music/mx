@@ -150,10 +150,10 @@ defmodule DialTone do
   defp strokes(name, patterns, bars) do
     levels = for strength <- 1..9, do: {:"#{strength}", [amp: strength / 9]}
     bar = fn pattern -> steps(pattern, 0.25, sample: {:sonic_pi, name}, strokes: levels) end
-    repeat(seq(Enum.map(patterns, bar)), bars)
+    repeat(seq(patterns, bar), bars)
   end
 
-  defp bass(times), do: repeat(seq(for bar <- @bass, do: line(:bass_trance_c, bar)), times)
+  defp bass(times), do: repeat(seq(@bass, fn bar -> line(:bass_trance_c, bar) end), times)
 
   defp beat(bars) do
     [
@@ -168,14 +168,14 @@ defmodule DialTone do
 
   defp arp(times, up \\ 0) do
     repeat(
-      seq(for bar <- @arp, do: line(:elec_blip, Enum.map(bar, &(&1 + up)), 1.5)),
+      seq(@arp, fn bar -> line(:elec_blip, Enum.map(bar, &(&1 + up)), 1.5) end),
       times
     )
   end
 
   # A voice at the start of every other bar.
   defp voices(names) do
-    seq(for name <- names, do: sample({:sonic_pi, name}, 8))
+    seq(names, fn name -> sample({:sonic_pi, name}, 8) end)
   end
 
   defp backbeat(bars) do

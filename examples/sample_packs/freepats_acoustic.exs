@@ -264,23 +264,21 @@ defmodule ValseDuZinc do
     high = Keyword.get(opts, :high, 0)
     strum = Keyword.get(opts, :strum, 0.03)
 
-    seq(
-      for {bass, notes} <- bars(chords) do
-        chord = Enum.map(notes, &(&1 + high))
-        bass = if Keyword.get(opts, :octaves), do: [bass + low - 12, bass + low], else: bass + low
+    seq(bars(chords), fn {bass, notes} ->
+      chord = Enum.map(notes, &(&1 + high))
+      bass = if Keyword.get(opts, :octaves), do: [bass + low - 12, bass + low], else: bass + low
 
-        seq([
-          note(bass, 1, vel: 0.9, release: 2),
-          note(chord, 1, vel: 0.5, strum: strum),
-          note(chord, 1, vel: 0.45, strum: strum)
-        ])
-      end
-    )
+      seq([
+        note(bass, 1, vel: 0.9, release: 2),
+        note(chord, 1, vel: 0.5, strum: strum),
+        note(chord, 1, vel: 0.45, strum: strum)
+      ])
+    end)
   end
 
   # Only the pompe's bass, in octaves, a bar long.
   defp basses(chords) do
-    seq(for {bass, _} <- bars(chords), do: note([bass - 12, bass], 3, vel: 0.7, release: 1))
+    seq(bars(chords), fn {bass, _} -> note([bass - 12, bass], 3, vel: 0.7, release: 1) end)
   end
 
   defp pairs(chords) do

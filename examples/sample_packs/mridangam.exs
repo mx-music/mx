@@ -162,19 +162,17 @@ defmodule Tani do
     words = rows |> List.wrap() |> Enum.join(" ") |> String.split()
     beats = length(words) / per_beat
 
-    together(
-      for stroke <- Keyword.keys(@strokes) do
-        hits =
-          for {word, index} <- Enum.with_index(words),
-              word != ".",
-              stroke in Map.fetch!(@syllables, word) do
-            strength = if rem(index, per_beat) == 0, do: strong, else: vel
-            {index / per_beat, hit(dyn(strength))}
-          end
+    together(Keyword.keys(@strokes), fn stroke ->
+      hits =
+        for {word, index} <- Enum.with_index(words),
+            word != ".",
+            stroke in Map.fetch!(@syllables, word) do
+          strength = if rem(index, per_beat) == 0, do: strong, else: vel
+          {index / per_beat, hit(dyn(strength))}
+        end
 
-        part(stroke, if(hits == [], do: rest(beats), else: at(hits, beats)))
-      end
-    )
+      part(stroke, if(hits == [], do: rest(beats), else: at(hits, beats)))
+    end)
   end
 
   # A stroke at a strength from 0 to 1: the strength picks the recording, and the level is left

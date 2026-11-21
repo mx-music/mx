@@ -73,19 +73,17 @@ defmodule Violin do
   defp section(:pizz, _pass) do
     chords = [{62, [65, 69, 74]}, {55, [62, 67, 70]}, {57, [61, 64, 67]}, {62, [65, 69, 74]}]
 
-    seq(
-      for {bass, chord} <- chords do
-        notes = [bass | chord] ++ tl(Enum.reverse(chord)) ++ [bass + 7]
+    seq(chords, fn {bass, chord} ->
+      notes = [bass | chord] ++ tl(Enum.reverse(chord)) ++ [bass + 7]
 
-        plucks =
-          Enum.with_index(
-            notes,
-            &note(&1, 0.5, vel: if(&2 == 0, do: 0.8, else: 0.6), pizz: 1, sustain: 4)
-          )
+      plucks =
+        Enum.with_index(
+          notes,
+          &note(&1, 0.5, vel: if(&2 == 0, do: 0.8, else: 0.6), pizz: 1, sustain: 4)
+        )
 
-        seq(plucks ++ [rest(0.5)])
-      end
-    )
+      seq(plucks ++ [rest(0.5)])
+    end)
   end
 
   # Shifting up the A and E strings in one bow, then D7 held, swelled and eased, with vibrato.

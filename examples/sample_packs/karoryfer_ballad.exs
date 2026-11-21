@@ -315,7 +315,7 @@ defmodule SmallHours do
 
   # The stir, started again every two bars, each fading in under the end of the one before.
   defp stir(bars, vel \\ 0.3) do
-    seq(for _ <- 1..div(bars, 2), do: at([{0, hit(dyn(vel) ++ [sustain: 8.5])}], 8))
+    seq(1..div(bars, 2), fn _ -> at([{0, hit(dyn(vel) ++ [sustain: 8.5])}], 8) end)
   end
 
   # Bars of a drum in triplets, a character to each third of a beat: a digit is a stroke of that
@@ -326,58 +326,52 @@ defmodule SmallHours do
 
   defp drum(patterns, bars) do
     bar = fn pattern -> steps(pattern, 4 / length(pattern), strokes: strokes()) end
-    repeat(seq(Enum.map(patterns, bar)), bars)
+    repeat(seq(patterns, bar), bars)
   end
 
   # The bass in two: a note on one and on three, and now and then a short one leading into the
   # next bar.
   defp in_two(bars) do
-    seq(
-      for bar <- bars do
-        case bar do
-          {first, second} ->
-            seq([note(first, 2, dyn(0.8)), note(second, 2, dyn(0.7))])
+    seq(bars, fn bar ->
+      case bar do
+        {first, second} ->
+          seq([note(first, 2, dyn(0.8)), note(second, 2, dyn(0.7))])
 
-          {first, second, lead} ->
-            seq([
-              note(first, 2, dyn(0.8)),
-              note(second, 1 + 2 / 3, dyn(0.7)),
-              note(lead, 1 / 3, dyn(0.6))
-            ])
-        end
+        {first, second, lead} ->
+          seq([
+            note(first, 2, dyn(0.8)),
+            note(second, 1 + 2 / 3, dyn(0.7)),
+            note(lead, 1 / 3, dyn(0.6))
+          ])
       end
-    )
+    end)
   end
 
   # The guitar under the tune: each chord strummed slowly and left to ring, and a soft answer on
   # the last third of two when the chord lasts the bar.
   defp comp(bars) do
-    seq(
-      for bar <- bars do
-        case bar do
-          [chord] ->
-            seq([
-              note(@chords[chord], 1 + 2 / 3, dyn(0.45) ++ [strum: 0.06]),
-              note(Enum.drop(@chords[chord], 1), 2 + 1 / 3, dyn(0.2) ++ [strum: 0.03])
-            ])
+    seq(bars, fn bar ->
+      case bar do
+        [chord] ->
+          seq([
+            note(@chords[chord], 1 + 2 / 3, dyn(0.45) ++ [strum: 0.06]),
+            note(Enum.drop(@chords[chord], 1), 2 + 1 / 3, dyn(0.2) ++ [strum: 0.03])
+          ])
 
-          [first, second] ->
-            seq([
-              note(@chords[first], 2, dyn(0.45) ++ [strum: 0.06]),
-              note(@chords[second], 2, dyn(0.45) ++ [strum: 0.06])
-            ])
-        end
+        [first, second] ->
+          seq([
+            note(@chords[first], 2, dyn(0.45) ++ [strum: 0.06]),
+            note(@chords[second], 2, dyn(0.45) ++ [strum: 0.06])
+          ])
       end
-    )
+    end)
   end
 
   # A line of notes and rests, each a name and a length in beats.
   defp line(notes, vel, options \\ []) do
-    seq(
-      for {name, beats} <- notes do
-        if name == :r, do: rest(beats), else: note(name, beats, dyn(vel) ++ options)
-      end
-    )
+    seq(notes, fn {name, beats} ->
+      if name == :r, do: rest(beats), else: note(name, beats, dyn(vel) ++ options)
+    end)
   end
 
   defp brushes(bars) do

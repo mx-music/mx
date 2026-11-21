@@ -347,20 +347,18 @@ defmodule TradingFours do
       "A7" => [:g3, :cs4, :f4]
     }
 
-    seq(
-      for {bar, pattern} <- Enum.zip(walk_bars, patterns) do
-        cells = pattern |> String.replace(" ", "") |> String.graphemes()
+    seq(Enum.zip(walk_bars, patterns), fn {bar, pattern} ->
+      cells = pattern |> String.replace(" ", "") |> String.graphemes()
 
-        hits =
-          for {cell, index} <- Enum.with_index(cells), cell != "." do
-            chord = chord_at(chart(), 4, if(index == 11, do: bar + 1, else: bar) * 4)
-            vel = Float.round(String.to_integer(cell) / 9 * 0.7, 2)
-            {index / 3, note(pitch(shells[chord]), 0.5, vel: vel, sustain: 0.5, release: 0.3)}
-          end
+      hits =
+        for {cell, index} <- Enum.with_index(cells), cell != "." do
+          chord = chord_at(chart(), 4, if(index == 11, do: bar + 1, else: bar) * 4)
+          vel = Float.round(String.to_integer(cell) / 9 * 0.7, 2)
+          {index / 3, note(pitch(shells[chord]), 0.5, vel: vel, sustain: 0.5, release: 0.3)}
+        end
 
-        if hits == [], do: rest(4), else: at(hits, 4)
-      end
-    )
+      if hits == [], do: rest(4), else: at(hits, 4)
+    end)
   end
 
   defp comping do
@@ -513,22 +511,20 @@ defmodule TradingFours do
   # The voices of a section, each given as bars of eighths; a snare's rimshot sounds on the head
   # and on the rim.
   defp mambo_voices(voices) do
-    together(
-      for {voice, bars} <- voices do
-        if voice == :rimshot do
-          together([
-            part(voice, eighths(voice, bars)),
-            part(:rimshot_rim, eighths(:rimshot_rim, bars))
-          ])
-        else
-          part(voice, eighths(voice, bars))
-        end
+    together(voices, fn {voice, bars} ->
+      if voice == :rimshot do
+        together([
+          part(voice, eighths(voice, bars)),
+          part(:rimshot_rim, eighths(:rimshot_rim, bars))
+        ])
+      else
+        part(voice, eighths(voice, bars))
       end
-    )
+    end)
   end
 
   defp swing_voices(voices) do
-    together(for {voice, bars} <- voices, do: part(voice, triplets(voice, bars)))
+    together(voices, fn {voice, bars} -> part(voice, triplets(voice, bars)) end)
   end
 
   # The mambo is written in eighths, eight to a bar, and the swing in triplets, twelve to a bar.
@@ -538,25 +534,23 @@ defmodule TradingFours do
   # Bars of one voice's strokes, a character to each step: a dot is silence, and spaces are left
   # out.
   defp strokes(voice, patterns, per_beat) do
-    seq(
-      for pattern <- List.wrap(patterns) do
-        cells = pattern |> String.replace(" ", "") |> String.graphemes()
+    seq(List.wrap(patterns), fn pattern ->
+      cells = pattern |> String.replace(" ", "") |> String.graphemes()
 
-        hits =
-          for {cell, index} <- Enum.with_index(cells),
-              cell != ".",
-              {offset, opts} <- stroke(voice, cell) do
-            beat = Float.round(max(index / per_beat + offset, 0), 3)
-            {beat, hit(opts)}
-          end
-
-        if hits == [] do
-          rest(length(cells) / per_beat)
-        else
-          at(hits, length(cells) / per_beat)
+      hits =
+        for {cell, index} <- Enum.with_index(cells),
+            cell != ".",
+            {offset, opts} <- stroke(voice, cell) do
+          beat = Float.round(max(index / per_beat + offset, 0), 3)
+          {beat, hit(opts)}
         end
+
+      if hits == [] do
+        rest(length(cells) / per_beat)
+      else
+        at(hits, length(cells) / per_beat)
       end
-    )
+    end)
   end
 
   # A stroke, as the beats it sounds after its step and its options.
