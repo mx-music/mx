@@ -130,6 +130,19 @@ defmodule Mx do
   defdelegate transpose(music, semitones), to: Mx.Music
 
   @doc """
+  The music with each of its notes and hits taking the options given, where the note gives none of its own, or those a function returns for the beat the note starts on, counted from the start of the music.
+  Samples, MIDI notes, messages, changes and rests are left as they are, and the music a loop returns takes the options as well, each pass counted from its own start.
+  An option the part's synth does not take is refused when the song loads.
+
+      each(seq(e5: 0.5, a5: 0.5, c6: 1), vel: 0.8)
+      each(melody(), fn beat -> [vel: if(rem(trunc(beat), 4) == 0, do: 0.9, else: 0.6)] end)
+
+      iex> beats(each(seq(c4: 1, e4: 2), vel: 0.5))
+      3
+  """
+  defdelegate each(music, opts), to: Mx.Music
+
+  @doc """
   The music with the parts named left out, one name or a list: each plays nothing there, and leaves a silence as long as it played, so every other part plays as before.
   A tempo change written in a part left out stays, and a part that plays a loop until the music beside it ends is left out with its loop.
   A name that no part of the music has is refused.

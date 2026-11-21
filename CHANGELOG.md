@@ -37,7 +37,8 @@
   * [mx] A `~MX` pattern accents a word with `>`, which `steps/3` plays as its `accent:` says, takes a length as a fraction such as `g4:1/3`, and plays a word after `^` as a grace note `grace:` beats before the next
   * [mx] `steps/3` takes `words:`, which gives words their pitches, and `pitch/1` takes a note's name as text
   * [mx] In a module that uses `Mx.Song`, `kit/2` declares a kit of strokes, each played by a declared part, and `kit/3` and `kit/4` play one pattern on all of them
-  * [mx] A song that defines a function of its own named `seq`, `together`, `at`, `form`, `without`, `only` or `kit`, at the arity of one of those above, no longer compiles, and must rename it; four examples renamed a `kit` helper to `drums`
+  * [mx] `each/2` gives every note and hit of some music options it does not give itself, or those a function of its beat returns
+  * [mx] A song that defines a function of its own named `seq`, `together`, `at`, `form`, `without`, `only`, `kit` or `each`, at the arity of one of those above, no longer compiles, and must rename it; four examples renamed a `kit` helper to `drums`
 
 ## v0.2.2 (2026-11-16)
 

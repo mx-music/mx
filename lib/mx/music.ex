@@ -46,6 +46,11 @@ defmodule Mx.Music do
     defstruct [:music, :fun]
   end
 
+  defmodule Each do
+    @moduledoc "Music whose notes take the options given, or those a function of their beat returns, where they give none of their own."
+    defstruct [:music, :opts]
+  end
+
   defmodule Sample do
     @moduledoc "A sample by name or path, lasting some beats, with the options samples take."
     defstruct [:ref, :beats, opts: []]
@@ -451,6 +456,7 @@ defmodule Mx.Music do
 
   defp left_out(%Repeat{music: music} = repeat, out?), do: kept_in(repeat, left_out(music, out?))
   defp left_out(%Swing{music: music} = swing, out?), do: kept_in(swing, left_out(music, out?))
+  defp left_out(%Each{music: music} = each, out?), do: kept_in(each, left_out(music, out?))
 
   defp left_out(%Loop{fun: fun} = loop, out?) do
     %{loop | fun: fn pass, inputs -> left_out(returned(fun.(pass, inputs)), out?) || %Seq{} end}
@@ -470,6 +476,7 @@ defmodule Mx.Music do
   defp silence(%At{entries: entries} = at), do: %{at | entries: kept_entries(entries, &silence/1)}
   defp silence(%Repeat{music: music} = repeat), do: kept_in(repeat, silence(music))
   defp silence(%Swing{music: music}), do: silence(music)
+  defp silence(%Each{music: music}), do: silence(music)
 
   defp silence(music) do
     case beats(music) do
@@ -527,6 +534,30 @@ defmodule Mx.Music do
 
   @doc "The music with each note started at the beat the function returns for the beat it was written on, its length unchanged."
   def swing(music, fun) when is_function(fun, 1), do: %Swing{music: item(music), fun: fun}
+
+  @doc "The music with each of its notes and hits taking the options given, or those the function returns for the beat it starts on, where the note gives none of its own."
+  def each(music, opts) when is_list(opts) or is_function(opts, 1) do
+    if is_list(opts), do: check_keyword("each", opts)
+    %Each{music: each_loop(item(music), opts), opts: opts}
+  end
+
+  def each(_music, other) do
+    other = inspect(other)
+    raise ArgumentError, "each takes a list of options or a function of a beat, not #{other}"
+  end
+
+  # The music a loop returns takes the options too, each pass counted from its own start.
+  defp each_loop(%Loop{fun: fun} = loop, opts) do
+    %{loop | fun: fn pass, inputs -> %Each{music: returned(fun.(pass, inputs)), opts: opts} end}
+  end
+
+  defp each_loop(music, opts),
+    do: map_notes(music, & &1, fn child, _ -> each_loop(child, opts) end)
+
+  defp each_opts(%Note{opts: own} = note, opts) do
+    added = for {name, value} <- opts, not Keyword.has_key?(own, name), do: {name, value}
+    %{note | opts: own ++ added}
+  end
 
   @steps_options [:sample, :digit, :strokes, :notes, :words, :each, :slide, :accent, :grace]
 
@@ -866,35 +897,7 @@ defmodule Mx.Music do
       {:error, message} -> raise ArgumentError, "part #{name}: #{message}"
     end
 
-    for note <- own_notes(part.music) do
-      {changes, opts} = Keyword.pop(note.opts, :changes, [])
-
-      result =
-        with :ok <- Pass.check_play(synth, part.defaults, note.pitch, opts),
-             :ok <- check_values(synth, opts) do
-          Enum.find_value(changes, :ok, fn {_beat, change} ->
-            try do
-              Pass.check_change(synth, change)
-
-              case check_values(synth, change) do
-                :ok -> nil
-                error -> error
-              end
-            rescue
-              error in ArgumentError -> {:error, Exception.message(error)}
-            end
-          end)
-        end
-
-      case result do
-        :ok ->
-          :ok
-
-        {:error, message} ->
-          written = written(note)
-          raise ArgumentError, "part #{name}: #{message}, in #{written}"
-      end
-    end
+    for note <- own_notes(part.music), do: check_note!(part, note)
 
     %{part | music: held(part.music, synth, part.defaults)}
   end
@@ -1223,6 +1226,7 @@ defmodule Mx.Music do
   def beats(%TempoChange{}), do: 0
   def beats(%At{beats: beats}), do: beats
   def beats(%Swing{music: music}), do: beats(music)
+  def beats(%Each{music: music}), do: beats(music)
   def beats(%Part{music: music}), do: beats(music)
   def beats(%Repeat{times: :forever}), do: :infinity
   def beats(%Repeat{music: music, times: times}), do: times(beats(music), times)
@@ -1588,6 +1592,27 @@ defmodule Mx.Music do
     end
   end
 
+  defp flatten(%Each{music: music, opts: opts}, beat, part, cut) do
+    for {at, part, step} <- flatten(music, beat, part, cut) do
+      case step do
+        %Note{} = note ->
+          given = if is_list(opts), do: opts, else: opts.(at - beat)
+
+          if not (is_list(given) and Keyword.keyword?(given)) do
+            given = inspect(given)
+            raise ArgumentError, "each's function returns a list of options, not #{given}"
+          end
+
+          note = each_opts(note, given)
+          if is_struct(part, Part), do: check_note!(part, note)
+          {at, part, note}
+
+        _ ->
+          {at, part, step}
+      end
+    end
+  end
+
   # Each part once, in the order it first plays, refusing a name played with other options
   # elsewhere.
   defp parts(played) do
@@ -1622,6 +1647,7 @@ defmodule Mx.Music do
   defp part_names(%At{entries: entries}), do: Enum.flat_map(entries, &part_names(elem(&1, 1)))
   defp part_names(%Repeat{music: music}), do: part_names(music)
   defp part_names(%Swing{music: music}), do: part_names(music)
+  defp part_names(%Each{music: music}), do: part_names(music)
   defp part_names(_music), do: []
 
   # The notes of the music that no part inside it plays.
@@ -1632,7 +1658,42 @@ defmodule Mx.Music do
   defp own_notes(%At{entries: entries}), do: Enum.flat_map(entries, &own_notes(elem(&1, 1)))
   defp own_notes(%Repeat{music: music}), do: own_notes(music)
   defp own_notes(%Swing{music: music}), do: own_notes(music)
+
+  defp own_notes(%Each{music: music, opts: opts}) when is_list(opts),
+    do: Enum.map(own_notes(music), &each_opts(&1, opts))
+
+  defp own_notes(%Each{music: music}), do: own_notes(music)
   defp own_notes(_music), do: []
+
+  defp check_note!(%Part{name: name, synth: synth, defaults: defaults}, note) do
+    {changes, opts} = Keyword.pop(note.opts, :changes, [])
+
+    result =
+      with :ok <- Pass.check_play(synth, defaults, note.pitch, opts),
+           :ok <- check_values(synth, opts) do
+        Enum.find_value(changes, :ok, fn {_beat, change} ->
+          try do
+            Pass.check_change(synth, change)
+
+            case check_values(synth, change) do
+              :ok -> nil
+              error -> error
+            end
+          rescue
+            error in ArgumentError -> {:error, Exception.message(error)}
+          end
+        end)
+      end
+
+    case result do
+      :ok ->
+        :ok
+
+      {:error, message} ->
+        written = written(note)
+        raise ArgumentError, "part #{name}: #{message}, in #{written}"
+    end
+  end
 
   # A note lasts its length on a synth that takes sustain, unless the note or the part's defaults
   # give one.
@@ -1675,6 +1736,7 @@ defmodule Mx.Music do
   end
 
   defp map_notes(%Swing{music: music} = swing, fun, walk), do: %{swing | music: walk.(music, fun)}
+  defp map_notes(%Each{music: music} = each, fun, walk), do: %{each | music: walk.(music, fun)}
   defp map_notes(%Part{music: music} = part, fun, walk), do: %{part | music: walk.(music, fun)}
 
   defp map_notes(%MIDI{} = midi, fun, _walk) do
@@ -1727,6 +1789,7 @@ defmodule Mx.Music do
               Repeat,
               At,
               Swing,
+              Each,
               Part,
               Loop,
               Sample,

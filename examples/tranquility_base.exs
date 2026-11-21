@@ -460,7 +460,7 @@ defmodule TranquilityBase do
 
   defp held(chord), do: note(chord.vibes, 8, vel: 0.6, strum: 0.05)
   defp pad(chord), do: note(chord.pad, 8, vel: 0.8)
-  defp lead(chord), do: seq(for {name, beats} <- chord.lead, do: note(name, beats, vel: 0.8))
+  defp lead(chord), do: each(seq(chord.lead), vel: 0.8)
 
   # Sputnik's beep, one stretch of four of its periods fitted to a bar.
   defp beeps(beats, amp) do

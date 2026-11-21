@@ -389,7 +389,7 @@ defmodule SmallHours do
   end
 
   # The bass walking, a note to each beat.
-  defp walk(notes), do: seq(for name <- notes, do: note(name, 1, dyn(0.8)))
+  defp walk(notes), do: each(seq(notes, &{&1, 1}), dyn(0.8))
 
   # A note at a strength from 0 to 1: the strength picks the recording, and the level is left
   # nearly as recorded.

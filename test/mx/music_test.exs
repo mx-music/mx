@@ -209,6 +209,58 @@ defmodule Mx.MusicTest do
     end
 
     @tag :tmp_dir
+    test "each gives every note and hit options it does not give itself, or those a function of its beat returns",
+         ctx do
+      vels = fn music, synth ->
+        {:ok, song} = load(ctx, "song(music: part(:a, #{music}, synth: :#{synth}))")
+        for {beat, note, opts} <- events(song, :a), do: {beat, note, opts[:vel]}
+      end
+
+      assert vels.("each(seq(c4: 1, e4: 1), vel: 0.8)", :piano) == [{0, 60, 0.8}, {1, 64, 0.8}]
+
+      assert vels.("each(seq([note(:c4, 1, vel: 0.3), note(:e4, 1)]), vel: 0.8)", :piano) ==
+               [{0, 60, 0.3}, {1, 64, 0.8}]
+
+      assert vels.(
+               "each(seq(c4: 1, e4: 1, g4: 1, c5: 1), fn beat -> [vel: if(beat == 0, do: 0.9, else: 0.5)] end)",
+               :piano
+             ) == [{0, 60, 0.9}, {1, 64, 0.5}, {2, 67, 0.5}, {3, 72, 0.5}]
+
+      assert vels.(
+               "seq([rest(1), each(seq(c4: 1, e4: 1), fn beat -> [vel: beat / 2 + 0.1] end)])",
+               :piano
+             ) ==
+               [{1, 60, 0.1}, {2, 64, 0.6}]
+
+      assert vels.(~s|each(steps(~MX"x.x."s, 0.5), vel: 0.4)|, :kick) ==
+               [{0, :own_note, 0.4}, {1.0, :own_note, 0.4}]
+
+      {:ok, song} =
+        load(
+          ctx,
+          "song(music: part(:a, each(seq([sample({:sonic_pi, :bd_haus}, 1), note(:c4, 1)]), vel: 0.8), synth: :piano))"
+        )
+
+      assert [{0, {:sample, {:sonic_pi, :bd_haus}, _}, []}, {1, 60, opts}] = events(song, :a)
+      assert opts[:vel] == 0.8
+      assert Mx.beats(Mx.each(Mx.seq(c4: 1, e4: 2), vel: 0.5)) == 3
+    end
+
+    @tag :tmp_dir
+    test "each gives the notes of each pass of a loop the options, its beats counted from the pass",
+         ctx do
+      {:ok, song} =
+        load(ctx, """
+        song(music: part(:a, each(loop(2, fn _, _ -> seq(c4: 1, e4: 1) end, times: 2), fn beat -> [vel: beat / 2 + 0.1] end), synth: :piano))
+        """)
+
+      assert {:ok, %{events: events}} = Pass.events(hd(song.loops), 0)
+
+      assert for({beat, note, opts} <- events, do: {beat, note, opts[:vel]}) ==
+               [{0, 60, 0.1}, {1, 64, 0.6}, {2, 60, 0.1}, {3, 64, 0.6}]
+    end
+
+    @tag :tmp_dir
     test "swing moves each note to the beat its function returns, and leaves the length", ctx do
       {:ok, song} =
         load(
@@ -410,6 +462,21 @@ defmodule Mx.MusicTest do
       assert_raise ArgumentError, "only names part cowbel, which the music does not have", fn ->
         Mx.only(music, [:kick, :cowbel])
       end
+    end
+
+    @tag :tmp_dir
+    test "each refuses an option the part's synth does not take, and a function that returns no options",
+         ctx do
+      path = write(ctx, "song(music: part(:keys, each(seq(c4: 1), wobble: 3), synth: :piano))")
+      assert {:error, message} = Song.load(path)
+      assert message =~ "part keys"
+      assert message =~ "wobble"
+
+      path =
+        write(ctx, "song(music: part(:keys, each(seq(c4: 1), fn _ -> 0.5 end), synth: :piano))")
+
+      assert {:error, message} = Song.load(path)
+      assert message =~ "each's function returns a list of options, not 0.5"
     end
 
     @tag :tmp_dir

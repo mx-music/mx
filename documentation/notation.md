@@ -154,6 +154,7 @@ seq([verse, transpose(verse, 5), repeat(chorus, 2)])
 - `repeat(music, 4)` plays the music four times. `repeat(music)` plays it until mx stops, and can only hold the whole of a song's music.
 - `transpose(music, 12)` moves every note an octave up.
 - `delay(music, 7)` is the music after 7 beats of silence, so inside `together` it starts 7 beats after the rest.
+- `each(music, vel: 0.8)` gives every note and hit of the music those options, where a note gives none of its own, so `each(seq(e5: 0.5, a5: 0.5, c6: 1), vel: 0.8)` plays the line at one level. Given a function, `each` calls it with the beat each note starts on, counted from the start of the music, and gives the note the options it returns. Samples, MIDI notes, messages and changes are left as they are, the notes a loop returns take the options too, each pass counted from its own start, and an option the part's synth does not take is refused.
 - `beats(music)` is the length of music in beats.
 
 ## Parts
