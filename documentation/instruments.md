@@ -452,7 +452,7 @@ graph LR
 These are mx's own designs, in mxs's `src/effects.rs`, with option names that follow Sonic Pi's.
 bitcrusher and chorus follow Airwindows' DeRez and Chorus, as `LICENSE-designs.md` credits.
 
-bitcrusher, bpf, chorus, compressor, distortion, echo, flanger, hpf, level, lpf, pan, ping_pong, reverb, rlpf, slicer, tremolo, wobble.
+bitcrusher, bpf, chorus, compressor, distortion, echo, flanger, hpf, level, lpf, pan, ping_pong, pitch_shift, reverb, rlpf, slicer, tremolo, wobble.
 
 Every effect takes `amp`, `mix` from 0 for dry to 1 for wet, and `pre_amp`, the level going in.
 `phase`, `decay` and `max_phase` are in beats, so a tremolo with `phase: 1` pulses once a beat at any tempo.
@@ -467,6 +467,7 @@ Every effect takes `amp`, `mix` from 0 for dry to 1 for wet, and `pre_amp`, the 
 - `hpf` and `lpf` take `cutoff`, a MIDI note number.
 - `pan` takes `pan`, from -1 for left to 1 for right.
 - `ping_pong` echoes between left and right: `phase` is the time between echoes, `feedback` how much of each echo the next keeps, `max_phase` the longest `phase` it can change to, and `pan_start` the side of the first echo, from -1 for left to 1 for right.
+- `pitch_shift` takes `pitch`, how many semitones the sound is shifted by, from -24 to 24, and delays the sound by up to 40 ms.
 - `reverb` takes `room` and `damp`, from 0 to 1.
 - `rlpf` takes `cutoff`, a MIDI note number, and `res`, from 0 to 1, how much it rings at its cutoff.
 - `slicer` turns the sound on and off: `phase` is the length of a cycle, `pulse_width` the part of it that is on, `amp_min` and `amp_max` the levels off and on, `phase_offset` where in the cycle it starts, from 0 to 1, and `smooth` how many seconds each change takes.
