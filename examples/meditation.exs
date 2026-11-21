@@ -68,135 +68,38 @@ defmodule Meditation do
   defp line(:shanti, 0), do: "S:6 .D:1 ~S:5 -:4"
   defp line(:shanti, 1), do: "-:4 G:2 ~R:2 ~S:6 -:2"
 
-  # The gat, one cell to each matra: a cell of several notes divides its matra evenly, and - holds
+  # The gat, a word to each matra: the words in brackets divide their matra evenly, and - holds
   # the note before.
-  defp cells(:sthayi) do
-    [
-      "G",
-      "R",
-      "S",
-      ".D S",
-      "R",
-      "G",
-      "-",
-      "P G",
-      "D",
-      "P",
-      "G R",
-      "G",
-      "P D",
-      "S'",
-      "D P",
-      "G R"
-    ]
-  end
+  defp cells(:sthayi), do: ~MX"G R S [.D S] R G - [P G] D P [G R] G [P D] S' [D P] [G R]"
 
-  defp cells(:antara) do
-    [
-      "P",
-      "D",
-      "S'",
-      "-",
-      "S' R'",
-      "G'",
-      "R'",
-      "S'",
-      "D",
-      "S'",
-      "D P",
-      "G",
-      "P D",
-      "P G",
-      "R S",
-      ".D S"
-    ]
-  end
+  defp cells(:antara), do: ~MX"P D S' - [S' R'] G' R' S' D S' [D P] G [P D] [P G] [R S] [.D S]"
 
-  defp cells(:taan) do
-    [
-      "G",
-      "R",
-      "S",
-      ".D S",
-      "R",
-      "G",
-      "-",
-      "P G",
-      "S R G P",
-      "D S' D P",
-      "G R S R",
-      "G P D S'",
-      "D P G R",
-      "S R G P",
-      "D S' D P",
-      "G R S .D"
-    ]
-  end
+  defp cells(:taan),
+    do:
+      ~MX"G R S [.D S] R G - [P G] [S R G P] [D S' D P] [G R S R] [G P D S'] [D P G R] [S R G P] [D S' D P] [G R S .D]"
 
-  defp cells(:fast_taan) do
-    [
-      "S R G P",
-      "D P G R",
-      "R G P D",
-      "S' D P G",
-      "G P D S'",
-      "R' S' D P",
-      "P D S' R'",
-      "G' R' S' D",
-      "S' D P G",
-      "D P G R",
-      "P G R S",
-      "G R S .D",
-      "S",
-      "-",
-      "P G",
-      "G R"
-    ]
-  end
+  defp cells(:fast_taan),
+    do:
+      ~MX"[S R G P] [D P G R] [R G P D] [S' D P G] [G P D S'] [R' S' D P] [P D S' R'] [G' R' S' D] [S' D P G] [D P G R] [P G R S] [G R S .D] S - [P G] [G R]"
 
   # Three times D P G R S, the last S landing on the next cycle's sam, where shanti begins.
-  defp cells(:tihai) do
-    ["D", "P", "G", "R", "S", "-", "D", "P", "G", "R", "S", "-", "D", "P", "G", "R"]
-  end
+  defp cells(:tihai), do: ~MX"D P G R S - D P G R S - D P G R"
 
   defp gat(index) do
     Enum.at([:sthayi, :sthayi, :antara, :sthayi, :taan, :antara, :fast_taan, :tihai], index)
-  end
-
-  # The notes of a gat part as {beat, token, length}, a held cell lengthening the note before it.
-  defp notes(part) do
-    part
-    |> cells()
-    |> Enum.with_index()
-    |> Enum.flat_map(fn {cell, matra} ->
-      tokens = String.split(cell)
-
-      Enum.with_index(tokens, fn token, index ->
-        {matra + index / length(tokens), token, 1 / length(tokens)}
-      end)
-    end)
-    |> Enum.reduce([], fn
-      {_, "-", length}, [{beat, token, held} | rest] -> [{beat, token, held + length} | rest]
-      note, notes -> [note | notes]
-    end)
-    |> Enum.reverse()
   end
 
   # A pass of the flute, given the section and how many of its passes came before.
   defp flute(:gat, time) do
     base = sa() + 12
 
-    notes =
-      for {beat, token, length} <- notes(gat(time)),
-          do:
-            {beat,
-             note(swara(token, base), length,
-               vel: 0.5,
-               sustain: length * 0.85,
-               release: min(length * 0.3, 0.3)
-             )}
-
-    at(notes, 16)
+    steps(cells(gat(time)), 1,
+      words:
+        for(name <- ~w(.D D G G' P R R' S S'), do: {String.to_atom(name), swara(name, base)}),
+      each: fn _step, length ->
+        [vel: 0.5, sustain: length * 0.85, release: min(length * 0.3, 0.3)]
+      end
+    )
   end
 
   defp flute(section, time) do
