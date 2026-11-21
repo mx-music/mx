@@ -143,15 +143,13 @@ defmodule Salsa do
   end
 
   defp piano(:piano_solo, _pass) do
-    chords = chords()
-
     # A solo: a right hand walking the scale in eighths, landing on a chord tone on each beat,
     # over short chords in the left.
     notes = scale(:a4, :minor, octaves: 2)
 
     Enum.map_reduce(0..31, 7, fn step, index ->
       bar = div(step, 8)
-      chord = Enum.at(chords, bar)
+      chord = chord_on(bar * 4)
       classes = Enum.map(chord, &rem(&1, 12))
 
       left =
@@ -188,8 +186,6 @@ defmodule Salsa do
   end
 
   defp piano(_section, _pass) do
-    chords = chords()
-
     # The montuno: chord tones in octaves on the off-beats, answering the clave, the last of each
     # bar already in the next chord.
     two_side = [{0.5, 0}, {1, 2}, {1.5, 1}, {2.5, 2}, {3, 0}, {3.5, 2}]
@@ -197,7 +193,7 @@ defmodule Salsa do
 
     hits =
       for bar <- 0..3, {beat, tone} <- if(rem(bar, 2) == 0, do: two_side, else: three_side) do
-        chord = Enum.at(chords, if(beat == 3.5, do: rem(bar + 1, 4), else: bar))
+        chord = chord_on(if(beat == 3.5, do: bar + 1, else: bar) * 4)
         note = Enum.at(chord, tone)
         {bar * 4 + beat, [note - 12, note]}
       end
@@ -245,8 +241,6 @@ defmodule Salsa do
   end
 
   defp horn_part(section) when section in [:mambo, :mambo_again] do
-    chords = chords()
-
     # The mambo, a written line for the section, from E5 up to D6.
     line = [
       {0.5, :e5, 0.5},
@@ -274,7 +268,7 @@ defmodule Salsa do
 
     hits =
       for {beat, name, length} <- line do
-        chord = Enum.at(chords, div(trunc(beat), 4))
+        chord = chord_on(beat)
         {beat, stab(voicing(pitch(name), chord), Float.round(length * 0.7, 2))}
       end
 
@@ -282,8 +276,6 @@ defmodule Salsa do
   end
 
   defp horn_part(:horn_solo) do
-    chords = chords()
-
     # A solo on one held voice that glides from note to note, a rhythm picked for each bar, the
     # filter opening across the bar.
     notes = scale(:a4, :minor, octaves: 2)
@@ -304,7 +296,7 @@ defmodule Salsa do
       glides = Enum.scan(rest, index, fn _, index -> step.(index) end)
 
       lead_note = fn index ->
-        Enum.at(if(bar == 3, do: fit(notes, Enum.at(chords, 3)), else: notes), index)
+        Enum.at(if(bar == 3, do: fit(notes, chord_on(12)), else: notes), index)
       end
 
       # The glides count from the note they bend.
@@ -330,15 +322,13 @@ defmodule Salsa do
   end
 
   defp horn_part(section) when section in [:stabs, :stabs_again] do
-    chords = chords()
-
     # Stabs, each pushing into the chord that follows, too short to start dark: louder and
     # brighter than the mambo's hits.
     stabs = [{2.5, 0}, {3.5, 1}, {6.5, 1}, {7.5, 2}, {10.5, 2}, {11.5, 3}, {14, 3}, {15, 3}]
 
     entries =
       for {beat, bar} <- stabs,
-          chord = Enum.at(chords, bar),
+          chord = chord_on(bar * 4),
           do:
             {beat,
              stab(voicing(Enum.max(chord), chord), 0.2, cutoff: 110, amp: 0.3, release: 0.25)}
@@ -426,7 +416,38 @@ defmodule Salsa do
   # marks.
   defp fill?(section, coming), do: coming != section and coming in [:stabs, :mambo, :horn_solo]
 
-  defp chords do
-    [chord(:a4, :minor7), chord(:d4, :dom7), chord(:f4, :major7), chord(:e4, :dom7)]
+  # The chart every player reads, a chord to each bar of four beats, played round.
+  defp chart, do: ~MX"Am7 D7 Fmaj7 E7"
+
+  # The chord at a beat of the chart, its root from D4 up.
+  defp chord_on(beat), do: named(chord_at(chart(), 4, beat), :d4)
+
+  # The chord written at a beat of a chart read a word to every step beats, going round past its
+  # end.
+  defp chord_at(chart, step, beat) do
+    length = Enum.sum(Enum.map(chart, & &1.steps)) * step
+    beat = beat - length * Float.floor(beat / length)
+
+    Enum.reduce_while(chart, 0, fn %{tokens: [name], steps: steps}, start ->
+      if beat < start + steps * step, do: {:halt, name}, else: {:cont, start + steps * step}
+    end)
   end
+
+  # A chord's pitches from its name as a chart writes it, such as C#dim7, its root the lowest of
+  # its letter at or above from.
+  defp named(name, from) do
+    [_, letter, accidental, kind] = Regex.run(~r/^([A-G])([#b]?)(.*)$/, name)
+    letters = %{"C" => 0, "D" => 2, "E" => 4, "F" => 5, "G" => 7, "A" => 9, "B" => 11}
+    class = letters[letter] + %{"" => 0, "#" => 1, "b" => -1}[accidental]
+    from = pitch(from)
+    root = from + Integer.mod(class - from, 12)
+    chord(root, kind(kind))
+  end
+
+  defp kind(""), do: :major
+  defp kind("m"), do: :minor
+  defp kind("7"), do: :dom7
+  defp kind("m7"), do: :minor7
+  defp kind("maj7"), do: :major7
+  defp kind("dim7"), do: :dim7
 end

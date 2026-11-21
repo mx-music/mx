@@ -298,11 +298,11 @@ defmodule Choro do
   # the bar, down on the eighths and up between,
   # and strikes the trio's tutti chords with the flute.
   defp cavaquinho(section) do
-    beats = chords(section)
-
     # Each tone of the chord placed between D4 and C#5, as the four strings reach; a five-note
     # chord leaves out its root.
-    voicing = fn {root, quality} -> voice(chord(root, quality), from: 62, to: 73, limit: 4) end
+    voicing = fn beat ->
+      voice(named(chord_at(chart(section), 2, beat), :d4), from: 62, to: 73, limit: 4)
+    end
 
     pattern = [
       {0, 0.02, 0.75, 0.3},
@@ -323,7 +323,7 @@ defmodule Choro do
 
     strums =
       for {beat, strum, vel, held} <- strums do
-        notes = voicing.(Enum.at(beats, trunc(beat)))
+        notes = voicing.(trunc(beat))
 
         # The first string the pick meets sounds loudest: the lowest going down, the highest
         # coming up.
@@ -340,23 +340,14 @@ defmodule Choro do
   # The 7-string guitar: the root on the beat, the chord's fifth and a note leading to the next
   # chord, and a run down to it at the end of each phrase of four bars.
   defp guitar(section, coming) do
-    beats = chords(section)
-    following = chords(coming)
-
-    # The root between B1 and A#2, so the low B string of the 7-string guitar gets used.
-    low = fn {root, quality} -> 35 + rem(hd(chord(root, quality)) - 35 + 120, 12) end
-
-    fifth = fn {root, quality} = chord ->
-      [first, _, third | _] = chord(root, quality)
-      low.(chord) + third - first
-    end
+    # The chord at a beat, reading on into the strain that follows, its root between B1 and A#2,
+    # so the low B string of the 7-string guitar gets used.
+    chord = fn beat -> named(chord_at(chart(section) ++ chart(coming), 2, beat), :b1) end
 
     bars =
       for bar <- 0..15 do
-        chord = Enum.at(beats, bar * 2)
-        next = Enum.at(beats ++ following, bar * 2 + 2)
-        root = low.(chord)
-        target = low.(next)
+        [root | _] = chord.(bar * 2)
+        [target | _] = chord.(bar * 2 + 2)
 
         if rem(bar, 4) == 3 do
           # A baixaria: the root, then sixteenths down the key towards the next chord's root.
@@ -378,7 +369,7 @@ defmodule Choro do
 
           seq([
             note(root, 1, vel: 0.7, sustain: 0.8, release: 0.1),
-            note(fifth.(Enum.at(beats, bar * 2 + 1)), 0.5,
+            note(Enum.at(chord.(bar * 2 + 1), 2), 0.5,
               vel: 0.5,
               sustain: 0.35,
               release: 0.08,
@@ -497,71 +488,45 @@ defmodule Choro do
     at(entries, 32)
   end
 
-  # Every player reads the same chart: a chord per bar, or two chords in a bar written as a pair.
-  defp chart(:a) do
-    phrase = [
-      {:d2, :dom7},
-      {:g2, :major},
-      {:b2, :dom7},
-      {:e2, :minor},
-      [{:a2, :minor}, {:cs2, :dim7}],
-      {:g2, :major},
-      {:d2, :dom7},
-      {:g2, :major}
-    ]
-
-    phrase ++ phrase
-  end
+  # Every player reads the same chart, a word to each bar of two beats, and two chords in a bar
+  # each half of it.
+  defp chart(:a),
+    do: ~MX"D7 G B7 Em Am:1/2 C#dim7:1/2 G D7 G  D7 G B7 Em Am:1/2 C#dim7:1/2 G D7 G"
 
   defp chart(:b) do
-    [
-      {:e2, :minor},
-      {:fs2, :dom7},
-      {:b2, :dom7},
-      {:e2, :minor},
-      {:e2, :minor},
-      {:b2, :minor},
-      {:fs2, :dom7},
-      {:b2, :dom7},
-      {:e2, :minor},
-      {:fs2, :dom7},
-      {:b2, :dom7},
-      {:e2, :dom7},
-      {:a2, :minor},
-      {:e2, :minor},
-      [{:fs2, :dom7}, {:b2, :dom7}],
-      {:e2, :minor}
-    ]
+    ~MX"Em F#7 B7 Em Em Bm F#7 B7  Em F#7 B7 E7 Am Em F#7:1/2 B7:1/2 Em"
   end
 
-  defp chart(:c) do
-    [
-      {:c2, :major},
-      {:ds2, :dim7},
-      {:g2, :dom7},
-      {:c2, :major},
-      {:e2, :dom7},
-      {:a2, :minor},
-      {:d2, :dom7},
-      {:g2, :dom7},
-      {:c2, :major},
-      {:ds2, :dim7},
-      {:g2, :dom7},
-      {:e2, :dom7},
-      {:a2, :minor},
-      {:d2, :minor},
-      {:g2, :dom7},
-      {:c2, :major}
-    ]
-  end
+  defp chart(:c), do: ~MX"C D#dim7 G7 C E7 Am D7 G7  C D#dim7 G7 E7 Am Dm G7 C"
 
-  # The chord on each of a strain's 32 beats.
-  defp chords(section) do
-    Enum.flat_map(chart(section), fn
-      {_, _} = chord -> [chord, chord]
-      pair -> pair
+  # The chord written at a beat of a chart read a word to every step beats, going round past its
+  # end.
+  defp chord_at(chart, step, beat) do
+    length = Enum.sum(Enum.map(chart, & &1.steps)) * step
+    beat = beat - length * Float.floor(beat / length)
+
+    Enum.reduce_while(chart, 0, fn %{tokens: [name], steps: steps}, start ->
+      if beat < start + steps * step, do: {:halt, name}, else: {:cont, start + steps * step}
     end)
   end
+
+  # A chord's pitches from its name as a chart writes it, such as C#dim7, its root the lowest of
+  # its letter at or above from.
+  defp named(name, from) do
+    [_, letter, accidental, kind] = Regex.run(~r/^([A-G])([#b]?)(.*)$/, name)
+    letters = %{"C" => 0, "D" => 2, "E" => 4, "F" => 5, "G" => 7, "A" => 9, "B" => 11}
+    class = letters[letter] + %{"" => 0, "#" => 1, "b" => -1}[accidental]
+    from = pitch(from)
+    root = from + Integer.mod(class - from, 12)
+    chord(root, kind(kind))
+  end
+
+  defp kind(""), do: :major
+  defp kind("m"), do: :minor
+  defp kind("7"), do: :dom7
+  defp kind("m7"), do: :minor7
+  defp kind("maj7"), do: :major7
+  defp kind("dim7"), do: :dim7
 
   defp key(:a), do: scale(:g1, :major, octaves: 5)
   defp key(:b), do: scale(:e1, :harmonic_minor, octaves: 5)

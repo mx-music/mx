@@ -261,20 +261,20 @@ defmodule TradingFours do
   # side from the first beat and on its three side off the beat, the last of each bar already in
   # the next chord.
   defp montuno(cycles) do
-    voicings = [
-      dm7: {[:a4, :a5], [:c5, :f5]},
-      g7: {[:g4, :g5], [:b4, :f5]},
-      cmaj7: {[:g4, :g5], [:b4, :e5]},
-      a7: {[:a4, :a5], [:cs5, :g5]}
-    ]
+    voicings = %{
+      "Dm7" => {[:a4, :a5], [:c5, :f5]},
+      "G7" => {[:g4, :g5], [:b4, :f5]},
+      "Cmaj7" => {[:g4, :g5], [:b4, :e5]},
+      "A7" => {[:a4, :a5], [:cs5, :g5]}
+    }
 
     two_side = [{0, :octave}, {1, :inside}, {1.5, :octave}, {2.5, :inside}, {3.5, :next}]
     three_side = [{0.5, :inside}, {1.5, :octave}, {2.5, :inside}, {3.5, :next}]
 
     hits =
       for bar <- 0..3, {beat, hand} <- if(rem(bar, 2) == 0, do: two_side, else: three_side) do
-        {octave, inside} = voicings[Enum.at(chords(), bar)]
-        {next, _inside} = voicings[Enum.at(chords(), rem(bar + 1, 4))]
+        {octave, inside} = voicings[chord_at(chart(), 4, bar * 4)]
+        {next, _inside} = voicings[chord_at(chart(), 4, (bar + 1) * 4)]
 
         {notes, vel} =
           case hand do
@@ -340,12 +340,12 @@ defmodule TradingFours do
   # The left hand's chords in the swing are without their roots: the third and seventh with a
   # ninth or a thirteenth.
   defp comp(walk_bars, patterns) do
-    shells = [
-      dm7: [:f3, :c4, :e4],
-      g7: [:f3, :b3, :e4],
-      cmaj7: [:e3, :b3, :d4],
-      a7: [:g3, :cs4, :f4]
-    ]
+    shells = %{
+      "Dm7" => [:f3, :c4, :e4],
+      "G7" => [:f3, :b3, :e4],
+      "Cmaj7" => [:e3, :b3, :d4],
+      "A7" => [:g3, :cs4, :f4]
+    }
 
     seq(
       for {bar, pattern} <- Enum.zip(walk_bars, patterns) do
@@ -353,7 +353,7 @@ defmodule TradingFours do
 
         hits =
           for {cell, index} <- Enum.with_index(cells), cell != "." do
-            chord = Enum.at(chords(), rem(if(index == 11, do: bar + 1, else: bar), 4))
+            chord = chord_at(chart(), 4, if(index == 11, do: bar + 1, else: bar) * 4)
             vel = Float.round(String.to_integer(cell) / 9 * 0.7, 2)
             {index / 3, note(pitch(shells[chord]), 0.5, vel: vel, sustain: 0.5, release: 0.3)}
           end
@@ -616,5 +616,17 @@ defmodule TradingFours do
   defp times(pattern, count), do: List.duplicate(pattern, count)
   defp after_bars(bars, patterns), do: times("........", bars) ++ List.wrap(patterns)
 
-  defp chords, do: ~w(dm7 g7 cmaj7 a7)a
+  # The chart every player reads, a chord to each bar of four beats, played round.
+  defp chart, do: ~MX"Dm7 G7 Cmaj7 A7"
+
+  # The chord written at a beat of a chart read a word to every step beats, going round past its
+  # end.
+  defp chord_at(chart, step, beat) do
+    length = Enum.sum(Enum.map(chart, & &1.steps)) * step
+    beat = beat - length * Float.floor(beat / length)
+
+    Enum.reduce_while(chart, 0, fn %{tokens: [name], steps: steps}, start ->
+      if beat < start + steps * step, do: {:halt, name}, else: {:cont, start + steps * step}
+    end)
+  end
 end
