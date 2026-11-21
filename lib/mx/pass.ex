@@ -131,6 +131,14 @@ defmodule Mx.Pass do
         :ok
     end
 
+    if notes != [] do
+      for {option, value} <- opts do
+        with {:error, message} <- Synths.check_value(synth, option, value) do
+          raise ArgumentError, message
+        end
+      end
+    end
+
     written = if is_list(written), do: written, else: List.duplicate(written, length(notes))
 
     indexes =
@@ -330,7 +338,8 @@ defmodule Mx.Pass do
       opts,
       &Synths.effect_option?(effect, &1),
       fn _ -> false end,
-      "effect #{effect} has"
+      "effect #{effect} has",
+      {:effect, effect}
     )
 
     record({{:control, target, {:effect, effect}}, control_values(opts)})
@@ -339,7 +348,7 @@ defmodule Mx.Pass do
 
   def record_control(%Handle{target: target, synth: synth}, opts) when is_list(opts) do
     owner = if synth == :stereo_player, do: "samples have", else: "synth #{synth} has"
-    check_control(opts, &Synths.option?(synth, &1), &Synths.fixed?(synth, &1), owner)
+    check_control(opts, &Synths.option?(synth, &1), &Synths.fixed?(synth, &1), owner, synth)
     record({{:control, target, synth}, control_values(opts)})
     :ok
   end
@@ -355,7 +364,8 @@ defmodule Mx.Pass do
       opts,
       &Synths.effect_option?(effect, &1),
       fn _ -> false end,
-      "effect #{effect} has"
+      "effect #{effect} has",
+      {:effect, effect}
     )
 
     :ok
@@ -363,7 +373,7 @@ defmodule Mx.Pass do
 
   def check_change(synth, opts) when is_list(opts) do
     owner = if synth == :stereo_player, do: "samples have", else: Synths.owner(synth) <> " has"
-    check_control(opts, &Synths.option?(synth, &1), &Synths.fixed?(synth, &1), owner)
+    check_control(opts, &Synths.option?(synth, &1), &Synths.fixed?(synth, &1), owner, synth)
     :ok
   end
 
@@ -375,8 +385,8 @@ defmodule Mx.Pass do
     :ok
   end
 
-  defp check_control(opts, option?, fixed?, owner) do
-    for {option, _} <- opts do
+  defp check_control(opts, option?, fixed?, owner, subject) do
+    for {option, value} <- opts do
       cond do
         option in @envelope or fixed?.(option) ->
           raise ArgumentError, "#{option} cannot change once a sound plays"
@@ -385,7 +395,9 @@ defmodule Mx.Pass do
           raise ArgumentError, "#{owner} no option #{option}"
 
         true ->
-          :ok
+          with {:error, message} <- Synths.check_value(subject, option, value) do
+            raise ArgumentError, message
+          end
       end
     end
   end

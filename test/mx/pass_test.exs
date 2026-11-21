@@ -21,6 +21,22 @@ defmodule Mx.PassTest do
            """) == [{0, 60, 1}, {1, 64, 0.5}, {4, 60, 1}, {4, 67, 1}]
   end
 
+  test "a pass refuses a value an option cannot take, naming the part and the option", %{
+    tmp_dir: dir
+  } do
+    path = Path.join(dir, "song.exs")
+
+    File.write!(path, """
+    import Mx
+    song(music: part(:x, loop(3, fn pass, _ -> note(:c4, 1, cutoff: if(pass == 2, do: :c5, else: 80)) end), synth: :saw))
+    """)
+
+    {:ok, %{loops: [loop]}} = Song.load(path)
+    assert {:ok, _events} = Pass.events(loop, 1)
+    assert {:error, message} = Pass.events(loop, 2)
+    assert message =~ "part x: synth saw takes cutoff a number, not c5"
+  end
+
   test "gives the notes of a synth that takes no sustain their beats", %{tmp_dir: dir} do
     assert notes(dir, """
            song(music: part(:drum, seq([note(:c3, 0.5), note(:d3, 1.5)]), synth: :berimbau))

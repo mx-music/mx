@@ -551,6 +551,51 @@ defmodule Mx.MusicTest do
     end
 
     @tag :tmp_dir
+    test "a note's option given a name or a string where it takes a number is refused", ctx do
+      path = write(ctx, "song(music: part(:x, note(:c4, 1, cutoff: :c6), synth: :saw))")
+
+      assert Song.load(path) ==
+               {:error,
+                "#{path}:3: part x: synth saw takes cutoff a number, not c6, in note(60, 1, cutoff: :c6)"}
+
+      path = write(ctx, ~s|song(music: part(:x, note(:c4, 1, cutoff: "x"), synth: :saw))|)
+
+      assert Song.load(path) ==
+               {:error,
+                ~s|#{path}:3: part x: synth saw takes cutoff a number, not "x", in note(60, 1, cutoff: "x")|}
+    end
+
+    @tag :tmp_dir
+    test "an effect's option given a value it cannot take is refused, naming what it takes",
+         ctx do
+      fx = fn fx -> write(ctx, "song(music: part(:x, note(:c4, 1), synth: :saw, fx: #{fx}))") end
+
+      path = fx.("[lpf: [cutoff: :c5]]")
+
+      assert Song.load(path) ==
+               {:error, "#{path}:3: part x: effect lpf takes cutoff a number, not c5"}
+
+      path = fx.("[reverb: [room: 5]]")
+
+      assert Song.load(path) ==
+               {:error, "#{path}:3: part x: effect reverb takes room from 0 to 1, not 5"}
+
+      assert {:ok, _song} = Song.load(fx.("[reverb: [room: 1]]"))
+    end
+
+    @tag :tmp_dir
+    test "a change to an effect with a value it cannot take is refused", ctx do
+      path =
+        write(
+          ctx,
+          "song(music: together([part(:x, note(:c4, 2), synth: :saw, fx: [lpf: []]), seq([rest(1), change({:x, :lpf}, cutoff: :c5)])]))"
+        )
+
+      assert {:error, message} = Song.load(path)
+      assert message =~ "effect lpf takes cutoff a number, not c5"
+    end
+
+    @tag :tmp_dir
     test "a note outside any part is refused", ctx do
       path = write(ctx, "song(music: note(:c4, 1))")
 

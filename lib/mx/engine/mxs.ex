@@ -71,9 +71,12 @@ defmodule Mx.Engine.Mxs do
       for {name, specs} <- effects ++ effect_specs(), do: {"fx_" <> name, specs ++ effect}
   end
 
-  @doc "Each synth's options that take a range or a set of names, as `{:range, low, high}`, with nil for an open end, or `{:names, names}`."
+  @doc "Each synth's and effect's options that take a range or a set of names, as `{:range, low, high}`, with nil for an open end, or `{:names, names}`."
   def limits do
-    Map.new(synth_specs(), fn {name, specs} ->
+    {_synths, _note, _sample, effects, _effect, _input} = Native.catalog()
+    effects = for {name, specs} <- effects ++ effect_specs(), do: {"fx_" <> name, specs}
+
+    Map.new(synth_specs() ++ effects, fn {name, specs} ->
       limits =
         for spec <- specs, limit = limit(spec), into: %{}, do: {spec.name, limit}
 

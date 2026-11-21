@@ -623,12 +623,18 @@ defmodule Mx.Song do
     Enum.find_value(chain, :ok, fn {effect, opts} ->
       if Synths.effect?(effect) do
         case Enum.find(Keyword.keys(opts), &(not Synths.effect_option?(effect, &1))) do
-          nil -> nil
+          nil -> check_effect_values(effect, opts)
           option -> {:error, "effect #{effect} has no option #{option}"}
         end
       else
         {:error, "mx has no effect #{effect}"}
       end
+    end)
+  end
+
+  defp check_effect_values(effect, opts) do
+    Enum.find_value(opts, fn {option, value} ->
+      with :ok <- Synths.check_value({:effect, effect}, option, value), do: nil
     end)
   end
 

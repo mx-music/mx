@@ -74,6 +74,7 @@
 
 ### 2. Bug fixes
 
+  * [mx] An option of a note, an effect or a change given a value it cannot take is refused when the song loads, naming the part and what the option takes: a name or a string where it takes a number, or a number outside an effect's range; before, such a song rendered silence, never finished, or stopped with no line
   * [mix mx.import] Join a tie between voices to the note it ties into
   * [mix mx.import] Write a long order of bars in full
 

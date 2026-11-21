@@ -97,6 +97,20 @@ defmodule Mx.InstrumentSongTest do
     assert {:ok, _song} = Mx.Song.load(path)
   end
 
+  test "a defeffect's option given a value outside the range its attr declares is refused when the song loads",
+       ctx do
+    path = Path.join(ctx.tmp_dir, "loud_bells.exs")
+    music = "part(:a, note(72, 1), synth: :bell, fx: [quieter: [level: 2]])"
+
+    File.write!(
+      path,
+      "import Mx\n" <> bell(0.1) <> @quieter <> "song(tempo: 60, music: #{music})\n"
+    )
+
+    assert {:error, message} = Mx.Song.load(path)
+    assert message =~ "part a: effect quieter takes level from 0 to 1, not 2"
+  end
+
   test "a defeffect that ends a note fails when its module compiles" do
     source = """
     defmodule Mx.InstrumentSongTest.Ringing do

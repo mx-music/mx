@@ -167,9 +167,18 @@ defmodule Mx.Synths do
 
   @doc "How messages name a synth or a sampled instrument."
   def owner(%Mx.Sampled{} = sampled), do: to_string(sampled)
+  def owner({:effect, effect}), do: "effect #{effect}"
   def owner(synth), do: "synth #{synth}"
 
-  @doc "Refuses a number outside the range a synth's option takes, or a name it does not take, naming what it takes."
+  @doc "Refuses a value a synth's option, or with `{:effect, effect}` an effect's, cannot take: a number outside its range, a name it does not take, or anything but a number where it takes one, naming what it takes."
+  def check_value(_synth, :note, _value), do: :ok
+
+  def check_value(synth, option, values) when is_list(values) do
+    Enum.find_value(values, :ok, fn value ->
+      with :ok <- check_value(synth, option, value), do: nil
+    end)
+  end
+
   def check_value(synth, option, value) do
     limit = limit(synth, option)
 
@@ -183,6 +192,7 @@ defmodule Mx.Synths do
     end
   end
 
+  defp limit({:effect, effect}, option), do: limit(fx(effect), option)
   defp limit(%Mx.Sampled{}, :vel), do: {:range, 0, 1}
   defp limit(%Mx.Sampled{}, option), do: limit("stereo_player", option)
 
@@ -194,9 +204,12 @@ defmodule Mx.Synths do
     (low == nil or value >= low) and (high == nil or value <= high)
   end
 
+  defp within?({:range, _low, _high}, value), do: is_boolean(value)
   defp within?({:names, names}, value) when is_atom(value), do: Atom.to_string(value) in names
-  defp within?(_limit, _value), do: true
+  defp within?({:names, _names}, _value), do: true
+  defp within?(nil, value), do: is_number(value) or is_boolean(value)
 
+  defp takes(nil), do: "a number"
   defp takes({:range, low, nil}), do: "from #{number(low)} up"
   defp takes({:range, nil, high}), do: "up to #{number(high)}"
   defp takes({:range, low, high}), do: "from #{number(low)} to #{number(high)}"
