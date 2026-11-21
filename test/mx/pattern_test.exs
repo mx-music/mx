@@ -47,6 +47,42 @@ defmodule Mx.PatternTest do
       assert_raise ArgumentError, ~r/holds no words/, fn -> Pattern.parse("[ ]") end
     end
 
+    test "> accents a word, inside brackets too, and a fraction is a length" do
+      assert Pattern.parse(">h [f >f] >g5/b4 c4:1/3 _:3/2") == [
+               %{tokens: ["h"], steps: 1, accent: true},
+               %{tokens: ["f"], steps: 0.5},
+               %{tokens: ["f"], steps: 0.5, accent: true},
+               %{tokens: ["g5", "b4"], steps: 1, accent: true},
+               %{tokens: ["c4"], steps: 1 / 3},
+               %{tokens: [], steps: 1.5}
+             ]
+
+      assert ~MX">x."s == [
+               %{tokens: [">"], steps: 1},
+               %{tokens: ["x"], steps: 1},
+               %{tokens: [], steps: 1}
+             ]
+    end
+
+    test "refuse an accent on a silence, a hold or a glide, and a fraction that is not above 0" do
+      for word <- [">_", ">-", ">~g4"] do
+        assert_raise ArgumentError, ~r/^#{word} accents/, fn -> Pattern.parse("f " <> word) end
+      end
+
+      for word <- ["c4:1/0", "c4:0/2", "c4:-1/2", "c4:1/x"] do
+        assert_raise ArgumentError, ~r/^#{word} takes its length/, fn -> Pattern.parse(word) end
+      end
+
+      for text <- ["f >_", "c4:1/0"] do
+        error =
+          assert_raise CompileError, fn ->
+            Code.eval_string("import Mx\n\n~MX\"#{text}\"", [], file: "song.exs")
+          end
+
+        assert Exception.message(error) =~ "song.exs:3: ~MX: "
+      end
+    end
+
     test "~MX with s reads a character to a step, and refuses another modifier" do
       assert ~MX"9. x|c"s == [
                %{tokens: ["9"], steps: 1},
@@ -115,6 +151,44 @@ defmodule Mx.PatternTest do
 
       assert %Seq{items: [%Note{opts: [vel: 0.5]}, %Rest{}, %Note{opts: [vel: 0.9]}]} =
                steps("x.x", 0.25, each: loud)
+    end
+
+    test "plays an accented word with accent:, a number added to its vel up to 1 or options in place of its own" do
+      vels = fn music -> for %Note{opts: opts} <- music.items, do: opts[:vel] end
+
+      assert vels.(steps(~MX"f >f", 0.25, strokes: [f: [vel: 0.5]], accent: 0.25)) == [0.5, 0.75]
+
+      assert vels.(steps(~MX"f >f", 0.25, strokes: [f: [vel: 0.5]], accent: [vel: 0.9])) == [
+               0.5,
+               0.9
+             ]
+
+      assert vels.(steps(~MX"f >f", 0.25, strokes: [f: [vel: 0.9]], accent: 0.25)) == [0.9, 1]
+
+      assert %Seq{items: [%Note{pitch: 67, opts: [vel: 0.6]}, %Note{pitch: 67, opts: [vel: 0.8]}]} =
+               steps(~MX"g4 >g4", 0.25, vel: 0.6, accent: 0.2)
+
+      assert %Seq{items: [%Note{beats: 0.25}, %Note{beats: 0.25}]} =
+               steps(~MX"f >f", 0.25, strokes: [f: [vel: 0.5]], accent: 0.25)
+    end
+
+    test "refuses an accented word without accent:, and a number for a sound with no vel" do
+      assert_raise ArgumentError, "steps plays the accented word >f and has no accent:", fn ->
+        steps(~MX"f >f", 0.25, strokes: [f: [vel: 0.5]])
+      end
+
+      assert_raise ArgumentError, ~r/>f/, fn ->
+        steps(~MX"f >f", 0.25, strokes: [f: [muted: 1]], accent: 0.2)
+      end
+    end
+
+    test "places notes whose lengths are fractions where the fractions add up" do
+      music = steps(~MX"c4:1/3 d4:1/3 e4:1/3", 1)
+
+      assert beats(music) == 1.0
+
+      {starts, _} = Enum.map_reduce(music.items, 0, &{{&2, &1.pitch}, &2 + &1.beats})
+      assert starts == [{0, 60}, {1 / 3, 62}, {2 / 3, 64}]
     end
 
     test "plays the words of a pattern as notes of their length, strokes and silence" do

@@ -212,6 +212,10 @@ defmodule Mx do
       part(:lead, steps(~MX"g4:2 _ g4 bb4:2 _ a4", 0.25, vel: 0.8))
       part(:bass, steps(~MX"eb2:2 ~g2:2 d2:4", 0.25, slide: 0.3), synth: :fm)
 
+  A word after `>` is accented by `accent:`: a number is added to the sound's vel, up to 1, and a list of options takes the place of the sound's options of the same names.
+
+      steps(~MX"f >f f f", 0.25, strokes: [f: [vel: 0.5]], accent: 0.3)
+
       iex> beats(steps("x..x", 0.25))
       1.0
 

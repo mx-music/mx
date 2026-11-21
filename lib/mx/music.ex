@@ -528,7 +528,7 @@ defmodule Mx.Music do
   @doc "The music with each note started at the beat the function returns for the beat it was written on, its length unchanged."
   def swing(music, fun) when is_function(fun, 1), do: %Swing{music: item(music), fun: fun}
 
-  @steps_options [:sample, :digit, :strokes, :notes, :each, :slide]
+  @steps_options [:sample, :digit, :strokes, :notes, :each, :slide, :accent]
 
   @doc "The sounds of a pattern, each character of a string or each word of `~MX` lasting a step of beats; a list of strings is one bar after another."
   def steps(pattern, step, opts \\ [])
@@ -601,26 +601,30 @@ defmodule Mx.Music do
         {after_steps * step, [note: named(token)] ++ slide}
       end
 
+    accented = accented(cell, own[:accent])
+
     case Enum.map(tokens, &sound(&1, own)) do
       [{:hit, opts}] when changes == [] ->
-        stroke(own[:sample], beats, opts ++ each)
+        stroke(own[:sample], beats, accented.(opts ++ each))
 
       [{:hit, _opts}] ->
         raise ArgumentError, "steps glides from a note, not from the stroke #{hd(tokens)}"
 
       [{:note, pitch}] when changes == [] ->
-        note(pitch, beats, each)
+        note(pitch, beats, accented.(each))
 
       [{:note, pitch}] ->
-        note(pitch, beats, each ++ [changes: changes])
+        note(pitch, beats, accented.(each) ++ [changes: changes])
 
       sounds ->
         case Enum.split_with(sounds, &match?({:hit, _}, &1)) do
           {hits, []} ->
-            together(for {:hit, opts} <- hits, do: stroke(own[:sample], beats, opts ++ each))
+            together(
+              for {:hit, opts} <- hits, do: stroke(own[:sample], beats, accented.(opts ++ each))
+            )
 
           {[], notes} ->
-            note(Keyword.values(notes), beats, each)
+            note(Keyword.values(notes), beats, accented.(each))
 
           _ ->
             raise ArgumentError,
@@ -628,6 +632,46 @@ defmodule Mx.Music do
         end
     end
   end
+
+  # What an accent does to a sound's options: a number is added to its vel, up to 1, and a list
+  # takes the place of its options of the same names.
+  defp accented(%{accent: true, tokens: tokens}, accent) do
+    word = ">" <> Enum.join(tokens, "/")
+
+    case accent do
+      nil ->
+        raise ArgumentError, "steps plays the accented word #{word} and has no accent:"
+
+      amount when is_number(amount) ->
+        fn opts ->
+          case Keyword.fetch(opts, :vel) do
+            {:ok, vel} ->
+              Keyword.replace(opts, :vel, min(vel + amount, 1))
+
+            :error ->
+              raise ArgumentError,
+                    "steps adds accent: #{amount} to the vel of #{word}, which has no vel"
+          end
+        end
+
+      replaced when is_list(replaced) ->
+        check_keyword("accent:", replaced)
+
+        fn opts ->
+          Enum.reduce(replaced, opts, fn {name, value}, opts ->
+            if Keyword.has_key?(opts, name),
+              do: Keyword.replace(opts, name, value),
+              else: opts ++ [{name, value}]
+          end)
+        end
+
+      other ->
+        other = inspect(other)
+        raise ArgumentError, "steps takes accent: as a number or a list of options, not #{other}"
+    end
+  end
+
+  defp accented(_cell, _accent), do: & &1
 
   defp stroke(nil, beats, opts), do: %Note{pitch: :own_note, beats: beats, opts: opts}
   defp stroke(ref, beats, opts), do: sample(ref, beats, opts)
