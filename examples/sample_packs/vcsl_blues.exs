@@ -244,8 +244,8 @@ defmodule TwelveBars do
       drums:
         seq([
           rest(8),
-          kit(hat: ~MX"7.47.47.47.4"s),
-          kit(
+          drums(hat: ~MX"7.47.47.47.4"s),
+          drums(
             hat: ~MX"7.47.4......"s,
             snare: ~MX"......666..."s,
             high_tom: ~MX".........77."s,
@@ -300,7 +300,10 @@ defmodule TwelveBars do
       {:bass, bass(eleven)},
       {:drums,
        together([
-         kit([ride: ~MX"7.47.47.47.4"s, kick: ~MX"8.....7....4"s, snare: ~MX"...7.....7.."s], 11),
+         drums(
+           [ride: ~MX"7.47.47.47.4"s, kick: ~MX"8.....7....4"s, snare: ~MX"...7.....7.."s],
+           11
+         ),
          sample(@kit.crash, 4, amp: 0.8)
        ])},
       harp_c,
@@ -323,9 +326,9 @@ defmodule TwelveBars do
       bass: seq([line(c3: 2, r: 10), note([:c2, :c3], 8, release: 2)]),
       drums:
         seq([
-          kit(kick: ~MX"6..........."s, snare: ~MX"6..........."s, hat: ~MX"6..........."s),
+          drums(kick: ~MX"6..........."s, snare: ~MX"6..........."s, hat: ~MX"6..........."s),
           together([
-            kit(kick: ~MX"6..........."s, low_tom: ~MX"6..........."s),
+            drums(kick: ~MX"6..........."s, low_tom: ~MX"6..........."s),
             sample(@kit.crash, 8, amp: 1.0, sustain: 8, release: 3)
           ])
         ])
@@ -378,7 +381,7 @@ defmodule TwelveBars do
 
   # Bars of the kit in pulses, a row to each piece and a character to each pulse: a digit is a
   # stroke of that level, a dot is silence.
-  defp kit(rows, bars \\ 1) do
+  defp drums(rows, bars \\ 1) do
     strokes =
       for strength <- 1..9,
           do: {:"#{strength}", [amp: strength / 9, sustain: 1.5, release: 0.5]}
@@ -404,11 +407,11 @@ defmodule TwelveBars do
   # Eleven bars of the shuffle on the cymbal given, and a bar that ends on the toms.
   defp shuffle(cymbal) do
     seq([
-      kit(
+      drums(
         [{cymbal, ~MX"7.47.47.47.4"s}, kick: ~MX"8.....7....4"s, snare: ~MX"...7.....7.."s],
         11
       ),
-      kit([
+      drums([
         {cymbal, ~MX"7.47.4......"s},
         kick: ~MX"8.....7....."s,
         snare: ~MX"...7..666..."s,

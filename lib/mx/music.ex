@@ -595,6 +595,9 @@ defmodule Mx.Music do
     %Together{items: [seq, %At{entries: entries, beats: beats(seq)}]}
   end
 
+  @doc false
+  def pattern_cells(pattern), do: pattern |> List.wrap() |> Enum.flat_map(&cells/1)
+
   defp cells(%{tokens: tokens, steps: steps} = cell) when is_list(tokens) and is_number(steps) do
     [cell]
   end
@@ -837,6 +840,18 @@ defmodule Mx.Music do
     end
 
     part = struct(%Part{name: name, music: item(music)}, opts)
+
+    case part_names(part.music) do
+      [] ->
+        :ok
+
+      inner ->
+        inner = inner |> Enum.uniq() |> Enum.join(", ")
+
+        raise ArgumentError,
+              "part #{name} holds the parts #{inner}; a kit plays beside parts, in together, not inside a part"
+    end
+
     part = %{part | synth: load_sampled(name, part.synth)}
     synth = part.synth
 

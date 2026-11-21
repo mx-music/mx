@@ -20,6 +20,7 @@ defmodule Mx.Song do
   `part/2` written in the module's body declares a part with its options, once, and written in a function it is that part playing some music, with those options.
   A part that is not declared does not compile.
   `together/1` in a function takes declared parts by name, as `together(kick: steps("x...", 1), bass: note(:g1, 4))`.
+  `kit/2` in the body declares a kit of strokes, each played by a declared part, and `kit/3` in a function plays one pattern on all of them.
   """
 
   alias Mx.{Samples, Synths}
@@ -64,8 +65,9 @@ defmodule Mx.Song do
   defmacro __using__(opts) do
     quote do
       import Mx, except: [part: 2, together: 1]
-      import Mx.Song, only: [part: 2, together: 1]
+      import Mx.Song, only: [part: 2, together: 1, kit: 2, kit: 3, kit: 4]
       Module.register_attribute(__MODULE__, :mx_parts, accumulate: true)
+      Module.register_attribute(__MODULE__, :mx_kits, accumulate: true)
       @mx_song unquote(opts)
       @before_compile Mx.Song
     end
@@ -123,6 +125,84 @@ defmodule Mx.Song do
 
   def together_parts(_declared, items, _location), do: Mx.together(items)
 
+  @doc "In a module's body, declares a kit: its strokes, each with the declared part that plays it and its options, or as a list of other strokes it plays together."
+  defmacro kit(name, strokes) do
+    if __CALLER__.function do
+      refuse(
+        __CALLER__,
+        "kit takes a pattern and a step in a function, as kit(:#{name}, ~MX\"o h\", 0.25)"
+      )
+    end
+
+    line = __CALLER__.line
+
+    quote do
+      @mx_kits {unquote(name), unquote(strokes), unquote(line)}
+    end
+  end
+
+  @doc "In a function, the kit playing a pattern: each of its parts plays the strokes that name it, at the beats `Mx.steps/3` gives them, and the options are those of steps but `strokes:`."
+  defmacro kit(name, pattern, step, opts \\ []) do
+    declared = Module.get_attribute(__CALLER__.module, :mx_kits)
+
+    if is_atom(name) and not Enum.any?(declared, &(elem(&1, 0) == name)) do
+      refuse(__CALLER__, "kit #{name} is not declared; declare it with kit :#{name}, ...")
+    end
+
+    location = [file: String.to_charlist(__CALLER__.file), line: __CALLER__.line]
+
+    quote do
+      Mx.Song.play_kit(
+        __mx_kits__(),
+        __mx_parts__(),
+        unquote(name),
+        unquote(pattern),
+        unquote(step),
+        unquote(opts),
+        unquote(location)
+      )
+    end
+  end
+
+  @doc false
+  def play_kit(kits, parts, name, pattern, step, opts, location) do
+    strokes = Keyword.fetch!(kits, name)
+    cells = Mx.Music.pattern_cells(pattern)
+    words = for {stroke, _} <- strokes, do: to_string(stroke)
+
+    for %{tokens: tokens} <- cells, token <- tokens, token not in words do
+      reraise ArgumentError,
+              [message: "kit #{name} has no stroke #{token}"],
+              [{__MODULE__, :kit, 3, location}]
+    end
+
+    played = for {stroke, _} <- strokes, do: {stroke, struck(strokes, stroke)}
+    kit_parts = played |> Enum.flat_map(fn {_, hits} -> Keyword.keys(hits) end) |> Enum.uniq()
+
+    Mx.together(
+      for part <- kit_parts do
+        own = for {stroke, hits} <- played, {^part, hit} <- hits, do: {stroke, hit}
+        plays = for {stroke, _} <- own, do: to_string(stroke)
+
+        part_cells =
+          for cell <- cells,
+              cell = %{cell | tokens: Enum.filter(cell.tokens, &(&1 in plays))},
+              not (Map.get(cell, :grace, false) and cell.tokens == []),
+              do: cell
+
+        Mx.part(part, Mx.steps(part_cells, step, [strokes: own] ++ opts), declared(parts, part))
+      end
+    )
+  end
+
+  # The hits a stroke plays, as {part, options}, a stroke of other strokes playing theirs.
+  defp struck(strokes, stroke) do
+    case Keyword.fetch!(strokes, stroke) do
+      [name | _] = names when is_atom(name) -> Enum.flat_map(names, &struck(strokes, &1))
+      opts -> [Keyword.pop!(opts, :part)]
+    end
+  end
+
   defmacro __before_compile__(env) do
     parts = env.module |> Module.get_attribute(:mx_parts) |> Enum.reverse()
     names = Keyword.keys(parts)
@@ -131,6 +211,9 @@ defmodule Mx.Song do
       [] -> :ok
       [name | _] -> refuse(env, "part #{name} is declared twice")
     end
+
+    kits = env.module |> Module.get_attribute(:mx_kits) |> Enum.reverse()
+    check_kits(env, kits, names)
 
     if not Module.defines?(env.module, {:song, 0}) do
       refuse(env, "a module that uses Mx.Song returns its music from song/0")
@@ -143,8 +226,52 @@ defmodule Mx.Song do
       def __mx_parts__, do: unquote(Macro.escape(parts))
 
       @doc false
+      def __mx_kits__,
+        do: unquote(Macro.escape(for {name, strokes, _} <- kits, do: {name, strokes}))
+
+      @doc false
       def __mx_song__, do: Mx.song([music: song()] ++ @mx_song)
     end
+  end
+
+  defp check_kits(env, kits, parts) do
+    Enum.reduce(kits, [], fn {name, strokes, line}, seen ->
+      at = %{env | line: line}
+
+      if name in seen, do: refuse(at, "kit #{name} is declared twice")
+
+      if not Keyword.keyword?(strokes) or strokes == [] do
+        refuse(at, "kit #{name} takes its strokes, such as kit :#{name}, o: [part: :thumb]")
+      end
+
+      for {stroke, given} <- strokes do
+        case given do
+          [other | _] = others when is_atom(other) ->
+            for other <- others, not Keyword.has_key?(strokes, other) do
+              refuse(
+                at,
+                "kit #{name}'s stroke #{stroke} names stroke #{other}, which the kit does not have"
+              )
+            end
+
+          opts when is_list(opts) ->
+            case Keyword.fetch(opts, :part) do
+              {:ok, part} when is_atom(part) ->
+                if part not in parts do
+                  refuse(at, "kit #{name} names part #{part}, which is not declared")
+                end
+
+              _ ->
+                refuse(
+                  at,
+                  "kit #{name}'s stroke #{stroke} names no part:, as #{stroke}: [part: :thumb]"
+                )
+            end
+        end
+      end
+
+      [name | seen]
+    end)
   end
 
   @doc false

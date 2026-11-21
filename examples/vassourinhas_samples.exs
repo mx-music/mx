@@ -205,7 +205,7 @@ defmodule VassourinhasSamples do
     pickup = for {beat, note, held} <- notes(lead_in()), do: {beat + 12, note, held}
     # The snare alone through the first two bars, with no crash to start.
     drums =
-      kit(8)
+      drums(8)
       |> List.flatten()
       |> Enum.reject(fn {voice, {beat, _}} ->
         voice == :crash or (voice not in [:snare, :buzz, :rimshot] and beat < 4)
@@ -237,7 +237,7 @@ defmodule VassourinhasSamples do
         tongued(:trombone, tune ++ last, key - 12, vel),
         saxes_answer(chords, key, vel - 0.1),
         low(chords, key, vel),
-        kit(16)
+        drums(16)
       ]
     )
   end
@@ -255,7 +255,7 @@ defmodule VassourinhasSamples do
         slurred(:tenor, melody, key - 12, vel, 4),
         trombones_answer(chords, key, vel - 0.15),
         low(chords, key, vel),
-        kit(16)
+        drums(16)
       ]
     )
   end
@@ -278,7 +278,7 @@ defmodule VassourinhasSamples do
         slurred(:tenor, close, key - 12, vel, 2),
         trombones_answer(chords, key, vel - 0.1),
         low(chords, key, vel),
-        kit(16)
+        drums(16)
       ]
     )
   end
@@ -316,7 +316,7 @@ defmodule VassourinhasSamples do
         slurred(:alto, close, 0, 0.85, 2),
         slurred(:tenor, close, -12, 0.85, 2),
         low(chords, 0, 0.7),
-        kit(16, 0.75)
+        drums(16, 0.75)
       ]
     )
   end
@@ -339,7 +339,7 @@ defmodule VassourinhasSamples do
         slurred(:alto, close, key, vel, 2),
         slurred(:tenor, close, key - 12, vel, 2),
         low(chords, key, vel),
-        kit(16)
+        drums(16)
       ]
     )
   end
@@ -705,7 +705,7 @@ defmodule VassourinhasSamples do
 
   # The kit through some bars: a crash and the bass drum on the first beat, the caixa's part and
   # the surdo's, and the turn at the end.
-  defp kit(bars, level \\ 1) do
+  defp drums(bars, level \\ 1) do
     units = div(bars, 2)
 
     caixa =

@@ -460,7 +460,7 @@ defmodule Dub do
   # The aria's opening sigh, as the horns state it in the intro.
   defp motto, do: seq(d5: 0.75, cs5: 0.25, b4: 0.5, b4: 0.75, as4: 0.25, b4: 0.5, b4: 3)
 
-  defp riddim(kick \\ :one_drop), do: kit(1..8, kick) ++ hand_drums(1..8) ++ band(1..8)
+  defp riddim(kick \\ :one_drop), do: drums(1..8, kick) ++ hand_drums(1..8) ++ band(1..8)
 
   # The ritornello on the trombone an octave down, each run of different notes slurred into one
   # held note that slides between them.
@@ -553,7 +553,7 @@ defmodule Dub do
 
   defp beat(index), do: index * 1.5
 
-  defp kit(range, kick) do
+  defp drums(range, kick) do
     [
       part(:kick, seq(range, fn _ -> kick(kick) end)),
       part(:rimshot, seq(range, &rimshot/1)),

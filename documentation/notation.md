@@ -328,6 +328,33 @@ A file holds one such module; a module that uses `Mx.Instrument` can stand besid
 
 `mix format` keeps a declaration without parentheses when the project's `.formatter.exs` has `import_deps: [:mx]`.
 
+### Kits
+
+A hand drum is one instrument to its player and several parts to mx: a pandeiro is a thumb, a heel, the jingles and a slap, each its own synth.
+`kit` in the module's body declares its strokes, each with the declared part that plays it and its options, and `kit` in a function plays one pattern on all of them:
+
+```elixir
+part :pandeiro_thumb, synth: :pandeiro_thumb
+part :pandeiro_heel, synth: :pandeiro_heel
+part :pandeiro_jingles, synth: :pandeiro_jingles
+
+kit :pandeiro,
+  o: [part: :pandeiro_thumb, vel: 0.75],
+  h: [part: :pandeiro_heel, vel: 0.55],
+  f: [part: :pandeiro_jingles, vel: 0.5],
+  of: [:o, :f]
+
+def song, do: repeat(kit(:pandeiro, ~MX"o f >h f  of f h f", 0.25, accent: [vel: 0.9]))
+```
+
+- `kit(:pandeiro, pattern, step)` is the pattern played by the kit's parts, each playing the strokes that name it at the beats `steps` gives them, and silent where the pattern has none of its strokes.
+- A stroke given as a list of other strokes plays them together, as `of: [:o, :f]` does.
+- The pattern is read a word to a step or a character to a step, and a fourth argument takes `each:`, `accent:` and `grace:` as `steps` does; any other option goes to every stroke.
+- Every word is a stroke of the kit, so `f` is the kit's stroke and never F4, and a word the kit has not is refused.
+- What a kit plays holds parts, so it goes beside other parts in `together`, not inside a part.
+- Each part keeps its own name, synth, defaults and effects, so `mx print`, `--mute` and `--solo` name the parts as before.
+- A kit that names a part not declared, a kit declared twice, and a stroke that names a stroke the kit does not have, do not compile.
+
 ## Rhythm
 
 A drum plays hits, not notes: it has its own pitch.

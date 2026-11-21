@@ -30,6 +30,14 @@
   * [Mx.Synths] `family/1` and `range/1` give each synth's family, such as `:winds`, and the lowest and highest notes it is meant to play, from mxs 0.3.0
   * [mx] `song/1` and `use Mx.Song` take `key:`, such as `:em`, which the page data holds and `mix mx.export` writes the score in when `--key` is not given
   * [mx] The Hex package holds THIRD_PARTY_NOTICES.md, the Rust crates built into mxs_nif and the Elixir packages mx runs with, each with its version and licence, and the licence texts; each release attaches it too
+  * [mx] `seq/2` and `together/2` take a collection and a function that makes each item, and `at/3` a list of `{beat, value}` and a function that makes the music at each beat
+  * [mx] In a module that uses `Mx.Song`, `together/1` takes declared parts by name, as `together(lead: tune(), bass: bass())`
+  * [mx] `form/3` plays a song's sections from a list of names and counts, giving the function each section's name, or its name with its `pass`, `time` and `coming`
+  * [mx] `without/2` and `only/2` leave parts out of some music, each as long a silence as it played, its tempo changes kept
+  * [mx] A `~MX` pattern accents a word with `>`, which `steps/3` plays as its `accent:` says, takes a length as a fraction such as `g4:1/3`, and plays a word after `^` as a grace note `grace:` beats before the next
+  * [mx] `steps/3` takes `words:`, which gives words their pitches, and `pitch/1` takes a note's name as text
+  * [mx] In a module that uses `Mx.Song`, `kit/2` declares a kit of strokes, each played by a declared part, and `kit/3` and `kit/4` play one pattern on all of them
+  * [mx] A song that defines a function of its own named `seq`, `together`, `at`, `form`, `without`, `only` or `kit`, at the arity of one of those above, no longer compiles, and must rename it; four examples renamed a `kit` helper to `drums`
 
 ## v0.2.2 (2026-11-16)
 

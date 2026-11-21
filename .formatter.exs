@@ -7,7 +7,8 @@ locals_without_parens = [
   defeffect: 2,
   defsound: 2,
   defsoundp: 2,
-  part: 2
+  part: 2,
+  kit: 2
 ]
 
 [

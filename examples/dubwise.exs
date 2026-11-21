@@ -155,7 +155,7 @@ defmodule Dubwise do
   # gaps.
   defp section(:riddim) do
     together(
-      kit(1..8, :one_drop) ++
+      drums(1..8, :one_drop) ++
         hands(1..8) ++
         band(1..8) ++
         [
@@ -169,7 +169,7 @@ defmodule Dubwise do
   # turn.
   defp section(:rockers) do
     together(
-      kit(1..8, :rockers) ++
+      drums(1..8, :rockers) ++
         hands(1..8) ++
         [
           part(:bass, seq(1..8, &bass/1)),
@@ -388,7 +388,7 @@ defmodule Dubwise do
     lead = phrase(:a) ++ phrase(:b)
 
     together(
-      kit(1..8, :steppers) ++
+      drums(1..8, :steppers) ++
         hands(1..8) ++
         [
           part(:bass, seq(1..8, &bass/1)),
@@ -643,7 +643,7 @@ defmodule Dubwise do
     {beat - 4.5, sample({:sonic_pi, :ambi_dark_woosh}, 4, rate: -1, amp: 0.35)}
   end
 
-  defp kit(range, style) do
+  defp drums(range, style) do
     [
       part(:kick, seq(range, fn _ -> kick(style) end)),
       part(:rimshot, seq(range, &rimshot/1)),
