@@ -7,6 +7,9 @@ defmodule Mx.Test.EffectNodes do
 
   defeffect late(sound, _o), do: sound |> delay(seconds: 2.5, max: 3)
 
+  defeffect echo(sound, _o),
+    do: sound + fed_back(sound, seconds: 0.25, feedback: 0.5, lowpass: 3000)
+
   tail(3.0)
   defeffect late_ringing(sound, _o), do: sound |> delay(seconds: 2.5, max: 3)
 

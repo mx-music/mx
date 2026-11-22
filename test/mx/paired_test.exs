@@ -84,6 +84,7 @@ defmodule Mx.PairedTest do
     {Mx.Paired.Tambourine, :tambourine, [[vel: 0.3], [vel: 1], [note: 74]], 2},
     {Mx.Paired.TambourineShake, :tambourine_shake,
      [[vel: 0.3], [vel: 1, sustain: 0.6], [note: 64, sustain: 0.1]], 2},
+    {Mx.Paired.Pluck, :pluck, [[], [note: 40, ring: 1, coef: 0.6], [note: 76, coef: 0]], 2},
     {Mx.Paired.Caxixi, :caxixi, [[vel: 0.3], [vel: 1]], 2},
     {Mx.Paired.Cajon, :cajon, [[vel: 0.3], [vel: 1], [note: 42, slap: 1]], 2},
     {Mx.Paired.Surdo, :surdo, [[vel: 0.3], [vel: 1], [note: 38, muted: 1]], 2},

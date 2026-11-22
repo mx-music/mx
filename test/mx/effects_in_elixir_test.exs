@@ -43,6 +43,18 @@ defmodule Mx.EffectsInElixirTest do
 
   defp at(samples, seconds), do: Enum.at(samples, round(seconds * @rate))
 
+  test "an echo of the fed-back delay with a low-pass in its loop sounds each repeat duller than the one before" do
+    {left, _right} = through([echo: []], 1, note: 57, sustain: 0.02, release: 0.02)
+
+    brightness =
+      for repeat <- 1..3 do
+        heard = Enum.slice(left, round(repeat * 0.25 * @rate), round(0.2 * @rate))
+        rms(Enum.zip_with(tl(heard), heard, &(&1 - &2))) / rms(heard)
+      end
+
+    assert brightness == Enum.sort(brightness, :desc) and length(Enum.uniq(brightness)) == 3
+  end
+
   test "an effect over both sides that swaps them moves a note on the left to the right" do
     {left, right} = through(pan: [pan: -1])
     assert peak(left) > 0.01 and peak(right) == 0.0

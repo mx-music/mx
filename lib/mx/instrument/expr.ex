@@ -180,6 +180,9 @@ defmodule Mx.Instrument.Vocabulary do
   @doc "A sound delayed by `seconds:`, which may change as it plays, up to `max:`."
   def delay(sound, opts), do: Expr.call(:delay, [sound], opts)
 
+  @doc "A sound delayed by `seconds:` and fed back into itself `feedback:` times, through a one-pole low-pass at `lowpass:` Hz and high-pass at `highpass:` Hz inside the loop, each left out unless given; it lets the sound in for the first `let_in:` seconds only, or always unless given, and sounds only what comes back, as a plucked string's period or an echo's repeats do. All are numbers known when the note starts."
+  def fed_back(sound, opts), do: Expr.call(:fed_back, [sound], opts)
+
   @doc "A level from 0 to 1 once every `length:` seconds: `wave:` is 0 saw, 1 pulse, 2 triangle, 3 sine or 4 cubic, and 3 unless given, `invert: 1` turns it upside down, `offset:` is where in the cycle it starts, from 0 to 1, and `width:` the part of a pulse that is up, a half unless given."
   def sweep(opts), do: Expr.call(:sweep, [], opts)
 
