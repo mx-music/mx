@@ -38,8 +38,9 @@ defmodule Ganza do
   end
 
   # Four samba ganzá patterns from
-  # https://kkfsamba2014.wordpress.com/2014/10/01/samba-patterns-for-ganza/, a sixteenth each:
-  # F pushes the ganzá forward for a down stroke, B pulls it back for an up stroke, and O, written here as a dot, rests.
+  # https://kkfsamba2014.wordpress.com/2014/10/01/samba-patterns-for-ganza/, a sixteenth each: F
+  # pushes the ganzá forward for a down stroke, B pulls it back for an up stroke, and O, written
+  # here as a dot, rests.
   defp pattern(:one), do: ~MX"FBFB FBFB FBFB FBFB"s
   defp pattern(:two), do: ~MX"F.B. F.B. F.B. F.B."s
   defp pattern(:three), do: ~MX"F..B F..B F..B F..B"s

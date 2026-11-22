@@ -28,7 +28,8 @@ defmodule Effects.Limiter do
 
   defp limiter(opts), do: change({:piano, :limiter}, opts)
 
-  # A bar a chord, D minor then A7: the bass note struck hard on the one, the chord soft on each beat after.
+  # A bar a chord, D minor then A7: the bass note struck hard on the one, the chord soft on each
+  # beat after.
   defp bars do
     seq(
       for {bass, chord} <- [{38, [62, 65, 69]}, {33, [61, 64, 67]}] do

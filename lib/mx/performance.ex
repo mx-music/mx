@@ -9,14 +9,17 @@ defmodule Mx.Performance do
 
   alias Mx.{Audio, Engine.Mxs.Native, Score}
 
-  # Score frames are a tenth of a second apart at the score's tempo, and the recording may start within its first 15 seconds.
+  # Score frames are a tenth of a second apart at the score's tempo, and the recording may start
+  # within its first 15 seconds.
   @hop 0.1
   @free 15.0
-  # A stretch of score whose mean cost passes this, or that the recording plays at under half or over 1.7 times the average speed, is music the two do not share.
+  # A stretch of score whose mean cost passes this, or that the recording plays at under half or
+  # over 1.7 times the average speed, is music the two do not share.
   @parted_cost 0.55
   @slowest 0.5
   @fastest 1.7
-  # Sound in the recording after the score ends, louder than 15 dB under the music's median level for 3 seconds in all, is music the score does not have.
+  # Sound in the recording after the score ends, louder than 15 dB under the music's median level
+  # for 3 seconds in all, is music the score does not have.
   @quieter 15
   @sound_after 3.0
   @grid 48
@@ -129,7 +132,8 @@ defmodule Mx.Performance do
     onsets
   end
 
-  # The second a beat of the score plays at, between the frames around it, and on at the last frames' pace past them.
+  # The second a beat of the score plays at, between the frames around it, and on at the last
+  # frames' pace past them.
   defp second_at(seconds, step) do
     last = tuple_size(seconds) - 1
 

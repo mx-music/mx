@@ -5,7 +5,8 @@ defmodule Mx.EffectsInElixirTest do
 
   @rate 48_000
 
-  # A saw note through a chain of effects, each `{effect, options}` with its times in seconds, as both sides.
+  # A saw note through a chain of effects, each `{effect, options}` with its times in seconds, as
+  # both sides.
   defp through(effects, seconds \\ 1.5, note \\ [note: 57, sustain: 1]) do
     {:ok, engine} = Native.start(false, false)
     :ok = Mx.Instrument.register(engine, Mx.Paired.Effects)
@@ -32,7 +33,8 @@ defmodule Mx.EffectsInElixirTest do
 
   defp rms(samples), do: :math.sqrt(Enum.sum(Enum.map(samples, &(&1 * &1))) / length(samples))
 
-  # How far below the first render's peak the two renders differ at most, on either side, in decibels.
+  # How far below the first render's peak the two renders differ at most, on either side, in
+  # decibels.
   defp apart({left, right}, {other_left, other_right}) do
     difference =
       max(
@@ -160,7 +162,8 @@ defmodule Mx.EffectsInElixirTest do
   end
 
   test "a node given an argument it does not take is refused when the effect registers" do
-    # The graph is handed over as defeffect would, without a module that every engine would then load.
+    # The graph is handed over as defeffect would, without a module that every engine would then
+    # load.
     input = %Mx.Instrument.Expr{op: :input, args: []}
     graph = Mx.Instrument.encode(Mx.Instrument.Vocabulary.allpass(input, hz: 1000, seconds: 1))
     {:ok, engine} = Native.start(false, false)
@@ -177,7 +180,8 @@ defmodule Mx.EffectsInElixirTest do
     {:ok, {left, _right}} = Native.render(engine, 0.5)
     left = floats(left)
 
-    # The triangle sweep is at its top a quarter of its 0.25 seconds in, and at 0 at three quarters.
+    # The triangle sweep is at its top a quarter of its 0.25 seconds in, and at 0 at three
+    # quarters.
     assert peak(Enum.slice(left, 2400, 1200)) > 3 * peak(Enum.slice(left, 8400, 1200))
   end
 end

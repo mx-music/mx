@@ -290,8 +290,8 @@ defmodule Salsa do
   end
 
   # The horns as a synth section: detuned saws through a resonant filter that opens on every hit,
-  # an equaliser that thins the low end, grit, a chorus, a compressor, a dotted echo and a pan that
-  # moves.
+  # an equaliser that thins the low end, grit, a chorus, a compressor, a dotted echo and a pan
+  # that moves.
   defp horns(section, pass, time) do
     moves = pan_moves(section, pass, time) ++ echo_moves(section, time)
     together([at(moves, 16), horn_part(section)])

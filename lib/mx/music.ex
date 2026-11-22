@@ -1150,7 +1150,9 @@ defmodule Mx.Music do
     %{struct(song, opts) | tempos: tempos, buses: buses}
   end
 
-  # Each part with its sends checked against the song's buses, and a send at 0 for each bus a change of the part names, which a loop started by on: has for every bus, as its changes are not known yet.
+  # Each part with its sends checked against the song's buses, and a send at 0 for each bus a
+  # change of the part names, which a loop started by on: has for every bus, as its changes are
+  # not known yet.
   defp send_parts(parts, played, buses) do
     names = Enum.map(buses, & &1.name)
     part_names = for {part, _music} <- parts, do: part.name
@@ -1311,7 +1313,8 @@ defmodule Mx.Music do
     end
   end
 
-  # A change to one of the song's own effects plays in the part it is written in, or in the song's first part.
+  # A change to one of the song's own effects plays in the part it is written in, or in the song's
+  # first part.
   defp song_changed(%Change{opts: opts}, effect, part, by_name, song_fx) do
     {:ok, chain} = Mx.Song.song_effects(song_fx)
 
@@ -1323,7 +1326,8 @@ defmodule Mx.Music do
     written_in(part, by_name)
   end
 
-  # A change to an effect of a bus plays in the part it is written in, or in the song's first part.
+  # A change to an effect of a bus plays in the part it is written in, or in the song's first
+  # part.
   defp bus_changed(%Change{opts: opts}, name, effect, part, by_name, buses) do
     bus =
       Enum.find(buses, &(&1.name == name)) ||

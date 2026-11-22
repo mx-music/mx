@@ -37,7 +37,8 @@ defmodule Mx.PhaserTest do
   defp rms(samples), do: :math.sqrt(Enum.sum(Enum.map(samples, &(&1 * &1))) / length(samples))
   defp db(level), do: 20 * :math.log10(max(level, 1.0e-12))
 
-  # How far in dB a sine at each frequency comes out of the effects below the same sine dry, on the left.
+  # How far in dB a sine at each frequency comes out of the effects below the same sine dry, on
+  # the left.
   defp gains(ctx, hz, fx) do
     for hz <- hz do
       {dry, _} = render(ctx, sine(hz, 2, "[]"))
@@ -46,7 +47,8 @@ defmodule Mx.PhaserTest do
     end
   end
 
-  # The notches of a phaser held at the note 72: where its stages turn the sound an odd number of half cycles.
+  # The notches of a phaser held at the note 72: where its stages turn the sound an odd number of
+  # half cycles.
   defp notches(stages) do
     corner = 440 * :math.pow(2, 3 / 12)
 
@@ -136,7 +138,8 @@ defmodule Mx.PhaserTest do
     level = fn beat -> db(rms(between(left, beat / 2, beat / 2 + 0.1))) end
     start = level.(0)
 
-    # At this notch the dry sound and the phaser's cancel at mix: 0.5, which the slide passes two thirds of the way.
+    # At this notch the dry sound and the phaser's cancel at mix: 0.5, which the slide passes two
+    # thirds of the way.
     assert_in_delta level.(2) - start, db(0.625), 1.5
     assert level.(5.2) - start < -12
     assert_in_delta level.(8.5) - start, db(0.5), 1

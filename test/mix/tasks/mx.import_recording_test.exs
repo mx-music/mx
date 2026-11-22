@@ -23,7 +23,8 @@ defmodule Mix.Tasks.Mx.ImportRecordingTest do
     wav
   end
 
-  # The second bar `number` of the aria starts at, at `tempo`: an upbeat of half a beat, then bars of 6.
+  # The second bar `number` of the aria starts at, at `tempo`: an upbeat of half a beat, then bars
+  # of 6.
   defp written(number, tempo), do: (0.5 + (number - 1) * 6) * 60 / tempo
 
   defp import!(args), do: capture_io(fn -> Import.run(args) end)
@@ -121,8 +122,10 @@ defmodule Mix.Tasks.Mx.ImportRecordingTest do
     refute File.exists?(song)
   end
 
-  # Marian Anderson's 1953 recording of the aria with the Robert Shaw Chorale and Orchestra, marked with the Public Domain Mark 1.0, from
-  # https://taju.uniarts.fi/bitstreams/30ed028d-ca86-4ac6-afa2-8f734936008d/download, as a WAV file at the path MX_ANDERSON names.
+  # Marian Anderson's 1953 recording of the aria with the Robert Shaw Chorale and Orchestra,
+  # marked with the Public Domain Mark 1.0, from
+  # https://taju.uniarts.fi/bitstreams/30ed028d-ca86-4ac6-afa2-8f734936008d/download, as a WAV
+  # file at the path MX_ANDERSON names.
   describe "Marian Anderson's recording of the aria" do
     @describetag :anderson
     @describetag :ffmpeg

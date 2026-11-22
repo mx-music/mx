@@ -8,7 +8,8 @@ defmodule Mx.EffectChangesTest do
   @moduletag :tmp_dir
   @rate 48_000
 
-  # The two sides of a saw note of four beats, two seconds, through an effect, with a change to it at the third beat when given.
+  # The two sides of a saw note of four beats, two seconds, through an effect, with a change to it
+  # at the third beat when given.
   defp render(ctx, fx, change) do
     path = Path.join(ctx.tmp_dir, "song.exs")
     out = Path.join(ctx.tmp_dir, "song.wav")

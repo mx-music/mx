@@ -9,8 +9,8 @@ defmodule MaracatuDub do
 
   use Mx.Song, tempo: 96
 
-  # The desk's two sends: the room the bells, the shakers and the skank share, and the skank's tape
-  # echo, whose repeats fall into the room too.
+  # The desk's two sends: the room the bells, the shakers and the skank share, and the skank's
+  # tape echo, whose repeats fall into the room too.
   bus :room, fx: [reverb: [decay_seconds: 1.8, damp: 0.5], eq: [low: [at: 52, gain: -9]]]
 
   bus :tape,

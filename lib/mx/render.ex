@@ -122,7 +122,8 @@ defmodule Mx.Render do
     end
   end
 
-  # The effects of the buses that ring longest one after another, from the buses sent into on through those they send into.
+  # The effects of the buses that ring longest one after another, from the buses sent into on
+  # through those they send into.
   defp sent_rings(names, buses, sends) do
     names
     |> Enum.map(fn name -> buses[name] ++ sent_rings(sends[name], buses, sends) end)
@@ -257,7 +258,8 @@ defmodule Mx.Render do
 
   @ceiling -1.0
 
-  # Scales the file towards the loudness asked for, no further than a peak at the ceiling, and returns the loudness it has.
+  # Scales the file towards the loudness asked for, no further than a peak at the ceiling, and
+  # returns the loudness it has.
   defp settle(out, target) do
     measured = Loudness.measure(out)
 

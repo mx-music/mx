@@ -9,7 +9,8 @@ defmodule Mx.EqTest do
   @moduletag :tmp_dir
   @rate 48_000
 
-  # One second of a synth through eq with the options a song would give it, after half a second to settle, as the left side.
+  # One second of a synth through eq with the options a song would give it, after half a second to
+  # settle, as the left side.
   defp through(bands, synth \\ :noise) do
     {:ok, engine} = Native.start(false, false)
     {:ok, flat} = Mx.Synths.bands(:eq, bands)
@@ -25,7 +26,8 @@ defmodule Mx.EqTest do
     Enum.drop(left, div(@rate, 2))
   end
 
-  # The power of one second of samples at each whole frequency from `low` to `high` Hz, `step` apart, summed.
+  # The power of one second of samples at each whole frequency from `low` to `high` Hz, `step`
+  # apart, summed.
   defp power(samples, low, high, step \\ 1) do
     Enum.sum(
       for hz <- low..high//step do

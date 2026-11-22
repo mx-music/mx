@@ -7,10 +7,11 @@ defmodule Mx.ViolinFitTest do
   @moduletag :engine
   @rate 48_000
 
-  # Medians of the University of Iowa's arco recordings, as mix mx.measure --held gives them: at mf and ff the files
-  # sulG.G3B3, sulD.D4A4 (D4B4 at ff), sulA.A4B4, sulA.C5C6 (C5Db6 at ff) and sulE.E5B5, split into the notes listed;
-  # at pp the same strings' files cut at their silences into one file a note and each measured with --drone,
-  # since mix mx.measure splits a quiet note in two.
+  # Medians of the University of Iowa's arco recordings, as mix mx.measure --held gives them: at
+  # mf and ff the files sulG.G3B3, sulD.D4A4 (D4B4 at ff), sulA.A4B4, sulA.C5C6 (C5Db6 at ff) and
+  # sulE.E5B5, split into the notes listed; at pp the same strings' files cut at their silences
+  # into one file a note and each measured with --drone, since mix mx.measure splits a quiet note
+  # in two.
   @recordings %{
     0.3 => %{
       notes:
@@ -108,8 +109,9 @@ defmodule Mx.ViolinFitTest do
     end
   end
 
-  # Iowa's mf A4 on the A string, held 5.9 seconds, wanders slowly by 1.6 cents in pitch and by 1.8 to 2.9 dB in its
-  # 1st, 2nd, 4th and 8th harmonics, as standard deviations of their averages over 0.4 seconds.
+  # Iowa's mf A4 on the A string, held 5.9 seconds, wanders slowly by 1.6 cents in pitch and by
+  # 1.8 to 2.9 dB in its 1st, 2nd, 4th and 8th harmonics, as standard deviations of their averages
+  # over 0.4 seconds.
   test "the violin's held A4 wanders in pitch and level as slowly and as far as Iowa's mf A4" do
     sound = render([note: 69, vel: 0.6, sustain: 5.5, vibrato: 0], 6)
     %{strokes: [_ | _]} = recording = Strokes.strokes(sound, @rate)

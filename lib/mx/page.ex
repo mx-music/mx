@@ -160,7 +160,8 @@ defmodule Mx.Page do
     }
   end
 
-  # A part that gives no sampled instrument and plays only samples is named by the samples it plays.
+  # A part that gives no sampled instrument and plays only samples is named by the samples it
+  # plays.
   defp sound(synth, played) do
     steps = for {_, _, events, _} <- Enum.reverse(played), {_, step, _} <- events, do: step
     samples = for {:sample, ref, _path} <- steps, uniq: true, do: sample_name(ref)

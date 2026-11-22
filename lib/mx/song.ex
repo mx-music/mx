@@ -73,7 +73,8 @@ defmodule Mx.Song do
   @modules_key :mx_song_modules
 
   defmacro __using__(opts) do
-    # A module that already uses Mx.Instrument keeps Mx's meaning of a name the nodes share, as delay, outside its synths and effects.
+    # A module that already uses Mx.Instrument keeps Mx's meaning of a name the nodes share, as
+    # delay, outside its synths and effects.
     nodes =
       if List.keymember?(__CALLER__.functions, Mx.Instrument.Vocabulary, 0) do
         shared =
@@ -783,7 +784,8 @@ defmodule Mx.Song do
 
   defp chain(_fx), do: {:error, @chain_error}
 
-  # The chain with each effect's bands written out as its own options, once every effect and option is one mx has.
+  # The chain with each effect's bands written out as its own options, once every effect and
+  # option is one mx has.
   defp check_effects(chain) do
     checked = Enum.map(chain, fn {effect, opts} -> check_effect(effect, opts) end)
 
@@ -804,7 +806,8 @@ defmodule Mx.Song do
     end
   end
 
-  # A compressor's key: names the part or bus whose level it follows, which the song's music checks.
+  # A compressor's key: names the part or bus whose level it follows, which the song's music
+  # checks.
   defp pop_key(:compressor, opts) when is_list(opts) do
     case Keyword.pop(opts, :key) do
       {nil, opts} ->

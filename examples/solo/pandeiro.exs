@@ -10,8 +10,8 @@ defmodule Pandeiro do
   part :pandeiro_jingles, synth: :pandeiro_jingles
   part :pandeiro_slap, synth: :pandeiro_slap
 
-  # o is an open bass with the thumb, ox a closed one, h the heel of the hand, f the fingertips and
-  # s a slap; mx's thumb has no closed bass, so ox is the thumb played softly.
+  # o is an open bass with the thumb, ox a closed one, h the heel of the hand, f the fingertips
+  # and s a slap; mx's thumb has no closed bass, so ox is the thumb played softly.
   kit :pandeiro,
     o: [part: :pandeiro_thumb, vel: 0.75],
     ox: [part: :pandeiro_thumb, vel: 0.4],

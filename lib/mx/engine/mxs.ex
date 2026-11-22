@@ -33,9 +33,9 @@ defmodule Mx.Engine.Mxs do
   # process that started it.
   @parts __MODULE__.Parts
 
-  # The song's buses as `{{:bus, name}, effects, key}`, each part's sends as `{{:sends, part}, sends}`,
-  # the chain of each part and bus started as `{{:chain, name}, key}`, and the part or bus that keys
-  # each keyed one as `{{:keyed, name}, by}`.
+  # The song's buses as `{{:bus, name}, effects, key}`, each part's sends as `{{:sends, part},
+  # sends}`, the chain of each part and bus started as `{{:chain, name}, key}`, and the part or
+  # bus that keys each keyed one as `{{:keyed, name}, by}`.
   @buses __MODULE__.Buses
 
   @impl Mx.Engine
@@ -378,7 +378,8 @@ defmodule Mx.Engine.Mxs do
     end
   end
 
-  # Records the part or bus that keys the chain just started, from its compressor's key:, and tells the engine every key whose two chains have started.
+  # Records the part or bus that keys the chain just started, from its compressor's key:, and
+  # tells the engine every key whose two chains have started.
   defp key_all(engine, name, effects) do
     case Enum.find_value(effects, fn {_effect, opts} -> opts[:key] end) do
       nil -> :ets.delete(@buses, {:keyed, name})
@@ -437,8 +438,9 @@ defmodule Mx.Engine.Mxs do
     end
   end
 
-  # The NIF asks an engine that holds only mxs's own effects, so the tail of an effect written with
-  # defeffect is worked out here: its seconds, as long as an option says, or the second mxs gives it.
+  # The NIF asks an engine that holds only mxs's own effects, so the tail of an effect written
+  # with defeffect is worked out here: its seconds, as long as an option says, or the second mxs
+  # gives it.
   defp written_tails([], [], _written, _bpm), do: []
 
   defp written_tails([{effect, opts} | effects], tails, written, bpm) do

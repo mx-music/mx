@@ -126,7 +126,8 @@ defmodule Mx.MIDI do
   defp key_event({_tick, {:meta, 0x59, <<fifths::signed, _::binary>>}}), do: fifths
   defp key_event(_event), do: nil
 
-  # Each change of tempo, the same tempo given again left out, with its beat and the bar it falls in.
+  # Each change of tempo, the same tempo given again left out, with its beat and the bar it falls
+  # in.
   defp about_tempos(events, meters, division) do
     events
     |> Enum.flat_map(&tempo_event/1)
@@ -137,7 +138,8 @@ defmodule Mx.MIDI do
     end)
   end
 
-  # The bar a tick falls in, counted from 1, through each time signature from the one in force at the start.
+  # The bar a tick falls in, counted from 1, through each time signature from the one in force at
+  # the start.
   defp bar_at(tick, meters, division) do
     meters = if match?([{0, _, _} | _], meters), do: meters, else: [{0, 4, 2} | meters]
 
@@ -459,8 +461,8 @@ defmodule Mx.MIDI do
     {:ok, %{score | tempos: tempos, left_out: left_out_lines(counts), left_out_counts: counts}}
   end
 
-  # The first tempo, and the changes after it as {beat, bpm}, each at the nearest step of the grid,
-  # the last of those at one step, leaving out those that keep the tempo already held.
+  # The first tempo, and the changes after it as {beat, bpm}, each at the nearest step of the
+  # grid, the last of those at one step, leaving out those that keep the tempo already held.
   defp tempos(changes, at, units) do
     [{_at, first} | later] =
       changes

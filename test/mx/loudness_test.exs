@@ -9,7 +9,8 @@ defmodule Mx.LoudnessTest do
   @moduletag :tmp_dir
   @rate 48_000
 
-  # A stereo WAV of 32-bit floats: on each side a sine of the Hz and peak in dB given, for the seconds given.
+  # A stereo WAV of 32-bit floats: on each side a sine of the Hz and peak in dB given, for the
+  # seconds given.
   defp sine(ctx, name, seconds, sides) do
     frames = round(seconds * @rate)
 
@@ -89,7 +90,8 @@ defmodule Mx.LoudnessTest do
 
     File.write!(gap, "RIFF" <> <<byte_size(body)::little-32>> <> body)
 
-    # The blocks that hold the music's end are part silence and pass the gates; ungated it would be -23.
+    # The blocks that hold the music's end are part silence and pass the gates; ungated it would
+    # be -23.
     assert_in_delta Loudness.measure(gap), -20, 0.2
   end
 

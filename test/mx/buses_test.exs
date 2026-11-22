@@ -68,7 +68,8 @@ defmodule Mx.BusesTest do
     thrown = render(ctx, "song(tempo: 120, #{buses}, music: together([#{hits}, #{throw}]))")
     echoes = Enum.zip_with(thrown, dry, &(&1 - &2))
 
-    # Hits fall on seconds 0, 1, 2 and 3; only the one at 1 second is sent, and its echoes follow it.
+    # Hits fall on seconds 0, 1, 2 and 3; only the one at 1 second is sent, and its echoes follow
+    # it.
     assert peak(between(echoes, 0, 1)) < 1.0e-6
     assert peak(between(echoes, 1.1, 1.9)) > 0.01
     assert peak(between(echoes, 3, 4)) < peak(between(echoes, 1.1, 1.9)) / 30
@@ -87,7 +88,8 @@ defmodule Mx.BusesTest do
     assert_in_delta level.(steady, 0.5) / level.(dry, 0.5), 2, 0.01
     assert_in_delta level.(faded, 0.5) / level.(dry, 0.5), 2, 0.01
 
-    # Two beats at 120 are a second: halfway down at 1.5 seconds, out by 2, and the dry sound as it was.
+    # Two beats at 120 are a second: halfway down at 1.5 seconds, out by 2, and the dry sound as
+    # it was.
     assert_in_delta level.(faded, 1.5) / level.(dry, 1.5), 1.5, 0.1
     assert_in_delta level.(faded, 2.2) / level.(dry, 2.2), 1, 0.01
     assert_in_delta level.(faded, 3.5) / level.(dry, 3.5), 1, 0.01

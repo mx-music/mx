@@ -281,7 +281,8 @@ defmodule Mx.InstrumentSongTest do
   end
   """
 
-  # The two sides of a saw note through effects written in a song file, or the error its render gives.
+  # The two sides of a saw note through effects written in a song file, or the error its render
+  # gives.
   defp zeroed(ctx, fx) do
     path = Path.join(ctx.tmp_dir, "zeroed.exs")
     out = Path.join(ctx.tmp_dir, "zeroed.wav")

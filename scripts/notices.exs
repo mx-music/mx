@@ -1,5 +1,5 @@
-# Writes THIRD_PARTY_NOTICES.md, or the path given, from the native crate's lock file and mix.lock.
-# Run it before a release, with cargo-about installed: elixir scripts/notices.exs
+# Writes THIRD_PARTY_NOTICES.md, or the path given, from the native crate's lock file and
+# mix.lock. Run it before a release, with cargo-about installed: elixir scripts/notices.exs
 
 out = List.first(System.argv(), "THIRD_PARTY_NOTICES.md")
 native = "native/mxs_nif"

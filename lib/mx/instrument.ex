@@ -422,7 +422,8 @@ defmodule Mx.Instrument do
 
   defp matches(_pattern), do: []
 
-  # A node is called by its module, so a name the caller also imports from elsewhere, as Mx's delay, still means the node.
+  # A node is called by its module, so a name the caller also imports from elsewhere, as Mx's
+  # delay, still means the node.
   @nodes Vocabulary.__info__(:functions)
 
   defp rewrite(body, caller) do

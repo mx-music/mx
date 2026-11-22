@@ -22,7 +22,8 @@ defmodule Dubwise do
 
   use Mx.Song, tempo: 74
 
-  # The desk's two sends: the room every part that names it shares, and the tape echo, whose repeats fall into the room too.
+  # The desk's two sends: the room every part that names it shares, and the tape echo, whose
+  # repeats fall into the room too.
   bus :room, fx: [reverb: [decay_seconds: 2.3], eq: [low: [at: 52, gain: -9]]]
 
   bus :tape,
@@ -114,8 +115,8 @@ defmodule Dubwise do
     seq([:intro, :riddim, :rockers, :dub, :deep, :rewind, :steppers, :outro], &section/1)
   end
 
-  # The part thrown into its echo at one beat and pulled back at another, within music of the given
-  # length: the echo opened to a mix and closed again to 0.2.
+  # The part thrown into its echo at one beat and pulled back at another, within music of the
+  # given length: the echo opened to a mix and closed again to 0.2.
   defp throw(name, from, back, length, mix \\ 0.55) do
     entries = for {beat, mix} <- [{from, mix}, {back, 0.2}], do: {beat, thrown(name, mix)}
     at(entries, length)
