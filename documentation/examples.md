@@ -154,6 +154,6 @@ Its strokes move a little off the beat and in strength from bar to bar, as much 
 ## Effects
 
 `examples/effects` holds one short song for each of mx's effects, named after it, such as `examples/effects/flanger.exs`.
-Each plays one phrase dry, then through the effect as it comes, then with one option moved at a time, on an instrument the effect is known on.
+Each plays one phrase dry, then through the effect as it comes, then with one option moved at a time, on an instrument the effect is known on; `eq`, which changes nothing as it comes, starts there.
 Each song's description says what to listen for, section by section.
 `examples/effects/order.exs` plays one guitar through a distortion and a reverb in one order and then the other, to show that the order of `fx:` matters.

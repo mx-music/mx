@@ -453,7 +453,7 @@ graph LR
 These are mx's own designs, in mxs's `src/effects.rs`, with option names that follow Sonic Pi's.
 bitcrusher and chorus follow Airwindows' DeRez and Chorus, as `LICENSE-designs.md` credits.
 
-bitcrusher, bpf, chorus, compressor, distortion, echo, flanger, hpf, level, lpf, pan, ping_pong, pitch_shift, reverb, rlpf, slicer, tremolo, wobble.
+bitcrusher, bpf, chorus, compressor, distortion, echo, eq, flanger, hpf, level, lpf, pan, ping_pong, pitch_shift, reverb, rlpf, slicer, tremolo, wobble.
 
 Every effect takes `amp`, `mix` from 0 for dry to 1 for wet, and `pre_amp`, the level going in.
 An effect's time is in beats and follows the tempo unless its name ends in `_ms`, for milliseconds, or `_seconds`: a tremolo with `phase: 1` pulses once a beat at any tempo, and a slicer's `smooth_ms: 20` takes 20 ms at any tempo.
@@ -465,6 +465,7 @@ An effect's time is in beats and follows the tempo unless its name ends in `_ms`
 - `compressor` takes `threshold`, the level above which it lowers the sound, `slope_above` and `slope_below`, how much the level changes above and below it, and `clamp_ms` and `relax_ms`, how long it takes to lower and to let go. Its song is `examples/effects/compressor.exs`.
 - `distortion` takes `distort`, from 0 to 1. Its song is `examples/effects/distortion.exs`.
 - `echo` takes `phase`, the time between echoes, `decay`, how long they take to die away, and `max_phase`, the longest `phase` it can change to. Its song is `examples/effects/echo.exs`.
+- `eq` is an equaliser of three bands, each a list of its own options: `fx: [eq: [low: [at: 48, gain: -6], mid: [at: 72, gain: 4, q: 2], high: [gain: 3]]]`. `low` raises or lowers everything below its `at`, `high` everything above its `at`, and `mid` a peak around its `at`, the narrower the higher its `q`, 1 unless given. `at` is a MIDI note number, 36 for `low`, 60 for `mid` and 96 for `high` unless given, and `gain` is in dB, 0 unless given, so a band that is not given changes nothing. A change names the band the same way, `change({:bass, :eq}, mid: [gain: -8, gain_slide: 2])`. Its song is `examples/effects/eq.exs`.
 - `flanger` takes `phase`, `wave`, `invert_wave` and `phase_offset` for its sweep, `stereo_invert_wave: 1` to sweep the left channel the other way, `delay_ms` and `depth_ms`, the delay it sweeps up from and how far, `max_delay_ms`, the longest delay, `feedback` from 0 to 1 and `decay` for how strongly and how long the delayed sound feeds back, and `invert_flange: 1` to subtract the delayed sound instead. Its song is `examples/effects/flanger.exs`.
 - `hpf` and `lpf` take `cutoff`, a MIDI note number. Their songs are `examples/effects/hpf.exs` and `examples/effects/lpf.exs`.
 - `level` takes only what every effect takes, and sets a part's level with `amp`. Its song is `examples/effects/level.exs`.

@@ -589,7 +589,7 @@ defmodule Mx.Song do
 
       true ->
         with {:ok, chain} <- chain(Keyword.get(opts, :fx, [])),
-             :ok <- check_effects(chain) do
+             {:ok, chain} <- check_effects(chain) do
           {:ok, %{live | input: input, stereo: stereo == true, opts: synth_opts, fx: chain}}
         else
           {:error, message} -> {:error, "live_audio #{name}: #{message}"}
@@ -599,14 +599,14 @@ defmodule Mx.Song do
 
   @doc "Checks an fx: option, an effect or a list of effects with their options, as `:ok` or `{:error, message}`."
   def check_fx(fx) do
-    with {:ok, chain} <- chain(fx), do: check_effects(chain)
+    with {:ok, chain} <- chain(fx), {:ok, _chain} <- check_effects(chain), do: :ok
   end
 
   defp find_loop_effects(loop) do
     name = loop.name
 
     with {:ok, chain} <- chain(loop.fx),
-         :ok <- check_effects(chain) do
+         {:ok, chain} <- check_effects(chain) do
       {:ok, %{loop | fx: chain}}
     else
       {:error, message} -> {:error, "loop #{name}: #{message}"}
@@ -632,17 +632,24 @@ defmodule Mx.Song do
 
   defp chain(_fx), do: {:error, @chain_error}
 
+  # The chain with each effect's bands written out as its own options, once every effect and option is one mx has.
   defp check_effects(chain) do
-    Enum.find_value(chain, :ok, fn {effect, opts} ->
-      if Synths.effect?(effect) do
-        case Enum.find(Keyword.keys(opts), &(not Synths.effect_option?(effect, &1))) do
-          nil -> check_effect_values(effect, opts)
-          option -> {:error, "effect #{effect} has no option #{option}"}
-        end
-      else
-        {:error, "mx has no effect #{effect}"}
+    checked = Enum.map(chain, fn {effect, opts} -> check_effect(effect, opts) end)
+
+    case Enum.find(checked, &match?({:error, _}, &1)) do
+      nil -> {:ok, checked}
+      error -> error
+    end
+  end
+
+  defp check_effect(effect, opts) do
+    with true <- Synths.effect?(effect) || {:error, "mx has no effect #{effect}"},
+         {:ok, opts} <- Synths.bands(effect, opts) do
+      case Enum.find(Keyword.keys(opts), &(not Synths.effect_option?(effect, &1))) do
+        nil -> check_effect_values(effect, opts) || {effect, opts}
+        option -> {:error, "effect #{effect} has no option #{option}"}
       end
-    end)
+    end
   end
 
   defp check_effect_values(effect, opts) do

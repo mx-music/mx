@@ -334,14 +334,8 @@ defmodule Mx.Pass do
   @doc "Records a control step that changes the sounds or effect a handle names, refusing an option they do not take."
   def record_control(%Handle{target: {:effect, _} = target, synth: effect}, opts)
       when is_list(opts) do
-    check_control(
-      opts,
-      &Synths.effect_option?(effect, &1),
-      fn _ -> false end,
-      "effect #{effect} has",
-      {:effect, effect}
-    )
-
+    check_change({:effect, effect}, opts)
+    opts = bands(effect, opts)
     record({{:control, target, {:effect, effect}}, control_values(opts)})
     :ok
   end
@@ -361,7 +355,7 @@ defmodule Mx.Pass do
   @doc "Refuses a change to a sound of a synth, or with `{:effect, effect}` to an effect, that it cannot take."
   def check_change({:effect, effect}, opts) when is_list(opts) do
     check_control(
-      opts,
+      bands(effect, opts),
       &Synths.effect_option?(effect, &1),
       fn _ -> false end,
       "effect #{effect} has",
@@ -383,6 +377,13 @@ defmodule Mx.Pass do
     check_change(synth, opts)
     record({{:control, :part, player(synth)}, control_values(opts)})
     :ok
+  end
+
+  defp bands(effect, opts) do
+    case Synths.bands(effect, opts) do
+      {:ok, opts} -> opts
+      {:error, message} -> raise ArgumentError, message
+    end
   end
 
   defp check_control(opts, option?, fixed?, owner, subject) do

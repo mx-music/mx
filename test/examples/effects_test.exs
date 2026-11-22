@@ -11,6 +11,7 @@ defmodule Mx.Examples.EffectsTest do
     "compressor" => 5,
     "distortion" => 5,
     "echo" => 6,
+    "eq" => 5,
     "flanger" => 5,
     "hpf" => 5,
     "level" => 4,

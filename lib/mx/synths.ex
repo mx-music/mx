@@ -16,6 +16,7 @@ defmodule Mx.Synths do
   alias Mx.Engine.Mxs
 
   @rate_options ~w(tremolo motor)
+  @bands %{eq: [:low, :mid, :high]}
   @effect_buses [:in_bus, :out_bus]
   @not_playable ~w(live_audio_mono live_audio_stereo mono_player stereo_player recorder)
   @engine_beats Map.new(
@@ -75,6 +76,45 @@ defmodule Mx.Synths do
   @doc "Whether an effect takes an option; its buses are mx's own, so they are not options."
   def effect_option?(effect, option) when is_atom(effect) and is_atom(option) do
     option not in @effect_buses and option?(fx(effect), option)
+  end
+
+  @doc """
+  An effect's options with each band's written out as the effect's own, as `{:ok, options}`: `mid: [gain: 3]` given to an effect that takes `mid_gain` becomes `mid_gain: 3`.
+  A band given an option it does not take, or anything but a list of options, is `{:error, message}`.
+  """
+  def bands(effect, opts) when is_atom(effect) and is_list(opts) do
+    bands = Map.get(@bands, effect, [])
+
+    Enum.reduce_while(opts, {:ok, []}, fn {name, value}, {:ok, flat} ->
+      if name in bands do
+        prefix = Atom.to_string(name) <> "_"
+
+        case band(effect, name, prefix, value) do
+          {:ok, band} -> {:cont, {:ok, flat ++ band}}
+          error -> {:halt, error}
+        end
+      else
+        {:cont, {:ok, flat ++ [{name, value}]}}
+      end
+    end)
+  end
+
+  defp band(effect, name, prefix, value) do
+    if is_list(value) and Keyword.keyword?(value) do
+      band =
+        for {option, value} <- value,
+            do: {option, String.to_atom(prefix <> Atom.to_string(option)), value}
+
+      case Enum.find(band, fn {_, option, _} -> not effect_option?(effect, option) end) do
+        nil -> {:ok, for({_, option, value} <- band, do: {option, value})}
+        {option, _, _} -> {:error, "effect #{effect}'s #{name} has no option #{option}"}
+      end
+    else
+      value = inspect(value)
+
+      {:error,
+       "effect #{effect}'s #{name} takes a list of its options, such as [gain: 3], not #{value}"}
+    end
   end
 
   @doc "An effect's options with its times in seconds, given in beats at a tempo."
