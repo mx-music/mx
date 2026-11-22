@@ -72,11 +72,11 @@ defmodule Mx.Instrument.Vocabulary do
   The nodes and functions a `defsynth` builds its sound from, named by what they do, with each argument named by its unit.
 
   Numbers: `hz/1`, `db/1`, `log2/1`, `exp/1`, `sin/1`, `cos/1`, `clamp/3` and `select/3`, worked out at once on numbers and when the note starts on its options.
-  Sources: `impulse/0`, `follow/1`, `time/0`, `sine/1`, `vibrato/1`, `partials/2`, `bowed_string/1`, `air_jet/1`, `saw/1`, `square/1`, `triangle/1`, `pulse/1` and `noise/1`.
-  Filters: `lowpass/2`, `highpass/2` and `bandpass/2`, at `hz:` with `q:`, either of which may change as the note sounds, and `poles:`, `ladder/2`, a four-pole resonant lowpass at `hz:` with `resonance:` from 0 to 1, where it rings on at `hz:`, `lowshelf/2`, `highshelf/2` and `peak/2`, at `hz:` with `q:` and `db:`, `mode/2`, a resonator struck by its input at `hz:`, ringing at `level:` and fading 60 dB over `fade:` seconds, `wind_bands/2`, `delay/2`, and `dc_block/1` and `dc_block/2`, which take away any offset below `hz:`, 10 unless given.
+  Sources: `impulse/0`, `follow/1`, `time/0`, `sine/1`, `vibrato/1`, `partials/2`, `bowed_string/1`, `air_jet/1`, `saw/1`, `square/1`, `triangle/1`, `pulse/1` and `noise/2`.
+  Filters: `lowpass/2`, `highpass/2` and `bandpass/2`, at `hz:` with `q:`, either of which may change as the note sounds, and `poles:`, `ladder/2`, a four-pole resonant lowpass at `hz:` with `resonance:` from 0 to 1, where it rings on at `hz:`, `lowshelf/2`, `highshelf/2` and `peak/2`, at `hz:` with `q:` and `db:`, `mode/2`, a resonator struck by its input at `hz:`, ringing at `level:` and fading 60 dB over `fade:` seconds, or given lists of the same length a resonator for each, all struck by the one input, `wind_bands/2`, `delay/2`, and `dc_block/1` and `dc_block/2`, which take away any offset below `hz:`, 10 unless given.
   Distortion: `saturate/2` rounds a sound off towards `level:`, `clip/2` cuts it off at `level:`, and `fold/2` folds it back at `level:`, each after a `drive:` in dB, worked out at twice the engine's rate.
   Shapes: `envelope/1` and `perc/1` are levels over time, and `envelope/2` and `perc/2` scale a sound by them.
-  Mixing: `mix/1` adds a list of sounds, and `gain/2` scales one.
+  Mixing: `mix/1` adds a list of sounds, `gain/2` scales one, and `share/2` builds a sound once for a function that uses it several times.
   A synth ends with `note_envelope/2`, shaping its sound by the note's envelope, or `rings/2`, ending it after `seconds:`.
   """
 
@@ -145,11 +145,16 @@ defmodule Mx.Instrument.Vocabulary do
   defp through({key, fun}) when is_function(fun, 1), do: {key, fun.(Expr.call(:input, []))}
   defp through(option), do: option
 
+  @doc "The sound `fun` makes of `sound`, which is built once however many times `fun` uses it, so a noise in it plays the same numbers at each use."
+  def share(sound, fun) when is_function(fun, 1) do
+    Expr.call(:share, [sound], through: fun.(Expr.call(:input, [])))
+  end
+
   @doc "A wind's sound through peaks at mx's eight bands up to 3162 Hz, `gains:` eight in dB at each of pp, mf and ff, and `levels:` in dB at each, following `vel:`."
   def wind_bands(sound, opts), do: Expr.call(:wind_bands, [sound], opts)
 
-  @doc "Noise, `:white` or `:pink`."
-  def noise(colour), do: Expr.call(:noise, [colour])
+  @doc "Noise, `:white` or `:pink`; `seed:`, if given, fixes its numbers instead of drawing a seed from the note."
+  def noise(colour, opts \\ []), do: Expr.call(:noise, [colour], opts)
 
   for filter <- [:lowpass, :highpass, :bandpass, :lowshelf, :highshelf, :peak, :mode] do
     @doc false
