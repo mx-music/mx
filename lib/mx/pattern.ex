@@ -122,7 +122,7 @@ defmodule Mx.Pattern do
     end
   end
 
-  defp length_of(written) do
+  defp written_length(written) do
     case String.split(written, "/") do
       [number] ->
         with {steps, ""} <- Float.parse(number), do: steps
@@ -143,7 +143,7 @@ defmodule Mx.Pattern do
         {name, 1}
 
       [name, written] when name != "" ->
-        case length_of(written) do
+        case written_length(written) do
           steps when is_number(steps) and steps > 0 ->
             whole = trunc(steps)
             {name, if(whole == steps, do: whole, else: steps)}

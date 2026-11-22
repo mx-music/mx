@@ -177,7 +177,7 @@ defmodule Mx.Engine.Mxs do
   defp start(false, input, _devices), do: Native.start(false, input)
 
   defp start(true, input, devices) do
-    Native.start_with(
+    Native.start_live(
       input,
       {devices[:output], devices[:input], devices[:rate], devices[:buffer]}
     )
@@ -344,7 +344,7 @@ defmodule Mx.Engine.Mxs do
       part = Atom.to_string(loop.name)
 
       dropped =
-        for {bus, _level} <- sends_of(part), not Keyword.has_key?(loop.send, bus), do: {bus, 0}
+        for {bus, _level} <- part_sends(part), not Keyword.has_key?(loop.send, bus), do: {bus, 0}
 
       :ets.insert(@buses, {{:sends, part}, loop.send})
 
@@ -397,7 +397,7 @@ defmodule Mx.Engine.Mxs do
     :ok
   end
 
-  defp sends_of(part) do
+  defp part_sends(part) do
     case :ets.lookup(@buses, {:sends, part}) do
       [{_sends, sends}] -> sends
       [] -> []
@@ -482,7 +482,7 @@ defmodule Mx.Engine.Mxs do
         if muted, do: Native.mute_part(engine, part, true)
         if soloed, do: Native.solo_part(engine, part, true)
         :ets.insert(@buses, {{:chain, part}, key})
-        send_all(engine, key, sends_of(part))
+        send_all(engine, key, part_sends(part))
         key_all(engine, part, effects)
         %{key: key, part: part}
 

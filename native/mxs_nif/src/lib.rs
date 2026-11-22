@@ -74,7 +74,7 @@ fn start(live: bool, with_input: bool) -> Result<ResourceArc<EngineResource>, St
 
 /// Starts a live engine on the devices named, at the rate and buffer size given, each nil for the device's default.
 #[rustler::nif(schedule = "DirtyIo")]
-fn start_with(with_input: bool, settings: (Option<String>, Option<String>, Option<u32>, Option<u32>)) -> Result<ResourceArc<EngineResource>, String> {
+fn start_live(with_input: bool, settings: (Option<String>, Option<String>, Option<u32>, Option<u32>)) -> Result<ResourceArc<EngineResource>, String> {
     let (device, input_device, rate, buffer) = settings;
     let settings = mxs::Settings { device, with_input, input_device, rate, buffer };
     let mut engine = Engine::live_with(&settings).map_err(|e| e.to_string())?;

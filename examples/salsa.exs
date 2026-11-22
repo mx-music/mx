@@ -196,7 +196,7 @@ defmodule Salsa do
 
     Enum.map_reduce(0..31, 7, fn step, index ->
       bar = div(step, 8)
-      chord = chord_on(bar * 4)
+      chord = beat_chord(bar * 4)
       classes = Enum.map(chord, &rem(&1, 12))
 
       left =
@@ -240,7 +240,7 @@ defmodule Salsa do
 
     hits =
       for bar <- 0..3, {beat, tone} <- if(rem(bar, 2) == 0, do: two_side, else: three_side) do
-        chord = chord_on(if(beat == 3.5, do: bar + 1, else: bar) * 4)
+        chord = beat_chord(if(beat == 3.5, do: bar + 1, else: bar) * 4)
         note = Enum.at(chord, tone)
         {bar * 4 + beat, [note - 12, note]}
       end
@@ -358,7 +358,7 @@ defmodule Salsa do
 
     hits =
       for {beat, name, length} <- line do
-        chord = chord_on(beat)
+        chord = beat_chord(beat)
         sustain = Float.round(length * 0.7, 2)
         opts = if length > 1, do: scoop(sustain), else: []
         {beat, stab(voicing(pitch(name), chord), sustain, opts)}
@@ -388,7 +388,7 @@ defmodule Salsa do
       glides = Enum.scan(rest, index, fn _, index -> step.(index) end)
 
       lead_note = fn index ->
-        Enum.at(if(bar == 3, do: fit(notes, chord_on(12)), else: notes), index)
+        Enum.at(if(bar == 3, do: fit(notes, beat_chord(12)), else: notes), index)
       end
 
       # The glides count from the note they bend.
@@ -420,7 +420,7 @@ defmodule Salsa do
 
     entries =
       for {beat, bar} <- stabs,
-          chord = chord_on(bar * 4),
+          chord = beat_chord(bar * 4),
           do:
             {beat,
              stab(voicing(Enum.max(chord), chord), 0.2, cutoff: 110, amp: 0.3, release: 0.25)}
@@ -512,5 +512,5 @@ defmodule Salsa do
   defp chart, do: ~MX"Am7 D7 Fmaj7 E7"
 
   # The chord at a beat of the chart, its root from D4 up.
-  defp chord_on(beat), do: chord(chord_at(chart(), 4, beat), from: :d4)
+  defp beat_chord(beat), do: chord(chord_at(chart(), 4, beat), from: :d4)
 end
