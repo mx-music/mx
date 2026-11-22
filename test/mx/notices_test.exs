@@ -46,7 +46,9 @@ defmodule Mx.NoticesTest do
 
     for {dep, licence} <- [{"midiex", "MIT"}, {"rustler_precompiled", "Apache-2.0"}] do
       [_, version] = Regex.run(~r/"#{dep}": \{:hex, :#{dep}, "([^"]+)"/, lock)
-      assert notices =~ "- #{dep} #{version}, #{licence}, https://hex.pm/packages/#{dep}/#{version}"
+
+      assert notices =~
+               "- #{dep} #{version}, #{licence}, https://hex.pm/packages/#{dep}/#{version}"
     end
   end
 

@@ -21,9 +21,14 @@ defmodule Mx.Examples.TenorSaxTest do
   end
 
   test "the slow phrase has full vibrato, then comes back at its softest and its loudest" do
-    assert print(2) =~ ~r/\nbeat 2 +play 65 vel: 0.6, sustain: 1.85, release: 0.2, vibrato: 0.145\n/
-    assert print(3) =~ ~r/\nbeat 0 +play 60 vel: 0.2, sustain: 1.85, release: 0.2, vibrato: 0.0725\n/
-    assert print(3) =~ ~r/\nbeat 8 +play 57 vel: 1, sustain: 3.85, release: 0.2, vibrato: 0.0725\n/
+    assert print(2) =~
+             ~r/\nbeat 2 +play 65 vel: 0.6, sustain: 1.85, release: 0.2, vibrato: 0.145\n/
+
+    assert print(3) =~
+             ~r/\nbeat 0 +play 60 vel: 0.2, sustain: 1.85, release: 0.2, vibrato: 0.0725\n/
+
+    assert print(3) =~
+             ~r/\nbeat 8 +play 57 vel: 1, sustain: 3.85, release: 0.2, vibrato: 0.0725\n/
   end
 
   test "the last run climbs down from E5 to its low A flat, held" do

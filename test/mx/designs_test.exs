@@ -2593,7 +2593,8 @@ defmodule Mx.DesignsTest do
 
   # VCSL's tenor saxophone held with vibrato swings 4.94 times a second by 10.8 cents,
   # as medians over its notes up to E5.
-  test "tenor_sax's vibrato at 0.145 semitones follows VCSL's tenor saxophone played with vibrato", ctx do
+  test "tenor_sax's vibrato at 0.145 semitones follows VCSL's tenor saxophone played with vibrato",
+       ctx do
     %{vibrato: vibrato} =
       Held.summary(bowed_notes(ctx, :tenor_sax, 44..76//4, vel: 0.6, vibrato: 0.145))
 
