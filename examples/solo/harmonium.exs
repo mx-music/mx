@@ -26,9 +26,11 @@ defmodule Harmonium do
 
   # The right hand's line, each word a note held a little short of its length.
   defp right_hand(section, time) do
+    words =
+      for name <- ~w(.d .N S r G M P d N S' r' G' M')a, do: {name, swara(Atom.to_string(name))}
+
     steps(line(section, time), 1,
-      words:
-        for(name <- ~w(.d .N S r G M P d N S' r' G' M')a, do: {name, swara(Atom.to_string(name))}),
+      words: words,
       each: fn _step, beats ->
         [vel: if(beats < 1, do: 0.5, else: 0.6), sustain: beats * 0.9, release: 0.15]
       end

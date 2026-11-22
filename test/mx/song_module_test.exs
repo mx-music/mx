@@ -142,7 +142,8 @@ defmodule Mx.SongModuleTest do
 
       for loop <- song.loops, into: %{} do
         {:ok, %{events: events, beats: beats}} = Pass.events(loop, 0)
-        {loop.name, {for({beat, _, opts} <- events, do: {beat, opts[:vel]}), beats}}
+        vels = for {beat, _, opts} <- events, do: {beat, opts[:vel]}
+        {loop.name, {vels, beats}}
       end
     end
 

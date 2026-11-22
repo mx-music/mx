@@ -14,9 +14,8 @@ defmodule Mx.EqTest do
     {:ok, engine} = Native.start(false, false)
     {:ok, flat} = Mx.Synths.bands(:eq, bands)
 
-    chain = [
-      {"eq", for({key, value} <- flat, do: {Atom.to_string(key), value / 1})}
-    ]
+    options = for {key, value} <- flat, do: {Atom.to_string(key), value / 1}
+    chain = [{"eq", options}]
 
     {:ok, key} = Native.start_effects(engine, chain)
     event = Mx.Engine.Mxs.event({:note, nil, synth, nil, [note: 57, sustain: 2], %{key: key}})
@@ -73,7 +72,8 @@ defmodule Mx.EqTest do
     event = Mx.Engine.Mxs.event({:note, nil, :saw, nil, [note: 57, sustain: 2], nil})
     :ok = Native.play(engine, [{0.0, event}])
     {:ok, {left, _right}} = Native.render(engine, 1.5)
-    dry = for(<<x::float-32-native <- left>>, do: x) |> Enum.drop(div(@rate, 2))
+    samples = for <<sample::float-32-native <- left>>, do: sample
+    dry = Enum.drop(samples, div(@rate, 2))
     peak = dry |> Enum.map(&abs/1) |> Enum.max()
 
     for bands <- [[], [mid: []]] do

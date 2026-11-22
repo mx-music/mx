@@ -68,7 +68,8 @@ defmodule Mx.Import do
       file = Path.basename(path)
       count = length(tunes)
       heading = "#{file} holds #{count} tunes, and --tune picks one:"
-      [heading | for({number, title} <- tunes, do: "  X:#{number} #{title}")]
+      lines = for {number, title} <- tunes, do: "  X:#{number} #{title}"
+      [heading | lines]
     else
       _one -> []
     end

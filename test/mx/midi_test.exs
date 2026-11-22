@@ -383,7 +383,8 @@ defmodule Mx.MIDITest do
              <<round(60_000_000 / 46)::24>>
            ]
 
-    assert [{8640, _}] = for({tick, {:meta, 0x51, _}} = event <- conductor, tick > 0, do: event)
+    tempos = for {tick, {:meta, 0x51, _}} = event <- conductor, tick > 0, do: event
+    assert [{8640, _}] = tempos
 
     {again, _output} = import!(out)
     # The export titles the file after the song, so only the song's first line differs.

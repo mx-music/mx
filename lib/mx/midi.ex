@@ -673,7 +673,8 @@ defmodule Mx.MIDI do
 
         {changes, length}, start ->
           next = if length == :infinity, do: :infinity, else: start + length
-          {for({beat, bpm, over} <- changes, do: {start + beat, bpm, over}), next}
+          shifted = for {beat, bpm, over} <- changes, do: {start + beat, bpm, over}
+          {shifted, next}
       end)
 
     changes

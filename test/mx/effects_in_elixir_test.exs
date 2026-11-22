@@ -13,8 +13,8 @@ defmodule Mx.EffectsInElixirTest do
 
     chain =
       for {effect, options} <- effects do
-        {Atom.to_string(effect),
-         for({key, value} <- options, do: {Atom.to_string(key), value / 1})}
+        strings = for {key, value} <- options, do: {Atom.to_string(key), value / 1}
+        {Atom.to_string(effect), strings}
       end
 
     {:ok, key} = Native.start_effects(engine, chain)
@@ -24,7 +24,9 @@ defmodule Mx.EffectsInElixirTest do
     {floats(left), floats(right)}
   end
 
-  defp floats(binary), do: for(<<x::float-32-native <- binary>>, do: x)
+  defp floats(binary) do
+    for <<sample::float-32-native <- binary>>, do: sample
+  end
 
   defp peak(samples), do: samples |> Enum.map(&abs/1) |> Enum.max()
 

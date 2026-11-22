@@ -1153,7 +1153,8 @@ defmodule Mx.Music do
   # Each part with its sends checked against the song's buses, and a send at 0 for each bus a change of the part names, which a loop started by on: has for every bus, as its changes are not known yet.
   defp send_parts(parts, played, buses) do
     names = Enum.map(buses, & &1.name)
-    keys = names ++ for({part, _music} <- parts, do: part.name)
+    part_names = for {part, _music} <- parts, do: part.name
+    keys = names ++ part_names
 
     for bus <- buses do
       with message when message != nil <- Mx.Song.keys_error("bus #{bus.name}", bus.fx, keys) do
@@ -1186,7 +1187,7 @@ defmodule Mx.Music do
         if match?({:triggered, _, _, _, _}, music) do
           names
         else
-          for({name, bus} <- changed, name == part.name, do: bus)
+          for {name, bus} <- changed, name == part.name, do: bus
         end
 
       zero = for bus <- Enum.uniq(later), not Keyword.has_key?(part.send, bus), do: {bus, 0}
@@ -1702,8 +1703,10 @@ defmodule Mx.Music do
     if opts != [] or sends == [], do: Pass.record_change(opts)
     slide = Keyword.take(sends, [:send_slide])
 
+    slides = for {_, beats} <- slide, do: {:level_slide, beats}
+
     for {bus, level} <- Keyword.get(sends, :send, []) do
-      Pass.record_send(bus, [level: level] ++ for({_, beats} <- slide, do: {:level_slide, beats}))
+      Pass.record_send(bus, [level: level] ++ slides)
     end
 
     :ok

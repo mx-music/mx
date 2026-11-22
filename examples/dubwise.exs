@@ -117,7 +117,8 @@ defmodule Dubwise do
   # The part thrown into its echo at one beat and pulled back at another, within music of the given
   # length: the echo opened to a mix and closed again to 0.2.
   defp throw(name, from, back, length, mix \\ 0.55) do
-    at(for({beat, mix} <- [{from, mix}, {back, 0.2}], do: {beat, thrown(name, mix)}), length)
+    entries = for {beat, mix} <- [{from, mix}, {back, 0.2}], do: {beat, thrown(name, mix)}
+    at(entries, length)
   end
 
   # The rimshot's echo is its own ping-pong and the melodica's its own tape, whose mix opens; the

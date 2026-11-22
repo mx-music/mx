@@ -61,7 +61,8 @@ defmodule Mx.Examples.EffectsTest do
       doc = File.read!(path(@effect))
       numbered = Regex.scan(~r/^  (\d+)\. /m, doc, capture: :all_but_first)
 
-      assert numbered == for(section <- 1..@count, do: [Integer.to_string(section)])
+      expected = for section <- 1..@count, do: [Integer.to_string(section)]
+      assert numbered == expected
     end
 
     @tag :engine

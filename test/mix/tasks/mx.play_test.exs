@@ -336,7 +336,8 @@ defmodule Mix.Tasks.Mx.PlayTest do
       "import Mx\nsong(tempo: 120, music: part(:voice, loop(4, fn _, _ -> rest(4) end), fx: [echo: [phase: 1, decay: 8, mix: 1]]))\n"
 
     File.write!(path, song)
-    write_wav(burst, for(i <- 0..959, do: :math.sin(i / 3)))
+    samples = for sample <- 0..959, do: :math.sin(sample / 3)
+    write_wav(burst, samples)
     {:ok, loaded} = Mx.Song.load(path)
     {:ok, session} = Mx.Session.start_link(path: path, song: loaded, record: out)
     {:ok, device} = StringIO.open("")
@@ -382,7 +383,8 @@ defmodule Mix.Tasks.Mx.PlayTest do
   @tag :engine
   test "a recording plays alone with no song, and stops", ctx do
     burst = Path.join(ctx.tmp_dir, "burst.wav")
-    write_wav(burst, for(i <- 0..959, do: 0.0001 * :math.sin(i / 3)))
+    samples = for sample <- 0..959, do: 0.0001 * :math.sin(sample / 3)
+    write_wav(burst, samples)
     {:ok, _engine} = Mxs.start_link([])
     assert {:ok, id} = Mxs.play_recording(burst, from: 0.0, to: 0.01)
     assert :ok = Mxs.stop_sounds([id])

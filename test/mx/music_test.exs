@@ -256,7 +256,9 @@ defmodule Mx.MusicTest do
 
       assert {:ok, %{events: events}} = Pass.events(hd(song.loops), 0)
 
-      assert for({beat, note, opts} <- events, do: {beat, note, opts[:vel]}) ==
+      vels = for {beat, note, opts} <- events, do: {beat, note, opts[:vel]}
+
+      assert vels ==
                [{0, 60, 0.1}, {1, 64, 0.6}, {2, 60, 0.1}, {3, 64, 0.6}]
     end
 

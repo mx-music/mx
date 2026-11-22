@@ -64,8 +64,10 @@ defmodule Sitar do
 
   # A gat part's notes over teentaal's 16 beats, the short ones softer.
   defp gat(time) do
+    words = for name <- ~w(.N D G G' M N P R R' S S')a, do: {name, swara(Atom.to_string(name))}
+
     steps(cells(time), 1,
-      words: for(name <- ~w(.N D G G' M N P R R' S S')a, do: {name, swara(Atom.to_string(name))}),
+      words: words,
       each: fn _step, length ->
         [vel: if(length < 0.5, do: 0.5, else: 0.65), sustain: length * 0.9, release: 0.25]
       end

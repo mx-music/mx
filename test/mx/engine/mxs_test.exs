@@ -730,7 +730,8 @@ defmodule Mx.Engine.MxsTest do
 
   defp offline(events) do
     {:ok, engine} = Mxs.Native.start(false, false)
-    :ok = Mxs.Native.play(engine, for({at, event} <- events, do: {at, Mxs.event(event)}))
+    played = for {at, event} <- events, do: {at, Mxs.event(event)}
+    :ok = Mxs.Native.play(engine, played)
     engine
   end
 

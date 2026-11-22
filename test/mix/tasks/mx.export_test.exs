@@ -63,7 +63,8 @@ defmodule Mix.Tasks.Mx.ExportTest do
 
     assert File.read!(Path.join(dir, "waltz.abc")) =~ "\nM:3/4\n"
     {:ok, midi} = Mx.MIDI.parse(File.read!(Path.join(dir, "waltz.mid")), "waltz.mid")
-    assert [<<3, 2, 24, 8>>] = for({_, {:meta, 0x58, time}} <- hd(midi.tracks), do: time)
+    signatures = for {_, {:meta, 0x58, time}} <- hd(midi.tracks), do: time
+    assert [<<3, 2, 24, 8>>] = signatures
   end
 
   test "a song in E minor writes a score, a MIDI file and an ABC tune in E minor unless --key is given",
@@ -92,7 +93,8 @@ defmodule Mix.Tasks.Mx.ExportTest do
 
     assert File.read!(Path.join(dir, "minor.abc")) =~ "\nK:Em"
     {:ok, midi} = Mx.MIDI.parse(File.read!(Path.join(dir, "minor.mid")), "minor.mid")
-    assert [<<1, 1>>] = for({_, {:meta, 0x59, key}} <- hd(midi.tracks), do: key)
+    keys = for {_, {:meta, 0x59, key}} <- hd(midi.tracks), do: key
+    assert [<<1, 1>>] = keys
   end
 
   test "names the parts it leaves out", %{tmp_dir: dir} do

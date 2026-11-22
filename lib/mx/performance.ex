@@ -119,8 +119,9 @@ defmodule Mx.Performance do
         counts -> Map.update(counts, {frame, rem(note.midi, 12)}, 1, &(&1 + 1))
       end
 
-    for frame <- 0..(count - 1),
-        do: for(class <- 0..11, do: Map.get(counts, {frame, class}, 0) / 1)
+    for frame <- 0..(count - 1) do
+      for class <- 0..11, do: Map.get(counts, {frame, class}, 0) / 1
+    end
   end
 
   defp onsets(groups, start) do

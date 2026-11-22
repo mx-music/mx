@@ -106,8 +106,12 @@ defmodule Mx.Synths do
             do: {option, String.to_atom(prefix <> Atom.to_string(option)), value}
 
       case Enum.find(band, fn {_, option, _} -> not effect_option?(effect, option) end) do
-        nil -> {:ok, for({_, option, value} <- band, do: {option, value})}
-        {option, _, _} -> {:error, "effect #{effect}'s #{name} has no option #{option}"}
+        nil ->
+          options = for {_, option, value} <- band, do: {option, value}
+          {:ok, options}
+
+        {option, _, _} ->
+          {:error, "effect #{effect}'s #{name} has no option #{option}"}
       end
     else
       value = inspect(value)

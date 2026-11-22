@@ -242,7 +242,8 @@ defmodule MaracatuDub do
   # The part's effect opened to a mix at one beat and brought back to its own at another, within
   # a section.
   defp throw(name, effect, from, back, mix, own) do
-    at(for({beat, mix} <- [{from, mix}, {back, own}], do: {beat, thrown(name, effect, mix)}), 32)
+    entries = for {beat, mix} <- [{from, mix}, {back, own}], do: {beat, thrown(name, effect, mix)}
+    at(entries, 32)
   end
 
   # The skank is sent into the desk's tape and turned down, so as much of it is in the echo and as
