@@ -43,6 +43,54 @@ defmodule Mx.PairedTest do
     20 * :math.log10(max(rms(difference), 1.0e-12) / rms(rust))
   end
 
+  # Each twin of mx-00229, with the options each is checked at and the seconds rendered.
+  @twins [
+    {Mx.Paired.Saw, :saw, [[note: 45, sustain: 1], [note: 69, cutoff: 80, res: 0.8, sustain: 1]],
+     2},
+    {Mx.Paired.Square, :square,
+     [[note: 45, sustain: 1], [note: 69, bend: 2, brightness: 0.2, sustain: 1]], 2},
+    {Mx.Paired.Tri, :tri, [[note: 45, sustain: 1], [note: 81, res: 0.9, sustain: 1]], 2},
+    {Mx.Paired.Pulse, :pulse, [[note: 45, sustain: 1], [note: 60, pulse_width: 0.1, sustain: 1]],
+     2},
+    {Mx.Paired.Noise, :noise, [[sustain: 1], [cutoff: 70, res: 0.7, sustain: 1]], 2},
+    {Mx.Paired.Fm, :fm, [[note: 45, sustain: 1], [note: 64, divisor: 0.5, depth: 3, sustain: 1]],
+     2},
+    {Mx.Paired.Viola, :viola,
+     [[note: 60, vel: 0.3], [note: 67, vel: 1, vibrato: 0.5], [note: 55, pizz: 1]], 3},
+    {Mx.Paired.DoubleBass, :double_bass,
+     [[note: 31, vel: 0.6], [note: 43, vel: 1, brightness: 0.7], [note: 36, pizz: 1, vel: 0.4]],
+     3},
+    {Mx.Paired.Organ, :organ,
+     [[note: 40], [note: 64, loud: 1], [note: 72, loud: 0.5, brightness: 0.3]], 2},
+    {Mx.Paired.Harmonium, :harmonium, [[note: 52], [note: 64, vel: 1, sustain: 1]], 2},
+    {Mx.Paired.Accordion, :accordion,
+     [[note: 60], [note: 67, vel: 0.3, detune: 0], [note: 55, vel: 1, brightness: 0.8]], 2},
+    {Mx.Paired.Kick, :kick, [[], [note: 30, vel: 1], [vel: 0.3, beater: 0]], 2},
+    {Mx.Paired.Clap, :clap, [[], [note: 67]], 1},
+    {Mx.Paired.Rimshot, :rimshot, [[], [note: 79]], 1},
+    {Mx.Paired.ClosedHihat, :closed_hihat, [[], [note: 96, vel: 0.3], [vel: 1, release: 0.2]], 2},
+    {Mx.Paired.OpenHihat, :open_hihat,
+     [[sustain: 1], [note: 88, vel: 0.9, sustain: 0.5, release: 0.3]], 3},
+    {Mx.Paired.Supersaw, :supersaw,
+     [[note: 45, sustain: 1], [note: 60, detune: 0.5, bend: -1, sustain: 1]], 2},
+    {Mx.Paired.Acid, :acid,
+     [[note: 33, sustain: 0.5], [note: 40, cutoff: 60, res: 0.9, brightness: 0.8, sustain: 0.5]],
+     2},
+    {Mx.Paired.Brass, :brass,
+     [
+       [note: 52, sustain: 1],
+       [note: 64, vel: 1, brightness: 0.8, sustain: 1],
+       [note: 45, vel: 0.3, sustain: 1]
+     ], 2}
+  ]
+
+  for {module, synth, cases, seconds} <- @twins, options <- cases do
+    test "#{synth} at #{inspect(options)} renders the same in its defsynth and Rust forms" do
+      apart = apart(unquote(module), unquote(synth), unquote(options), unquote(seconds))
+      assert apart < -60, "#{apart} dB apart"
+    end
+  end
+
   for vel <- [0.3, 1] do
     test "the flute's note 72 at vel #{vel}, held with its vibrato, renders the same in its defsynth and Rust forms" do
       options = [note: 72, vel: unquote(vel), sustain: 2]
