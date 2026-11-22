@@ -26,6 +26,7 @@ defmodule Mx.InstrumentSongTest do
             Mx.InstrumentSongTest.Pulse,
             Mx.InstrumentSongTest.Tails,
             Mx.InstrumentSongTest.Later,
+            Mx.InstrumentSongTest.Zeroed,
             Mx.InstrumentSongTest.Shared,
             Mx.InstrumentSongTest.SongFirst,
             Mx.InstrumentSongTest.InstrumentFirst
@@ -260,6 +261,81 @@ defmodule Mx.InstrumentSongTest do
       {:ok, %{rate: rate, samples: samples}} = Mx.Audio.read(out)
       assert_in_delta Enum.find_index(samples, &(abs(&1) > 1.0e-4)) / rate, 1.1, 0.01
     end
+  end
+
+  @zeroed """
+  defmodule Mx.InstrumentSongTest.Zeroed do
+    use Mx.Instrument
+
+    defeffect silenced(sound, _opts), do: sound * 0 + sound
+
+    attr :wet, :float, default: 0
+    defeffect wetter(sound, opts), do: sound * opts.wet + sound
+
+    attr :on, :float, default: 1
+    defeffect picked(sound, opts), do: select(opts.on, sound, sound * 0.5)
+
+    defeffect right_on_both({left, right}, _opts), do: {left * 0 + right, right}
+
+    defeffect broken(sound, _opts), do: sound |> delay(seconds: 0.1, max: sound)
+  end
+  """
+
+  # The two sides of a saw note through effects written in a song file, or the error its render gives.
+  defp zeroed(ctx, fx) do
+    path = Path.join(ctx.tmp_dir, "zeroed.exs")
+    out = Path.join(ctx.tmp_dir, "zeroed.wav")
+    music = "part(:x, note(:c4, 1), synth: :saw, fx: #{fx})"
+    File.write!(path, @zeroed <> "import Mx\nsong(tempo: 120, music: #{music})\n")
+    File.rm(out)
+    me = self()
+
+    capture_io(:stderr, fn ->
+      capture_io(fn -> send(me, {:rendered, Mx.Render.render(path, out, [])}) end)
+    end)
+
+    receive do
+      {:rendered, :ok} ->
+        {:ok, _format, data} = Mx.Audio.raw(out)
+        frames = for <<left::little-float-32, right::little-float-32 <- data>>, do: {left, right}
+        Enum.unzip(frames)
+
+      {:rendered, error} ->
+        error
+    end
+  end
+
+  test "an effect whose input is multiplied by 0 or left out of a select plays the rest", ctx do
+    {dry, _} = zeroed(ctx, "[level: []]")
+    assert peak(dry) > 0.01
+
+    {left, _} = zeroed(ctx, "[silenced: []]")
+    assert peak(Enum.zip_with(left, dry, &(&1 - &2))) <= peak(dry) * 1.0e-5
+
+    {left, _} = zeroed(ctx, "[wetter: []]")
+    assert peak(Enum.zip_with(left, dry, &(&1 - &2))) <= peak(dry) * 1.0e-5
+    {left, _} = zeroed(ctx, "[wetter: [wet: 1]]")
+    assert_in_delta peak(left), 2 * peak(dry), 1.0e-4
+
+    {left, _} = zeroed(ctx, "[picked: []]")
+    assert_in_delta peak(left), peak(dry), 1.0e-5
+    {left, _} = zeroed(ctx, "[picked: [on: 0]]")
+    assert_in_delta peak(left), 0.5 * peak(dry), 1.0e-5
+
+    {left, right} = zeroed(ctx, "[pan: [pan: 1], right_on_both: []]")
+    assert peak(right) > 0.01
+    assert left == right
+  end
+
+  test "an effect that cannot be built ends the render with an error naming the part and the effect",
+       ctx do
+    {micros, result} = :timer.tc(fn -> zeroed(ctx, "[broken: []]") end)
+
+    assert result ==
+             {:error,
+              "part x: effect broken could not be built: a delay's max must be known when the note starts"}
+
+    assert micros < 1_000_000
   end
 
   test "a defeffect's option given a value outside the range its attr declares is refused when the song loads",

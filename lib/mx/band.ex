@@ -175,6 +175,7 @@ defmodule Mx.Band do
       share: Keyword.get(opts, :share, 1),
       tempo_pass: -1,
       on_end: Keyword.get(opts, :on_end, fn -> :ok end),
+      on_fail: Keyword.get(opts, :on_fail),
       joining: %{},
       loops: %{},
       stopping: %{},
@@ -442,6 +443,10 @@ defmodule Mx.Band do
       {name, _} when reason == :normal ->
         loop = Enum.find(state.song.loops, &(&1.name == name))
         {:noreply, start_loops(state, [{loop, later_start(state, loop)}])}
+
+      {name, _} when state.on_fail != nil ->
+        state.on_fail.(name, reason)
+        {:noreply, %{state | loops: Map.delete(state.loops, name)}}
 
       {name, _} ->
         IO.puts(:stderr, "loop #{name} failed and starts again: #{inspect(reason)}")

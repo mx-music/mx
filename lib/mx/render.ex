@@ -41,9 +41,11 @@ defmodule Mx.Render do
       Enum.each(left_out(song), &IO.puts/1)
       follow = List.wrap(opts[:follow])
       heard = Keyword.take(opts, [:mute, :solo])
-      run(playing, out, seconds, follow, share, total, {ring_out, ring}, heard)
-      if ring_out == nil and ring, do: IO.puts(cut_short(ring))
-      Enum.each(Recording.report(out), &IO.puts/1)
+
+      with :ok <- run(playing, out, seconds, follow, share, total, {ring_out, ring}, heard) do
+        if ring_out == nil and ring, do: IO.puts(cut_short(ring))
+        Enum.each(Recording.report(out), &IO.puts/1)
+      end
     end
   end
 
@@ -243,35 +245,50 @@ defmodule Mx.Render do
           inputs: &Inputs.snapshot_at(inputs, &1, &2),
           set: &Inputs.put(inputs, &1, &2, &3, &4),
           worked_out: &Inputs.worked_out(inputs, &1, &2),
-          on_end: fn -> send(render, :song_ended) end
+          on_end: fn -> send(render, :song_ended) end,
+          on_fail: fn name, reason -> send(render, {:part_failed, name, reason}) end
         )
 
       for name <- Keyword.get(heard, :mute, []), do: :ok = Band.mute(band, name)
       :ok = Band.solo(band, Keyword.get(heard, :solo, []))
       stop_us = if seconds, do: start_us + round(seconds * 1_000_000)
       progress = %{start_us: start_us, total: total, printed_ms: now_ms()}
-      last_us = play(band, start_us, stop_us, MapSet.new(), progress)
-      print_progress(total, total)
-      cut(band, last_us - @step_us + @ahead_us)
-      GenServer.stop(band)
 
-      case {ring_out, ring} do
-        {false, _ring} ->
-          Mxs.render_to(start_us + round(total * 1_000_000))
+      case play(band, start_us, stop_us, MapSet.new(), progress) do
+        {:part_failed, name, reason} ->
+          for pid <- [band, inputs, engine], do: GenServer.stop(pid)
+          File.rm(out)
+          {:error, "part #{name}: " <> failure(reason)}
 
-        {true, %{seconds: seconds}} ->
-          faded_us = fade(last_us, last_us + @fade_us)
-          Clock.advance(faded_us + round(seconds * 1_000_000))
-          Mxs.render_to(faded_us + round(seconds * 1_000_000))
-
-        _as_ever ->
-          fade(last_us, last_us + @fade_us)
+        last_us ->
+          rendered(band, last_us, start_us, total, {ring_out, ring})
+          GenServer.stop(inputs)
+          GenServer.stop(engine)
       end
-
-      GenServer.stop(inputs)
-      GenServer.stop(engine)
     after
       Clock.stop_render()
+    end
+  end
+
+  defp failure({%{__exception__: true} = error, _stack}), do: Exception.message(error)
+  defp failure(reason), do: inspect(reason)
+
+  defp rendered(band, last_us, start_us, total, {ring_out, ring}) do
+    print_progress(total, total)
+    cut(band, last_us - @step_us + @ahead_us)
+    GenServer.stop(band)
+
+    case {ring_out, ring} do
+      {false, _ring} ->
+        Mxs.render_to(start_us + round(total * 1_000_000))
+
+      {true, %{seconds: seconds}} ->
+        faded_us = fade(last_us, last_us + @fade_us)
+        Clock.advance(faded_us + round(seconds * 1_000_000))
+        Mxs.render_to(faded_us + round(seconds * 1_000_000))
+
+      _as_ever ->
+        fade(last_us, last_us + @fade_us)
     end
   end
 
@@ -285,6 +302,7 @@ defmodule Mx.Render do
   defp play(band, now_us, stop_us, told, progress) do
     receive do
       :song_ended -> now_us
+      {:part_failed, name, reason} -> {:part_failed, name, reason}
     after
       0 ->
         if stop_us != nil and now_us >= stop_us do
