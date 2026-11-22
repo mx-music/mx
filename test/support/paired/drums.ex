@@ -6,6 +6,9 @@ defmodule Mx.Paired.Drums do
   use Mx.Instrument
 
   @ride_bands [200, 300, 500, 800, 1300, 2000, 3200, 5000, 8000, 12_500]
+  @hat_bands [200, 300, 500, 800, 1300, 2000, 3200, 5000, 8000, 12_500]
+  @jingle_levels [-29, -24, -24.8, -17.5, -13.3, -17, -21.4, 0, -5, 0]
+  @jingle_rings [0.55, 0.6, 0.7, 0.5, 0.45, 0.2, 0.15, 0.15, 0.15, 0.15]
 
   @doc "A rise over `attack` seconds and a fall over `decay`, both bent by `curve`."
   defsound hit(attack, decay, curve) do
@@ -307,5 +310,28 @@ defmodule Mx.Paired.Drums do
       end)
 
     mixed * ending * (s.gain * vel / 0.6)
+  end
+
+  @doc "A tambourine at `scale` times its own pitch, at `vel`, struck, or shaken for `held` seconds when `shaken`: random clicks and a strike ringing the jingles' modes."
+  defsound tambourine(scale, vel, held, shaken) do
+    rattle = 0.15 + vel * 0.6
+    shaking = envelope([{0.005, 1}, {held, 1}, {rattle, 0, -4}])
+    # mxs draws the clicks' seed before the strike's noise, so they come first.
+    clicked = (clicks(rate: shaking * 400) * shaking) |> highpass(hz: 2500) |> highpass(hz: 2500)
+
+    exciter =
+      if shaken do
+        clicked
+      else
+        clicked + (impulse() + highpass(noise(:white), hz: 2000) * hit(0.0005, 0.004, -4)) * 0.3
+      end
+
+    jingles = List.flatten(Mx.Paired.Draws.plate(120, 170, 16_000))
+    levels = Enum.map(jingles, &db(between(&1, @hat_bands, @jingle_levels)))
+    rings = Enum.map(jingles, &between(&1, @hat_bands, @jingle_rings))
+    ringing = mode(exciter, hz: Enum.map(jingles, &(&1 * scale)), level: levels, fade: rings)
+
+    lowshelf(ringing, hz: 1000, q: 0.707, db: max(vel - 0.6, 0) * 16) *
+      (db(-36) * (vel / 0.6) ** 1.9)
   end
 end
