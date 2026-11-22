@@ -84,6 +84,7 @@ defmodule Mx.PairedTest do
     {Mx.Paired.PedalHihat, :pedal_hihat, [[vel: 0.3], [note: 62, vel: 1]], 1},
     {Mx.Paired.Crash, :crash,
      [[vel: 0.3, sustain: 2], [note: 62, vel: 1, sustain: 1, release: 0.5]], 3},
+    {Mx.Paired.Snare, :snare, [[vel: 0.3], [vel: 1], [note: 50]], 1},
     {Mx.Paired.LowTom, :low_tom, [[vel: 0.3], [note: 40, vel: 1]], 3},
     {Mx.Paired.MidTom, :mid_tom, [[vel: 0.3], [note: 45, vel: 1]], 3},
     {Mx.Paired.HighTom, :high_tom, [[vel: 0.3], [note: 47, vel: 1]], 3},
