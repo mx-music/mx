@@ -71,7 +71,7 @@ defmodule Mx.Instrument.Vocabulary do
   @moduledoc """
   The nodes and functions a `defsynth` builds its sound from, named by what they do, with each argument named by its unit.
 
-  Numbers: `hz/1`, `db/1`, `log2/1`, `exp/1`, `sin/1`, `cos/1`, `clamp/3`, `mod/2` and `select/3`, worked out at once on numbers and when the note starts on its options.
+  Numbers: `hz/1`, `db/1`, `log2/1`, `exp/1`, `sin/1`, `cos/1`, `clamp/3`, `mod/2`, `select/3` and `draw/2`, a number drawn as the note starts,, worked out at once on numbers and when the note starts on its options.
   Sources: `impulse/1`, `follow/1`, `time/1`, `sine/1`, `vibrato/1`, `partials/2`, `bowed_string/1`, `air_jet/1`, `saw/1`, `square/1`, `triangle/1`, `pulse/1`, `noise/2` and `clicks/1`, clicks at random times at `rate:` a second.
   Filters: `lowpass/2`, `highpass/2` and `bandpass/2`, at `hz:` with `q:`, either of which may change as the note sounds, and `poles:`, `ladder/2`, a four-pole resonant lowpass at `hz:` with `resonance:` from 0 to 1, where it rings on at `hz:`, `lowshelf/2`, `highshelf/2` and `peak/2`, at `hz:` with `q:` and `db:`, `mode/2`, a resonator struck by its input at `hz:`, ringing at `level:` and fading 60 dB over `fade:` seconds, or given lists of the same length a resonator for each, all struck by the one input, `wind_bands/2`, `delay/2`, `struck/2`, a level that rises over `attack:` and falls over `fall:` at each click of its sound, and `dc_block/1` and `dc_block/2`, which take away any offset below `hz:`, 10 unless given.
   Distortion: `saturate/2` rounds a sound off towards `level:`, `clip/2` cuts it off at `level:`, and `fold/2` folds it back at `level:`, each after a `drive:` in dB, worked out at twice the engine's rate.
@@ -160,7 +160,10 @@ defmodule Mx.Instrument.Vocabulary do
   @doc "A wind's sound through peaks at mx's eight bands up to 3162 Hz, `gains:` eight in dB at each of pp, mf and ff, and `levels:` in dB at each, following `vel:`."
   def wind_bands(sound, opts), do: Expr.call(:wind_bands, [sound], opts)
 
-  @doc "Noise, `:white` or `:pink`; `seed:`, if given, fixes its numbers instead of drawing a seed from the note."
+  @doc "The note's `index`th number from 0 up to 1, counting from 0, drawn from a seed that moves with each note of the synth by `mix:`, a whole number, 0 unless given; each draw and drawn noise of a synth takes the same mix."
+  def draw(index, opts \\ []), do: Expr.call(:draw, [index], opts)
+
+  @doc "Noise, `:white` or `:pink`; `seed:`, if given, fixes its numbers instead of drawing a seed from the note, and `drawn:` seeds it from the note's seed that `draw/2` takes, with the same `mix:`, plus `drawn:`."
   def noise(colour, opts \\ []), do: Expr.call(:noise, [colour], opts)
 
   for filter <- [:lowpass, :highpass, :bandpass, :lowshelf, :highshelf, :peak, :mode] do

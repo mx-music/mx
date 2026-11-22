@@ -83,6 +83,7 @@ defmodule Mx.PairedTest do
     {Mx.Paired.Tambourine, :tambourine, [[vel: 0.3], [vel: 1], [note: 74]], 2},
     {Mx.Paired.TambourineShake, :tambourine_shake,
      [[vel: 0.3], [vel: 1, sustain: 0.6], [note: 64, sustain: 0.1]], 2},
+    {Mx.Paired.Caxixi, :caxixi, [[vel: 0.3], [vel: 1]], 2},
     {Mx.Paired.Cajon, :cajon, [[vel: 0.3], [vel: 1], [note: 42, slap: 1]], 2},
     {Mx.Paired.Surdo, :surdo, [[vel: 0.3], [vel: 1], [note: 38, muted: 1]], 2},
     {Mx.Paired.Tamborim, :tamborim, [[vel: 0.3], [note: 74, vel: 1]], 2},
@@ -173,6 +174,28 @@ defmodule Mx.PairedTest do
       apart = apart(Mx.Paired.Violin, :violin, options, 3)
       assert apart < -60, "#{apart} dB apart"
     end
+  end
+
+  test "the caxixi's shakes in a run render the same in its defsynth and Rust forms, each drawing its own peak" do
+    shakes = fn module ->
+      {:ok, engine} = Native.start(false, false)
+      if module, do: :ok = Mx.Instrument.register(engine, module)
+
+      events =
+        for {at, vel} <- [{0.0, 0.6}, {0.3, 0.8}, {0.6, 0.5}, {0.9, 1.0}] do
+          {at, Mx.Engine.Mxs.event({:note, nil, :caxixi, nil, [vel: vel], nil})}
+        end
+
+      :ok = Native.play(engine, events)
+      {:ok, {left, _right}} = Native.render(engine, 3)
+      for <<x::float-32-native <- left>>, do: x
+    end
+
+    rust = shakes.(nil)
+    elixir = shakes.(Mx.Paired.Caxixi)
+    difference = Enum.zip_with(rust, elixir, &(&1 - &2))
+    apart = 20 * :math.log10(max(rms(difference), 1.0e-12) / rms(rust))
+    assert apart < -60, "#{apart} dB apart"
   end
 
   test "the violin plucked renders the same in its defsynth and Rust forms" do

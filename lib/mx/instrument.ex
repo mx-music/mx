@@ -601,6 +601,12 @@ defmodule Mx.Instrument do
   defp encode_match({key, value}), do: {Atom.to_string(key), value / 1}
 
   @doc false
+  # A float holds whole numbers exactly only up to 2 ** 53, so a larger one, such as a draw's
+  # mix, goes as its digits.
+  def encode(number) when is_integer(number) and abs(number) > 9_007_199_254_740_992 do
+    {:name, Integer.to_string(number)}
+  end
+
   def encode(number) when is_number(number), do: number / 1
   def encode(true), do: 1.0
   def encode(false), do: 0.0
