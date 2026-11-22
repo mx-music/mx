@@ -1,11 +1,13 @@
 defmodule Mx.SynthsTest do
   use ExUnit.Case, async: true
 
+  alias Mx.Engine.Mxs.Native
+
   test "the instruments guide lists every synth mx ships" do
     guide = File.read!("documentation/instruments.md")
 
     # Instruments that tests register join the catalog, so only mxs's own synths are listed.
-    {native, _note, _sample, _effects, _effect, _input} = Mx.Engine.Mxs.Native.catalog()
+    {native, _note, _sample, _effects, _effect, _input} = Native.catalog()
     shipped = MapSet.new(native, fn {name, _specs} -> name end)
     synths = Mx.Synths.synths() |> Enum.filter(&(&1 in shipped)) |> Enum.sort() |> Enum.join(", ")
 
@@ -16,7 +18,7 @@ defmodule Mx.SynthsTest do
     guide = File.read!("documentation/instruments.md")
 
     # Effects that tests register join the catalog, so only mxs's own effects are listed.
-    {_synths, _note, _sample, native, _effect, _input} = Mx.Engine.Mxs.Native.catalog()
+    {_synths, _note, _sample, native, _effect, _input} = Native.catalog()
     effects = native |> Enum.map(fn {name, _specs} -> name end) |> Enum.sort()
 
     assert guide =~ "\n" <> Enum.join(effects, ", ") <> ".\n"
@@ -34,7 +36,7 @@ defmodule Mx.SynthsTest do
   end
 
   test "an effect's time that is not in beats names its unit" do
-    {_synths, _note, _sample, native, _effect, _input} = Mx.Engine.Mxs.Native.catalog()
+    {_synths, _note, _sample, native, _effect, _input} = Native.catalog()
 
     for {effect, specs} <- native, %{name: name, kind: kind} <- specs do
       unit =

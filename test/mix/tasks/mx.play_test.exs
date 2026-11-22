@@ -4,6 +4,7 @@ defmodule Mix.Tasks.Mx.PlayTest do
   import ExUnit.CaptureIO
 
   alias Mix.Tasks.Mx.Play
+  alias Mx.Engine.Mxs
 
   @song "import Mx\nsong(tempo: 240, music: part(:a, loop(1, fn _, _ -> seq([note(72, 0, release: 0.05), rest(1)]) end)))\n"
 
@@ -177,7 +178,7 @@ defmodule Mix.Tasks.Mx.PlayTest do
     assert Mx.Session.solo(session, ["bass"]) == :ok
     assert Mx.Session.solo(session, [:bass, :nope]) == {:error, "the song has no part named nope"}
     Process.sleep(2000)
-    :ok = Mx.Engine.Mxs.levels(self())
+    :ok = Mxs.levels(self())
     assert_receive {:mx_levels, %{peak: {+0.0, +0.0}, parts: parts}}, 500
     assert %{"bass" => %{peak: {+0.0, +0.0}}, "lead" => %{peak: {+0.0, +0.0}}} = parts
     assert map_size(parts) == 2
@@ -382,27 +383,27 @@ defmodule Mix.Tasks.Mx.PlayTest do
   test "a recording plays alone with no song, and stops", ctx do
     burst = Path.join(ctx.tmp_dir, "burst.wav")
     write_wav(burst, for(i <- 0..959, do: 0.0001 * :math.sin(i / 3)))
-    {:ok, _engine} = Mx.Engine.Mxs.start_link([])
-    assert {:ok, id} = Mx.Engine.Mxs.play_recording(burst, from: 0.0, to: 0.01)
-    assert :ok = Mx.Engine.Mxs.stop_sounds([id])
+    {:ok, _engine} = Mxs.start_link([])
+    assert {:ok, id} = Mxs.play_recording(burst, from: 0.0, to: 0.01)
+    assert :ok = Mxs.stop_sounds([id])
 
-    assert Mx.Engine.Mxs.play_recording(burst, from: 0.0, to: 1.0) ==
+    assert Mxs.play_recording(burst, from: 0.0, to: 1.0) ==
              {:error, "sample #{burst} lasts 0.020 seconds, so to: 1.0 is outside it"}
 
-    GenServer.stop(Mx.Engine.Mxs)
+    GenServer.stop(Mxs)
   end
 
   @tag :engine
   test "an engine plays through the output named, at the rate and buffer size given" do
     name = default_device(true)
-    {:ok, _engine} = Mx.Engine.Mxs.start_link(devices: [output: name, rate: 44_100, buffer: 64])
-    assert %{device: ^name, rate: rate} = Mx.Engine.Mxs.output(self())
+    {:ok, _engine} = Mxs.start_link(devices: [output: name, rate: 44_100, buffer: 64])
+    assert %{device: ^name, rate: rate} = Mxs.output(self())
     assert rate == 44_100
-    Mx.Engine.Mxs.buffer_load()
+    Mxs.buffer_load()
     Process.sleep(1000)
-    %{buffers: buffers} = Mx.Engine.Mxs.buffer_load()
+    %{buffers: buffers} = Mxs.buffer_load()
     assert_in_delta buffers, 44_100 / 64, 70
-    GenServer.stop(Mx.Engine.Mxs)
+    GenServer.stop(Mxs)
   end
 
   @tag :engine
@@ -411,12 +412,12 @@ defmodule Mix.Tasks.Mx.PlayTest do
     name = default_device(true)
 
     assert {:error, "no output device named Studio; the outputs are " <> outputs} =
-             Mx.Engine.Mxs.start_link(devices: [output: "Studio"])
+             Mxs.start_link(devices: [output: "Studio"])
 
     assert outputs =~ name
-    assert {:error, message} = Mx.Engine.Mxs.start_link(devices: [rate: 7])
+    assert {:error, message} = Mxs.start_link(devices: [rate: 7])
     assert message =~ ~r/^#{Regex.escape(name)} runs at [0-9, or]+ Hz, not 7$/
-    assert {:error, message} = Mx.Engine.Mxs.start_link(devices: [buffer: 7])
+    assert {:error, message} = Mxs.start_link(devices: [buffer: 7])
     assert message =~ ~r/^#{Regex.escape(name)} takes buffers of \d+ to \d+ frames, not 7$/
   end
 
@@ -501,7 +502,7 @@ defmodule Mix.Tasks.Mx.PlayTest do
   end
 
   defp default_device(output?) do
-    {:ok, devices} = Mx.Engine.Mxs.Native.devices()
+    {:ok, devices} = Mxs.Native.devices()
 
     {name, ^output?, true, _, _, _} =
       Enum.find(devices, &match?({_, ^output?, true, _, _, _}, &1))

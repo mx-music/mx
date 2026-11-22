@@ -1,6 +1,7 @@
 defmodule Mx.PairedTest do
   use ExUnit.Case, async: true
 
+  alias Mx.Engine.Mxs
   alias Mx.Engine.Mxs.Native
 
   defp render(module, synth, options, seconds) do
@@ -8,7 +9,7 @@ defmodule Mx.PairedTest do
     if module, do: :ok = Mx.Instrument.register(engine, module)
 
     :ok =
-      Native.play(engine, [{0.0, Mx.Engine.Mxs.event({:note, nil, synth, nil, options, nil})}])
+      Native.play(engine, [{0.0, Mxs.event({:note, nil, synth, nil, options, nil})}])
 
     {:ok, {left, _right}} = Native.render(engine, seconds)
     for <<x::float-32-native <- left>>, do: x
@@ -19,7 +20,7 @@ defmodule Mx.PairedTest do
     for _ <- 1..5 do
       {:ok, engine} = Native.start(false, false)
       if module, do: :ok = Mx.Instrument.register(engine, module)
-      event = Mx.Engine.Mxs.event({:note, nil, synth, nil, options, nil})
+      event = Mxs.event({:note, nil, synth, nil, options, nil})
 
       {micros, {:ok, _}} =
         :timer.tc(fn ->
@@ -183,7 +184,7 @@ defmodule Mx.PairedTest do
 
       events =
         for {at, vel} <- [{0.0, 0.6}, {0.3, 0.8}, {0.6, 0.5}, {0.9, 1.0}] do
-          {at, Mx.Engine.Mxs.event({:note, nil, :caxixi, nil, [vel: vel], nil})}
+          {at, Mxs.event({:note, nil, :caxixi, nil, [vel: vel], nil})}
         end
 
       :ok = Native.play(engine, events)
