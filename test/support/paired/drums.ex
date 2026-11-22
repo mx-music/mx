@@ -270,4 +270,42 @@ defmodule Mx.Paired.Drums do
     sound = peak(head + skin + crack, hz: 900, q: 0.5, db: tone)
     sound * (db(c.gain + mute * c.tap_gain) * (vel / 0.6) ** c.curve)
   end
+
+  @doc "A shaker of the design `s`, shaken down, or upward by `up`, at `vel`: random clicks of beads coloured by a sinking bottom, a dip and a falling top, through a burst and a tail."
+  defsound shake(pitch, vel, up, s) do
+    shape = Enum.zip_with(s.down, s.upward, &(&1 + up * (&2 - &1)))
+    at = &Enum.at(shape, &1)
+    burst = envelope([{at.(0), 1, 2}, {at.(6), 0, at.(9)}])
+
+    tail =
+      envelope([{at.(0), 1, 2}]) * envelope([{0, 1}, {at.(0), 1, :exp}, {at.(1), 0.001, :exp}])
+
+    ending = envelope([{0, 1}, {at.(5), 1}, {0.04, 0}])
+    keep = at.(7)
+
+    beads =
+      struck(clicks(rate: 4000), attack: 0.0001, fall: 0.001) * noise(:white) +
+        noise(:white) * 0.1
+
+    lowest = pitch * at.(3)
+    bottom = clamp(envelope([{0, lowest}, {at.(1), lowest * at.(8), :exp}]), 20, 20_000)
+    colour = Enum.reduce(1..s.stages, beads, fn _, sound -> highpass(sound, hz: bottom, q: 1) end)
+    dipped = peak(colour, hz: clamp(pitch * s.dip, 20, 20_000), q: 2, db: at.(4))
+    highest = pitch * at.(2)
+    top = clamp(envelope([{0, highest}, {at.(1), highest * s.darken, :exp}]), 20, 20_000)
+
+    bright =
+      dipped
+      |> lowpass(hz: top, q: 1)
+      |> highshelf(hz: clamp(pitch * 1.2, 20, 20_000), q: 0.707, db: (vel - 0.6) * 8)
+
+    # The bright sound plays through the burst and, lowpassed, through the tail: built once.
+    mixed =
+      share(bright, fn both ->
+        darker = lowpass(both, hz: clamp(pitch * at.(10), 20, 20_000), q: 1)
+        both * burst * (1 - keep) + darker * tail * keep
+      end)
+
+    mixed * ending * (s.gain * vel / 0.6)
+  end
 end

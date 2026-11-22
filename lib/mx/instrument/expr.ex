@@ -72,8 +72,8 @@ defmodule Mx.Instrument.Vocabulary do
   The nodes and functions a `defsynth` builds its sound from, named by what they do, with each argument named by its unit.
 
   Numbers: `hz/1`, `db/1`, `log2/1`, `exp/1`, `sin/1`, `cos/1`, `clamp/3`, `mod/2` and `select/3`, worked out at once on numbers and when the note starts on its options.
-  Sources: `impulse/0`, `follow/1`, `time/1`, `sine/1`, `vibrato/1`, `partials/2`, `bowed_string/1`, `air_jet/1`, `saw/1`, `square/1`, `triangle/1`, `pulse/1` and `noise/2`.
-  Filters: `lowpass/2`, `highpass/2` and `bandpass/2`, at `hz:` with `q:`, either of which may change as the note sounds, and `poles:`, `ladder/2`, a four-pole resonant lowpass at `hz:` with `resonance:` from 0 to 1, where it rings on at `hz:`, `lowshelf/2`, `highshelf/2` and `peak/2`, at `hz:` with `q:` and `db:`, `mode/2`, a resonator struck by its input at `hz:`, ringing at `level:` and fading 60 dB over `fade:` seconds, or given lists of the same length a resonator for each, all struck by the one input, `wind_bands/2`, `delay/2`, and `dc_block/1` and `dc_block/2`, which take away any offset below `hz:`, 10 unless given.
+  Sources: `impulse/0`, `follow/1`, `time/1`, `sine/1`, `vibrato/1`, `partials/2`, `bowed_string/1`, `air_jet/1`, `saw/1`, `square/1`, `triangle/1`, `pulse/1`, `noise/2` and `clicks/1`, clicks at random times at `rate:` a second.
+  Filters: `lowpass/2`, `highpass/2` and `bandpass/2`, at `hz:` with `q:`, either of which may change as the note sounds, and `poles:`, `ladder/2`, a four-pole resonant lowpass at `hz:` with `resonance:` from 0 to 1, where it rings on at `hz:`, `lowshelf/2`, `highshelf/2` and `peak/2`, at `hz:` with `q:` and `db:`, `mode/2`, a resonator struck by its input at `hz:`, ringing at `level:` and fading 60 dB over `fade:` seconds, or given lists of the same length a resonator for each, all struck by the one input, `wind_bands/2`, `delay/2`, `struck/2`, a level that rises over `attack:` and falls over `fall:` at each click of its sound, and `dc_block/1` and `dc_block/2`, which take away any offset below `hz:`, 10 unless given.
   Distortion: `saturate/2` rounds a sound off towards `level:`, `clip/2` cuts it off at `level:`, and `fold/2` folds it back at `level:`, each after a `drive:` in dB, worked out at twice the engine's rate.
   Shapes: `envelope/1` and `perc/1` are levels over time, and `envelope/2` and `perc/2` scale a sound by them.
   Mixing: `mix/1` adds a list of sounds, `gain/2` scales one, and `share/2` builds a sound once for a function that uses it several times.
@@ -167,6 +167,12 @@ defmodule Mx.Instrument.Vocabulary do
     @doc false
     def unquote(filter)(sound, opts), do: Expr.call(unquote(filter), [sound], opts)
   end
+
+  @doc "Clicks at random times, `rate:` a second on average, each of a random level from 0 to 1; `seed:`, if given, fixes them instead of drawing a seed from the note."
+  def clicks(opts), do: Expr.call(:clicks, [], opts)
+
+  @doc "A level rising over `attack:` and falling over `fall:` seconds at each click or impulse of `sound`, starting again at the next."
+  def struck(sound, opts), do: Expr.call(:struck, [sound], opts)
 
   @doc "A sound delayed by `seconds:`, which may change as it plays, up to `max:`."
   def delay(sound, opts), do: Expr.call(:delay, [sound], opts)
