@@ -32,13 +32,23 @@ defmodule MaracatuDub do
 
   part :low_alfaia,
     synth: :surdo,
-    defaults: [amp: 0.6, pan: -0.15, note: 33, muted: 0.6],
-    fx: [reverb: [room: 0.4, damp: 0.6, mix: 0.1]]
+    defaults: [amp: 0.45, pan: -0.15, note: 33, muted: 0.35],
+    fx: [
+      distortion: [distort: 0.2, mix: 0.3],
+      eq: [low: [at: 45, gain: 4], high: [at: 84, gain: -4]],
+      compressor: [clamp_ms: 20, relax_ms: 120],
+      reverb: [room: 0.55, damp: 0.6, mix: 0.22]
+    ]
 
   part :high_alfaia,
     synth: :surdo,
-    defaults: [amp: 0.5, pan: 0.15, note: 38, muted: 0.6],
-    fx: [reverb: [room: 0.4, damp: 0.6, mix: 0.1]]
+    defaults: [amp: 0.38, pan: 0.15, note: 38, muted: 0.35],
+    fx: [
+      distortion: [distort: 0.2, mix: 0.3],
+      eq: [low: [at: 45, gain: 4], high: [at: 84, gain: -4]],
+      compressor: [clamp_ms: 20, relax_ms: 120],
+      reverb: [room: 0.55, damp: 0.6, mix: 0.22]
+    ]
 
   part :bass, synth: :double_bass, defaults: [pizz: 1, vel: 0.8], fx: [lpf: [cutoff: 76]]
 
@@ -257,9 +267,19 @@ defmodule MaracatuDub do
 
   # Bars on the alfaia: D is the right hand, which holds the heavy stick, and E the left, which
   # holds the thin one; a capital is an accent.
+  # Each sixteenth of the bar comes early by its own amount, the same on both drums: two strokes
+  # of the same drum a few milliseconds apart sound as a click.
   defp alfaia(bars) do
     strokes = [D: [vel: 0.95], d: [vel: 0.8], E: [vel: 0.7], e: [vel: 0.45]]
-    steps(Enum.map(bars, &bar/1), 0.25, strokes: strokes)
+
+    early =
+      [0, -0.02, -0.012, -0.024, -0.008, -0.018, -0.026, -0.01] ++
+        [-0.016, -0.006, -0.022, -0.014, -0.02, -0.004, -0.024, -0.012]
+
+    bars
+    |> Enum.map(&bar/1)
+    |> steps(0.25, strokes: strokes)
+    |> feel(step: 0.25, push: early, touch: 0.08)
   end
 
   defp bar(:marcacao), do: ~MX"D.......eD..eD.."s
