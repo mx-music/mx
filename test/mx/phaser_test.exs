@@ -70,10 +70,10 @@ defmodule Mx.PhaserTest do
   end
 
   # How far apart two runs of levels are, as a share of how far the first moves.
-  defp apart(a, b) do
-    mean = Enum.sum(a) / length(a)
-    moves = Enum.sum(Enum.map(a, &abs(&1 - mean)))
-    Enum.sum(Enum.zip_with(a, b, &abs(&1 - &2))) / moves
+  defp apart(first, second) do
+    mean = Enum.sum(first) / length(first)
+    moves = Enum.sum(Enum.map(first, &abs(&1 - mean)))
+    Enum.sum(Enum.zip_with(first, second, &abs(&1 - &2))) / moves
   end
 
   @tag :engine
