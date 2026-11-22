@@ -197,12 +197,13 @@ Every synth ends with `note_envelope` or `rings`, which tells mxs when the note 
 | For | Use |
 |---|---|
 | a wave | `sine`, `saw`, `square`, `triangle`, `pulse`, each at `hz:` |
-| noise and strikes | `noise(:white)`, `noise(:pink)`, `impulse()` |
+| noise and strikes | `noise(:white)`, `noise(:pink)`, fixed by `seed:`; `impulse()`, or at `at:` and again every `period:` until `until:`; `clicks`, random clicks at a `rate:` a second |
 | a set of harmonics | `partials` |
-| filtering | `lowpass`, `highpass`, `bandpass`, `lowshelf`, `highshelf`, `peak`, and `mode`, a resonator that rings |
-| level over time | `gain`, `envelope`, `perc` |
-| combining | `mix`, `delay`, and `+` and `*` on sounds |
-| reading options | `hz`, `db`, `follow`, `select`, `clamp` |
+| filtering | `lowpass`, `highpass`, one pole with `poles: 1`, `bandpass`, `lowshelf`, `highshelf`, `peak`, and `mode`, a resonator that rings, many from one input given lists, and gliding given a sound as `hz:` |
+| level over time | `gain`, `envelope`, `perc`, `struck`, a decay struck again by each click, and `time()`, which starts over every `every:` seconds |
+| combining | `mix`, `delay`, `fed_back`, a delay fed back into itself through filters in its loop, `share`, a sound built once and used several times, and `+` and `*` on sounds |
+| reading options | `hz`, `db`, `follow`, `select`, `clamp`, `mod` |
+| chance | `draw`, a number drawn as each note starts, and `noise` seeded from the same with `drawn:` |
 | ending the note | `note_envelope`, `rings` |
 | whole models | `bowed_string`, `air_jet`, `wind_bands`, `vibrato` |
 
