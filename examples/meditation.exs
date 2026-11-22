@@ -111,7 +111,7 @@ defmodule Meditation do
 
     steps(cells(gat(time)), 1,
       words:
-        for(name <- ~w(.D D G G' P R R' S S'), do: {String.to_atom(name), swara(name, base)}),
+        for(name <- ~w(.D D G G' P R R' S S')a, do: {name, swara(Atom.to_string(name), base)}),
       each: fn _step, length ->
         [vel: 0.5, sustain: length * 0.85, release: min(length * 0.3, 0.3)]
       end

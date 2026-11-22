@@ -28,7 +28,7 @@ defmodule Harmonium do
   defp right_hand(section, time) do
     steps(line(section, time), 1,
       words:
-        for(name <- ~w(.d .N S r G M P d N S' r' G' M'), do: {String.to_atom(name), swara(name)}),
+        for(name <- ~w(.d .N S r G M P d N S' r' G' M')a, do: {name, swara(Atom.to_string(name))}),
       each: fn _step, beats ->
         [vel: if(beats < 1, do: 0.5, else: 0.6), sustain: beats * 0.9, release: 0.15]
       end
