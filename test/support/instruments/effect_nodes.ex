@@ -1,5 +1,5 @@
 defmodule Mx.Test.EffectNodes do
-  @moduledoc "Effects and a synth that use what mx-00239 added to defeffect: both sides, tail, and the sweep, follower and all-pass nodes."
+  @moduledoc "Effects and a synth that use defeffect's both sides, tail, and the sweep, follower and all-pass nodes."
 
   use Mx.Instrument
 
