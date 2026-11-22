@@ -248,13 +248,13 @@ run_check "Avoid ':persistent_term.put/2'; it has global VM-wide side effects" \
 run_check 'Use index, not idx' 'idx'
 # Note names (c4, eb3), dynamics (mf, ff), up and Pa are music's own words.
 SHORT_NAME='(?!(?:id|by|to|at|db|op|ok|js|ip|fx|on|hz|ms|us|f0|v\d+|[a-g][sb]?\d|pp|mp|mf|ff|up|pa)\b)[a-z]{1,2}\d*'
-run_check "Use a descriptive variable name: 'global = insert(:global)', not 'g = insert(:global)', 'g1 = ...' or '%{global: g} = ...'" \
+run_check "Use a descriptive variable name: 'category = insert(:category)', not 'c = insert(:category)', 'c1 = ...' or '%{category: c} = ...'" \
           -P "^\s*(?:${SHORT_NAME}|[%{\[](?:[^=\n]|=>)*?[\s{\[,]${SHORT_NAME}\s*[,}\]](?:[^=\n]|=>)*) = "
-run_check "Use a descriptive variable name in 'for' generators: 'for global <- globals', not 'for g <- globals' or 'for i <- 1..5'" \
+run_check "Use a descriptive variable name in 'for' generators: 'for category <- categories', not 'for c <- categories' or 'for i <- 1..5'" \
           -P "\bfor\s+(?:${SHORT_NAME}|[%{\[](?:(?!<-)[^\n])*?[\s{\[,]${SHORT_NAME}\s*[,}\]](?:(?!<-)[^\n])*?)\s*<-"
-run_check "Use a descriptive variable name in assertion patterns: 'assert {:ok, global} = ...', not 'assert {:ok, g} = ...'" \
+run_check "Use a descriptive variable name in assertion patterns: 'assert {:ok, category} = ...', not 'assert {:ok, c} = ...'" \
           -P "^\s*(?:assert|assert_receive|assert_received)\s+(?:${SHORT_NAME}\s+=(?![=~>])|[%{\[](?:[^=\n]|=>)*?[\s{\[,]${SHORT_NAME}\s*[,}\]](?:[^=\n]|=>)*?(?:\s=(?![=~>])|\s*$))"
-run_check "Use a descriptive parameter name in function heads: 'def label(global)', not 'def label(g)'" \
+run_check "Use a descriptive parameter name in function heads: 'def label(category)', not 'def label(c)'" \
           -P "^\s*(?:defp?|defmacrop?)\s+[a-z_]\w*[?!]?\((?:(?:(?!\)\s*(?:,\s*do:|do\b|when\b))[^\n])*?[\s(,{\[])?${SHORT_NAME}\s*(?:[,)}\]]|\\\\\\\\)"
 run_check 'Avoid # === or # ---, prefer simple comments' '# [-─=]{2,}'
 # A comment of one word, such as a URL, may run past.
