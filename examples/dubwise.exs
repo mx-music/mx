@@ -66,7 +66,7 @@ defmodule Dubwise do
 
   part :melodica,
     synth: :harmonium,
-    defaults: [vel: 0.55, note_slide: 0.06, pan: -0.1],
+    defaults: [vel: 0.55, amp: 2.5, note_slide: 0.06, pan: -0.1],
     fx: @tape ++ [reverb: [room: 0.8, mix: 0.3]]
 
   part :trombone,
