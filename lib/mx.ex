@@ -321,7 +321,7 @@ defmodule Mx do
   defdelegate set(name, value), to: Mx.Music
 
   @doc """
-  A change to every sound of a part still playing, or, given `{part, effect}`, to one of the part's effects, at its beat, taking no time.
+  A change to every sound of a part still playing, or, given `{part, effect}`, to one of the part's effects, or, given `{:song, effect}`, to one of the song's own, at its beat, taking no time; `{bus, effect}` reaches an effect of a bus, and `send: [tape: 1]` moves the part's send into a bus, over `send_slide:` beats when given.
   It takes the options the synth or effect takes, and slides as control does; envelope options such as `release` are refused.
   A note changes itself with `changes:`, as `note(:a4, 4, changes: [{1, note: :c5, note_slide: 0.1}])` glides to C5 a beat in.
 
@@ -356,7 +356,7 @@ defmodule Mx do
   defdelegate loop(beats, fun, opts \\ []), to: Mx.Music
 
   @doc """
-  Music played by one player: `synth:` names its synth, `:tri` by default, and `fx:`, `defaults:` and `midi:` are taken as a loop takes them.
+  Music played by one player: `synth:` names its synth, `:tri` by default, `fx:`, `defaults:` and `midi:` are taken as a loop takes them, and `send:` gives the level it sends at into each of the song's buses, as `send: [room: 0.2]`.
   A part of one name plays as one player wherever it appears in the song.
 
       part(:soprano, seq(c4: 1, d4: 1, e4: 2), synth: :oboe)
@@ -373,7 +373,7 @@ defmodule Mx do
   defdelegate sampled(source), to: Mx.Sampled, as: :new
 
   @doc """
-  The song, which a song file ends with: its `music:`, its `tempo:`, 60 by default, its `meter:`, the whole beats to a bar, 4 by default, its `key:`, such as `:em`, none by default, and `live_audio:`, `osc_to:` and `osc_from:`.
+  The song, which a song file ends with: its `music:`, its `tempo:`, 60 by default, its `meter:`, the whole beats to a bar, 4 by default, its `key:`, such as `:em`, none by default, its `fx:`, the effects every part plays through after its own, written as a part's, its `buses:`, the chains of effects its parts send into, as `buses: [room: [reverb: [decay_seconds: 2.3]]]`, and `live_audio:`, `osc_to:` and `osc_from:`.
 
       import Mx
 

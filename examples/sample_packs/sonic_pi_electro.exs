@@ -14,7 +14,7 @@ defmodule DialTone do
   use Mx.Song, tempo: 126
 
   part :kick, fx: [level: [amp: 0.65]]
-  part :snare, fx: [level: [amp: 0.5], reverb: [room: 0.4, mix: 0.15]]
+  part :snare, fx: [level: [amp: 0.5], reverb: [decay_seconds: 1.2, mix: 0.15]]
   part :hats, fx: [level: [amp: 0.3], pan: [pan: 0.25]]
   part :bells, fx: [level: [amp: 0.35], pan: [pan: -0.3]]
 
@@ -23,7 +23,7 @@ defmodule DialTone do
 
   part :bass, fx: [level: [amp: 0.33]]
   part :arp, fx: [level: [amp: 0.8], echo: [phase: 0.75, decay: 3, mix: 0.35], pan: [pan: 0.3]]
-  part :pads, fx: [level: [amp: 0.35], reverb: [room: 0.8, mix: 0.4]]
+  part :pads, fx: [level: [amp: 0.35], reverb: [decay_seconds: 3.2, mix: 0.4]]
   part :voices, fx: [level: [amp: 0.4], echo: [phase: 0.5, decay: 3, mix: 0.3]]
   part :bed, fx: [level: [amp: 0.5]]
 

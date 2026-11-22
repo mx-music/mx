@@ -8,7 +8,7 @@ defmodule BassLine do
 
   use Mx.Song, tempo: 96
 
-  part :bass, synth: :guitar, fx: [reverb: [room: 0.3, mix: 0.12]]
+  part :bass, synth: :guitar, fx: [reverb: [decay_seconds: 1, mix: 0.12]]
 
   def song do
     part(:bass, loop(4, fn pass, _ -> walk(pass) end))

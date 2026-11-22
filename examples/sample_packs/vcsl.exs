@@ -92,24 +92,24 @@ defmodule LowB do
   part :kushaura,
        [
          synth: sampled(@mbira),
-         fx: [level: [amp: 7.0], reverb: [room: 0.5, mix: 0.15], pan: [pan: -0.4]]
+         fx: [level: [amp: 7.0], reverb: [decay_seconds: 1.5, mix: 0.15], pan: [pan: -0.4]]
        ] ++ @plucks
 
   part :kutsinhira,
        [
          synth: sampled(@mbira),
-         fx: [level: [amp: 5.5], reverb: [room: 0.5, mix: 0.15], pan: [pan: 0.4]]
+         fx: [level: [amp: 5.5], reverb: [decay_seconds: 1.5, mix: 0.15], pan: [pan: 0.4]]
        ] ++ @plucks
 
   part :bass,
     synth: sampled(@marimba),
     defaults: [sustain: 2, release: 1],
-    fx: [level: [amp: 2.5], reverb: [room: 0.5, mix: 0.15]]
+    fx: [level: [amp: 2.5], reverb: [decay_seconds: 1.5, mix: 0.15]]
 
   part :soprano,
     synth: sampled(@marimba),
     defaults: [sustain: 1, release: 1],
-    fx: [level: [amp: 3.0], reverb: [room: 0.5, mix: 0.2], pan: [pan: 0.15]]
+    fx: [level: [amp: 3.0], reverb: [decay_seconds: 1.5, mix: 0.2], pan: [pan: 0.15]]
 
   part :hosho_down,
     synth: sampled(shaker.("Down")),
@@ -124,7 +124,7 @@ defmodule LowB do
   part :claps,
     synth: sampled(@claps),
     defaults: [sustain: 0.5, release: 0.3],
-    fx: [level: [amp: 0.5], reverb: [room: 0.6, mix: 0.25], pan: [pan: -0.2]]
+    fx: [level: [amp: 0.5], reverb: [decay_seconds: 1.8, mix: 0.25], pan: [pan: -0.2]]
 
   part :drum,
     synth: sampled(frame.("Hit")),

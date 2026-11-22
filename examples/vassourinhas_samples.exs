@@ -133,7 +133,7 @@ defmodule VassourinhasSamples do
                 {{voice, mic}, files}
               end)
 
-  @room [room: 0.5, mix: 0.2]
+  @room [decay_seconds: 1.5, mix: 0.2]
 
   part :trumpet, synth: sampled(@trumpet), fx: [level: [amp: 1.2], reverb: @room, pan: [pan: 0.3]]
 

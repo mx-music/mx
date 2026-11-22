@@ -189,7 +189,7 @@ Each note starts at the beat the function returns.
 ### A part
 
 ```elixir
-part(:keys, music, synth: :piano, fx: [echo: [phase: 0.75], reverb: [room: 0.8]], defaults: [amp: 0.55])
+part(:keys, music, synth: :piano, fx: [echo: [phase: 0.75], reverb: [decay_seconds: 3.2]], defaults: [amp: 0.55])
 ```
 
 One player: a name, its music, a synth, its effects in order, and options for its notes.
@@ -220,7 +220,7 @@ note(:a4, 4, changes: [{1, note: :c5, note_slide: 0.1}])
 
 ### Effects
 
-`reverb` `echo` `ping_pong` `chorus` `flanger` `tremolo` `slicer` `wobble` `distortion` `bitcrusher` `compressor` `lpf` `hpf` `bpf` `rlpf` `pan` `level`
+`reverb` `echo` `ping_pong` `chorus` `flanger` `phaser` `tremolo` `slicer` `wobble` `distortion` `bitcrusher` `compressor` `limiter` `eq` `lpf` `hpf` `bpf` `rlpf` `pan` `level`
 
 Every effect takes `amp`, `mix` and `pre_amp`.
 [Instruments](instruments.md) lists each synth's and effect's options.

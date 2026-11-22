@@ -24,7 +24,7 @@ defmodule Afrobeat do
 
   use Mx.Song, tempo: 100
 
-  @hall [reverb: [room: 0.85, damp: 0.4, mix: 0.3]]
+  @hall [reverb: [decay_seconds: 4, damp: 0.4, mix: 0.3]]
   @throw [ping_pong: [phase: 0.75, feedback: 0.7, mix: 0.65]]
   @trail [ping_pong: [phase: 0.75, feedback: 0.5, mix: 0.2]]
 
@@ -37,7 +37,7 @@ defmodule Afrobeat do
     snare:
       {"snare", "center", 36, nil, {0.75, 0.5},
        [{:snare_snaremic, :snaremic, 0.9}, {:snare_oh, :oh, 0.8}, {:snare_room, :room, 0.6}],
-       @trail ++ [reverb: [room: 0.7, mix: 0.2]]},
+       @trail ++ [reverb: [decay_seconds: 2.3, mix: 0.2]]},
     rimshot:
       {"snare", "rimshot", 12, nil, {1.5, 1},
        [{:rimshot_snaremic, :snaremic, 0.6}, {:rimshot_oh, :oh, 0.6}], @throw ++ @hall},
@@ -106,7 +106,7 @@ defmodule Afrobeat do
     fx: [
       tremolo: [phase: 0.25, depth: 0.7],
       echo: [phase: 1.5, decay: 6, mix: 0.35],
-      reverb: [room: 0.85, mix: 0.4]
+      reverb: [decay_seconds: 4, mix: 0.4]
     ]
 
   part :keys,
@@ -115,7 +115,7 @@ defmodule Afrobeat do
     fx: [
       tremolo: [phase: 0.5, depth: 0.5],
       echo: [phase: 0.75, decay: 6, mix: 0.35],
-      reverb: [room: 0.9, mix: 0.45]
+      reverb: [decay_seconds: 5.1, mix: 0.45]
     ]
 
   # Each section is four bars, two turns of the vamp, and the ending is a chord held for two bars.

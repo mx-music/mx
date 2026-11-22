@@ -9,7 +9,7 @@ defmodule MaracatuDub do
 
   use Mx.Song, tempo: 96
 
-  @room [reverb: [room: 0.6, damp: 0.5, mix: 0.2]]
+  @room [reverb: [decay_seconds: 1.8, damp: 0.5, mix: 0.2]]
   @tape [echo: [phase: 0.75, decay: 4, max_phase: 2, mix: 0.15]]
   @cross [ping_pong: [phase: 0.75, feedback: 0.5, max_phase: 2, mix: 0.08]]
 
@@ -28,7 +28,7 @@ defmodule MaracatuDub do
   part :caixa,
     synth: :snare,
     defaults: [amp: 0.7, pan: -0.2],
-    fx: @cross ++ [reverb: [room: 0.8, damp: 0.4, mix: 0.3]]
+    fx: @cross ++ [reverb: [decay_seconds: 3.2, damp: 0.4, mix: 0.3]]
 
   part :low_alfaia,
     synth: :surdo,
@@ -37,7 +37,7 @@ defmodule MaracatuDub do
       distortion: [distort: 0.2, mix: 0.3],
       eq: [low: [at: 45, gain: 4], high: [at: 84, gain: -4]],
       compressor: [clamp_ms: 20, relax_ms: 120],
-      reverb: [room: 0.55, damp: 0.6, mix: 0.22]
+      reverb: [decay_seconds: 1.6, damp: 0.6, mix: 0.22]
     ]
 
   part :high_alfaia,
@@ -47,7 +47,7 @@ defmodule MaracatuDub do
       distortion: [distort: 0.2, mix: 0.3],
       eq: [low: [at: 45, gain: 4], high: [at: 84, gain: -4]],
       compressor: [clamp_ms: 20, relax_ms: 120],
-      reverb: [room: 0.55, damp: 0.6, mix: 0.22]
+      reverb: [decay_seconds: 1.6, damp: 0.6, mix: 0.22]
     ]
 
   part :bass, synth: :double_bass, defaults: [pizz: 1, vel: 0.8], fx: [lpf: [cutoff: 76]]
@@ -64,7 +64,7 @@ defmodule MaracatuDub do
   part :trombone,
     synth: :trombone,
     defaults: [vel: 0.6, amp: 0.8, note_slide: 0.06, pan: -0.1],
-    fx: @tape ++ [reverb: [room: 0.8, mix: 0.3]]
+    fx: @tape ++ [reverb: [decay_seconds: 3.2, mix: 0.3]]
 
   def song do
     seq([:call, :riddim, :dub, :martelo], &section/1)

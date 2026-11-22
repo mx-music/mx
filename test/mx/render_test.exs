@@ -120,7 +120,7 @@ defmodule Mx.RenderTest do
       write(dir, "song.exs", """
       song(tempo: 140, music: together([
         part(:bass, repeat(seq(a2: 1, e2: 1), 4), synth: :fm, fx: [echo: [phase: 0.75, mix: 0.3]]),
-        part(:lead, repeat(seq(a4: 0.5, c5: 0.5, e5: 1), 4), synth: :fm, fx: [reverb: [room: 0.7]]),
+        part(:lead, repeat(seq(a4: 0.5, c5: 0.5, e5: 1), 4), synth: :fm, fx: [reverb: [decay_seconds: 2.3]]),
         part(:pad, repeat(seq(a3: 4), 2), synth: :fm, fx: [ping_pong: [phase: 0.5], reverb: []])
       ]))
       """)
@@ -181,7 +181,7 @@ defmodule Mx.RenderTest do
     assert_in_delta length(lines), micros / 250_000, micros / 1_000_000 + 2
 
     assert output =~
-             ~r/^rendered 148\.0 of 148\.0 seconds\nthe render ends as the last notes fade, cutting short the reverb of part flute, which rings 5\.5 seconds on; --ring-out keeps it\nRecorded \d+\.\d seconds to /m
+             ~r/^rendered 148\.0 of 148\.0 seconds\nthe render ends as the last notes fade, cutting short the reverb of part flute, which rings 1\.3 seconds on; --ring-out keeps it\nRecorded \d+\.\d seconds to /m
   end
 
   test "a song that ends renders as many seconds as its music, at its share of the tempo",
@@ -207,7 +207,7 @@ defmodule Mx.RenderTest do
        %{tmp_dir: dir} do
     path =
       write(dir, "song.exs", """
-      song(tempo: 120, music: part(:a, seq(c4: 2, e4: 2, g4: 4), synth: :fm, fx: [reverb: [room: 0.45]]))
+      song(tempo: 120, music: part(:a, seq(c4: 2, e4: 2, g4: 4), synth: :fm, fx: [reverb: [decay_seconds: 5.5]]))
       """)
 
     left_out = Path.join(dir, "left_out.wav")
@@ -240,7 +240,7 @@ defmodule Mx.RenderTest do
     {:ok, song} = Mx.Song.load("examples/choro.exs")
 
     assert Render.ring_out(song, seconds: 148) ==
-             {:ok, %{seconds: 5.5, part: :flute, effect: :reverb}}
+             {:ok, %{seconds: 1.3, part: :flute, effect: :reverb}}
   end
 
   test "an echo given in beats rings for those beats at the tempo the music ends at, and a song with no effects rings for none",

@@ -13,7 +13,7 @@ defmodule Effects.Order do
   use Mx.Song, tempo: 84
 
   @distortion {:distortion, [distort: 0.8, amp: 0.2]}
-  @reverb {:reverb, [room: 0.8, mix: 0.4]}
+  @reverb {:reverb, [decay_seconds: 3.2, mix: 0.4]}
 
   part :driven_first, synth: :electric_guitar, defaults: [amp: 2], fx: [@distortion, @reverb]
   part :room_first, synth: :electric_guitar, defaults: [amp: 2], fx: [@reverb, @distortion]

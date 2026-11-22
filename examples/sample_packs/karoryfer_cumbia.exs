@@ -63,7 +63,7 @@ defmodule Cosmonauta do
       level: [amp: 0.5],
       tremolo: [phase: 0.16, depth: 0.25],
       echo: [phase: 0.375, decay: 2, mix: 0.25],
-      reverb: [room: 0.6, mix: 0.2],
+      reverb: [decay_seconds: 1.8, mix: 0.2],
       pan: [pan: 0.15]
     ]
 
@@ -73,14 +73,14 @@ defmodule Cosmonauta do
     fx: [
       level: [amp: 0.35],
       tremolo: [phase: 0.16, depth: 0.25],
-      reverb: [room: 0.6, mix: 0.2],
+      reverb: [decay_seconds: 1.8, mix: 0.2],
       pan: [pan: 0.3]
     ]
 
   part :chords,
     synth: stop.("flutes"),
     defaults: [release: 0.05],
-    fx: [level: [amp: 0.3], reverb: [room: 0.5, mix: 0.15], pan: [pan: -0.35]]
+    fx: [level: [amp: 0.3], reverb: [decay_seconds: 1.5, mix: 0.15], pan: [pan: -0.35]]
 
   part :bass, synth: sampled(@swag), defaults: [release: 0.1], fx: [level: [amp: 1.7]]
 
@@ -117,7 +117,7 @@ defmodule Cosmonauta do
   part :snare,
     synth: kit.("snare_main", "snare_hit", 12, "_top"),
     defaults: @hit,
-    fx: [level: [amp: 1.0], reverb: [room: 0.4, mix: 0.15]]
+    fx: [level: [amp: 1.0], reverb: [decay_seconds: 1.2, mix: 0.15]]
 
   part :crash,
     synth: kit.("crash", "crash", 12, ""),

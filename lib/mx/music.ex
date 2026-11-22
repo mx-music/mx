@@ -83,7 +83,7 @@ defmodule Mx.Music do
 
   defmodule Part do
     @moduledoc "Music played by one player, with its synth and the loop options it takes."
-    defstruct [:name, :music, synth: :tri, fx: [], defaults: [], midi: nil]
+    defstruct [:name, :music, synth: :tri, fx: [], send: [], defaults: [], midi: nil]
   end
 
   defmodule Loop do
@@ -108,13 +108,15 @@ defmodule Mx.Music do
       meter: 4,
       key: nil,
       live_audio: [],
+      fx: [],
+      buses: [],
       osc_to: nil,
       osc_from: nil
     ]
   end
 
-  @part_options [:synth, :fx, :defaults, :midi]
-  @song_options [:tempo, :meter, :key, :music, :live_audio, :osc_to, :osc_from]
+  @part_options [:synth, :fx, :send, :defaults, :midi]
+  @song_options [:tempo, :meter, :key, :music, :live_audio, :fx, :buses, :osc_to, :osc_from]
   @forever "repeat without a count plays until mx stops, so it can only hold the whole of a song's music"
 
   @doc "A note of a pitch, given as a name, a number or a list of them, lasting some beats, with options for the part's synth."
@@ -985,6 +987,11 @@ defmodule Mx.Music do
 
   @doc "Music played by one player, refusing a synth mx does not have and a note the synth cannot play."
   def part(name, music, opts \\ []) when is_atom(name) and is_list(opts) do
+    if name == :song do
+      raise ArgumentError,
+            "a part cannot be named song: the name is taken by the song's own chain, the effects of its fx:"
+    end
+
     case Enum.find(Keyword.keys(opts), &(&1 not in @part_options)) do
       nil -> :ok
       option -> raise ArgumentError, "part #{name} has no option #{option}"
@@ -1069,7 +1076,14 @@ defmodule Mx.Music do
     {played, changes} = played |> Enum.map(&split_tempos/1) |> Enum.unzip()
     changes = carry_tempos(changes, lengths)
     {played, triggered} = Enum.map_reduce(played, [], &split_triggered/2)
-    played = route_changes(played, triggered)
+
+    buses =
+      case Mx.Song.buses(Keyword.get(opts, :buses, [])) do
+        {:ok, buses} -> buses
+        {:error, message} -> raise ArgumentError, message
+      end
+
+    played = route_changes(played, triggered, Keyword.get(opts, :fx, []), buses)
     check_osc_to(played, opts[:osc_to])
 
     {played, lengths, changes} =
@@ -1119,8 +1133,51 @@ defmodule Mx.Music do
         }
       end
 
+    parts = send_parts(parts, played, buses)
     song = %Song{music: music, sections: length(played), parts: parts, forever: forever}
-    %{struct(song, opts) | tempos: tempos}
+    %{struct(song, opts) | tempos: tempos, buses: buses}
+  end
+
+  # Each part with its sends checked against the song's buses, and a send at 0 for each bus a change of the part names, which a loop started by on: has for every bus, as its changes are not known yet.
+  defp send_parts(parts, played, buses) do
+    names = Enum.map(buses, & &1.name)
+    keys = names ++ for({part, _music} <- parts, do: part.name)
+
+    for bus <- buses do
+      with message when message != nil <- Mx.Song.keys_error("bus #{bus.name}", bus.fx, keys) do
+        raise ArgumentError, message
+      end
+    end
+
+    changed =
+      for {_, %Part{name: name}, %Change{target: name, opts: opts}} <- List.flatten(played),
+          {bus, _level} <- Keyword.get(opts, :send, []),
+          do: {name, bus}
+
+    for {part, music} <- parts do
+      if part.name in names do
+        raise ArgumentError,
+              "#{part.name} is the name of a part and of a bus, and a change could not tell them apart"
+      end
+
+      with message when message != nil <-
+             Mx.Song.sends_error("part #{part.name}", part.send, names) do
+        raise ArgumentError, message
+      end
+
+      with message when message != nil <-
+             Mx.Song.keys_error("part #{part.name}", part.fx, keys) do
+        raise ArgumentError, message
+      end
+
+      later =
+        if match?({:triggered, _, _, _, _}, music),
+          do: names,
+          else: for({name, bus} <- changed, name == part.name, do: bus)
+
+      zero = for bus <- Enum.uniq(later), not Keyword.has_key?(part.send, bus), do: {bus, 0}
+      {%{part | send: part.send ++ zero}, music}
+    end
   end
 
   defp check_options(opts) do
@@ -1151,6 +1208,10 @@ defmodule Mx.Music do
 
       key ->
         refuse_key(key)
+    end
+
+    with {:error, message} <- Mx.Song.song_effects(Keyword.get(opts, :fx, [])) do
+      raise ArgumentError, message
     end
 
     case opts[:osc_to] do
@@ -1210,7 +1271,7 @@ defmodule Mx.Music do
   end
 
   # A change plays in the part it names, wherever it is written.
-  defp route_changes(played, triggered) do
+  defp route_changes(played, triggered, song_fx, buses) do
     by_name =
       for {_, %Part{} = part, step} <- List.flatten([played, triggered]),
           not is_struct(step, Change),
@@ -1219,13 +1280,58 @@ defmodule Mx.Music do
 
     for events <- played do
       Enum.map(events, fn
-        {beat, _part, %Change{} = change} -> {beat, changed_part(change, by_name), change}
-        event -> event
+        {beat, part, %Change{target: {:song, effect}} = change} ->
+          {beat, song_changed(change, effect, part, by_name, song_fx), change}
+
+        {beat, part, %Change{target: {name, effect}} = change}
+        when not is_map_key(by_name, name) ->
+          {beat, bus_changed(change, name, effect, part, by_name, buses), change}
+
+        {beat, _part, %Change{} = change} ->
+          {beat, changed_part(change, by_name, buses), change}
+
+        event ->
+          event
       end)
     end
   end
 
-  defp changed_part(%Change{target: target, opts: opts}, by_name) do
+  # A change to one of the song's own effects plays in the part it is written in, or in the song's first part.
+  defp song_changed(%Change{opts: opts}, effect, part, by_name, song_fx) do
+    {:ok, chain} = Mx.Song.song_effects(song_fx)
+
+    if not List.keymember?(chain, effect, 0) do
+      raise ArgumentError, "change names effect #{effect}, which the song's fx: does not have"
+    end
+
+    Pass.check_change({:effect, effect}, opts)
+    written_in(part, by_name)
+  end
+
+  # A change to an effect of a bus plays in the part it is written in, or in the song's first part.
+  defp bus_changed(%Change{opts: opts}, name, effect, part, by_name, buses) do
+    bus =
+      Enum.find(buses, &(&1.name == name)) ||
+        raise ArgumentError, "change names part #{name}, which the song does not have"
+
+    if not List.keymember?(bus.fx, effect, 0) do
+      raise ArgumentError, "change names effect #{effect}, which bus #{name} does not have"
+    end
+
+    Pass.check_change({:effect, effect}, opts)
+    written_in(part, by_name)
+  end
+
+  defp written_in(part, by_name) do
+    case {part, Enum.sort(Map.keys(by_name))} do
+      {%Part{} = part, _names} -> part
+      {_none, [first | _]} -> Map.fetch!(by_name, first)
+      {_none, []} -> raise ArgumentError, "change needs a part playing in its section"
+    end
+  end
+
+  defp changed_part(%Change{target: target, opts: opts}, by_name, buses) do
+    {sends, opts} = Keyword.split(opts, [:send, :send_slide])
     {name, effect} = if is_atom(target), do: {target, nil}, else: target
 
     part =
@@ -1234,7 +1340,21 @@ defmodule Mx.Music do
         _ -> raise ArgumentError, "change names part #{name}, which the song does not have"
       end
 
+    names = Enum.map(buses, & &1.name)
+    slide = Keyword.get(sends, :send_slide, 0)
+
     cond do
+      effect != nil and sends != [] ->
+        raise ArgumentError, "a change to an effect takes no send: or send_slide:"
+
+      not (is_number(slide) and slide >= 0) ->
+        slide = inspect(slide)
+        raise ArgumentError, "change takes send_slide: in beats, 0 or more, not #{slide}"
+
+      message =
+          Mx.Song.sends_error("change of part #{name}", Keyword.get(sends, :send, []), names) ->
+        raise ArgumentError, message
+
       effect == nil ->
         Pass.check_change(part.synth, opts)
 
@@ -1388,6 +1508,8 @@ defmodule Mx.Music do
     if song.tempos, do: Mx.Song.put_tempos(song.tempos)
     if song.osc_from, do: Mx.Song.put_osc_from(song.osc_from)
     with {host, port} <- song.osc_to, do: Mx.Song.put_osc_to(host, port)
+    Mx.Song.put_fx(song.fx)
+    Mx.Song.put_buses(song.buses)
     for {name, opts} <- song.live_audio, do: Mx.Song.put_live(name, opts)
 
     for {part, music} <- song.parts do
@@ -1561,13 +1683,36 @@ defmodule Mx.Music do
     Pass.record_set(name, value)
   end
 
-  defp record_step(%{name: name}, %Change{target: name, opts: opts}), do: Pass.record_change(opts)
+  defp record_step(%{name: name}, %Change{target: name, opts: opts}) do
+    {sends, opts} = Keyword.split(opts, [:send, :send_slide])
+    if opts != [] or sends == [], do: Pass.record_change(opts)
+    slide = Keyword.take(sends, [:send_slide])
+
+    for {bus, level} <- Keyword.get(sends, :send, []) do
+      Pass.record_send(bus, [level: level] ++ for({_, beats} <- slide, do: {:level_slide, beats}))
+    end
+
+    :ok
+  end
+
+  defp record_step(_part, %Change{target: {:song, effect}, opts: opts}) do
+    Pass.record_control(Pass.song_effect(effect), opts)
+  end
 
   defp record_step(%{name: name}, %Change{target: {name, effect}, opts: opts}) do
     Pass.record_control(Pass.effect(effect), opts)
   end
 
-  defp record_step(%{name: name}, %Change{target: target}) do
+  defp record_step(%{name: name}, %Change{target: {bus, effect}, opts: opts} = change) do
+    case Pass.bus_effect(bus, effect) do
+      nil -> refuse_change(name, change)
+      handle -> Pass.record_control(handle, opts)
+    end
+  end
+
+  defp record_step(%{name: name}, %Change{} = change), do: refuse_change(name, change)
+
+  defp refuse_change(name, %Change{target: target}) do
     target = inspect(target)
     raise ArgumentError, "a loop's music changes only its own part #{name}, not #{target}"
   end

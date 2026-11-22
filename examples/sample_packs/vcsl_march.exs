@@ -65,7 +65,7 @@ defmodule Parade do
                    {struck.("Tubular Glockenspiel/#{name}_loud1.wav"), note: pitch(note) + 0.5}
                  end)
 
-  @room [room: 0.7, mix: 0.2]
+  @room [decay_seconds: 2.3, mix: 0.2]
 
   part :field_drum, fx: [level: [amp: 2.5], reverb: @room, pan: [pan: -0.2]]
   part :bass_drum, fx: [level: [amp: 1.5], reverb: @room]

@@ -103,7 +103,7 @@ defmodule TranquilityBase do
   part :snare,
     synth: sampled(@snare),
     defaults: [amp: 0.6] ++ @drum,
-    fx: [reverb: [room: 0.4, mix: 0.15]]
+    fx: [reverb: [decay_seconds: 1.2, mix: 0.15]]
 
   part :hat,
     synth: sampled(@hat),
@@ -118,7 +118,7 @@ defmodule TranquilityBase do
   part :frame,
     synth: sampled(@frame),
     defaults: [amp: 0.8] ++ @drum,
-    fx: [reverb: [room: 0.5, mix: 0.25]]
+    fx: [reverb: [decay_seconds: 1.5, mix: 0.25]]
 
   part :shaker,
     synth: sampled(@shaker),
@@ -128,10 +128,10 @@ defmodule TranquilityBase do
   part :claps,
     synth: sampled(@claps),
     defaults: [amp: 0.25, sustain: 0.5, release: 0.3],
-    fx: [reverb: [room: 0.6, mix: 0.3]]
+    fx: [reverb: [decay_seconds: 1.8, mix: 0.3]]
 
-  part :tom, fx: [reverb: [room: 0.5, mix: 0.25]]
-  part :turns, fx: [reverb: [room: 0.8, mix: 0.3]]
+  part :tom, fx: [reverb: [decay_seconds: 1.5, mix: 0.25]]
+  part :turns, fx: [reverb: [decay_seconds: 3.2, mix: 0.3]]
 
   part :bass,
     synth: sampled(@marimba),
@@ -149,31 +149,33 @@ defmodule TranquilityBase do
     fx: [
       tremolo: [phase: 0.5, depth: 0.35, wave: 3],
       ping_pong: [phase: 0.75, feedback: 0.4, mix: 0.2],
-      reverb: [room: 0.7, mix: 0.3]
+      reverb: [decay_seconds: 2.3, mix: 0.3]
     ]
 
   part :bowed,
     synth: sampled(@bowed),
     defaults: [normalize: true, amp: 0.08, attack: 1, release: 4],
-    fx: [chorus: [mix: 0.4], reverb: [room: 0.9, mix: 0.5]]
+    fx: [chorus: [mix: 0.4], reverb: [decay_seconds: 5.1, mix: 0.5]]
 
   part :lead,
     synth: sampled(@chimes),
     defaults: [normalize: true, amp: 0.27, release: 2],
-    fx: [echo: [phase: 1.5, decay: 6, mix: 0.35], reverb: [room: 0.8, mix: 0.35]]
+    fx: [echo: [phase: 1.5, decay: 6, mix: 0.35], reverb: [decay_seconds: 3.2, mix: 0.35]]
 
-  part :glass, fx: [chorus: [mix: 0.4], reverb: [room: 0.9, mix: 0.4]]
+  part :glass, fx: [chorus: [mix: 0.4], reverb: [decay_seconds: 5.1, mix: 0.4]]
 
   part :gate,
     fx: [
       slicer: [phase: 0.5, pulse_width: 0.5, amp_min: 0.05, smooth_ms: 10],
       ping_pong: [phase: 0.75, feedback: 0.5, mix: 0.3],
-      reverb: [room: 0.8, mix: 0.3]
+      reverb: [decay_seconds: 3.2, mix: 0.3]
     ]
 
   part :ocean, fx: [wobble: [phase: 16, cutoff_min: 80, cutoff_max: 125, res: 0.2, wave: 3]]
   part :sputnik, fx: [lpf: [cutoff: 100], echo: [phase: 1.5, decay: 4, mix: 0.25]]
-  part :rocket, fx: [flanger: [phase: 4, feedback: 0.5, mix: 0.5], reverb: [room: 0.9, mix: 0.4]]
+
+  part :rocket,
+    fx: [flanger: [phase: 4, feedback: 0.5, mix: 0.5], reverb: [decay_seconds: 5.1, mix: 0.4]]
 
   part :radio,
     fx: [
@@ -185,7 +187,7 @@ defmodule TranquilityBase do
     fx: [
       hpf: [cutoff: 50],
       echo: [phase: 0.75, decay: 6, mix: 0.3],
-      reverb: [room: 0.7, mix: 0.3]
+      reverb: [decay_seconds: 2.3, mix: 0.3]
     ]
 
   def song, do: seq([signal(), liftoff(), problem(), tranquility(), home()])

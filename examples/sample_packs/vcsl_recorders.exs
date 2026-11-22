@@ -44,7 +44,7 @@ defmodule Consort do
       defaults: [attack: 0.03, release: 0.15],
       fx: [
         level: [amp: @levels[voice]],
-        reverb: [room: 0.8, damp: 0.4, mix: 0.3],
+        reverb: [decay_seconds: 3.2, damp: 0.4, mix: 0.3],
         pan: [pan: @pans[voice]]
       ]
     ]

@@ -57,7 +57,7 @@ defmodule MapleLeafRag do
     [
       synth: sampled(files),
       defaults: [release: 0.3],
-      fx: [level: [amp: @levels[name]], reverb: [room: 0.4, mix: 0.12]]
+      fx: [level: [amp: @levels[name]], reverb: [decay_seconds: 1.2, mix: 0.12]]
     ]
   end
 

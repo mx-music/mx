@@ -63,7 +63,7 @@ defmodule RumbaYMontuno do
   @medium xylophone.("Medium", "Medium")
   @hard xylophone.("Hard", "Hard")
 
-  @room [room: 0.5, mix: 0.15]
+  @room [decay_seconds: 1.5, mix: 0.15]
 
   part :claves, fx: [level: [amp: 2.6], reverb: @room, pan: [pan: 0.1]]
   part :sticks, fx: [level: [amp: 1.8], reverb: @room, pan: [pan: -0.4]]

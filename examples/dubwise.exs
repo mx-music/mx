@@ -11,7 +11,7 @@ defmodule Dubwise do
   octave down in the last riddim.
   The desk does the rest, as King Tubby and Lee Perry played their mixing desks: parts thrown into
   the tape echo and pulled back, the skank and the organ swept through a high-pass filter, the
-  hi-hat through a flanger standing in for the Black Ark's phaser, the echo's delay slid while its
+  hi-hat through the Black Ark's phaser, the echo's delay slid while its
   repeats ring so they bend in pitch, the organ gated by a slicer, and a dub siren.
   Before the last riddim the selector pulls the record back, as sound systems rewind a tune the
   crowd calls for.
@@ -22,31 +22,39 @@ defmodule Dubwise do
 
   use Mx.Song, tempo: 74
 
-  @room [reverb: [room: 0.7, mix: 0.3]]
-  @tape [echo: [phase: 0.75, decay: 4, max_phase: 2, mix: 0.2]]
+  # The desk's two sends: the room every part that names it shares, and the tape echo, whose repeats fall into the room too.
+  bus :room, fx: [reverb: [decay_seconds: 2.3], eq: [low: [at: 52, gain: -9]]]
+
+  bus :tape,
+    fx: [
+      echo: [phase: 0.75, decay: 4, max_phase: 2],
+      eq: [low: [at: 57, gain: -12], high: [at: 93, gain: -12]]
+    ],
+    send: [room: 0.43]
 
   part :kick, synth: :kick, defaults: [amp: 1]
 
   part :rimshot,
     synth: :rimshot,
-    defaults: [amp: 0.5],
-    fx: [ping_pong: [phase: 0.75, feedback: 0.45, mix: 0.12]] ++ @room
+    defaults: [amp: 0.35],
+    fx: [ping_pong: [phase: 0.75, feedback: 0.45, mix: 0.12]],
+    send: [room: 0.43]
 
   part :snare,
     synth: :snare,
     defaults: [vel: 0.6, amp: 0.7],
-    fx: [reverb: [room: 0.9, damp: 0.3, mix: 0.45]]
+    fx: [reverb: [decay_seconds: 5.1, damp: 0.3, mix: 0.45]]
 
   part :hihat,
     synth: :closed_hihat,
     defaults: [pan: 0.3],
-    fx: [flanger: [phase: 16, feedback: 0.4, mix: 0.25]]
+    fx: [phaser: [phase: 16, feedback: 0.4, mix: 0.25]]
 
   part :open_hihat, synth: :open_hihat, defaults: [vel: 0.4, amp: 0.3, pan: 0.3, sustain: 0.4]
-  part :tom, synth: :mid_tom, defaults: [vel: 0.6, amp: 0.6], fx: @tape ++ @room
-  part :crash, synth: :crash, defaults: [vel: 0.5, amp: 0.3, pan: -0.2], fx: @room
+  part :tom, synth: :mid_tom, defaults: [vel: 0.6, amp: 0.34], send: [tape: 0.25, room: 0.43]
+  part :crash, synth: :crash, defaults: [vel: 0.5, amp: 0.21, pan: -0.2], send: [room: 0.43]
   part :thunder, synth: :low_conga, defaults: [amp: 0.4, pan: -0.15]
-  part :funde, synth: :mid_conga, defaults: [amp: 0.3, pan: 0.15], fx: @room
+  part :funde, synth: :mid_conga, defaults: [amp: 0.21, pan: 0.15], send: [room: 0.43]
   part :shaker, synth: :shaker, defaults: [vel: 0.2, amp: 0.2, pan: -0.4]
   part :bass, synth: :double_bass, defaults: [pizz: 1, vel: 0.8], fx: [lpf: [cutoff: 76]]
 
@@ -56,8 +64,9 @@ defmodule Dubwise do
 
   part :skank,
     synth: :guitar,
-    defaults: [vel: 0.5, pan: 0.35, release: 0.1],
-    fx: [hpf: [cutoff: 0]] ++ @tape ++ @room
+    defaults: [vel: 0.5, amp: 0.56, pan: 0.35, release: 0.1],
+    fx: [hpf: [cutoff: 0]],
+    send: [tape: 0.25, room: 0.43]
 
   part :organ,
     synth: :organ,
@@ -67,51 +76,55 @@ defmodule Dubwise do
   part :melodica,
     synth: :harmonium,
     defaults: [vel: 0.55, amp: 2.5, note_slide: 0.06, pan: -0.1],
-    fx: @tape ++ [reverb: [room: 0.8, mix: 0.3]]
+    fx: [
+      echo: [phase: 0.75, decay: 4, max_phase: 2, mix: 0.2],
+      reverb: [decay_seconds: 3.2, mix: 0.3]
+    ]
 
   part :trombone,
     synth: :trombone,
-    defaults: [vel: 0.6, amp: 0.7, note_slide: 0.06, pan: 0.15],
-    fx: @tape ++ @room
+    defaults: [vel: 0.6, amp: 0.39, note_slide: 0.06, pan: 0.15],
+    send: [tape: 0.25, room: 0.43]
 
   part :vibes,
     synth: :vibraphone,
     defaults: [vel: 0.45, motor: 1, pan: 0.45],
-    fx: [ping_pong: [phase: 1.5, feedback: 0.5, mix: 0.35], reverb: [room: 0.85, mix: 0.4]]
+    fx: [ping_pong: [phase: 1.5, feedback: 0.5, mix: 0.35], reverb: [decay_seconds: 4, mix: 0.4]]
 
   part :siren,
     synth: :fm,
     defaults: [amp: 0.07, divisor: 4, depth: 0.6, note_slide: 0.4],
-    fx: [echo: [phase: 0.75, decay: 5, mix: 0.4], reverb: [room: 0.9, mix: 0.45]]
+    fx: [echo: [phase: 0.75, decay: 5, mix: 0.4], reverb: [decay_seconds: 5.1, mix: 0.45]]
 
-  part :drone, synth: :tanpura, defaults: [vel: 0.4], fx: [reverb: [room: 0.8, mix: 0.35]]
+  part :drone,
+    synth: :tanpura,
+    defaults: [vel: 0.4],
+    fx: [reverb: [decay_seconds: 3.2, mix: 0.35]]
 
   part :dub_snare,
     fx: [
       ping_pong: [phase: 0.75, feedback: 0.55, max_phase: 2, mix: 0.4],
-      reverb: [room: 0.9, mix: 0.4]
+      reverb: [decay_seconds: 5.1, mix: 0.4]
     ]
 
   part :vinyl, []
-  part :space, fx: [reverb: [room: 0.9, mix: 0.4]]
+  part :space, fx: [reverb: [decay_seconds: 5.1, mix: 0.4]]
 
   def song do
     seq([:intro, :riddim, :rockers, :dub, :deep, :rewind, :steppers, :outro], &section/1)
   end
 
-  # The part's echo opened to a mix at one beat and closed again at another, within music of the
-  # given length.
+  # The part thrown into its echo at one beat and pulled back at another, within music of the given
+  # length: the echo opened to a mix and closed again to 0.2.
   defp throw(name, from, back, length, mix \\ 0.55) do
-    entries =
-      for {beat, mix} <- [{from, mix}, {back, 0.2}],
-          do: {beat, change({name, echo(name)}, mix: mix)}
-
-    at(entries, length)
+    at(for({beat, mix} <- [{from, mix}, {back, 0.2}], do: {beat, thrown(name, mix)}), length)
   end
 
-  # The rimshot's echo is a ping-pong, and every other part's thrown is the tape echo.
-  defp echo(:rimshot), do: :ping_pong
-  defp echo(_name), do: :echo
+  # The rimshot's echo is its own ping-pong and the melodica's its own tape, whose mix opens; the
+  # skank is sent into the desk's tape, at the level that puts as much of it in the echo.
+  defp thrown(:rimshot, mix), do: change({:rimshot, :ping_pong}, mix: mix)
+  defp thrown(:melodica, mix), do: change({:melodica, :echo}, mix: mix)
+  defp thrown(:skank, mix), do: change(:skank, send: [tape: mix / 0.8])
 
   # The hiss and a haunted hum, the siren, the melodica's first bars thrown into the echo, then
   # the one drop and the bass, and a roll into the riddim.
@@ -233,8 +246,8 @@ defmodule Dubwise do
             seq(1..8, &hihat/1),
             at(
               [
-                {8, change({:hihat, :flanger}, mix: 0.75, mix_slide: 8)},
-                {28, change({:hihat, :flanger}, mix: 0.25, mix_slide: 2)}
+                {8, change({:hihat, :phaser}, mix: 0.5, mix_slide: 8)},
+                {28, change({:hihat, :phaser}, mix: 0.25, mix_slide: 2)}
               ],
               32
             )
@@ -290,7 +303,7 @@ defmodule Dubwise do
     )
   end
 
-  # The kick and bass out under the drone, the hi-hat deep in the flanger and the dub snare's echo
+  # The kick and bass out under the drone, the hi-hat deep in the phaser and the dub snare's echo
   # running away and bending up; then a boom, the bass back, and the organ's chords cut up by the
   # slicer.
   defp section(:deep) do
@@ -342,8 +355,8 @@ defmodule Dubwise do
             seq(1..8, &hihat/1),
             at(
               [
-                {0, change({:hihat, :flanger}, mix: 0.85, feedback: 0.6)},
-                {16, change({:hihat, :flanger}, mix: 0.3, feedback: 0.4)}
+                {0, change({:hihat, :phaser}, mix: 0.5, feedback: 0.6)},
+                {16, change({:hihat, :phaser}, mix: 0.25, feedback: 0.4)}
               ],
               32
             )

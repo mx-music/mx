@@ -18,7 +18,7 @@ defmodule SombrasSynths do
 
   use Mx.Song, tempo: 90
 
-  @room [room: 0.6, damp: 0.5, mix: 0.22]
+  @room [decay_seconds: 1.8, damp: 0.5, mix: 0.22]
 
   @tempo 90
 

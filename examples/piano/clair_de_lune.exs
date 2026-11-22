@@ -17,7 +17,7 @@ defmodule ClairDeLune.Piano do
   part :piano,
     synth: :piano,
     defaults: [pedal: 1, release: 0.3],
-    fx: [reverb: [room: 0.75, damp: 0.5, mix: 0.3]]
+    fx: [reverb: [decay_seconds: 2.7, damp: 0.5, mix: 0.3]]
 
   def song do
     part(:piano, seq(1..72, &bar/1))

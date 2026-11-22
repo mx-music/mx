@@ -43,7 +43,9 @@ defmodule Mx.Render do
       heard = Keyword.take(opts, [:mute, :solo])
 
       with :ok <- run(playing, out, seconds, follow, share, total, {ring_out, ring}, heard) do
-        if ring_out == nil and ring, do: IO.puts(cut_short(ring))
+        if (ring_out == nil and ring) && ring.seconds >= 0.05,
+          do: IO.puts(cut_short(ring, playing))
+
         Enum.each(Recording.report(out), &IO.puts/1)
       end
     end
@@ -73,9 +75,9 @@ defmodule Mx.Render do
   end
 
   @doc """
-  How long a song's effects ring once its notes have faded, rendered for `seconds:` and at `share:` of its tempo as `render/3` takes them, as `{:ok, %{seconds: seconds, part: part, effect: effect}}` naming the part whose effects ring longest and the effect of it that rings longest, `{:ok, nil}` when no effect rings, or `{:error, message}`.
+  How long a song's effects ring once its notes have faded, rendered for `seconds:` and at `share:` of its tempo as `render/3` takes them, as `{:ok, %{seconds: seconds, part: part, effect: effect}}` naming the effect that rings longest among those that ring longest together and its part, a bus's name for an effect of a bus and `:song` for one of the song's own effects, `{:ok, nil}` when no effect rings, or `{:error, message}`.
 
-  A part's effects ring for as long as each of them rings in turn, from its options, and an option given in beats lasts those beats at the tempo the music ends at.
+  A part's effects ring for as long as each of them rings in turn, then those of the buses it sends into, and then each of the song's own, from its options, and an option given in beats lasts those beats at the tempo the music ends at.
   """
   def ring_out(%Song{} = song, opts \\ []) when is_list(opts) do
     playing = %{song | loops: Enum.filter(song.loops, &(&1.on == nil))}
@@ -83,16 +85,44 @@ defmodule Mx.Render do
   end
 
   defp ring(song, seconds, share) do
-    with {:ok, bpm} <- end_tempo(song, seconds) do
+    with {:ok, bpm} <- end_tempo(song, seconds),
+         {:ok, main} <- chain_rings(:song, song.fx, bpm * share),
+         {:ok, buses} <- map_ok(song.buses, &chain_rings(&1.name, &1.fx, bpm * share)) do
+      buses = Map.new(Enum.zip(Enum.map(song.buses, & &1.name), buses))
+      sends = Map.new(song.buses, &{&1.name, Keyword.keys(&1.send)})
+
       song.loops
       |> map_ok(fn loop ->
-        with {:ok, tails} <- Mxs.effect_tails(loop.fx, bpm * share) do
-          rings = Enum.zip(Keyword.keys(loop.fx), tails)
-          {:ok, {loop.name, Enum.sum(tails), rings}}
+        with {:ok, own} <- chain_rings(loop.name, loop.fx, bpm * share) do
+          rings = own ++ sent_rings(Keyword.keys(loop.send), buses, sends) ++ main
+          {:ok, {loop.name, rings |> Enum.map(&elem(&1, 2)) |> Enum.sum(), rings}}
         end
       end)
+      |> then(
+        &with {:ok, rings} <- &1,
+              do:
+                {:ok,
+                 [
+                   {:song, main |> Enum.map(fn {_, _, tail} -> tail end) |> Enum.sum(), main}
+                   | rings
+                 ]}
+      )
       |> longest_ring()
     end
+  end
+
+  # Each effect of a chain with whose it is and how long it rings.
+  defp chain_rings(owner, fx, bpm) do
+    with {:ok, tails} <- Mxs.effect_tails(fx, bpm) do
+      {:ok, for({effect, tail} <- Enum.zip(Keyword.keys(fx), tails), do: {owner, effect, tail})}
+    end
+  end
+
+  # The effects of the buses that ring longest one after another, from the buses sent into on through those they send into.
+  defp sent_rings(names, buses, sends) do
+    names
+    |> Enum.map(fn name -> buses[name] ++ sent_rings(sends[name], buses, sends) end)
+    |> Enum.max_by(fn rings -> rings |> Enum.map(&elem(&1, 2)) |> Enum.sum() end, fn -> [] end)
   end
 
   defp longest_ring({:ok, rings}) do
@@ -101,18 +131,20 @@ defmodule Mx.Render do
         {:ok, nil}
 
       ringing ->
-        {part, seconds, rings} = Enum.max_by(ringing, &elem(&1, 1), fn -> nil end)
-        {effect, _tail} = Enum.max_by(rings, &elem(&1, 1))
+        {_part, seconds, rings} = Enum.max_by(ringing, &elem(&1, 1), fn -> nil end)
+        {part, effect, _tail} = Enum.max_by(rings, &elem(&1, 2))
         {:ok, %{seconds: seconds, part: part, effect: effect}}
     end
   end
 
   defp longest_ring(error), do: error
 
-  defp cut_short(%{seconds: seconds, part: part, effect: effect}) do
+  defp cut_short(%{seconds: seconds, part: part, effect: effect}, song) do
+    kind = if Enum.any?(song.buses, &(&1.name == part)), do: "bus", else: "part"
     seconds = :erlang.float_to_binary(seconds / 1, decimals: 1)
+    part = if part == :song, do: "the song", else: "#{kind} #{part}"
 
-    "the render ends as the last notes fade, cutting short the #{effect} of part #{part}, which rings #{seconds} seconds on; --ring-out keeps it"
+    "the render ends as the last notes fade, cutting short the #{effect} of #{part}, which rings #{seconds} seconds on; --ring-out keeps it"
   end
 
   # The tempo the music ends at: the song's own, or where the loop that ends last ends.
@@ -235,6 +267,8 @@ defmodule Mx.Render do
           start_fx: &Mxs.start_fx/1,
           stop_fx: &Mxs.stop_fx/2,
           start_part: &Mxs.start_part(&1, &2, beats: true),
+          main: &Mxs.set_main/1,
+          buses: &Mxs.set_buses/1,
           hand: &Mxs.pass/5,
           cut: &Mxs.cut/2,
           place_beats: &Mxs.place_beats/1,

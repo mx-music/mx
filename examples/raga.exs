@@ -15,19 +15,22 @@ defmodule Raga do
   use Mx.Song, tempo: 80
 
   @sa 49
-  @room [reverb: [room: 0.6, mix: 0.18]]
+  @room [reverb: [decay_seconds: 1.8, mix: 0.18]]
 
   part :tanpura,
     synth: :tanpura,
     defaults: [amp: 0.8, pan: -0.25],
-    fx: [reverb: [room: 0.8, mix: 0.3]]
+    fx: [reverb: [decay_seconds: 3.2, mix: 0.3]]
 
-  part :sitar, synth: :sitar, defaults: [sa: @sa, amp: 1.3], fx: [reverb: [room: 0.75, mix: 0.25]]
+  part :sitar,
+    synth: :sitar,
+    defaults: [sa: @sa, amp: 1.3],
+    fx: [reverb: [decay_seconds: 2.7, mix: 0.25]]
 
   part :chikari,
     synth: :sitar,
     defaults: [sa: @sa, amp: 0.65],
-    fx: [reverb: [room: 0.75, mix: 0.25]]
+    fx: [reverb: [decay_seconds: 2.7, mix: 0.25]]
 
   # tabla_na rings two semitones below its note, so this is the drum on Sa.
   part :tabla_na, synth: :tabla_na, defaults: [note: @sa + 14, amp: 0.7, pan: 0.25], fx: @room

@@ -198,8 +198,12 @@ defmodule Mx.Band do
     Keyword.get(opts, :place_beats, fn _start_us -> :ok end).(start_us)
     state.set_tempo.(0, song.tempo * state.share)
     if subscribe = opts[:subscribe], do: subscribe.(self())
+    state = Map.put(state, :buses, Keyword.get(opts, :buses, fn _song -> :ok end))
+    state.buses.(song)
     state = Map.put(state, :live, Keyword.get(opts, :live, fn _lives, _tempo -> :ok end))
     state.live.(song.live, song.tempo)
+    state = Map.put(state, :main, Keyword.get(opts, :main, fn _effects -> :ok end))
+    state.main.(song.fx)
     from = Keyword.get(opts, :from, 0)
     {:ok, tell(start_loops(state, Enum.flat_map(song.loops, &place(&1, from))))}
   end
@@ -333,7 +337,9 @@ defmodule Mx.Band do
   def handle_cast({:switch, song}, %{} = state) do
     song = state.prepare.(song)
     state = if song.tempo != state.song.tempo, do: tell(retempo(state, song.tempo)), else: state
+    state.buses.(song)
     state.live.(song.live, song.tempo)
+    state.main.(song.fx)
     names = Enum.map(song.loops, & &1.name)
 
     removed = Map.drop(state.loops, names)

@@ -69,7 +69,7 @@ defmodule ThreeTunings do
   @low_drum vcsl.("Struck Idiophones/Slit Drum/LogDrumLo_MedM_v3_rr1_Sum.wav")
   @high_drum vcsl.("Struck Idiophones/Slit Drum/LogDrumHi_MedM_v3_rr1_Sum.wav")
 
-  @room [room: 0.6, mix: 0.2]
+  @room [decay_seconds: 1.8, mix: 0.2]
   @ringing [sustain: 2, release: 1.5]
 
   part :nyunga,

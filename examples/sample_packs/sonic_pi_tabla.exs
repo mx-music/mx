@@ -27,8 +27,8 @@ defmodule Kaida do
     "ge" => {nil, :tabla_ghe8}
   }
 
-  part :dayan, fx: [level: [amp: 0.7], reverb: [room: 0.4, mix: 0.12], pan: [pan: 0.25]]
-  part :bayan, fx: [level: [amp: 0.7], reverb: [room: 0.4, mix: 0.12], pan: [pan: -0.25]]
+  part :dayan, fx: [level: [amp: 0.7], reverb: [decay_seconds: 1.2, mix: 0.12], pan: [pan: 0.25]]
+  part :bayan, fx: [level: [amp: 0.7], reverb: [decay_seconds: 1.2, mix: 0.12], pan: [pan: -0.25]]
 
   @theka "dha dhin dhin dha dha dhin dhin dha dha tin tin ta ta dhin dhin dha"
   @filled "dha . dhin . dhin . dha~ . dha . dhin . dhin . dha te dha . tin . tin . ta . ta te dhin . dhin . dha~ ge"

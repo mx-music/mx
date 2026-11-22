@@ -45,7 +45,7 @@ defmodule LunaDeCabarete do
               end
             end)
 
-  @room [reverb: [room: 0.6, damp: 0.5, mix: 0.2]]
+  @room [reverb: [decay_seconds: 1.8, damp: 0.5, mix: 0.2]]
 
   part :requinto,
     synth: sampled(@shinyguitar),
@@ -55,7 +55,7 @@ defmodule LunaDeCabarete do
       level: [amp: 1.0],
       chorus: [phase: 1.5, mix: 0.35],
       echo: [phase: 0.75, decay: 1.5, mix: 0.12],
-      reverb: [room: 0.7, damp: 0.4, mix: 0.25],
+      reverb: [decay_seconds: 2.3, damp: 0.4, mix: 0.25],
       pan: [pan: 0.2]
     ]
 
@@ -66,7 +66,7 @@ defmodule LunaDeCabarete do
       hpf: [cutoff: 55],
       level: [amp: 0.7],
       chorus: [phase: 1.5, mix: 0.35],
-      reverb: [room: 0.7, damp: 0.4, mix: 0.25],
+      reverb: [decay_seconds: 2.3, damp: 0.4, mix: 0.25],
       pan: [pan: 0.45]
     ]
 

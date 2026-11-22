@@ -9,25 +9,41 @@ defmodule Meditation do
   part :flute,
     synth: :flute,
     defaults: [vibrato: 0.1, pan: 0.1, amp: 2.2],
-    fx: [reverb: [room: 0.85, mix: 0.4]]
+    fx: [reverb: [decay_seconds: 4, mix: 0.4, amp: 0.84]]
 
-  part :tanpura, synth: :harp, defaults: [pan: -0.3], fx: [reverb: [room: 0.9, mix: 0.45]]
-  part :shruti, synth: :organ, fx: [reverb: [room: 0.9, mix: 0.5]]
-  part :bells, synth: :vibraphone, defaults: [pan: -0.2], fx: [reverb: [room: 0.9, mix: 0.5]]
-  part :chikari, synth: :harp, defaults: [pan: 0.35], fx: [reverb: [room: 0.8, mix: 0.35]]
+  part :tanpura,
+    synth: :harp,
+    defaults: [pan: -0.3],
+    fx: [reverb: [decay_seconds: 5.1, mix: 0.45]]
+
+  part :shruti, synth: :organ, fx: [reverb: [decay_seconds: 5.1, mix: 0.5]]
+
+  part :bells,
+    synth: :vibraphone,
+    defaults: [pan: -0.2],
+    fx: [reverb: [decay_seconds: 5.1, mix: 0.5]]
+
+  part :chikari,
+    synth: :harp,
+    defaults: [pan: 0.35],
+    fx: [reverb: [decay_seconds: 3.2, mix: 0.35]]
 
   part :dayan,
     synth: :high_bongo,
     defaults: [note: 62, pan: 0.25, amp: 2.7],
-    fx: [reverb: [room: 0.6, mix: 0.25]]
+    fx: [reverb: [decay_seconds: 1.8, mix: 0.25]]
 
   part :bayan,
     synth: :low_bongo,
     defaults: [note: 50, pan: 0.15, amp: 4.4],
-    fx: [reverb: [room: 0.6, mix: 0.25]]
+    fx: [reverb: [decay_seconds: 1.8, mix: 0.25]]
 
   part :ganza, synth: :ganza, defaults: [pan: 0.45]
-  part :sam, synth: :glockenspiel, defaults: [pan: -0.1], fx: [reverb: [room: 0.9, mix: 0.5]]
+
+  part :sam,
+    synth: :glockenspiel,
+    defaults: [pan: -0.1],
+    fx: [reverb: [decay_seconds: 5.1, mix: 0.5]]
 
   # Alap opens over the drone alone, jor finds a pulse, gat brings in the tabla, and shanti
   # settles back on Sa.

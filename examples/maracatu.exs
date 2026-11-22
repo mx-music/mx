@@ -16,7 +16,7 @@ defmodule Maracatu do
 
   use Mx.Song, tempo: 104
 
-  @room [reverb: [room: 0.4, damp: 0.6, mix: 0.12]]
+  @room [reverb: [decay_seconds: 1.2, damp: 0.6, mix: 0.12]]
 
   part :gongue, synth: :cowbell, defaults: [amp: 0.3, pan: 0.15, note: 65], fx: @room
   part :mineiro, synth: :ganza, defaults: [amp: 0.55, pan: -0.4], fx: @room

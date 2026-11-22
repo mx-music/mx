@@ -24,7 +24,7 @@ defmodule ErbarmeDich.Paraphrase do
   part :piano,
     synth: :piano,
     defaults: [release: 0.4, amp: 1.7],
-    fx: [reverb: [room: 0.9, damp: 0.45, mix: 0.35]]
+    fx: [reverb: [decay_seconds: 5.1, damp: 0.45, mix: 0.35]]
 
   def song do
     part(:piano, at(piano(), beats()))

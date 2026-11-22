@@ -12,7 +12,7 @@ defmodule Paganini do
 
   use Mx.Song, tempo: 116
 
-  part :violin, synth: :violin, fx: [reverb: [room: 0.5, mix: 0.3]]
+  part :violin, synth: :violin, fx: [reverb: [decay_seconds: 1.5, mix: 0.3]]
 
   def song do
     repeat(

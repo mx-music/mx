@@ -135,6 +135,8 @@ defmodule Mx.Session do
        start_fx: &Mxs.start_fx/1,
        stop_fx: &Mxs.stop_fx/2,
        start_part: &Mxs.start_part(&1, &2, beats: true),
+       main: &Mxs.set_main/1,
+       buses: &Mxs.set_buses/1,
        hand: &Mxs.pass/5,
        cut: &Mxs.cut/2,
        place_beats: &Mxs.place_beats/1,

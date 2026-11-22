@@ -1032,7 +1032,7 @@ defmodule Mx.BandTest do
       song =
         load(
           ctx,
-          "import Mx\nsong(tempo: 120, music: part(:a, loop(1, fn _, _ -> seq([note(60, 0), rest(1)]) end), fx: [echo: [phase: 1], reverb: [room: 0.8]]))\n"
+          "import Mx\nsong(tempo: 120, music: part(:a, loop(1, fn _, _ -> seq([note(60, 0), rest(1)]) end), fx: [echo: [phase: 1], reverb: [decay_seconds: 3.2]]))\n"
         )
 
       start(song, ctx, ctx.fx_opts)
@@ -1040,7 +1040,7 @@ defmodule Mx.BandTest do
       assert_receive {:fx_started, _, [{:echo, echo}, {:reverb, reverb}]}
       assert echo[:phase] == 0.5
       assert echo[:decay] == 1.0
-      assert reverb[:room] == 0.8
+      assert reverb[:decay_seconds] == 3.2
     end
 
     @tag :tmp_dir
@@ -1049,7 +1049,7 @@ defmodule Mx.BandTest do
       song =
         load(
           ctx,
-          "import Mx\nsong(tempo: 120, music: part(:a, loop(1, fn _, _ -> seq([note(60, 0), rest(1)]) end), fx: [flanger: [], reverb: [room: 0.8]]))\n"
+          "import Mx\nsong(tempo: 120, music: part(:a, loop(1, fn _, _ -> seq([note(60, 0), rest(1)]) end), fx: [flanger: [], reverb: [decay_seconds: 3.2]]))\n"
         )
 
       start(song, ctx, ctx.fx_opts)
@@ -1058,7 +1058,7 @@ defmodule Mx.BandTest do
       assert flanger[:phase] == 2.0
       assert flanger[:decay] == 1.0
       assert flanger[:delay] == nil
-      assert reverb[:room] == 0.8
+      assert reverb[:decay_seconds] == 3.2
     end
 
     @tag :tmp_dir

@@ -13,44 +13,52 @@ defmodule Odeon do
 
   use Mx.Song, tempo: 72
 
-  part :trombone, synth: :trombone, defaults: [amp: 2], fx: [reverb: [room: 0.6, mix: 0.3]]
-  part :cello, synth: :cello, defaults: [amp: 2], fx: [reverb: [room: 0.6, mix: 0.3]]
-  part :flute, synth: :flute, defaults: [amp: 1.8, pan: 0.2], fx: [reverb: [room: 0.6, mix: 0.3]]
+  part :trombone,
+    synth: :trombone,
+    defaults: [amp: 2],
+    fx: [reverb: [decay_seconds: 1.8, mix: 0.3]]
+
+  part :cello, synth: :cello, defaults: [amp: 2], fx: [reverb: [decay_seconds: 1.8, mix: 0.3]]
+
+  part :flute,
+    synth: :flute,
+    defaults: [amp: 1.8, pan: 0.2],
+    fx: [reverb: [decay_seconds: 1.8, mix: 0.3]]
 
   part :tenor_sax,
     synth: :tenor_sax,
     defaults: [amp: 1.6, pan: 0.2],
-    fx: [reverb: [room: 0.6, mix: 0.3]]
+    fx: [reverb: [decay_seconds: 1.8, mix: 0.3]]
 
   part :guitar,
     synth: :guitar,
     defaults: [amp: 0.9, pan: -0.25],
-    fx: [reverb: [room: 0.5, mix: 0.2]]
+    fx: [reverb: [decay_seconds: 1.5, mix: 0.2]]
 
   part :cavaquinho,
     synth: :cavaquinho,
     defaults: [amp: 0.4, pan: 0.3],
-    fx: [reverb: [room: 0.5, mix: 0.2]]
+    fx: [reverb: [decay_seconds: 1.5, mix: 0.2]]
 
   part :pandeiro_thumb,
     synth: :pandeiro_thumb,
     defaults: [amp: 0.6, pan: 0.1],
-    fx: [reverb: [room: 0.4, mix: 0.12]]
+    fx: [reverb: [decay_seconds: 1.2, mix: 0.12]]
 
   part :pandeiro_jingles,
     synth: :pandeiro_jingles,
     defaults: [amp: 0.5, pan: 0.1],
-    fx: [reverb: [room: 0.4, mix: 0.12]]
+    fx: [reverb: [decay_seconds: 1.2, mix: 0.12]]
 
   part :pandeiro_heel,
     synth: :pandeiro_heel,
     defaults: [amp: 0.5, pan: 0.1],
-    fx: [reverb: [room: 0.4, mix: 0.12]]
+    fx: [reverb: [decay_seconds: 1.2, mix: 0.12]]
 
   part :pandeiro_slap,
     synth: :pandeiro_slap,
     defaults: [amp: 0.4, pan: 0.1],
-    fx: [reverb: [room: 0.4, mix: 0.12]]
+    fx: [reverb: [decay_seconds: 1.2, mix: 0.12]]
 
   part :shaker, synth: :shaker, defaults: [amp: 0.35, pan: -0.35]
 

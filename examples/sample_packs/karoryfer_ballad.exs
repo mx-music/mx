@@ -74,24 +74,24 @@ defmodule SmallHours do
   part :sax,
     synth: sampled(@alto),
     defaults: [attack: 0.03, release: 0.3],
-    fx: [level: [amp: 1.0], reverb: [room: 0.75, mix: 0.3], pan: [pan: 0.1]]
+    fx: [level: [amp: 1.0], reverb: [decay_seconds: 2.7, mix: 0.3], pan: [pan: 0.1]]
 
   part :guitar,
     synth: sampled(@archtop),
     defaults: [release: 0.5],
-    fx: [level: [amp: 0.9], reverb: [room: 0.6, mix: 0.2], pan: [pan: -0.4]]
+    fx: [level: [amp: 0.9], reverb: [decay_seconds: 1.8, mix: 0.2], pan: [pan: -0.4]]
 
   part :solo,
     synth: sampled(@archtop),
     defaults: [release: 0.5],
-    fx: [level: [amp: 1.8], reverb: [room: 0.7, mix: 0.3], pan: [pan: -0.2]]
+    fx: [level: [amp: 1.8], reverb: [decay_seconds: 2.3, mix: 0.3], pan: [pan: -0.2]]
 
   part :bass, synth: sampled(@upright), defaults: [release: 0.3], fx: [level: [amp: 2.4]]
 
   part :cello,
     synth: sampled(@bowed),
     defaults: [attack: 0.15, release: 0.6],
-    fx: [level: [amp: 2.0], reverb: [room: 0.75, mix: 0.3], pan: [pan: 0.45]]
+    fx: [level: [amp: 2.0], reverb: [decay_seconds: 2.7, mix: 0.3], pan: [pan: 0.45]]
 
   part :stir, synth: sampled(@stir), defaults: [attack: 1, release: 1.5], fx: [level: [amp: 8.0]]
 

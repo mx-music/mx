@@ -8,6 +8,7 @@ locals_without_parens = [
   defsound: 2,
   defsoundp: 2,
   part: 2,
+  bus: 2,
   kit: 2
 ]
 

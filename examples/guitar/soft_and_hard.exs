@@ -7,7 +7,7 @@ defmodule SoftAndHard do
 
   use Mx.Song, tempo: 72
 
-  part :guitar, synth: :guitar, defaults: [amp: 0.5], fx: [reverb: [room: 0.4, mix: 0.2]]
+  part :guitar, synth: :guitar, defaults: [amp: 0.5], fx: [reverb: [decay_seconds: 1.2, mix: 0.2]]
 
   def song do
     part(:guitar, loop(16, fn pass, _ -> phrase(pass) end))

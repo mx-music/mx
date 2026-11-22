@@ -10,7 +10,7 @@ defmodule Viola do
 
   use Mx.Song, tempo: 66
 
-  part :viola, synth: :viola, fx: [reverb: [room: 0.5, mix: 0.25]]
+  part :viola, synth: :viola, fx: [reverb: [decay_seconds: 1.5, mix: 0.25]]
 
   # The form, each of its passes a section.
   def song do

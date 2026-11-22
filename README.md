@@ -16,7 +16,7 @@ left = seq([bar.(:g2, [:b3, :d4, :fs4]), bar.(:d2, [:a3, :cs4, :fs4])])
 
 melody = seq(r: 1, fs5: 1, a5: 1, g5: 1, fs5: 1, cs5: 1, b4: 1, cs5: 1, d5: 1, a4: 3, fs4: 12)
 
-room = [reverb: [room: 0.4, mix: 0.15]]
+room = [reverb: [decay_seconds: 1.2, mix: 0.15]]
 
 song(
   tempo: 72,

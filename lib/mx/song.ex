@@ -38,6 +38,9 @@ defmodule Mx.Song do
       :music,
       :passes,
       fx: [],
+      send: [],
+      song_fx: [],
+      buses: [],
       defaults: [],
       samples: [],
       buffers: %{}
@@ -46,7 +49,12 @@ defmodule Mx.Song do
 
   defmodule Live do
     @moduledoc "A live audio input the song declares: the sound card input it plays, in mono or stereo, with its options and effects."
-    defstruct [:name, input: 1, stereo: false, opts: [], fx: []]
+    defstruct [:name, input: 1, stereo: false, opts: [], fx: [], send: []]
+  end
+
+  defmodule Bus do
+    @moduledoc "A chain of effects the song's parts send a share of their sound into, which can send into other buses in turn."
+    defstruct [:name, fx: [], send: []]
   end
 
   defstruct tempo: 60,
@@ -55,6 +63,8 @@ defmodule Mx.Song do
             tempos: nil,
             osc_to: nil,
             osc_from: nil,
+            fx: [],
+            buses: [],
             loops: [],
             live: [],
             played: []
@@ -78,8 +88,9 @@ defmodule Mx.Song do
     quote do
       import Mx, except: [part: 2, together: 1]
       unquote(nodes)
-      import Mx.Song, only: [part: 2, together: 1, kit: 2, kit: 3, kit: 4]
+      import Mx.Song, only: [part: 2, together: 1, kit: 2, kit: 3, kit: 4, bus: 2]
       Module.register_attribute(__MODULE__, :mx_parts, accumulate: true)
+      Module.register_attribute(__MODULE__, :mx_buses, accumulate: true)
       Module.register_attribute(__MODULE__, :mx_kits, accumulate: true)
       @mx_song unquote(opts)
       @before_compile Mx.Song
@@ -105,6 +116,13 @@ defmodule Mx.Song do
       quote do
         @mx_parts {unquote(name), unquote(given)}
       end
+    end
+  end
+
+  @doc "Declares a bus of the song, a chain of effects its parts send into with `send:`: `bus :room, fx: [reverb: [decay_seconds: 2.3]]`, which can send into other buses with its own `send:`."
+  defmacro bus(name, given) do
+    quote do
+      @mx_buses {unquote(name), unquote(given)}
     end
   end
 
@@ -243,7 +261,9 @@ defmodule Mx.Song do
         do: unquote(Macro.escape(for {name, strokes, _} <- kits, do: {name, strokes}))
 
       @doc false
-      def __mx_song__, do: Mx.song([music: song()] ++ @mx_song)
+      def __mx_song__ do
+        Mx.song([music: song(), buses: Enum.reverse(@mx_buses)] ++ @mx_song)
+      end
     end
   end
 
@@ -324,16 +344,24 @@ defmodule Mx.Song do
       if match?(%Mx.Music.Song{}, value), do: Mx.Music.load(value)
 
       song = Process.get(@key)
-      loops = Enum.map(Enum.reverse(song.loops), &%{&1 | file: path, osc_to: song.osc_to})
+
+      {:ok, fx} =
+        with {:error, message} <- song_effects(song.fx), do: raise(ArgumentError, message)
+
+      loops =
+        Enum.map(
+          Enum.reverse(song.loops),
+          &%{&1 | file: path, osc_to: song.osc_to, song_fx: fx, buses: song.buses}
+        )
 
       live = Enum.reverse(song.live)
 
       with :ok <- check(loops, path, live, value),
-           {:ok, live} <- check_live(live, path),
+           {:ok, live} <- check_live(live, path, Enum.map(song.buses, & &1.name)),
            {:ok, loops} <- find_effects(loops),
            {:ok, loops} <- find_samples(loops) do
         Enum.each(level_warnings(song.played), &IO.puts(:stderr, &1))
-        {:ok, %{song | loops: loops, live: live, played: []}}
+        {:ok, %{song | loops: loops, live: live, fx: fx, played: []}}
       end
     rescue
       error -> {:error, Exception.message(error)}
@@ -435,6 +463,7 @@ defmodule Mx.Song do
       name: part.name,
       synth: part.synth,
       fx: part.fx,
+      send: part.send,
       defaults: part.defaults,
       midi: part.midi,
       line: 1,
@@ -476,6 +505,120 @@ defmodule Mx.Song do
 
   @doc "Records the tempo changes the music of the song being loaded writes."
   def put_tempos(tempos) when is_map(tempos), do: update(&%{&1 | tempos: tempos})
+
+  @doc "Records the effects the whole song being loaded plays through, as `fx:` gives them."
+  def put_fx(fx), do: update(&%{&1 | fx: fx})
+
+  @doc "The song's own effects as a chain with each effect's bands written out, or `{:error, message}`."
+  def song_effects(fx) do
+    with {:ok, chain} <- chain(fx),
+         {:ok, chain} <- check_effects(chain),
+         nil <- Enum.find_value(chain, fn {_effect, opts} -> opts[:key] end) do
+      {:ok, chain}
+    else
+      {:error, message} -> {:error, "the song's fx: #{message}"}
+      _key -> {:error, "the song's fx: a compressor there takes no key:"}
+    end
+  end
+
+  @doc "Records the buses of the song being loaded, as `buses/1` returns them."
+  def put_buses(buses) when is_list(buses), do: update(&%{&1 | buses: buses})
+
+  @buses_error "buses: takes the song's buses by name, each with its effects, such as buses: [room: [reverb: [decay_seconds: 2.3]]]"
+
+  @doc """
+  The song's buses from what `buses:` gives, as `{:ok, buses}` or `{:error, message}`.
+  Each bus is given by its name with its effects, as `room: [reverb: [decay_seconds: 2.3]]`, or with `fx:` and `send:`, as `tape: [fx: [echo: []], send: [room: 0.3]]`.
+  An effect of a bus has a `mix` of 1 unless given, a bus that sends into a bus the song does not have is refused, and so is one that sends into itself, directly or through others.
+  """
+  def buses(given) do
+    with true <- Keyword.keyword?(given) || {:error, @buses_error},
+         names = Keyword.keys(given),
+         [] <- names -- Enum.uniq(names),
+         false <- :song in names,
+         {:ok, buses} <- map_buses(given),
+         :ok <- check_bus_sends(buses) do
+      {:ok, buses}
+    else
+      [name | _] -> {:error, "the song declares bus #{name} twice"}
+      true -> {:error, "a bus cannot be named song: the name is taken by the song's own chain"}
+      error -> error
+    end
+  end
+
+  defp map_buses(given) do
+    Enum.reduce_while(given, {:ok, []}, fn {name, spec}, {:ok, buses} ->
+      {fx, send} =
+        if Keyword.keyword?(spec) and spec != [] and Keyword.keys(spec) -- [:fx, :send] == [] do
+          {Keyword.get(spec, :fx, []), Keyword.get(spec, :send, [])}
+        else
+          {spec, []}
+        end
+
+      with {:ok, chain} <- chain(fx),
+           {:ok, chain} <- check_effects(chain) do
+        chain = for {effect, opts} <- chain, do: {effect, Keyword.put_new(opts, :mix, 1)}
+        {:cont, {:ok, buses ++ [%Bus{name: name, fx: chain, send: send}]}}
+      else
+        {:error, message} -> {:halt, {:error, "bus #{name}: #{message}"}}
+      end
+    end)
+  end
+
+  defp check_bus_sends(buses) do
+    names = Enum.map(buses, & &1.name)
+
+    with nil <- Enum.find_value(buses, &sends_error("bus #{&1.name}", &1.send, names)),
+         nil <- Enum.find_value(buses, &bus_loop(&1.name, buses)) do
+      :ok
+    else
+      message -> {:error, message}
+    end
+  end
+
+  @doc "What is wrong with the sends of `owner`, such as `\"part snare\"`, given the names of the song's buses, or nil."
+  def sends_error(owner, sends, buses) do
+    cond do
+      not (Keyword.keyword?(sends) and
+               Enum.all?(sends, fn {_, level} -> is_number(level) and level >= 0 end)) ->
+        sends = inspect(sends)
+
+        "#{owner}: send: takes a level of 0 or more for each bus, such as send: [room: 0.3], not #{sends}"
+
+      bus = Enum.find(Keyword.keys(sends), &(&1 not in buses)) ->
+        "#{owner} sends to #{bus}, which the song does not declare; declare it with bus :#{bus}, fx: ..."
+
+      true ->
+        nil
+    end
+  end
+
+  # The message for a bus that reaches itself through its sends, naming those on the way.
+  defp bus_loop(name, buses) do
+    sends = Map.new(buses, &{&1.name, Keyword.keys(&1.send)})
+
+    case way(sends[name], name, sends, [name]) do
+      nil ->
+        nil
+
+      [] ->
+        "bus #{name} sends into itself"
+
+      through ->
+        "bus #{name} sends into itself, through " <> Enum.map_join(through, " and ", &to_string/1)
+    end
+  end
+
+  defp way(next, goal, sends, seen) do
+    Enum.find_value(next, fn bus ->
+      cond do
+        bus == goal -> []
+        bus in seen -> nil
+        way = way(sends[bus], goal, sends, [bus | seen]) -> [bus | way]
+        true -> nil
+      end
+    end)
+  end
 
   @doc "Records where the song being loaded sends OSC."
   def put_osc_to(host, port) when is_binary(host) and is_integer(port) do
@@ -553,12 +696,12 @@ defmodule Mx.Song do
     end
   end
 
-  defp check_live(live, path) do
+  defp check_live(live, path, buses) do
     names = Enum.map(live, & &1.name)
 
     case List.first(names -- Enum.uniq(names)) do
       nil ->
-        found = Enum.map(live, &check_one_live/1)
+        found = Enum.map(live, &check_one_live(&1, buses))
 
         case Enum.find(found, &match?({:error, _}, &1)) do
           nil -> {:ok, Enum.map(found, fn {:ok, live} -> live end)}
@@ -570,10 +713,11 @@ defmodule Mx.Song do
     end
   end
 
-  defp check_one_live(%Live{name: name, opts: opts} = live) do
+  defp check_one_live(%Live{name: name, opts: opts} = live, buses) do
     input = Keyword.get(opts, :input, 1)
     stereo = Keyword.get(opts, :stereo, false)
-    synth_opts = Keyword.drop(opts, [:input, :stereo, :fx])
+    synth_opts = Keyword.drop(opts, [:input, :stereo, :fx, :send])
+    send = Keyword.get(opts, :send, [])
     synth = if stereo, do: :live_audio_stereo, else: :live_audio_mono
 
     unknown =
@@ -587,10 +731,14 @@ defmodule Mx.Song do
         input = inspect(input)
         {:error, "live_audio #{name}: input must be 1 or more, not #{input}"}
 
+      message = sends_error("live_audio #{name}", send, buses) ->
+        {:error, message}
+
       true ->
         with {:ok, chain} <- chain(Keyword.get(opts, :fx, [])),
              {:ok, chain} <- check_effects(chain) do
-          {:ok, %{live | input: input, stereo: stereo == true, opts: synth_opts, fx: chain}}
+          {:ok,
+           %{live | input: input, stereo: stereo == true, opts: synth_opts, fx: chain, send: send}}
         else
           {:error, message} -> {:error, "live_audio #{name}: #{message}"}
         end
@@ -644,19 +792,62 @@ defmodule Mx.Song do
 
   defp check_effect(effect, opts) do
     with true <- Synths.effect?(effect) || {:error, "mx has no effect #{effect}"},
+         {:ok, key, opts} <- pop_key(effect, opts),
          {:ok, opts} <- Synths.bands(effect, opts) do
       case Enum.find(Keyword.keys(opts), &(not Synths.effect_option?(effect, &1))) do
-        nil -> check_effect_values(effect, opts) || {effect, opts}
+        nil -> check_effect_values(effect, opts) || {effect, opts ++ key}
         option -> {:error, "effect #{effect} has no option #{option}"}
       end
     end
   end
 
-  defp check_effect_values(effect, opts) do
-    Enum.find_value(opts, fn {option, value} ->
-      with :ok <- Synths.check_value({:effect, effect}, option, value), do: nil
+  # A compressor's key: names the part or bus whose level it follows, which the song's music checks.
+  defp pop_key(:compressor, opts) when is_list(opts) do
+    case Keyword.pop(opts, :key) do
+      {nil, opts} ->
+        {:ok, [], opts}
+
+      {key, opts} when is_atom(key) ->
+        {:ok, [key: key], opts}
+
+      {key, _opts} ->
+        key = inspect(key)
+        {:error, "effect compressor takes key: as the name of a part or a bus, not #{key}"}
+    end
+  end
+
+  defp pop_key(_effect, opts), do: {:ok, [], opts}
+
+  @doc "What is wrong with the key: of a compressor among the effects of `owner`, such as `\"part pad\"`, given the names of the song's parts and buses, or nil."
+  def keys_error(owner, fx, names) do
+    Enum.find_value(List.wrap(fx), fn
+      {:compressor, opts} when is_list(opts) ->
+        key = opts[:key]
+
+        if key != nil and key not in names do
+          "#{owner}: the compressor's key #{key} names no part or bus of the song"
+        end
+
+      _effect ->
+        nil
     end)
   end
+
+  defp check_effect_values(effect, opts) do
+    Enum.find_value(opts, fn {option, value} ->
+      with :ok <- check_stages(effect, option, value),
+           :ok <- Synths.check_value({:effect, effect}, option, value),
+           do: nil
+    end)
+  end
+
+  # A phaser cuts one notch for every two stages, so it takes an even number of them.
+  defp check_stages(:phaser, :stages, stages) when stages not in [2, 4, 6, 8] do
+    stages = inspect(stages)
+    {:error, "effect phaser takes stages: as 2, 4, 6 or 8, not #{stages}"}
+  end
+
+  defp check_stages(_effect, _option, _value), do: :ok
 
   defp find_samples(loops) do
     found = Enum.map(loops, &find_loop_samples/1)

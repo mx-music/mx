@@ -17,10 +17,10 @@ defmodule Rewind do
 
   part :breaks, fx: [level: [amp: 0.5]]
   part :bass, fx: [level: [amp: 0.35]]
-  part :stabs, fx: [level: [amp: 0.3], reverb: [room: 0.5, mix: 0.2]]
+  part :stabs, fx: [level: [amp: 0.3], reverb: [decay_seconds: 1.5, mix: 0.2]]
   part :bell, fx: [level: [amp: 0.4], echo: [phase: 0.75, decay: 4, mix: 0.4], pan: [pan: 0.3]]
-  part :choir, fx: [level: [amp: 0.45], reverb: [room: 0.85, mix: 0.5], pan: [pan: -0.3]]
-  part :guitar, fx: [level: [amp: 0.6], reverb: [room: 0.7, mix: 0.3]]
+  part :choir, fx: [level: [amp: 0.45], reverb: [decay_seconds: 4, mix: 0.5], pan: [pan: -0.3]]
+  part :guitar, fx: [level: [amp: 0.6], reverb: [decay_seconds: 2.3, mix: 0.3]]
   part :tabla, fx: [level: [amp: 1.2], pan: [pan: 0.2]]
   part :record, fx: [level: [amp: 0.45]]
   part :crash, fx: [level: [amp: 0.35]]

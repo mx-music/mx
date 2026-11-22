@@ -99,7 +99,7 @@ Everything so far returns music, so it all nests: a `seq` of `together`s, a `rep
 defmodule MaracatuDub do
   use Mx.Song, tempo: 96
 
-  @room [reverb: [room: 0.6, mix: 0.2]]
+  @room [reverb: [decay_seconds: 1.8, mix: 0.2]]
 
   part :trombone, synth: :trombone, defaults: [vel: 0.6], fx: [echo: [phase: 0.75, mix: 0.25]] ++ @room
   part :bass, synth: :double_bass, defaults: [pizz: 1, vel: 0.8]

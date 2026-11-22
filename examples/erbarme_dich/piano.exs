@@ -21,7 +21,7 @@ defmodule ErbarmeDich.Piano do
   part :piano,
     synth: :piano,
     defaults: [pedal: 0.5, release: 0.3, amp: 2],
-    fx: [reverb: [room: 0.8, damp: 0.5, mix: 0.3]]
+    fx: [reverb: [decay_seconds: 3.2, damp: 0.5, mix: 0.3]]
 
   def song do
     part(:piano, at(piano(), beats()))

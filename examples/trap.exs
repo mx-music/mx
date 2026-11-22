@@ -69,7 +69,7 @@ defmodule ColdFront do
     )
   end
 
-  @room [reverb: [room: 0.7, damp: 0.6, mix: 0.3]]
+  @room [reverb: [decay_seconds: 2.3, damp: 0.6, mix: 0.3]]
 
   player = for octave <- 1..4, key <- ~w(C# D# F G A B), do: "#{key}#{octave}"
 
@@ -115,12 +115,12 @@ defmodule ColdFront do
     defaults: [drive: 0.6],
     fx: [distortion: [distort: 0.55, mix: 0.4], level: [amp: 0.31]]
 
-  part :clap, synth: :clap, fx: [level: [amp: 1.6], reverb: [room: 0.5, mix: 0.2]]
+  part :clap, synth: :clap, fx: [level: [amp: 1.6], reverb: [decay_seconds: 1.5, mix: 0.2]]
 
   part :snare,
     synth: :snare,
     defaults: [vel: 0.75],
-    fx: [level: [amp: 2.0], reverb: [room: 0.5, mix: 0.2]]
+    fx: [level: [amp: 2.0], reverb: [decay_seconds: 1.5, mix: 0.2]]
 
   part :hats,
     synth: :closed_hihat,
@@ -137,20 +137,20 @@ defmodule ColdFront do
     fx: [
       level: [amp: 1.0],
       ping_pong: [phase: 0.75, feedback: 0.4, mix: 0.3],
-      reverb: [room: 0.5, mix: 0.2]
+      reverb: [decay_seconds: 1.5, mix: 0.2]
     ]
 
   part :cymbals,
     synth: :crash,
     defaults: [vel: 0.7, sustain: 4, release: 3],
-    fx: [level: [amp: 1.3], reverb: [room: 0.7, mix: 0.3]]
+    fx: [level: [amp: 1.3], reverb: [decay_seconds: 2.3, mix: 0.3]]
 
   part :hiss, fx: [level: [amp: 0.5]]
 
   part :riser,
     synth: :noise,
     defaults: [res: 0.5],
-    fx: [level: [amp: 0.16], reverb: [room: 0.8, mix: 0.4]]
+    fx: [level: [amp: 0.16], reverb: [decay_seconds: 3.2, mix: 0.4]]
 
   part :piano,
     synth: @piano,
@@ -158,7 +158,7 @@ defmodule ColdFront do
     fx: [
       bitcrusher: [bits: 9, sample_rate: 11_000, mix: 0],
       lpf: [cutoff: 118],
-      reverb: [room: 0.8, damp: 0.5, mix: 0.35]
+      reverb: [decay_seconds: 3.2, damp: 0.5, mix: 0.35]
     ]
 
   part :glock,
@@ -169,7 +169,7 @@ defmodule ColdFront do
   part :lead,
     synth: @ocarina,
     defaults: [amp: 0.5, attack: 0.02, release: 0.15],
-    fx: [echo: [phase: 0.75, decay: 3, mix: 0.25], reverb: [room: 0.8, mix: 0.35]]
+    fx: [echo: [phase: 0.75, decay: 3, mix: 0.25], reverb: [decay_seconds: 3.2, mix: 0.35]]
 
   part :plucks,
     synth: @dan_tranh,
@@ -182,7 +182,7 @@ defmodule ColdFront do
     fx: [
       slicer: [phase: 0.25, pulse_width: 0.6, smooth_ms: 10, mix: 0],
       lpf: [cutoff: 95],
-      reverb: [room: 0.9, mix: 0.4]
+      reverb: [decay_seconds: 5.1, mix: 0.4]
     ]
 
   part :bells, synth: @tubular_bells, defaults: [amp: 0.3, release: 2], fx: @room

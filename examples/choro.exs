@@ -16,22 +16,22 @@ defmodule Choro do
   part :flute,
     synth: :flute,
     defaults: [amp: 0.9, vibrato: 0.03, pan: 0.15],
-    fx: [reverb: [room: 0.45, mix: 0.25]]
+    fx: [reverb: [decay_seconds: 1.3, mix: 0.25]]
 
   part :clarinet,
     synth: :clarinet,
     defaults: [amp: 0.8, pan: -0.25],
-    fx: [reverb: [room: 0.35, mix: 0.2]]
+    fx: [reverb: [decay_seconds: 1.1, mix: 0.2]]
 
   part :cavaquinho,
     synth: :cavaquinho,
     defaults: [pan: 0.35],
-    fx: [reverb: [room: 0.3, mix: 0.15]]
+    fx: [reverb: [decay_seconds: 1, mix: 0.15]]
 
   part :guitar,
     synth: :guitar,
     defaults: [amp: 0.55, pan: -0.1],
-    fx: [reverb: [room: 0.3, mix: 0.15]]
+    fx: [reverb: [decay_seconds: 1, mix: 0.15]]
 
   part :pandeiro_thumb, synth: :pandeiro_thumb, defaults: [amp: 0.5]
   part :pandeiro_jingles, synth: :pandeiro_jingles, defaults: [amp: 0.5]

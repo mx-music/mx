@@ -59,17 +59,17 @@ defmodule RustWave do
   part :lead,
     synth: sampled(@green),
     defaults: [release: 0.4],
-    fx: [level: [amp: 1.6], reverb: [room: 0.85, mix: 0.4], pan: [pan: 0.2]]
+    fx: [level: [amp: 1.6], reverb: [decay_seconds: 4, mix: 0.4], pan: [pan: 0.2]]
 
   part :harmony,
     synth: sampled(@green),
     defaults: [release: 0.4],
-    fx: [level: [amp: 1.1], reverb: [room: 0.85, mix: 0.4], pan: [pan: -0.5]]
+    fx: [level: [amp: 1.1], reverb: [decay_seconds: 4, mix: 0.4], pan: [pan: -0.5]]
 
   part :riff,
     synth: sampled(@muted),
     defaults: [release: 0.2],
-    fx: [level: [amp: 0.6], reverb: [room: 0.8, mix: 0.35], pan: [pan: 0.2]]
+    fx: [level: [amp: 0.6], reverb: [decay_seconds: 3.2, mix: 0.35], pan: [pan: 0.2]]
 
   part :rhythm,
     synth: sampled(@black),
@@ -77,7 +77,7 @@ defmodule RustWave do
     fx: [
       level: [amp: 0.9],
       tremolo: [phase: 0.5, depth: 0.5, wave: 3],
-      reverb: [room: 0.6, mix: 0.25],
+      reverb: [decay_seconds: 1.8, mix: 0.25],
       pan: [pan: -0.35]
     ]
 

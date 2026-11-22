@@ -7,7 +7,7 @@ defmodule Fingerpicking do
 
   use Mx.Song, tempo: 84
 
-  part :guitar, synth: :guitar, fx: [reverb: [room: 0.35, mix: 0.18]]
+  part :guitar, synth: :guitar, fx: [reverb: [decay_seconds: 1.1, mix: 0.18]]
 
   def song do
     part(:guitar, loop(3, fn pass, _ -> bar(pass) end))

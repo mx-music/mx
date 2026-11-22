@@ -61,39 +61,39 @@ defmodule SevenStrokes do
   part :marimba,
     synth: sampled(@marimba),
     defaults: [sustain: 1, release: 1],
-    fx: [level: [amp: 3.0], reverb: [room: 0.6, mix: 0.2], pan: [pan: -0.35]]
+    fx: [level: [amp: 3.0], reverb: [decay_seconds: 1.8, mix: 0.2], pan: [pan: -0.35]]
 
   part :bass,
     synth: sampled(@marimba),
     defaults: [sustain: 2, release: 1],
-    fx: [level: [amp: 3.2], reverb: [room: 0.6, mix: 0.15]]
+    fx: [level: [amp: 3.2], reverb: [decay_seconds: 1.8, mix: 0.15]]
 
   part :vibes,
     synth: sampled(@vibes),
     defaults: [sustain: 2, release: 2],
-    fx: [level: [amp: 1.0], reverb: [room: 0.6, mix: 0.2], pan: [pan: 0.35]]
+    fx: [level: [amp: 1.0], reverb: [decay_seconds: 1.8, mix: 0.2], pan: [pan: 0.35]]
 
   part :bowed,
     synth: sampled(@bowed),
     defaults: [sustain: 9, release: 3],
-    fx: [level: [amp: 5.0], reverb: [room: 0.8, mix: 0.4]]
+    fx: [level: [amp: 5.0], reverb: [decay_seconds: 3.2, mix: 0.4]]
 
   part :glock,
     synth: sampled(@glock),
     defaults: [sustain: 4, release: 3],
-    fx: [level: [amp: 8.0], reverb: [room: 0.7, mix: 0.3], pan: [pan: 0.15]]
+    fx: [level: [amp: 8.0], reverb: [decay_seconds: 2.3, mix: 0.3], pan: [pan: 0.15]]
 
   part :chimes,
     synth: sampled(@chimes),
     defaults: [sustain: 6, release: 3],
-    fx: [level: [amp: 1.5], reverb: [room: 0.7, mix: 0.3], pan: [pan: -0.15]]
+    fx: [level: [amp: 1.5], reverb: [decay_seconds: 2.3, mix: 0.3], pan: [pan: -0.15]]
 
   part :bells,
     synth: sampled(@bells),
     defaults: [sustain: 8, release: 4],
-    fx: [level: [amp: 0.5], reverb: [room: 0.8, mix: 0.3]]
+    fx: [level: [amp: 0.5], reverb: [decay_seconds: 3.2, mix: 0.3]]
 
-  part :metal, fx: [reverb: [room: 0.8, mix: 0.3]]
+  part :metal, fx: [reverb: [decay_seconds: 3.2, mix: 0.3]]
 
   @pulse 1 / 3
 

@@ -5,18 +5,27 @@ defmodule Ambient do
 
   use Mx.Song, tempo: 64
 
-  part :pad, synth: :supersaw, fx: [lpf: [cutoff: 84], reverb: [room: 0.95, damp: 0.6, mix: 0.7]]
+  part :pad,
+    synth: :supersaw,
+    fx: [lpf: [cutoff: 84], reverb: [decay_seconds: 7.3, damp: 0.9, mix: 0.7]]
+
   part :sub, []
 
   part :keys,
     synth: :piano,
-    fx: [echo: [phase: 1.5, decay: 8, mix: 0.4], reverb: [room: 0.8, mix: 0.5]]
+    fx: [
+      echo: [phase: 1.5, decay: 8, mix: 0.4],
+      reverb: [decay_seconds: 3.2, damp: 0.9, mix: 0.5]
+    ]
 
   part :bells,
     synth: :vibraphone,
-    fx: [echo: [phase: 0.75, decay: 6, mix: 0.5], reverb: [room: 0.9, mix: 0.6]]
+    fx: [
+      echo: [phase: 0.75, decay: 6, mix: 0.5],
+      reverb: [decay_seconds: 5.1, damp: 0.9, mix: 0.6]
+    ]
 
-  part :air, fx: [reverb: [room: 1, mix: 0.8]]
+  part :air, fx: [reverb: [decay_seconds: 12, damp: 0.9, mix: 0.8]]
   part :dust, []
 
   def song do

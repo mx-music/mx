@@ -33,6 +33,11 @@ defmodule Mx.Engine.Mxs do
   # process that started it.
   @parts __MODULE__.Parts
 
+  # The song's buses as `{{:bus, name}, effects, key}`, each part's sends as `{{:sends, part}, sends}`,
+  # the chain of each part and bus started as `{{:chain, name}, key}`, and the part or bus that keys
+  # each keyed one as `{{:keyed, name}, by}`.
+  @buses __MODULE__.Buses
+
   @impl Mx.Engine
   def start_link(opts), do: GenServer.start_link(__MODULE__, opts, name: __MODULE__)
 
@@ -134,8 +139,10 @@ defmodule Mx.Engine.Mxs do
       {reports, output} = reports(engine, live)
       origin = Mx.Clock.now() - round(Native.now(engine) * 1_000_000)
       :persistent_term.put(__MODULE__, {engine, origin})
+      :persistent_term.put({__MODULE__, :main}, nil)
       :persistent_term.put({__MODULE__, :ids}, :atomics.new(1, []))
       :ets.new(@parts, [:named_table, :public])
+      :ets.new(@buses, [:named_table, :public])
 
       {:ok,
        %{
@@ -279,12 +286,137 @@ defmodule Mx.Engine.Mxs do
     {engine, _} = :persistent_term.get(__MODULE__)
 
     effects =
-      for {effect, opts} <- effects, do: {Atom.to_string(effect), options(opts)}
+      for {effect, opts} <- effects, do: {Atom.to_string(effect), effect_options(opts)}
 
     case Native.start_effects(engine, effects) do
       {:ok, key} -> %{key: key}
       {:error, message} -> raise ArgumentError, message
     end
+  end
+
+  @doc """
+  Starts the song's effects, which every part and live audio plays through after its own, with their times in beats.
+  The same effects as those already started are left running, so a new version of a song that keeps them does not interrupt them.
+  """
+  def set_main(effects) when is_list(effects) do
+    {engine, _} = :persistent_term.get(__MODULE__)
+
+    case :persistent_term.get({__MODULE__, :main}) do
+      {^effects, _key} ->
+        :ok
+
+      started when started != nil or effects != [] ->
+        chain = for {effect, opts} <- effects, do: {Atom.to_string(effect), effect_options(opts)}
+
+        case Native.start_main(engine, chain, true) do
+          {:ok, key} -> :persistent_term.put({__MODULE__, :main}, {effects, key})
+          {:error, message} -> raise ArgumentError, message
+        end
+
+        :ok
+
+      nil ->
+        :ok
+    end
+  end
+
+  @doc """
+  Starts the song's buses, the chains its parts send into, and sets every send of its parts and buses.
+  A bus whose effects are those already started is left running, one whose effects changed is started again, and one the song no longer has is stopped.
+  A part started later takes its sends as it starts.
+  """
+  def set_buses(%Mx.Song{} = song) do
+    {engine, _} = :persistent_term.get(__MODULE__)
+    wanted = Map.new(song.buses, &{&1.name, &1})
+
+    for {{:bus, name}, _effects, key} <- :ets.tab2list(@buses), not is_map_key(wanted, name) do
+      Native.stop_part(engine, Atom.to_string(name), key, Native.now(engine))
+      :ets.delete(@buses, {:bus, name})
+    end
+
+    Enum.each(song.buses, &start_bus(engine, &1))
+
+    for bus <- song.buses do
+      send_all(engine, bus_key(bus.name), bus.send)
+    end
+
+    for loop <- song.loops do
+      part = Atom.to_string(loop.name)
+
+      dropped =
+        for {bus, _level} <- sends_of(part), not Keyword.has_key?(loop.send, bus), do: {bus, 0}
+
+      :ets.insert(@buses, {{:sends, part}, loop.send})
+
+      with [{_chain, key}] <- :ets.lookup(@buses, {:chain, part}) do
+        send_all(engine, key, dropped ++ loop.send)
+      end
+    end
+
+    :ok
+  end
+
+  defp start_bus(engine, bus) do
+    name = Atom.to_string(bus.name)
+
+    case :ets.lookup(@buses, {:bus, bus.name}) do
+      [{_bus, effects, _key}] when effects == bus.fx ->
+        :ok
+
+      _changed ->
+        effects = for {effect, opts} <- bus.fx, do: {Atom.to_string(effect), effect_options(opts)}
+
+        case Native.start_part(engine, name, effects, true) do
+          {:ok, key} ->
+            :ets.insert(@buses, {{:bus, bus.name}, bus.fx, key})
+            :ets.insert(@buses, {{:chain, name}, key})
+            key_all(engine, name, bus.fx)
+
+          {:error, message} ->
+            raise ArgumentError, message
+        end
+    end
+  end
+
+  # Records the part or bus that keys the chain just started, from its compressor's key:, and tells the engine every key whose two chains have started.
+  defp key_all(engine, name, effects) do
+    case Enum.find_value(effects, fn {_effect, opts} -> opts[:key] end) do
+      nil -> :ets.delete(@buses, {:keyed, name})
+      by -> :ets.insert(@buses, {{:keyed, name}, Atom.to_string(by)})
+    end
+
+    for [keyed, by] <- :ets.match(@buses, {{:keyed, :"$1"}, :"$2"}),
+        [{_, chain}] <- [:ets.lookup(@buses, {:chain, keyed})],
+        [{_, by}] <- [:ets.lookup(@buses, {:chain, by})] do
+      with {:error, message} <- Native.key_chain(engine, chain, by) do
+        IO.puts(:stderr, "#{keyed}: #{message}")
+      end
+    end
+
+    :ok
+  end
+
+  defp sends_of(part) do
+    case :ets.lookup(@buses, {:sends, part}) do
+      [{_sends, sends}] -> sends
+      [] -> []
+    end
+  end
+
+  defp bus_key(bus) do
+    case :ets.lookup(@buses, {:bus, bus}) do
+      [{_bus, _effects, key}] -> key
+      [] -> nil
+    end
+  end
+
+  # A send from a chain the engine has ended, or into a bus not started, is left out.
+  defp send_all(engine, from, sends) do
+    for {bus, level} <- sends, to = bus_key(bus), to != nil do
+      Native.send_chain(engine, from, to, level / 1)
+    end
+
+    :ok
   end
 
   @doc "The seconds each of a part's effects sounds on after its input stops, with the options declared in beats in beats at `bpm`, or `{:error, message}`; it needs no engine started."
@@ -298,7 +430,7 @@ defmodule Mx.Engine.Mxs do
     native =
       for {effect, opts} <- effects,
           not is_map_key(written, effect),
-          do: {Atom.to_string(effect), options(opts)}
+          do: {Atom.to_string(effect), effect_options(opts)}
 
     with {:ok, tails} <- Native.effect_tails(native, bpm / 1) do
       {:ok, written_tails(effects, tails, written, bpm)}
@@ -338,17 +470,18 @@ defmodule Mx.Engine.Mxs do
   def start_part(name, effects, opts \\ []) when is_atom(name) and is_list(opts) do
     {engine, _} = :persistent_term.get(__MODULE__)
     part = Atom.to_string(name)
+    chain = for {effect, opts} <- effects, do: {Atom.to_string(effect), effect_options(opts)}
 
-    effects =
-      for {effect, opts} <- effects, do: {Atom.to_string(effect), options(opts)}
-
-    case Native.start_part(engine, part, effects, Keyword.get(opts, :beats, false)) do
+    case Native.start_part(engine, part, chain, Keyword.get(opts, :beats, false)) do
       {:ok, key} ->
         :ets.insert_new(@parts, {part, false, false, nil})
         :ets.update_element(@parts, part, {4, self()})
         [{_part, muted, soloed, _pid}] = :ets.lookup(@parts, part)
         if muted, do: Native.mute_part(engine, part, true)
         if soloed, do: Native.solo_part(engine, part, true)
+        :ets.insert(@buses, {{:chain, part}, key})
+        send_all(engine, key, sends_of(part))
+        key_all(engine, part, effects)
         %{key: key, part: part}
 
       {:error, message} ->
@@ -459,7 +592,7 @@ defmodule Mx.Engine.Mxs do
   def render_through(synth, params, seconds, _dir, effects) do
     {:ok, engine} = Native.start(false, false)
     :ok = instruments(engine)
-    effects = for {effect, opts} <- effects, do: {Atom.to_string(effect), options(opts)}
+    effects = for {effect, opts} <- effects, do: {Atom.to_string(effect), effect_options(opts)}
     {:ok, key} = Native.start_effects(engine, effects)
     :ok = Native.play(engine, [{0.0, event({:note, nil, synth, nil, params, %{key: key}})}])
     render(engine, seconds)
@@ -530,10 +663,22 @@ defmodule Mx.Engine.Mxs do
 
   defp target({:sounds, ids}), do: {:sounds, ids}
   defp target({:part, chain}), do: {:part, key(chain)}
+
+  defp target({:send, chain, bus}), do: {:send, key(chain), bus_key(bus)}
+  defp target({:effect, {:bus, bus}, index}), do: {:effect, bus_key(bus), index}
+
+  defp target({:effect, :main, index}) do
+    {_effects, key} = :persistent_term.get({__MODULE__, :main})
+    {:effect, key, index}
+  end
+
   defp target({:effect, chain, index}), do: {:effect, key(chain), index}
 
   defp key(nil), do: nil
   defp key(%{key: key}), do: key
+
+  # A compressor's key names a part, which the engine is told once both chains have started.
+  defp effect_options(opts), do: options(Keyword.delete(opts, :key))
 
   defp options(params) do
     for {name, value} <- params, do: {Atom.to_string(name), value(value)}
@@ -806,13 +951,16 @@ defmodule Mx.Engine.Mxs do
 
     case playing do
       %{input: input, stereo: stereo, chain: ^chain}
-      when {input, stereo} == {live.input, live.stereo} ->
+      when {input, stereo} == {live.input, live.stereo} and
+             (playing.fx != nil or live.send == []) ->
         send_events(engine, now, [event({:set, {:sounds, [playing.id]}, opts})])
+        if playing.fx, do: send_all(engine, playing.fx.key, live.send)
         playing
 
       _ ->
         if playing, do: stop_live(engine, playing, now)
-        fx = if chain == [], do: nil, else: start_fx(chain)
+        fx = if chain == [] and live.send == [], do: nil, else: start_fx(chain)
+        if fx, do: send_all(engine, fx.key, live.send)
         id = new_id()
         channels = if live.stereo, do: 2, else: 1
         send_events(engine, now, [{:input, id, live.input - 1, channels, options(opts), key(fx)}])

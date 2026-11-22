@@ -64,7 +64,11 @@ defmodule Tani do
                [
                  synth: sampled(files),
                  defaults: [sustain: 4, release: 2],
-                 fx: [level: [amp: level], reverb: [room: 0.4, mix: 0.12], pan: [pan: pan]]
+                 fx: [
+                   level: [amp: level],
+                   reverb: [decay_seconds: 1.2, mix: 0.12],
+                   pan: [pan: pan]
+                 ]
                ]}
             end)
 

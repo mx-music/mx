@@ -38,7 +38,7 @@ defmodule Dub do
     [{:b3, :minor, :b1}, {:fs3, :dom7, :fs1}, {:b3, :minor, :b1}, {:b3, :minor, :b1}]
   ]
 
-  @room [reverb: [room: 0.7, mix: 0.3]]
+  @room [reverb: [decay_seconds: 2.3, mix: 0.3]]
 
   part :kick, synth: :kick, defaults: [amp: 0.75]
 
@@ -47,7 +47,7 @@ defmodule Dub do
     defaults: [amp: 0.7],
     fx: [echo: [phase: 1, decay: 4, mix: 0.15]] ++ @room
 
-  part :snare, synth: :snare, defaults: [vel: 0.6], fx: [reverb: [room: 0.85, mix: 0.4]]
+  part :snare, synth: :snare, defaults: [vel: 0.6], fx: [reverb: [decay_seconds: 4, mix: 0.4]]
 
   part :hihat,
     synth: :closed_hihat,
@@ -80,12 +80,16 @@ defmodule Dub do
   part :harp,
     synth: :harp,
     defaults: [vel: 0.8, amp: 1.2, pan: 0.35, release: 0.1],
-    fx: [hpf: [cutoff: 0], echo: [phase: 1, decay: 3, mix: 0.15], reverb: [room: 0.6, mix: 0.25]]
+    fx: [
+      hpf: [cutoff: 0],
+      echo: [phase: 1, decay: 3, mix: 0.15],
+      reverb: [decay_seconds: 1.8, mix: 0.25]
+    ]
 
   part :lead,
     synth: :trombone,
     defaults: [vel: 0.8, amp: 0.8, note_slide: 0.06, pan: 0.15],
-    fx: [echo: [phase: 1.5, decay: 6, mix: 0.25], reverb: [room: 0.8, mix: 0.35]]
+    fx: [echo: [phase: 1.5, decay: 6, mix: 0.25], reverb: [decay_seconds: 3.2, mix: 0.35]]
 
   part :harmonium,
     synth: :harmonium,
@@ -110,12 +114,12 @@ defmodule Dub do
   part :siren,
     synth: :square,
     defaults: [amp: 0.07, cutoff: 92, note_slide: 0.4],
-    fx: [echo: [phase: 0.75, decay: 4, mix: 0.4], reverb: [room: 0.8, mix: 0.4]]
+    fx: [echo: [phase: 0.75, decay: 4, mix: 0.4], reverb: [decay_seconds: 3.2, mix: 0.4]]
 
   part :marimba,
     synth: :marimba,
     defaults: [vel: 0.5, pan: -0.35],
-    fx: [echo: [phase: 1.5, decay: 6, mix: 0.4], reverb: [room: 0.8, mix: 0.4]]
+    fx: [echo: [phase: 1.5, decay: 6, mix: 0.4], reverb: [decay_seconds: 3.2, mix: 0.4]]
 
   part :tabla,
     synth: :tabla_ghe,
@@ -125,7 +129,7 @@ defmodule Dub do
   part :tanpura,
     synth: :tanpura,
     defaults: [vel: 0.45, release: 3],
-    fx: [reverb: [room: 0.8, mix: 0.3]]
+    fx: [reverb: [decay_seconds: 3.2, mix: 0.3]]
 
   @horns [:trumpet, :tenor_sax, :trombone]
 

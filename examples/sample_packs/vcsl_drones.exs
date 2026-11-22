@@ -80,10 +80,10 @@ defmodule StillWater do
                    ~w(C5 D5 E5 F5 G5 G#5 A5 A#5 B5)
                  )
 
-  @far [room: 0.9, mix: 0.5]
-  @near [room: 0.8, mix: 0.3]
+  @far [decay_seconds: 5.1, mix: 0.5]
+  @near [decay_seconds: 3.2, mix: 0.3]
 
-  part :didgeridoo, fx: [level: [amp: 5.0], reverb: [room: 0.7, mix: 0.2]]
+  part :didgeridoo, fx: [level: [amp: 5.0], reverb: [decay_seconds: 2.3, mix: 0.2]]
   part :glasses, fx: [level: [amp: 0.9], reverb: @far, pan: [pan: 0.3]]
   part :water, fx: [level: [amp: 3.0], reverb: @near]
   part :bells, fx: [level: [amp: 2.5], reverb: @far, pan: [pan: -0.3]]

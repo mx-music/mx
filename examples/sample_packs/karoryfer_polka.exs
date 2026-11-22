@@ -91,17 +91,17 @@ defmodule SquidPolka do
   part :chanter,
     synth: sampled(@chanter),
     defaults: [attack: 0.02, release: 0.1],
-    fx: [level: [amp: 2.6], reverb: [room: 0.6, mix: 0.2], pan: [pan: 0.15]]
+    fx: [level: [amp: 2.6], reverb: [decay_seconds: 1.8, mix: 0.2], pan: [pan: 0.15]]
 
   part :cut,
     synth: sampled(@short),
     defaults: [release: 0.05],
-    fx: [level: [amp: 1.8], reverb: [room: 0.6, mix: 0.2], pan: [pan: 0.15]]
+    fx: [level: [amp: 1.8], reverb: [decay_seconds: 1.8, mix: 0.2], pan: [pan: 0.15]]
 
   part :drone,
     synth: sampled(@chanter),
     defaults: [attack: 0.5, release: 0.8],
-    fx: [level: [amp: 0.7], reverb: [room: 0.6, mix: 0.2], pan: [pan: 0.15]]
+    fx: [level: [amp: 0.7], reverb: [decay_seconds: 1.8, mix: 0.2], pan: [pan: 0.15]]
 
   part :tuba,
     synth: sampled(@tongued),
@@ -168,7 +168,7 @@ defmodule SquidPolka do
     defaults: [sustain: 2, release: 1],
     fx: [level: [amp: 1.2], pan: [pan: 0.4]]
 
-  part :orks, fx: [level: [amp: 1.4], reverb: [room: 0.7, mix: 0.25]]
+  part :orks, fx: [level: [amp: 1.4], reverb: [decay_seconds: 2.3, mix: 0.25]]
 
   @both [snare: :snare_overhead, big_snare: :big_snare_overhead]
 

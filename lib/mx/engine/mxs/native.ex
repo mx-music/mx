@@ -181,6 +181,15 @@ defmodule Mx.Engine.Mxs.Native do
   @doc "Starts the part `name` with effects as `start_effects/2` takes them, and returns the chain notes name to play into it; a part of that name already started is removed first. With `in_beats`, the options the effects declare in beats are given in beats, and follow the engine's tempo as it changes."
   def start_part(_engine, _name, _effects, _in_beats), do: :erlang.nif_error(:nif_not_loaded)
 
+  @doc "Sends a share of the sound of the chain `from` into the chain `to` at `level`, besides where it already goes; a send already made takes the level."
+  def send_chain(_engine, _from, _to, _level), do: :erlang.nif_error(:nif_not_loaded)
+
+  @doc "Has the effects of `chain` that read a key, such as the compressor, follow the sound of the chain `by`."
+  def key_chain(_engine, _chain, _by), do: :erlang.nif_error(:nif_not_loaded)
+
+  @doc "Starts the main effects, which everything the engine plays goes through after its part, in place of those before, and returns the chain a change names to reach them. With `in_beats`, the options the effects declare in beats are given in beats."
+  def start_main(_engine, _effects, _in_beats), do: :erlang.nif_error(:nif_not_loaded)
+
   @doc "Places beat 0 of the engine's tempo map at the Unix time `unix_us` in microseconds, which an offline engine takes as `unix_us` less `origin_us` into its own seconds."
   def place_beats(_engine, _unix_us, _origin_us), do: :erlang.nif_error(:nif_not_loaded)
 

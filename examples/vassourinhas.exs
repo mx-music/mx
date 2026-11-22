@@ -12,7 +12,7 @@ defmodule Vassourinhas do
 
   use Mx.Song, tempo: 148
 
-  @hall [reverb: [room: 0.45, mix: 0.18]]
+  @hall [reverb: [decay_seconds: 1.3, mix: 0.18]]
 
   # The nine winds, each placed and levelled in the band.
   part :flute, synth: :flute, defaults: [pan: -0.5, amp: 0.66], fx: @hall

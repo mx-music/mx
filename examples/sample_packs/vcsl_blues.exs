@@ -102,7 +102,7 @@ defmodule TwelveBars do
     crash: vcsl.("#{@cymbals}/Suspended Cymbal 1/susCymb1_hit_f1.wav")
   }
 
-  @room [room: 0.5, mix: 0.15]
+  @room [decay_seconds: 1.5, mix: 0.15]
 
   part :tenor,
     synth: sampled(@tenor),
@@ -146,9 +146,9 @@ defmodule TwelveBars do
   part :bass,
     synth: sampled(@piano),
     defaults: [release: 0.2],
-    fx: [level: [amp: 0.7], reverb: [room: 0.4, mix: 0.08]]
+    fx: [level: [amp: 0.7], reverb: [decay_seconds: 1.2, mix: 0.08]]
 
-  part :drums, fx: [level: [amp: 1.15], reverb: [room: 0.4, mix: 0.1]]
+  part :drums, fx: [level: [amp: 1.15], reverb: [decay_seconds: 1.2, mix: 0.1]]
 
   # A third of a beat: the shuffle's long note is two of them and its short note one.
   @pulse 1 / 3

@@ -37,6 +37,8 @@ defmodule Mx.Pass do
       synth: loop.synth,
       defaults: loop.defaults,
       fx: loop.fx,
+      song_fx: loop.song_fx,
+      buses: loop.buses,
       osc_to: loop.osc_to,
       inputs: Keyword.get(opts, :inputs, %{}),
       trigger: opts[:trigger]
@@ -331,9 +333,41 @@ defmodule Mx.Pass do
     end
   end
 
+  @doc "A handle to one of the effects the whole song plays through, refusing an effect the song does not have."
+  def song_effect(effect) when is_atom(effect) do
+    case Enum.find_index(Process.get(@key).song_fx, fn {name, _} -> name == effect end) do
+      nil -> raise ArgumentError, "the song has no effect #{effect}"
+      index -> %Handle{target: {:main, index}, synth: effect}
+    end
+  end
+
+  @doc "A handle to an effect of one of the song's buses, or nil when the song has no such bus or the bus no such effect."
+  def bus_effect(bus, effect) when is_atom(bus) and is_atom(effect) do
+    with %{fx: fx} <- Enum.find(Map.get(Process.get(@key), :buses, []), &(&1.name == bus)),
+         index when index != nil <- Enum.find_index(fx, fn {name, _} -> name == effect end) do
+      %Handle{target: {:bus, bus, index}, synth: effect}
+    else
+      _ -> nil
+    end
+  end
+
+  @doc "Records a control step that changes the level of the loop's send into a bus, as `[level: level]`, gliding over `level_slide:` beats when given."
+  def record_send(bus, opts) when is_atom(bus) and is_list(opts) do
+    record({{:control, {:send, bus}, :send}, opts})
+    :ok
+  end
+
   @doc "Records a control step that changes the sounds or effect a handle names, refusing an option they do not take."
-  def record_control(%Handle{target: {:effect, _} = target, synth: effect}, opts)
+  def record_control(%Handle{target: {:bus, _, _} = target, synth: effect}, opts)
       when is_list(opts) do
+    check_change({:effect, effect}, opts)
+    opts = bands(effect, opts)
+    record({{:control, target, {:effect, effect}}, control_values(opts)})
+    :ok
+  end
+
+  def record_control(%Handle{target: {kind, _} = target, synth: effect}, opts)
+      when kind in [:effect, :main] and is_list(opts) do
     check_change({:effect, effect}, opts)
     opts = bands(effect, opts)
     record({{:control, target, {:effect, effect}}, control_values(opts)})

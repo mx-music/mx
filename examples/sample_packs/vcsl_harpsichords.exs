@@ -46,15 +46,23 @@ defmodule Prelude do
        rows.(~w(C D# F# A), 1..2, ~w(C3 D#3 F#3))}
   ]
 
-  @harpsichord [defaults: [release: 0.25], reverb: [room: 0.5, mix: 0.15]]
+  @harpsichord [defaults: [release: 0.25], reverb: [decay_seconds: 1.5, mix: 0.15]]
 
   @settings [
     italian: [level: 1.8] ++ @harpsichord,
     french: [level: 2.1] ++ @harpsichord,
     english: [level: 2.1] ++ @harpsichord,
     flemish: [level: 2.0] ++ @harpsichord,
-    organ: [level: 1.0, defaults: [attack: 0.05, release: 0.3], reverb: [room: 0.7, mix: 0.25]],
-    pedal: [level: 1.5, defaults: [attack: 0.05, release: 0.4], reverb: [room: 0.7, mix: 0.25]]
+    organ: [
+      level: 1.0,
+      defaults: [attack: 0.05, release: 0.3],
+      reverb: [decay_seconds: 2.3, mix: 0.25]
+    ],
+    pedal: [
+      level: 1.5,
+      defaults: [attack: 0.05, release: 0.4],
+      reverb: [decay_seconds: 2.3, mix: 0.25]
+    ]
   ]
 
   # A part's options: its instrument's recorded keys, an octave below the pitch mx names them by,

@@ -10,7 +10,7 @@ defmodule Mx.EffectsTest do
 
   test "a compressor lowers loud notes, keeps quiet ones, and with a level after it stops a loud loop clipping",
        ctx do
-    compressor = fx(:compressor, threshold: 0.2)
+    compressor = fx(:compressor, threshold: -14)
     {loud, _} = saw(ctx, [amp: 4], [])
     {quiet, _} = saw(ctx, [amp: 0.1], [])
 
@@ -127,7 +127,7 @@ defmodule Mx.EffectsTest do
 
   test "a flanger then a reverb sounds through both, in that order", ctx do
     flanger = fx(:flanger, feedback: 0.8)
-    reverb = fx(:reverb, room: 0.8)
+    reverb = fx(:reverb, decay_seconds: 3.2)
     {in_order, _} = saw(ctx, [], [flanger, reverb])
     {reversed, _} = saw(ctx, [], [reverb, flanger])
     {flanged, _} = saw(ctx, [], [flanger])
@@ -138,7 +138,7 @@ defmodule Mx.EffectsTest do
 
   test "every new effect slides each option it can change while it plays" do
     for {effect, options} <- [
-          compressor: ~w(threshold clamp_ms slope_above slope_below relax_ms)a,
+          compressor: ~w(threshold ratio makeup clamp_ms relax_ms)a,
           chorus: ~w(phase decay)a,
           bitcrusher: ~w(sample_rate bits cutoff)a,
           tremolo: ~w(phase depth)a,

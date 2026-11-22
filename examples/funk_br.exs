@@ -95,7 +95,7 @@ defmodule Paredao do
 
   use Mx.Song, tempo: 92
 
-  @room [reverb: [room: 0.5, damp: 0.6, mix: 0.18]]
+  @room [reverb: [decay_seconds: 1.5, damp: 0.6, mix: 0.18]]
 
   @kick {:karoryfer_big_rusty_drums, "Samples/kick_24/kick/kick/k_vl14_rr1.flac"}
 
@@ -108,7 +108,11 @@ defmodule Paredao do
 
   part :snare,
     synth: :tcha,
-    fx: [distortion: [distort: 0.5, mix: 0.4], level: [amp: 0.85], reverb: [room: 0.3, mix: 0.1]]
+    fx: [
+      distortion: [distort: 0.5, mix: 0.4],
+      level: [amp: 0.85],
+      reverb: [decay_seconds: 1, mix: 0.1]
+    ]
 
   part :tamborim, synth: :tamborim, fx: [level: [amp: 1.4]] ++ @room
   part :triangle, synth: :triangle, defaults: [amp: 0.8, pan: 0.3], fx: @room
@@ -118,7 +122,7 @@ defmodule Paredao do
     fx: [
       level: [amp: 0.8],
       echo: [phase: 0.75, decay: 2, mix: 0.18],
-      reverb: [room: 0.6, damp: 0.5, mix: 0.2]
+      reverb: [decay_seconds: 1.8, damp: 0.5, mix: 0.2]
     ]
 
   def song, do: swung(seq([intro(), beat(false), break(), beat(true), outro()]))

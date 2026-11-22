@@ -28,7 +28,7 @@ defmodule PoeiraNoTerreiro do
 
   use Mx.Song, tempo: 104
 
-  @room [reverb: [room: 0.5, damp: 0.5, mix: 0.16]]
+  @room [reverb: [decay_seconds: 1.5, damp: 0.5, mix: 0.16]]
 
   part :sanfona,
     synth: :accordion,

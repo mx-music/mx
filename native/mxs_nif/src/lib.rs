@@ -13,7 +13,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime};
 
-rustler::atoms! { ok, error, note, held, release, sample, input, set, stop, sounds, part, effect, option, name, list, call, mxs_report, clock, output, voices, levels, pass_ending, pass_started }
+rustler::atoms! { ok, error, note, held, release, sample, input, set, stop, sounds, part, effect, send, option, name, list, call, mxs_report, clock, output, voices, levels, pass_ending, pass_started }
 
 struct EngineResource {
     engine: Mutex<Engine>,
@@ -258,6 +258,8 @@ fn target(term: Term) -> NifResult<Target> {
         Ok(Target::Part(parts[1].decode()?))
     } else if tag == effect() {
         Ok(Target::Effect(parts[1].decode()?, parts[2].decode()?))
+    } else if tag == send() {
+        Ok(Target::Send(parts[1].decode()?, parts[2].decode()?))
     } else {
         Err(rustler::Error::BadArg)
     }
@@ -684,6 +686,26 @@ fn start_part(resource: ResourceArc<EngineResource>, name: String, effects: Vec<
     }
     let started = if in_beats { engine.start_part_in_beats(&name, &effects) } else { engine.start_part(&name, &effects) };
     Ok(started.map_err(|e| e.to_string()))
+}
+
+/// Sends a share of the sound of the chain `from` into the chain `to` at `level`, besides where it already goes; a send already made takes the level.
+#[rustler::nif]
+fn send_chain(env: Env, resource: ResourceArc<EngineResource>, from: u64, to: u64, level: f64) -> Term {
+    reply(env, lock(&resource).send(from, to, level))
+}
+
+/// Has the effects of `chain` that read a key, such as the compressor, follow the sound of the chain `by`.
+#[rustler::nif]
+fn key_chain(env: Env, resource: ResourceArc<EngineResource>, chain: u64, by: u64) -> Term {
+    reply(env, lock(&resource).key(chain, Some(by)))
+}
+
+/// Starts the main effects, which everything the engine plays goes through after its part, in place of those before, and returns the chain a change names to reach them.
+/// With `in_beats`, the options the effects declare in beats are given in beats, and follow the engine's tempo as it changes.
+#[rustler::nif]
+fn start_main(resource: ResourceArc<EngineResource>, effects: Vec<(String, Term)>, in_beats: bool) -> NifResult<Result<u64, String>> {
+    let effects = effects.into_iter().map(|(name, opts)| Ok((name, options(opts)?))).collect::<NifResult<Vec<_>>>()?;
+    Ok(lock(&resource).start_main_effects(&effects, in_beats).map_err(|e| e.to_string()))
 }
 
 /// Places beat 0 of the engine's tempo map at the Unix time `unix_us` in microseconds, which an offline engine takes as `unix_us` less `origin_us` into its own seconds.

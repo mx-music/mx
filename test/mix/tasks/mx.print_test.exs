@@ -89,6 +89,39 @@ defmodule Mix.Tasks.Mx.PrintTest do
   end
 
   @tag :tmp_dir
+  test "prints the song's effects, each bus with what sends to it, and each part's sends", %{
+    tmp_dir: dir
+  } do
+    path = Path.join(dir, "song.exs")
+
+    File.write!(path, """
+    import Mx
+
+    drums = part(:snare, seq([note(:a2, 1), change(:snare, send: [tape: 1], send_slide: 2)]), synth: :saw, send: [room: 0.2])
+    keys = part(:keys, note(:c4, 1), synth: :tri, fx: [lpf: []])
+
+    song(
+      fx: [limiter: []],
+      buses: [room: [reverb: [decay_seconds: 2.3]], tape: [fx: [echo: []], send: [room: 0.3]]],
+      music: together([drums, keys])
+    )
+    """)
+
+    assert capture_io(fn -> Mix.Tasks.Mx.Print.run([path]) end) == """
+           song, through limiter
+           bus room, through reverb (mix: 1, decay_seconds: 2.3), from snare, tape
+           bus tape, through echo (mix: 1), sending to room (0.3), from snare
+
+           snare, 1 beat at 60 bpm, sending to room (0.2), tape (0)
+           beat 0  play 45 sustain: 1
+           beat 1  send to tape level: 1, level_slide: 2
+
+           keys, 1 beat at 60 bpm, through lpf
+           beat 0  play 60 sustain: 1
+           """
+  end
+
+  @tag :tmp_dir
   test "prints each note of a strum at the beat it starts", %{tmp_dir: dir} do
     path = Path.join(dir, "strum.exs")
 

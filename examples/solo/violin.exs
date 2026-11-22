@@ -11,7 +11,7 @@ defmodule Violin do
 
   use Mx.Song, tempo: 72
 
-  part :violin, synth: :violin, fx: [reverb: [room: 0.5, mix: 0.25]]
+  part :violin, synth: :violin, fx: [reverb: [decay_seconds: 1.5, mix: 0.25]]
 
   def song do
     repeat(

@@ -13,7 +13,7 @@ defmodule Salsa do
   use Mx.Song, tempo: 184
 
   # The one small room the drums, the bells and the clave share.
-  @room {:reverb, [room: 0.3, mix: 0.12]}
+  @room {:reverb, [decay_seconds: 1, mix: 0.12]}
 
   part :clave, synth: :clave, fx: [@room, level: [amp: 2]]
 
@@ -30,11 +30,11 @@ defmodule Salsa do
     synth: :electric_piano,
     fx: [
       eq: [low: [at: 48, gain: -6], mid: [at: 86, gain: 3, q: 1.2], high: [at: 98, gain: 3]],
-      compressor: [threshold: 0.03, slope_above: 0.25, relax_ms: 80, amp: 2.6],
+      compressor: [threshold: -30.5, ratio: 4, relax_ms: 80, makeup: 11.1],
       tremolo: [phase: 3, wave: 3, depth: 0.35],
       pan: [],
       ping_pong: [phase: 0.75, feedback: 0.35, mix: 0],
-      reverb: [room: 0.35, mix: 0.2],
+      reverb: [decay_seconds: 1.1, mix: 0.2],
       level: [amp: 1]
     ]
 
@@ -44,10 +44,10 @@ defmodule Salsa do
       eq: [low: [at: 55, gain: -9], mid: [at: 88, gain: 4, q: 1.5], high: [at: 100, gain: 3]],
       distortion: [distort: 0.25, mix: 0.35],
       chorus: [phase: 3, mix: 0.35],
-      compressor: [threshold: 0.1, slope_above: 0.3, relax_ms: 120],
+      compressor: [threshold: -20, ratio: 3.3, relax_ms: 120, makeup: 3.3],
       echo: [phase: 0.75, decay: 3, mix: 0.3],
       pan: [],
-      reverb: [room: 0.5, damp: 0.6, mix: 0.25],
+      reverb: [decay_seconds: 1.5, damp: 0.6, mix: 0.25],
       level: [amp: 0.9]
     ]
 

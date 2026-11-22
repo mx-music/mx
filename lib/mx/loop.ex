@@ -450,6 +450,10 @@ defmodule Mx.Loop do
   defp control_target({:sounds, indexes}, ids, _fx), do: {:sounds, Enum.map(indexes, &ids[&1])}
   defp control_target(:part, _ids, nil), do: nil
   defp control_target(:part, _ids, fx), do: {:part, fx}
+  defp control_target({:main, index}, _ids, _fx), do: {:effect, :main, index}
+  defp control_target({:bus, bus, index}, _ids, _fx), do: {:effect, {:bus, bus}, index}
+  defp control_target({:send, _bus}, _ids, nil), do: nil
+  defp control_target({:send, bus}, _ids, fx), do: {:send, fx, bus}
   defp control_target({:effect, _}, _ids, nil), do: nil
   defp control_target({:effect, index}, _ids, fx), do: {:effect, fx, index}
 

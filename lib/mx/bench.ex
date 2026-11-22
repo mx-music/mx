@@ -83,6 +83,8 @@ defmodule Mx.Bench do
        start_fx: &Mxs.start_fx/1,
        stop_fx: &Mxs.stop_fx/2,
        start_part: &Mxs.start_part(&1, &2, beats: true),
+       main: &Mxs.set_main/1,
+       buses: &Mxs.set_buses/1,
        hand: handed(table),
        place_beats: &Mxs.place_beats/1,
        set_tempo: &Mxs.set_tempo/2}

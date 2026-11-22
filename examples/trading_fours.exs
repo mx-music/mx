@@ -45,7 +45,7 @@ defmodule TradingFours do
   part :guiro, synth: :guiro, defaults: [amp: 0.6, pan: 0.5]
 
   part :bass, synth: :double_bass, defaults: [pizz: 1, amp: 1.2]
-  part :piano, synth: :piano, fx: [reverb: [room: 0.4, mix: 0.2]]
+  part :piano, synth: :piano, fx: [reverb: [decay_seconds: 1.2, mix: 0.2]]
 
   def song do
     seq([

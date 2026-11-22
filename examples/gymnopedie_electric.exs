@@ -15,12 +15,12 @@ defmodule GymnopedieElectric do
   part :electric_piano,
     synth: :electric_piano,
     defaults: [pan: -0.2],
-    fx: [reverb: [room: 0.5, damp: 0.5, mix: 0.2]]
+    fx: [reverb: [decay_seconds: 1.5, damp: 0.5, mix: 0.2]]
 
   part :electric_guitar,
     synth: :electric_guitar,
     defaults: [pan: 0.25],
-    fx: [reverb: [room: 0.5, damp: 0.5, mix: 0.2]]
+    fx: [reverb: [decay_seconds: 1.5, damp: 0.5, mix: 0.2]]
 
   def song do
     seq([first_time(), second_time()])

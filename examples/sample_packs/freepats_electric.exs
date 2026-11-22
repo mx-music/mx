@@ -55,12 +55,12 @@ defmodule NightService do
   part :snare,
     synth: sampled(drum.(["Snare14"])),
     defaults: [amp: 0.35],
-    fx: [reverb: [room: 0.4, mix: 0.2]]
+    fx: [reverb: [decay_seconds: 1.2, mix: 0.2]]
 
   part :clap,
     synth: sampled(drum.(["Clap01"])),
     defaults: [amp: 0.4],
-    fx: [reverb: [room: 0.5, mix: 0.25]]
+    fx: [reverb: [decay_seconds: 1.5, mix: 0.25]]
 
   part :hat,
     synth: sampled(drum.(["ClosedHiHat01-01", "ClosedHiHat02-01"])),
@@ -77,7 +77,7 @@ defmodule NightService do
   part :claves,
     synth: sampled(drum.(["Claves01"])),
     defaults: [amp: 0.3],
-    fx: [pan: [pan: -0.3], reverb: [room: 0.5, mix: 0.3]]
+    fx: [pan: [pan: -0.3], reverb: [decay_seconds: 1.5, mix: 0.3]]
 
   part :high_tom,
     synth: sampled(drum.(["HighTom02-01", "HighTom02-02"])),
@@ -94,39 +94,42 @@ defmodule NightService do
   part :cymbal,
     synth: sampled(drum.(["Cymbal01-01"])),
     defaults: [amp: 0.3],
-    fx: [reverb: [room: 0.6, mix: 0.3]]
+    fx: [reverb: [decay_seconds: 1.8, mix: 0.3]]
 
   part :bass, synth: sampled(file.(:bass, "samples")), defaults: [amp: 0.38, release: 0.1]
 
   part :piano,
     synth: sampled(@piano),
     defaults: [amp: 0.42, release: 0.5],
-    fx: [tremolo: [phase: 0.5, depth: 0.4, wave: 3], reverb: [room: 0.5, mix: 0.2]]
+    fx: [tremolo: [phase: 0.5, depth: 0.4, wave: 3], reverb: [decay_seconds: 1.5, mix: 0.2]]
 
   part :guitar,
     synth: sampled(@guitar),
     defaults: [amp: 0.3, release: 1],
-    fx: [ping_pong: [phase: 0.75, feedback: 0.45, mix: 0.35], reverb: [room: 0.5, mix: 0.15]]
+    fx: [
+      ping_pong: [phase: 0.75, feedback: 0.45, mix: 0.35],
+      reverb: [decay_seconds: 1.5, mix: 0.15]
+    ]
 
   part :strings,
     synth: sampled(file.(:strings, "samples")),
     defaults: [amp: 0.12, attack: 0.5, release: 1.5],
-    fx: [chorus: [mix: 0.3], reverb: [room: 0.7, mix: 0.3]]
+    fx: [chorus: [mix: 0.3], reverb: [decay_seconds: 2.3, mix: 0.3]]
 
   part :choir,
     synth: sampled(file.(:choir, "samples")),
     defaults: [amp: 0.12, attack: 1, release: 2],
-    fx: [reverb: [room: 0.8, mix: 0.4]]
+    fx: [reverb: [decay_seconds: 3.2, mix: 0.4]]
 
   part :brass,
     synth: sampled(file.(:brass, "samples")),
     defaults: [amp: 0.16, attack: 0.02, release: 0.25],
-    fx: [pan: [pan: 0.25], reverb: [room: 0.5, mix: 0.25]]
+    fx: [pan: [pan: 0.25], reverb: [decay_seconds: 1.5, mix: 0.25]]
 
   part :lead,
     synth: sampled(file.(:lead, "samples")),
     defaults: [amp: 0.2, attack: 0.03, release: 0.3],
-    fx: [echo: [phase: 0.75, decay: 3, mix: 0.25], reverb: [room: 0.6, mix: 0.25]]
+    fx: [echo: [phase: 0.75, decay: 3, mix: 0.25], reverb: [decay_seconds: 1.8, mix: 0.25]]
 
   # Each chord's bass note and its notes around middle C.
   @chords [

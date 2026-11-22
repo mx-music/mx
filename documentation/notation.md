@@ -32,6 +32,7 @@ The sections go from one note to a whole song, and then to what a song does beyo
 | write notes and chords | [Notes](#notes) | `note`, `rest`, `chord` |
 | put music together | [One after another, and at once](#one-after-another-and-at-once) | `seq`, `together`, `repeat`, `transpose`, `delay`, `each`, `beats` |
 | give music to a player | [Parts](#parts) | `part`, with `synth:`, `fx:` and `defaults:` |
+| share an effect between parts | [Buses](#buses) | `buses:`, `bus`, and a part's `send:` |
 | write a drum's rhythm | [Rhythm](#rhythm) | `steps`, `hit`, `at`, `swing`, `feel` |
 | write music as text | [Patterns](#patterns) | `~MX`, and the options of `steps` |
 | lay out a whole song | [The song](#the-song) | `song`, sections, `form`, `only`, `without`, `tempo` |
@@ -199,7 +200,7 @@ part(:soprano, melody, synth: :oboe)
 
 ```elixir
 part(:keys, music, synth: :piano, fx: :reverb)
-part(:keys, music, synth: :piano, fx: [echo: [phase: 0.75], reverb: [room: 0.8]])
+part(:keys, music, synth: :piano, fx: [echo: [phase: 0.75], reverb: [decay_seconds: 3.2]])
 ```
 
 `defaults:` gives every note of the part options it takes unless the note gives its own:
@@ -207,6 +208,46 @@ part(:keys, music, synth: :piano, fx: [echo: [phase: 0.75], reverb: [room: 0.8]]
 ```elixir
 part(:guitar, music, synth: :guitar, defaults: [amp: 0.55])
 ```
+
+## Buses
+
+A bus is a chain of effects that parts share: each part sends a share of its sound into it, and the effect runs once.
+The song declares its buses by name, and a part's `send:` gives the level it sends at into each:
+
+```elixir
+drums = part(:tom, toms, synth: :mid_tom, send: [room: 0.2])
+keys = part(:keys, chords, synth: :organ, send: [room: 0.4, tape: 0.1])
+
+song(
+  tempo: 74,
+  buses: [
+    room: [reverb: [decay_seconds: 2.3]],
+    tape: [fx: [echo: [phase: 0.75, decay: 4]], send: [room: 0.3]]
+  ],
+  music: together([drums, keys])
+)
+```
+
+- A send's level is a plain factor, as `amp` is, and it takes the part's sound after the part's own effects.
+- The part's own sound still plays as it would without the send: the bus adds to it.
+- In a bus an effect's `mix` is 1 unless given, so the bus plays only the effect's sound.
+- A bus given with `fx:` and `send:` sends into other buses in turn, here the echoes of `tape` into `room`.
+- A song module declares each bus beside its parts, as `bus :room, fx: [reverb: [decay_seconds: 2.3]]` and `bus :tape, fx: [echo: [phase: 0.75]], send: [room: 0.3]`.
+- A bus and a part cannot have the same name, a send into a bus the song does not declare is refused, and so is a bus that sends into itself, directly or through others.
+- A muted part sends nothing, and `--mute` and `--solo` name parts, not buses.
+
+`change` moves a send while the song plays, at once or over `send_slide:` beats.
+A dub throw sends one hit into the echo and pulls the part back out, so only that hit repeats:
+
+```elixir
+hits = seq([note(:a2, 1), note(:a2, 1), note(:a2, 1), note(:a2, 1)])
+throw = at([{1.9, change(:tom, send: [tape: 1])}, {2.9, change(:tom, send: [tape: 0])}], 4)
+part(:tom, together([hits, throw]), synth: :mid_tom)
+```
+
+- `change(:tom, send: [tape: 0], send_slide: 2)` fades the part out of the echo over two beats.
+- `change({:room, :reverb}, decay_seconds: 5.1)` changes an effect of a bus, as it changes an effect of a part.
+- `mx print` lists each bus with its effects and what sends to it, and `--ring-out` waits for the buses to fade.
 
 ## Rhythm
 
@@ -442,6 +483,19 @@ repeat(seq([tempo(100), verse, tempo(140), chorus]))
 
 A function refuses what cannot play, such as an unknown note name or an option the synth does not have.
 mx prints the refusal with the line of the song file, and a song that is already playing keeps its previous version.
+
+`fx:` sends the whole song through effects, written as a part's `fx:`:
+
+```elixir
+song(tempo: 104, fx: [limiter: [ceiling: -1]], music: music)
+```
+
+- Every part, and live audio, plays through them after its own effects, its gain, and mute and solo.
+- A song has none unless it gives them, and no limiter: a song that is too loud still clips, and mx says so.
+- `limiter` holds every peak under its `ceiling`, in dB below full scale, and delays the song by 5 ms to do it; [Effects](instruments.md#effects) lists what each effect takes.
+- `change({:song, :limiter}, ceiling: -3)` changes one of them, from any part or beside the parts.
+- A module song gives them with its tempo, as `use Mx.Song, tempo: 104, fx: [limiter: []]`.
+- No part can be named `song`, the name a change gives the song's effects.
 
 ## A song as a module
 
@@ -879,6 +933,7 @@ sweep                change: cutoff glides to 110        stays at 110
 
 - `change(:pad, opts)` changes every sound of the part `:pad` still playing, and takes no time.
 - `change({:pad, :reverb}, mix: 0)` changes one of the part's effects.
+- `change({:song, :limiter}, ceiling: -3)` changes one of the song's own effects, those of its `fx:`.
 - An option's `_slide` partner makes the change glide over that many beats instead of jumping.
 - `change` takes the options the synth or effect takes. Envelope options such as `release` are refused.
 
@@ -924,6 +979,7 @@ song(
 | `stereo: true` | plays the input in stereo |
 | `amp`, `pan` | how loud, and where from left to right |
 | `fx:` | the effects it goes through, as a part's `fx:` |
+| `send:` | the buses it sends into, as a part's `send:` |
 
 - mx must start with a song that has `live_audio` to read the input.
 - Use headphones with a microphone, or the speakers feed back into it.

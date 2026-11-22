@@ -50,8 +50,8 @@ defmodule Sgubhu do
 
   use Mx.Song, tempo: 112
 
-  @room [reverb: [room: 0.6, damp: 0.5, mix: 0.25]]
-  @hall [reverb: [room: 0.85, damp: 0.4, mix: 0.35]]
+  @room [reverb: [decay_seconds: 1.8, damp: 0.5, mix: 0.25]]
+  @hall [reverb: [decay_seconds: 4, damp: 0.4, mix: 0.35]]
 
   vcsl = fn path ->
     {:vcsl, path}
@@ -133,7 +133,7 @@ defmodule Sgubhu do
 
   part :conga, synth: :high_conga, defaults: [amp: 0.8, pan: -0.3], fx: @room
   part :tumba, synth: :low_conga, defaults: [amp: 1.2, pan: -0.3], fx: @room
-  part :clap, synth: :clap, defaults: [amp: 0.75], fx: [reverb: [room: 0.7, mix: 0.35]]
+  part :clap, synth: :clap, defaults: [amp: 0.75], fx: [reverb: [decay_seconds: 2.3, mix: 0.35]]
   part :cowbell, synth: :cowbell, defaults: [amp: 0.8, pan: 0.5], fx: @room
 
   part :keys,
@@ -144,7 +144,7 @@ defmodule Sgubhu do
       tremolo: [phase: 0.5, depth: 0.35, wave: 3],
       chorus: [phase: 2, mix: 0.3],
       lpf: [cutoff: 112],
-      reverb: [room: 0.6, mix: 0.25]
+      reverb: [decay_seconds: 1.8, mix: 0.25]
     ]
 
   part :pad,

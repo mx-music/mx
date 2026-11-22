@@ -35,7 +35,7 @@ defmodule DanTranh do
   @sweep_up vcsl.("Gliss/Gliss_Up_Swl_ff_1.wav")
   @sweep_down vcsl.("Gliss/Gliss_Dwn_Slw_mf_2.wav")
 
-  @room [room: 0.75, mix: 0.3]
+  @room [decay_seconds: 2.7, mix: 0.3]
 
   part :plucked,
     synth: sampled(@plucked),

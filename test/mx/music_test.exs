@@ -575,12 +575,12 @@ defmodule Mx.MusicTest do
       assert Song.load(path) ==
                {:error, "#{path}:3: part x: effect lpf takes cutoff a number, not c5"}
 
-      path = fx.("[reverb: [room: 5]]")
+      path = fx.("[reverb: [damp: 5]]")
 
       assert Song.load(path) ==
-               {:error, "#{path}:3: part x: effect reverb takes room from 0 to 1, not 5"}
+               {:error, "#{path}:3: part x: effect reverb takes damp from 0 to 1, not 5"}
 
-      assert {:ok, _song} = Song.load(fx.("[reverb: [room: 1]]"))
+      assert {:ok, _song} = Song.load(fx.("[reverb: [damp: 1]]"))
       assert {:ok, _song} = Song.load(fx.("[slicer: [smooth_ms: 20], flanger: [delay_ms: 5]]"))
 
       path = fx.("[slicer: [smooth: 0.02]]")

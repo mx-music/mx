@@ -157,17 +157,17 @@ defmodule ValseDuZinc do
   part :accordion,
     synth: sampled(@accordion),
     defaults: [amp: 0.4, attack: 0.03, release: 0.2],
-    fx: [reverb: [room: 0.5, mix: 0.2]]
+    fx: [reverb: [decay_seconds: 1.5, mix: 0.2]]
 
   part :guitar,
     synth: sampled(@guitar),
     defaults: [amp: 0.6, release: 1.5],
-    fx: [pan: [pan: -0.3], reverb: [room: 0.5, mix: 0.2]]
+    fx: [pan: [pan: -0.3], reverb: [decay_seconds: 1.5, mix: 0.2]]
 
   part :piano,
     synth: sampled(@piano),
     defaults: [amp: 0.45, release: 0.8],
-    fx: [pan: [pan: 0.3], reverb: [room: 0.5, mix: 0.2]]
+    fx: [pan: [pan: 0.3], reverb: [decay_seconds: 1.5, mix: 0.2]]
 
   part :slowing, []
 

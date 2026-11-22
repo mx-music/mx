@@ -19,7 +19,7 @@ defmodule Berimbau do
 
   use Mx.Song, tempo: 120
 
-  part :berimbau, synth: :berimbau, fx: [reverb: [room: 0.35, mix: 0.1]]
+  part :berimbau, synth: :berimbau, fx: [reverb: [decay_seconds: 1.1, mix: 0.1]]
 
   # The form, each of its passes a section, and the tempo each toque is played at between them.
   def song do

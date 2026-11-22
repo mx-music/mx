@@ -54,7 +54,7 @@ defmodule HouseKit do
   # The percussion was recorded close; the kit also sounds through its overhead and room
   # microphones, which a reverb stands for here.
   @close ~w(claves cowbell conga conga_muted tumba guiro_long guiro_short)a
-  @room [reverb: [room: 0.5, mix: 0.3]]
+  @room [reverb: [decay_seconds: 1.5, mix: 0.3]]
 
   # Each layer of the kit is a part of its own.
   for {name, layers} <- @kit, {layer, synth, defaults, level, _late} <- layers do

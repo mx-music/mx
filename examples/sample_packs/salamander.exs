@@ -31,7 +31,7 @@ defmodule Salamander do
   part :piano,
     synth: sampled(@files),
     defaults: [release: 2.5],
-    fx: [level: [amp: 0.85], reverb: [room: 0.75, damp: 0.5, mix: 0.25]]
+    fx: [level: [amp: 0.85], reverb: [decay_seconds: 2.7, damp: 0.5, mix: 0.25]]
 
   def song do
     part(:piano, seq(1..72, &bar/1))

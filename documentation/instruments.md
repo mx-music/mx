@@ -442,8 +442,11 @@ band          recordings          sitar at vel 0.6    difference
 A part's `fx:` sends its sound through effects, in the order written:
 
 ```elixir
-part(:keys, tune, synth: :piano, fx: [echo: [phase: 0.75, mix: 0.3], reverb: [room: 0.6]])
+part(:keys, tune, synth: :piano, fx: [echo: [phase: 0.75, mix: 0.3], reverb: [decay_seconds: 1.8]])
 ```
+
+The song's own `fx:` takes the same effects, and every part plays through them after its own, as [The song](notation.md#the-song) describes.
+A bus takes them too, for parts to share one effect with `send:`, as [Buses](notation.md#buses) describes.
 
 ```mermaid
 graph LR
@@ -453,26 +456,30 @@ graph LR
 These are mx's own designs, in mxs's `src/effects.rs`, with option names that follow Sonic Pi's.
 bitcrusher and chorus follow Airwindows' DeRez and Chorus, as `LICENSE-designs.md` credits.
 
-bitcrusher, bpf, chorus, compressor, distortion, echo, eq, flanger, hpf, level, lpf, pan, ping_pong, pitch_shift, reverb, rlpf, slicer, tremolo, wobble.
+bitcrusher, bpf, chorus, compressor, distortion, echo, eq, flanger, hpf, level, limiter, lpf, pan, phaser, ping_pong, pitch_shift, reverb, rlpf, slicer, tremolo, wobble.
 
 Every effect takes `amp`, `mix` from 0 for dry to 1 for wet, and `pre_amp`, the level going in.
 An effect's time is in beats and follows the tempo unless its name ends in `_ms`, for milliseconds, or `_seconds`: a tremolo with `phase: 1` pulses once a beat at any tempo, and a slicer's `smooth_ms: 20` takes 20 ms at any tempo.
-`amp`, `pre_amp` and `mix` are plain factors, not decibels, and a frequency, such as `cutoff` or `centre`, is a MIDI note number.
+`amp`, `pre_amp` and `mix` are plain factors, not decibels, and so is a send's level.
+The options in decibels are the compressor's `threshold` and `makeup`, the limiter's `ceiling` and the `gain` of each of the equaliser's bands.
+A frequency, such as `cutoff` or `centre`, is a MIDI note number.
 `wave` is the shape of a sweep: 0 saw, 1 pulse, 2 triangle, 3 sine and 4 cubic; `invert_wave: 1` turns it upside down, and `phase_offset` is where in the cycle it starts, from 0 to 1.
 - `bitcrusher` takes `sample_rate`, the rate in Hz it holds samples at, `bits`, how many it rounds each to, and `cutoff`, a MIDI note number for a low-pass after it, off at 0. Its song is `examples/effects/bitcrusher.exs`.
 - `bpf` takes `centre`, the MIDI note number of the band it keeps, and `res`, from 0 to 1, the higher the narrower. Its song is `examples/effects/bpf.exs`.
 - `chorus` takes `phase`, how long the delay takes to sweep back and forth, `decay`, how long the delayed sound feeds back, and `max_phase`, the longest `phase` it can change to. Its song is `examples/effects/chorus.exs`.
-- `compressor` takes `threshold`, the level above which it lowers the sound, `slope_above` and `slope_below`, how much the level changes above and below it, and `clamp_ms` and `relax_ms`, how long it takes to lower and to let go. Its song is `examples/effects/compressor.exs`.
+- `compressor` turns down what is louder than `threshold`, in dB below full scale, -18 unless given: above it the sound comes out 1 dB louder for each `ratio` dB it rises, 4 unless given. `makeup`, in dB, raises the sound afterwards, and `clamp_ms` and `relax_ms`, 10 and 150 unless given, are how long it takes to turn down and to let go. It follows the louder of the two sides and turns both down alike. `key:` names a part or a bus whose level it follows in place of its own, so `part(:pad, chords, synth: :organ, fx: [compressor: [key: :kick, threshold: -24, ratio: 8]])` drops the pad each time the kick plays, and the kick sounds as it would without it. Its song is `examples/effects/compressor.exs`.
 - `distortion` takes `distort`, from 0 to 1. Its song is `examples/effects/distortion.exs`.
 - `echo` takes `phase`, the time between echoes, `decay`, how long they take to die away, and `max_phase`, the longest `phase` it can change to. Its song is `examples/effects/echo.exs`.
 - `eq` is an equaliser of three bands, each a list of its own options: `fx: [eq: [low: [at: 48, gain: -6], mid: [at: 72, gain: 4, q: 2], high: [gain: 3]]]`. `low` raises or lowers everything below its `at`, `high` everything above its `at`, and `mid` a peak around its `at`, the narrower the higher its `q`, 1 unless given. `at` is a MIDI note number, 36 for `low`, 60 for `mid` and 96 for `high` unless given, and `gain` is in dB, 0 unless given, so a band that is not given changes nothing. A change names the band the same way, `change({:bass, :eq}, mid: [gain: -8, gain_slide: 2])`. Its song is `examples/effects/eq.exs`.
 - `flanger` takes `phase`, `wave`, `invert_wave` and `phase_offset` for its sweep, `stereo_invert_wave: 1` to sweep the left channel the other way, `delay_ms` and `depth_ms`, the delay it sweeps up from and how far, `max_delay_ms`, the longest delay, `feedback` from 0 to 1 and `decay` for how strongly and how long the delayed sound feeds back, and `invert_flange: 1` to subtract the delayed sound instead. Its song is `examples/effects/flanger.exs`.
+- `phaser` sweeps notches with no pitch of their own through the sound. It takes `phase`, `wave`, `invert_wave` and `phase_offset` for its sweep, a sine unless given, `stages`, 2, 4, 6 or 8, one notch for every two and 4 unless given, `low` and `high`, the notes it sweeps between, 60 and 108 unless given, `feedback` from 0 to 0.95, which raises the sound between the notches, and `stereo_invert_wave: 1` to sweep the left channel the other way. Its notches are deepest at `mix: 0.5`, half the dry sound and half the phaser's, and at `mix: 1` it cuts none. `stages` is read when the part starts. Its song is `examples/effects/phaser.exs`.
 - `hpf` and `lpf` take `cutoff`, a MIDI note number. Their songs are `examples/effects/hpf.exs` and `examples/effects/lpf.exs`.
 - `level` takes only what every effect takes, and sets a part's level with `amp`. Its song is `examples/effects/level.exs`.
+- `limiter` holds every peak under `ceiling`, in dB below full scale, -1 unless given: it reads 5 ms ahead, turns both sides down alike just before a peak on either would pass, and lets them back up over `relax_ms`, 100 unless given. Its sound comes out 5 ms late, so a part through it plays 5 ms behind the others, and a song through it starts 5 ms later. Its song is `examples/effects/limiter.exs`.
 - `pan` takes `pan`, from -1 for left to 1 for right. Its song is `examples/effects/pan.exs`.
 - `ping_pong` echoes between left and right: `phase` is the time between echoes, `feedback` how much of each echo the next keeps, `max_phase` the longest `phase` it can change to, and `pan_start` the side of the first echo, from -1 for left to 1 for right. Its song is `examples/effects/ping_pong.exs`.
 - `pitch_shift` takes `pitch`, how many semitones the sound is shifted by, from -24 to 24, and delays the sound by up to 40 ms. Its song is `examples/effects/pitch_shift.exs`.
-- `reverb` takes `room` and `damp`, from 0 to 1. Its song is `examples/effects/reverb.exs`.
+- `reverb` is a room around the sound. It takes `size`, the room's size in metres, 20 unless given, `decay_seconds`, the time its sound takes to fade 60 dB, 2 unless given, `predelay_ms`, the gap before the room starts, `low_cut`, the note below which the room is cut, 0 for none, and `damp`, from 0 to 1, how much the room dulls the highs. A sound's room is louder on the sound's own side. `size` and `predelay_ms` are read when the part starts. Its song is `examples/effects/reverb.exs`.
 - `rlpf` takes `cutoff`, a MIDI note number, and `res`, from 0 to 1, how much it rings at its cutoff. Its song is `examples/effects/rlpf.exs`.
 - `slicer` turns the sound on and off: `phase` is the length of a cycle, `pulse_width` the part of it that is on, `amp_min` and `amp_max` the levels off and on, `phase_offset` where in the cycle it starts, from 0 to 1, and `smooth_ms` how long each change takes. Its song is `examples/effects/slicer.exs`.
 - `tremolo` takes `phase`, `wave`, `invert_wave` and `phase_offset` for its sweep, and `depth`, from 0 to 1, how far it turns the sound down. Its song is `examples/effects/tremolo.exs`.

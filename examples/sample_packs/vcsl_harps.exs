@@ -79,7 +79,7 @@ defmodule PlanxtyIrwin do
            ~w(A#3_Main_LongBow_rr2 C4_Main_LongBow_rr1 D4_Main_LongBow_rr1 E4_Main_LongBow_rr2 F#4_Main_LongBow_rr1 G#4_Main_LongBow_rr1 A#4_Main_LongBow_rr2 C5_Main_LongBow_rr1 D5_Main_LongBow_rr2 E5_Main_LongBow_rr2 F#5_Main_LongBow_rr2)
          )
 
-  @room [room: 0.7, mix: 0.22]
+  @room [decay_seconds: 2.3, mix: 0.22]
   @ringing [sustain: 2, release: 1.5]
 
   part :concert_harp,
@@ -105,7 +105,7 @@ defmodule PlanxtyIrwin do
   part :bowed,
     synth: sampled(@bowed),
     defaults: [attack: 0.05, release: 0.6],
-    fx: [level: [amp: 4.5], reverb: [room: 0.8, mix: 0.35], pan: [pan: 0.4]]
+    fx: [level: [amp: 4.5], reverb: [decay_seconds: 3.2, mix: 0.35], pan: [pan: 0.4]]
 
   # An eighth note; a bar is six, and two beats.
   @eighth 1 / 3

@@ -30,7 +30,7 @@ defmodule Midnight do
     synth: :organ,
     fx: [
       wobble: [phase: 32, cutoff_min: 38, cutoff_max: 72, res: 0.3, wave: 3],
-      reverb: [room: 0.9, mix: 0.45]
+      reverb: [decay_seconds: 5.1, low_cut: 43, mix: 0.3]
     ]
 
   part :chorus,
@@ -39,7 +39,7 @@ defmodule Midnight do
     fx: [
       slicer: [phase: 0.5, amp_min: 0.2, smooth_ms: 30],
       wobble: [phase: 24, cutoff_min: 70, cutoff_max: 115, res: 0.4, wave: 3],
-      reverb: [room: 0.9, mix: 0.45]
+      reverb: [decay_seconds: 5.1, mix: 0.45]
     ]
 
   part :oboe,
@@ -47,7 +47,7 @@ defmodule Midnight do
     defaults: [pan: 0.1],
     fx: [
       ping_pong: [phase: 1.5, feedback: 0.6, mix: 0.5],
-      reverb: [room: 0.85, mix: 0.4]
+      reverb: [decay_seconds: 4, mix: 0.4]
     ]
 
   part :ghost,
@@ -55,7 +55,7 @@ defmodule Midnight do
     defaults: [amp: 0.22],
     fx: [
       echo: [phase: 3, decay: 10, mix: 1],
-      reverb: [room: 0.95, mix: 0.7]
+      reverb: [decay_seconds: 7.3, mix: 0.7]
     ]
 
   part :stars,
@@ -63,7 +63,7 @@ defmodule Midnight do
     defaults: [amp: 1.2],
     fx: [
       ping_pong: [phase: 1, feedback: 0.6, mix: 0.5],
-      reverb: [room: 0.95, mix: 0.6]
+      reverb: [decay_seconds: 7.3, mix: 0.6]
     ]
 
   part :harmonium,
@@ -72,7 +72,7 @@ defmodule Midnight do
     fx: [
       chorus: [mix: 0.4],
       echo: [phase: 0.75, decay: 4, mix: 0.3],
-      reverb: [room: 0.8, mix: 0.35]
+      reverb: [decay_seconds: 3.2, mix: 0.35]
     ]
 
   part :piano,
@@ -81,7 +81,7 @@ defmodule Midnight do
     fx: [
       wobble: [phase: 24, cutoff_min: 68, cutoff_max: 118, res: 0.5, wave: 3],
       ping_pong: [phase: 0.75, feedback: 0.4, mix: 0.25],
-      reverb: [room: 0.85, mix: 0.4]
+      reverb: [decay_seconds: 4, mix: 0.4]
     ]
 
   part :piano_phase,
@@ -89,18 +89,24 @@ defmodule Midnight do
     defaults: [amp: 2.5, pan: 0.6],
     fx: [
       wobble: [phase: 20, cutoff_min: 68, cutoff_max: 118, res: 0.5, wave: 3],
-      reverb: [room: 0.85, mix: 0.4]
+      reverb: [decay_seconds: 4, mix: 0.4]
     ]
 
   part :tabla_na,
     synth: :tabla_na,
     defaults: [note: @sa, amp: 0.7, pan: 0.2],
-    fx: [ping_pong: [phase: 0.75, feedback: 0.4, mix: 0.2], reverb: [room: 0.7, mix: 0.2]]
+    fx: [
+      ping_pong: [phase: 0.75, feedback: 0.4, mix: 0.2],
+      reverb: [decay_seconds: 2.3, mix: 0.2]
+    ]
 
   part :tabla_tun,
     synth: :tabla_tun,
     defaults: [note: @sa, amp: 0.7, pan: 0.2],
-    fx: [ping_pong: [phase: 0.75, feedback: 0.4, mix: 0.2], reverb: [room: 0.7, mix: 0.2]]
+    fx: [
+      ping_pong: [phase: 0.75, feedback: 0.4, mix: 0.2],
+      reverb: [decay_seconds: 2.3, mix: 0.2]
+    ]
 
   part :tabla_te, synth: :tabla_te, defaults: [amp: 0.7, pan: 0.2]
   part :tabla_ghe, synth: :tabla_ghe, defaults: [amp: 0.5, pan: 0.15]
@@ -108,7 +114,7 @@ defmodule Midnight do
   part :clave,
     synth: :clave,
     defaults: [amp: 0.5, pan: 0.45],
-    fx: [echo: [phase: 0.75, decay: 3, mix: 0.35], reverb: [room: 0.8, mix: 0.3]]
+    fx: [echo: [phase: 0.75, decay: 3, mix: 0.35], reverb: [decay_seconds: 3.2, mix: 0.3]]
 
   part :guiro,
     synth: :guiro,

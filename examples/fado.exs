@@ -46,7 +46,7 @@ defmodule Fado do
                 end
               end)
 
-  @room [reverb: [room: 0.55, damp: 0.5, mix: 0.2]]
+  @room [reverb: [decay_seconds: 1.6, damp: 0.5, mix: 0.2]]
 
   part :guitarra,
     synth: sampled(@shinyguitar),

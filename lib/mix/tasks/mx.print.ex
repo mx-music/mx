@@ -11,7 +11,8 @@ defmodule Mix.Tasks.Mx.Print do
   `--cc 74=64`, `--note 60=100`, `--osc /trigger=1,a` and `--get root=40` print the pass as if those inputs had arrived or that value had been set, and each can be given more than once.
   A loop started by input prints only what starts it.
   Each part's tempo is the tempo it starts at, and the tempo changes in what it prints, with their beats.
-  A part with effects names them after its tempo, in the order its notes go through them.
+  A part with effects names them after its tempo, in the order its notes go through them, and then the buses it sends to, each with its level.
+  The song's own effects and its buses come first, each bus with its effects and the parts and buses that send to it.
   """
 
   use Mix.Task
@@ -34,6 +35,8 @@ defmodule Mix.Tasks.Mx.Print do
       end
 
     inputs = inputs(opts)
+
+    IO.write(format_chains(song))
 
     song.loops
     |> Enum.map_join("\n", &format_pass(&1, pass, song, inputs))
@@ -62,7 +65,7 @@ defmodule Mix.Tasks.Mx.Print do
     name = loop.name
     length = format_beat(beats)
     unit = if beats == 1, do: "beat", else: "beats"
-    fx = format_fx(loop.fx)
+    fx = format_fx(loop.fx) <> format_sends(loop.send)
     again = if forever, do: ", played again and again", else: ""
     last = tuple_size(sections) - 1
     {timeline, _} = Tempo.through(song.tempos, song.tempo, last, elem(sections, last).beats)
@@ -79,7 +82,7 @@ defmodule Mix.Tasks.Mx.Print do
         name = loop.name
         length = format_beat(beats)
         unit = if beats == 1, do: "beat", else: "beats"
-        fx = format_fx(loop.fx)
+        fx = format_fx(loop.fx) <> format_sends(loop.send)
         {timeline, start} = pass_timeline(song, loop, pass)
         tempo = Tempo.describe(timeline, start, start + beats)
         events = with_rates(events, timeline, start)
@@ -145,6 +148,31 @@ defmodule Mix.Tasks.Mx.Print do
     end
   end
 
+  # The song's own effects and each of its buses with the parts that send to it, before the parts.
+  defp format_chains(song) do
+    main = if song.fx == [], do: [], else: ["song" <> format_fx(song.fx) <> "\n"]
+
+    buses =
+      for bus <- song.buses do
+        name = bus.name
+
+        fed =
+          for loop <- song.loops ++ song.buses, Keyword.has_key?(loop.send, name), do: loop.name
+
+        fed = if fed == [], do: "", else: ", from " <> Enum.map_join(fed, ", ", &to_string/1)
+        chain = format_fx(bus.fx) <> format_sends(bus.send)
+        "bus #{name}#{chain}#{fed}\n"
+      end
+
+    if main ++ buses == [], do: "", else: Enum.join(main ++ buses) <> "\n"
+  end
+
+  defp format_sends([]), do: ""
+
+  defp format_sends(sends) do
+    ", sending to " <> Enum.map_join(sends, ", ", fn {bus, level} -> "#{bus} (#{level})" end)
+  end
+
   defp format_fx([]), do: ""
   defp format_fx(chain), do: ", through " <> Enum.map_join(chain, " then ", &format_effect/1)
 
@@ -169,6 +197,7 @@ defmodule Mix.Tasks.Mx.Print do
   end
 
   defp format_step({:sample, ref, _path}), do: "sample #{Samples.name(ref)}"
+  defp format_step({:control, {:send, bus}, _synth}), do: "send to #{bus}"
   defp format_step({:control, _target, _synth}), do: "control"
   defp format_step({:midi_note, note}), do: "midi #{note}"
   defp format_step({:midi_cc, number, value}), do: "midi_cc #{number}, #{value}"
