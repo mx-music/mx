@@ -9,21 +9,37 @@ defmodule MaracatuDub do
 
   use Mx.Song, tempo: 96
 
-  @room [reverb: [decay_seconds: 1.8, damp: 0.5, mix: 0.2]]
+  # The desk's two sends: the room the bells, the shakers and the skank share, and the skank's tape
+  # echo, whose repeats fall into the room too.
+  bus :room, fx: [reverb: [decay_seconds: 1.8, damp: 0.5], eq: [low: [at: 52, gain: -9]]]
+
+  bus :tape,
+    fx: [
+      echo: [phase: 0.75, decay: 4, max_phase: 2],
+      eq: [low: [at: 57, gain: -12], high: [at: 93, gain: -12]]
+    ],
+    send: [room: 0.25]
+
   @tape [echo: [phase: 0.75, decay: 4, max_phase: 2, mix: 0.15]]
   @cross [ping_pong: [phase: 0.75, feedback: 0.5, max_phase: 2, mix: 0.08]]
 
-  part :gongue, synth: :cowbell, defaults: [amp: 0.4, pan: 0.15, note: 65], fx: @cross ++ @room
+  part :gongue,
+    synth: :cowbell,
+    defaults: [amp: 0.32, pan: 0.15, note: 65],
+    fx: @cross,
+    send: [room: 0.25]
 
   part :mineiro,
     synth: :ganza,
-    defaults: [amp: 0.55, pan: -0.4],
-    fx: [hpf: [cutoff: 0]] ++ @room
+    defaults: [amp: 0.44, pan: -0.4],
+    fx: [hpf: [cutoff: 0]],
+    send: [room: 0.25]
 
   part :agbe,
     synth: :cabasa,
-    defaults: [amp: 0.3, pan: 0.4],
-    fx: [flanger: [phase: 16, feedback: 0.4, mix: 0.2]] ++ @room
+    defaults: [amp: 0.24, pan: 0.4],
+    fx: [flanger: [phase: 16, feedback: 0.4, mix: 0.2]],
+    send: [room: 0.25]
 
   part :caixa,
     synth: :snare,
@@ -58,8 +74,9 @@ defmodule MaracatuDub do
 
   part :skank,
     synth: :guitar,
-    defaults: [vel: 0.5, amp: 1.3, pan: 0.35, release: 0.1],
-    fx: [hpf: [cutoff: 0]] ++ @tape ++ @room
+    defaults: [vel: 0.5, amp: 0.884, pan: 0.35, release: 0.1],
+    fx: [hpf: [cutoff: 0], level: [amp: 1]],
+    send: [tape: 0.1765, room: 0.25]
 
   part :trombone,
     synth: :trombone,
@@ -104,7 +121,7 @@ defmodule MaracatuDub do
           throw(:trombone, :echo, 0, 12, 0.5, 0.15)
         ])
       ),
-      part(:skank, at([{0, change({:skank, :echo}, mix: 0.15)}], 32)),
+      part(:skank, at([{0, thrown(:skank, :echo, 0.15)}], 32)),
       part(:bass, delay(bass(1..4), 16)),
       part(:sub, delay(bass(1..4), 16)),
       part(:low_alfaia, delay(alfaia([:marcacao, :marcacao, :marcacao, :virada]), 16)),
@@ -215,7 +232,7 @@ defmodule MaracatuDub do
         together([
           skank(1..8),
           throw(:skank, :echo, 14, 16, 0.5, 0.15),
-          at([{28, change({:skank, :echo}, mix: 0.55)}], 32)
+          at([{28, thrown(:skank, :echo, 0.55)}], 32)
         ])
       ),
       part(:trombone, legato(phrase(:b) ++ phrase(:a)))
@@ -225,11 +242,17 @@ defmodule MaracatuDub do
   # The part's effect opened to a mix at one beat and brought back to its own at another, within
   # a section.
   defp throw(name, effect, from, back, mix, own) do
-    entries =
-      for {beat, mix} <- [{from, mix}, {back, own}], do: {beat, change({name, effect}, mix: mix)}
-
-    at(entries, 32)
+    at(for({beat, mix} <- [{from, mix}, {back, own}], do: {beat, thrown(name, effect, mix)}), 32)
   end
+
+  # The skank is sent into the desk's tape and turned down, so as much of it is in the echo and as
+  # much left dry as the mix would give; every other part's own effect opens to the mix.
+  defp thrown(:skank, :echo, mix) do
+    dry = 1 - mix
+    together([change({:skank, :level}, amp: dry / 0.85), change(:skank, send: [tape: mix / dry])])
+  end
+
+  defp thrown(name, effect, mix), do: change({name, effect}, mix: mix)
 
   # Bars of the gonguê in sixteenths: its first pattern starts a sixteenth after the beat, and its
   # second fills the beats in.
