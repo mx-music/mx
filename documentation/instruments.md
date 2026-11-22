@@ -477,7 +477,7 @@ An effect's time is in beats and follows the tempo unless its name ends in `_ms`
 - `slicer` turns the sound on and off: `phase` is the length of a cycle, `pulse_width` the part of it that is on, `amp_min` and `amp_max` the levels off and on, `phase_offset` where in the cycle it starts, from 0 to 1, and `smooth_ms` how long each change takes. Its song is `examples/effects/slicer.exs`.
 - `tremolo` takes `phase`, `wave`, `invert_wave` and `phase_offset` for its sweep, and `depth`, from 0 to 1, how far it turns the sound down. Its song is `examples/effects/tremolo.exs`.
 - `wobble` sweeps a resonant filter between `cutoff_min` and `cutoff_max`, MIDI note numbers, once a `phase`, with `res`, `wave`, `invert_wave`, `phase_offset`, `pulse_width` for wave 1, and `filter`, 0 for low-pass and 1 for high-pass. Its song is `examples/effects/wobble.exs`.
-- Every option that takes a number along a range, rather than a choice or a longest value, has a `_slide` partner; `max_phase`, `max_delay_ms`, `phase_offset`, `smooth_ms`, `wave`, `invert_wave`, `stereo_invert_wave`, `invert_flange`, `filter` and `pan_start` do not.
+- Every option that takes a number along a range, rather than a choice or a longest value, has a `_slide` partner. A choice, such as `wave`, `invert_wave`, `stereo_invert_wave`, `invert_flange` and `filter`, goes over to its new value at once when a change gives it one, or within 10 ms where a jump would click. `max_phase` and `max_delay_ms` set the longest value when the part starts, and a change to them does nothing.
 
 ### An effect in Elixir
 

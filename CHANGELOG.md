@@ -51,6 +51,7 @@
 
   * [instruments] A `defsynth`, `defeffect` or `defsound` below `import Mx`, or in a module that uses `Mx.Song`, calls the `delay` and `clamp` nodes, where the file stopped with "conflicting delay/2 import"; outside them the names keep Mx's meaning
   * [instruments] A `defeffect` whose input is multiplied by 0, as in `sound * opts.wet + sound` at a `wet` of 0, or is in the side a `select` leaves out, plays the rest, where the part failed and started again without end
+  * [effects] A change to slicer's `smooth_ms`, to flanger's `invert_flange` and `stereo_invert_wave`, to wobble's `filter`, to ping_pong's `pan_start`, or to the `phase_offset` of slicer, tremolo, flanger and wobble is heard from where it is written, where the song loaded and the sound stayed as it was
   * [render] A render whose part cannot start its effects ends with an error naming the part and the effect, where it started the part again without end
 
 ## v0.2.2 (2026-11-16)
