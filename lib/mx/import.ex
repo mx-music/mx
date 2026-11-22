@@ -286,11 +286,11 @@ defmodule Mx.Import do
       |> Enum.reject(&is_nil/1)
       |> Enum.map_join("\n", &doc_line/1)
 
-    ~s'''
+    """
     defmodule #{song_module} do
-      @moduledoc """
+      @moduledoc \"""
     #{moduledoc}
-      """
+      \"""
 
       use Mx.Song, tempo: #{tempo}
 
@@ -307,7 +307,7 @@ defmodule Mx.Import do
 
     #{bars}
     end
-    '''
+    """
   end
 
   defp tempo_changes([], _beats), do: []
