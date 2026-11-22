@@ -43,6 +43,8 @@ defmodule Mx.Paired.LowConga do
         clamp(o.slap, 0, 1),
         clamp(o.damp, 0, 1),
         @conga
-      ) * db(-3.4), seconds: 1.31)
+      ) * db(-3.4),
+      seconds: 1.31
+    )
   end
 end

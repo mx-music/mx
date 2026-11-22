@@ -42,6 +42,8 @@ defmodule Mx.Paired.HighConga do
         clamp(o.slap, 0, 1),
         clamp(o.damp, 0, 1),
         @conga
-      ), seconds: 1.31)
+      ),
+      seconds: 1.31
+    )
   end
 end

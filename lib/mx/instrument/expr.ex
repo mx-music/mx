@@ -72,7 +72,7 @@ defmodule Mx.Instrument.Vocabulary do
   The nodes and functions a `defsynth` builds its sound from, named by what they do, with each argument named by its unit.
 
   Numbers: `hz/1`, `db/1`, `log2/1`, `exp/1`, `sin/1`, `cos/1`, `clamp/3`, `mod/2` and `select/3`, worked out at once on numbers and when the note starts on its options.
-  Sources: `impulse/0`, `follow/1`, `time/0`, `sine/1`, `vibrato/1`, `partials/2`, `bowed_string/1`, `air_jet/1`, `saw/1`, `square/1`, `triangle/1`, `pulse/1` and `noise/2`.
+  Sources: `impulse/0`, `follow/1`, `time/1`, `sine/1`, `vibrato/1`, `partials/2`, `bowed_string/1`, `air_jet/1`, `saw/1`, `square/1`, `triangle/1`, `pulse/1` and `noise/2`.
   Filters: `lowpass/2`, `highpass/2` and `bandpass/2`, at `hz:` with `q:`, either of which may change as the note sounds, and `poles:`, `ladder/2`, a four-pole resonant lowpass at `hz:` with `resonance:` from 0 to 1, where it rings on at `hz:`, `lowshelf/2`, `highshelf/2` and `peak/2`, at `hz:` with `q:` and `db:`, `mode/2`, a resonator struck by its input at `hz:`, ringing at `level:` and fading 60 dB over `fade:` seconds, or given lists of the same length a resonator for each, all struck by the one input, `wind_bands/2`, `delay/2`, and `dc_block/1` and `dc_block/2`, which take away any offset below `hz:`, 10 unless given.
   Distortion: `saturate/2` rounds a sound off towards `level:`, `clip/2` cuts it off at `level:`, and `fold/2` folds it back at `level:`, each after a `drive:` in dB, worked out at twice the engine's rate.
   Shapes: `envelope/1` and `perc/1` are levels over time, and `envelope/2` and `perc/2` scale a sound by them.
@@ -131,8 +131,8 @@ defmodule Mx.Instrument.Vocabulary do
   @doc "One of the note's options as a sound, gliding to each new value the song gives over the option's `_slide` seconds."
   def follow(%Expr{op: :option} = option), do: Expr.call(:follow, [option])
 
-  @doc "The seconds since the note started."
-  def time, do: Expr.call(:time, [])
+  @doc "The seconds since the note started, starting over every `every:` seconds if given."
+  def time(opts \\ []), do: Expr.call(:time, [], opts)
 
   @doc "A bowed string at the MIDI `note:`, bowed at `speed:` and `force:`, reached over `takes:` seconds, at `position:` along it from the bridge, its speed swayed by `rosin:` times pink noise."
   def bowed_string(opts), do: Expr.call(:bowed_string, [], opts)

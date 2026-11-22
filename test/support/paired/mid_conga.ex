@@ -43,6 +43,8 @@ defmodule Mx.Paired.MidConga do
         clamp(o.slap, 0, 1),
         clamp(o.damp, 0, 1),
         @conga
-      ) * db(3.2), seconds: 1.31)
+      ) * db(3.2),
+      seconds: 1.31
+    )
   end
 end
