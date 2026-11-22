@@ -477,6 +477,47 @@ An effect's time is in beats and follows the tempo unless its name ends in `_ms`
 - `wobble` sweeps a resonant filter between `cutoff_min` and `cutoff_max`, MIDI note numbers, once a `phase`, with `res`, `wave`, `invert_wave`, `phase_offset`, `pulse_width` for wave 1, and `filter`, 0 for low-pass and 1 for high-pass. Its song is `examples/effects/wobble.exs`.
 - Every option that takes a number along a range, rather than a choice or a longest value, has a `_slide` partner; `max_phase`, `max_delay_ms`, `phase_offset`, `smooth_ms`, `wave`, `invert_wave`, `stereo_invert_wave`, `invert_flange`, `filter` and `pan_start` do not.
 
+### An effect in Elixir
+
+`defeffect` in a module that uses `Mx.Instrument` defines an effect from the same nodes as a synth, and a song applies it by name with `fx:`.
+`attr` lines before it declare its options, each read from the second argument, and `follow/1` makes an option glide when a song changes it.
+
+An effect whose first argument is one sound shapes each side on its own:
+
+```elixir
+defmodule Shaky do
+  use Mx.Instrument
+
+  attr :phase, :beats, default: 0.5, doc: "How long one sweep takes."
+  attr :depth, :float, default: 0.5, range: 0..1, doc: "How far it turns the sound down."
+
+  defeffect shaky(sound, opts) do
+    sound * (1 - follow(opts.depth) * sweep(length: follow(opts.phase), wave: 3))
+  end
+end
+```
+
+An effect whose first argument is a pair takes both sides and returns both, so one side can reach the other:
+
+```elixir
+defmodule Narrow do
+  use Mx.Instrument
+
+  attr :width, :float, default: 0.5, range: 0..1, doc: "From 0, both sides the same, to 1, as they came in."
+
+  defeffect narrow({left, right}, opts) do
+    middle = (left + right) / 2
+    width = follow(opts.width)
+    {middle + (left - middle) * width, middle + (right - middle) * width}
+  end
+end
+```
+
+An effect sounds on for one second after its input stops, which is how long a render keeps it after the last note.
+`tail` beside the `attr` lines says otherwise: `tail 2.0` for two seconds, or `tail :decay` for as long as the option `decay` says, in its own unit.
+Besides a synth's nodes, an effect has `sweep/1`, a level from 0 to 1 in the five waves of tremolo, `follower/2`, the level of a sound, `allpass/2` and `lag/2`, and a synth can call them too.
+An effect cannot yet feed its own sound back into itself, so an echo and a reverb are still written in mxs.
+
 ## Measuring an instrument
 
 These are the commands the steps under [After a real instrument](#after-a-real-instrument) use.

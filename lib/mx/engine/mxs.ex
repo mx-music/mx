@@ -289,25 +289,43 @@ defmodule Mx.Engine.Mxs do
 
   @doc "The seconds each of a part's effects sounds on after its input stops, with the options declared in beats in beats at `bpm`, or `{:error, message}`; it needs no engine started."
   def effect_tails(effects, bpm) when is_list(effects) and is_number(bpm) do
-    written = for {name, _specs} <- effect_specs(), into: MapSet.new(), do: name
-    effects = for {effect, opts} <- effects, do: {Atom.to_string(effect), options(opts)}
-    native = Enum.reject(effects, fn {name, _opts} -> name in written end)
+    written =
+      for module <- Mx.Instrument.modules(),
+          effect <- module.__effects__(),
+          into: %{},
+          do: {effect.name, effect}
+
+    native =
+      for {effect, opts} <- effects,
+          not is_map_key(written, effect),
+          do: {Atom.to_string(effect), options(opts)}
 
     with {:ok, tails} <- Native.effect_tails(native, bpm / 1) do
-      {:ok, written_tails(effects, tails, written)}
+      {:ok, written_tails(effects, tails, written, bpm)}
     end
   end
 
-  # The NIF asks an engine that holds only mxs's own effects, and an effect written with defeffect
-  # rings a second in mxs.
-  defp written_tails([], [], _written), do: []
+  # The NIF asks an engine that holds only mxs's own effects, so the tail of an effect written with
+  # defeffect is worked out here: its seconds, as long as an option says, or the second mxs gives it.
+  defp written_tails([], [], _written, _bpm), do: []
 
-  defp written_tails([{name, _opts} | effects], tails, written) do
-    if name in written do
-      [1.0 | written_tails(effects, tails, written)]
-    else
-      [hd(tails) | written_tails(effects, tl(tails), written)]
+  defp written_tails([{effect, opts} | effects], tails, written, bpm) do
+    case written do
+      %{^effect => %{tail: tail, attrs: attrs}} ->
+        [written_tail(tail, attrs, opts, bpm) | written_tails(effects, tails, written, bpm)]
+
+      _ ->
+        [hd(tails) | written_tails(effects, tl(tails), written, bpm)]
     end
+  end
+
+  defp written_tail(nil, _attrs, _opts, _bpm), do: 1.0
+  defp written_tail(seconds, _attrs, _opts, _bpm) when is_number(seconds), do: seconds / 1
+
+  defp written_tail(option, attrs, opts, bpm) do
+    {^option, type, declared} = List.keyfind(attrs, option, 0)
+    value = abs(Keyword.get(opts, option, Keyword.get(declared, :default, 0)))
+    if type == :beats, do: value * 60 / bpm, else: value / 1
   end
 
   @doc """

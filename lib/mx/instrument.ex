@@ -4,7 +4,7 @@ defmodule Mx.Instrument do
 
   A module that uses `Mx.Instrument` declares each synth's options with `attr` lines, as a Phoenix function component declares its assigns, and `envelope_attrs/1` for the seven options of the note's envelope.
   `defsynth` defines a synth as a function of one map, the note's options, with clauses that match on it; `defsound` and `defsoundp` define pieces a synth calls.
-  `defeffect` defines an effect as a function of the sound coming in, one channel, and a map of its options, and a song applies it by name with `fx:`.
+  `defeffect` defines an effect as a function of the sound coming in, one channel or both sides as `{left, right}`, and a map of its options, and a song applies it by name with `fx:`.
 
   When the module compiles, each clause runs once with the note's options as placeholders, and what its body does with them is recorded as a graph.
   Data written in the module takes any Elixir, while a placeholder takes only arithmetic, comparisons, `select/3` and the vocabulary of `Mx.Instrument.Vocabulary`.
@@ -50,6 +50,7 @@ defmodule Mx.Instrument do
           envelope_attrs: 1,
           defsynth: 2,
           defeffect: 2,
+          tail: 1,
           defsound: 2,
           defsoundp: 2
         ]
@@ -179,7 +180,8 @@ defmodule Mx.Instrument do
   Defines an effect, a function of the sound coming in and a map of its options, which returns the sound going out.
 
   `attr` lines before it declare its options, as for a synth.
-  The effect shapes each channel on its own, so the sound coming in is one channel, and a song applies it by name with `fx:`.
+  An effect whose first argument is one sound shapes each channel on its own, and one whose first argument is a pair, `{left, right}`, takes both sides and returns both as a pair.
+  A song applies it by name with `fx:`, and it sounds on for one second after its input stops unless `tail/1` says otherwise.
 
   ## Examples
 
@@ -187,14 +189,42 @@ defmodule Mx.Instrument do
       defeffect quieter(sound, opts) do
         sound |> gain(opts.level)
       end
+
+      defeffect swapped({left, right}, _opts), do: {right, left}
   """
   defmacro defeffect(call, do: body) do
     {name, [sound, pattern]} = Macro.decompose_call(call)
     line = __CALLER__.line
+    file = __CALLER__.file
+    sides = if match?({_left, _right}, sound), do: 2, else: 1
 
     quote do
-      Mx.Instrument.__defeffect__(__MODULE__, unquote(name), unquote(line))
+      Mx.Instrument.__defeffect__(
+        __MODULE__,
+        unquote(name),
+        unquote(line),
+        unquote(file),
+        unquote(sides)
+      )
+
       def unquote(name)(unquote(sound), unquote(pattern)), do: unquote(rewrite(body, __CALLER__))
+    end
+  end
+
+  @doc """
+  Says how long the next `defeffect` sounds on after its input stops: a number of seconds, or the name of one of its options, for as long as that option says in its own unit.
+
+  It goes beside the `attr` lines, and an effect without it sounds on for one second.
+
+  ## Examples
+
+      attr :decay, :beats, default: 2
+      tail :decay
+      defeffect ringing(sound, opts), do: sound |> gain(0.5)
+  """
+  defmacro tail(value) do
+    quote do
+      @mx_pending_tail unquote(value)
     end
   end
 
@@ -252,10 +282,30 @@ defmodule Mx.Instrument do
   end
 
   @doc false
-  def __defeffect__(module, name, line) do
+  def __defeffect__(module, name, line, file, sides) do
     attrs = module |> Module.get_attribute(:mx_pending_attrs) |> Enum.reverse()
     Module.delete_attribute(module, :mx_pending_attrs)
-    Module.put_attribute(module, :mx_effects, {name, attrs, line})
+    tail = Module.get_attribute(module, :mx_pending_tail)
+    Module.delete_attribute(module, :mx_pending_tail)
+
+    cond do
+      tail == nil or (is_number(tail) and tail >= 0) ->
+        :ok
+
+      is_atom(tail) and Enum.any?(attrs, fn {option, _, _} -> option == tail end) ->
+        :ok
+
+      true ->
+        given = inspect(tail)
+
+        raise CompileError,
+          file: file,
+          line: line,
+          description:
+            "#{name}'s tail takes seconds, a number from 0 up, or the name of one of its options, not #{given}"
+    end
+
+    Module.put_attribute(module, :mx_effects, {name, attrs, line, sides, tail})
 
     with {doc_line, doc} when is_binary(doc) and attrs != [] <- Module.get_attribute(module, :doc) do
       Module.put_attribute(module, :doc, {doc_line, doc <> options_doc(attrs)})
@@ -420,21 +470,56 @@ defmodule Mx.Instrument do
 
   @doc false
   def trace_effects(module, effects, file) do
-    for {name, attrs, line} <- effects do
+    for {name, attrs, line, sides, tail} <- effects do
       placeholders =
         Map.new(attrs, fn {option, _, _} -> {option, %Expr{op: :option, args: [option]}} end)
 
-      sound = apply(module, name, [%Expr{op: :input, args: []}, placeholders])
-
-      if match?(%Expr{op: op} when op in [:note_envelope, :rings], sound) do
-        raise CompileError,
-          file: file,
-          line: line,
-          description:
-            "#{name} is an effect, so it returns its sound, without note_envelope or rings"
+      refuse = fn description ->
+        raise CompileError, file: file, line: line, description: description
       end
 
-      %{name: name, attrs: attrs, sound: sound}
+      input =
+        if sides == 2,
+          do: {%Expr{op: :left, args: []}, %Expr{op: :right, args: []}},
+          else: %Expr{op: :input, args: []}
+
+      sound =
+        case {sides, apply(module, name, [input, placeholders])} do
+          {_, %Expr{op: op}} when op in [:note_envelope, :rings] ->
+            refuse.(
+              "#{name} is an effect, so it returns its sound, without note_envelope or rings"
+            )
+
+          {2, {left, right}} ->
+            %Expr{op: :sides, args: [left, right]}
+
+          {2, _one} ->
+            refuse.(
+              "#{name} takes both sides, {left, right}, so it returns both, as {left, right}"
+            )
+
+          {1, sound} when is_tuple(sound) ->
+            refuse.(
+              "#{name} takes one sound, so it returns one; to return both sides, take {left, right}"
+            )
+
+          {1, sound} ->
+            sound
+        end
+
+      sound =
+        case tail do
+          nil ->
+            sound
+
+          seconds when is_number(seconds) ->
+            %Expr{op: :tail, args: [sound], named: [seconds: seconds]}
+
+          option ->
+            %Expr{op: :tail, args: [sound], named: [option: option]}
+        end
+
+      %{name: name, attrs: attrs, sound: sound, tail: tail}
     end
   end
 

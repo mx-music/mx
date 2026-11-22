@@ -159,6 +159,18 @@ defmodule Mx.Instrument.Vocabulary do
   @doc "A sound delayed by `seconds:`, which may change as it plays, up to `max:`."
   def delay(sound, opts), do: Expr.call(:delay, [sound], opts)
 
+  @doc "A level from 0 to 1 once every `length:` seconds: `wave:` is 0 saw, 1 pulse, 2 triangle, 3 sine or 4 cubic, and 3 unless given, `invert: 1` turns it upside down, `offset:` is where in the cycle it starts, from 0 to 1, and `width:` the part of a pulse that is up, a half unless given."
+  def sweep(opts), do: Expr.call(:sweep, [], opts)
+
+  @doc "The level of a sound, as its peaks: a steady tone brings it within a tenth of the tone's peak in `rise:` seconds, and silence within a tenth of 0 in `fall:`."
+  def follower(sound, opts), do: Expr.call(:follower, [sound], opts)
+
+  @doc "A sound with every frequency at the same level and its phase shifted around `hz:`, with `q:` 0.707 unless given."
+  def allpass(sound, opts), do: Expr.call(:allpass, [sound], opts)
+
+  @doc "A sound that glides to each new value, falling 60 dB short of each step over `seconds:`."
+  def lag(sound, opts), do: Expr.call(:lag, [sound], opts)
+
   @doc "A sound with any constant offset below `hz:`, 10 unless given, taken out."
   def dc_block(sound, opts \\ []), do: Expr.call(:dc_block, [sound], opts)
 

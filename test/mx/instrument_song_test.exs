@@ -23,7 +23,8 @@ defmodule Mx.InstrumentSongTest do
       for module <- [
             Mx.InstrumentSongTest.Bell,
             Mx.InstrumentSongTest.Quieter,
-            Mx.InstrumentSongTest.Pulse
+            Mx.InstrumentSongTest.Pulse,
+            Mx.InstrumentSongTest.Tails
           ] do
         :code.purge(module)
         :code.delete(module)
@@ -113,6 +114,65 @@ defmodule Mx.InstrumentSongTest do
 
     {:ok, song} = Mx.Song.load(Path.join(ctx.tmp_dir, "half.exs"))
     assert Mx.Render.ring_out(song) == {:ok, %{seconds: 1.0, part: :x, effect: :quieter}}
+  end
+
+  @tails """
+  defmodule Mx.InstrumentSongTest.Tails do
+    use Mx.Instrument
+
+    defeffect late(sound, _opts), do: sound |> delay(seconds: 2.5, max: 3)
+
+    tail 3.0
+    defeffect late_ringing(sound, _opts), do: sound |> delay(seconds: 2.5, max: 3)
+
+    attr :decay, :beats, default: 4
+    tail :decay
+    defeffect decaying(sound, opts), do: sound |> gain(opts.decay / opts.decay)
+  end
+  """
+
+  test "a defeffect's tail says how long a render keeps it sounding after the last note", ctx do
+    render = fn fx ->
+      path = Path.join(ctx.tmp_dir, "tail.exs")
+      out = Path.join(ctx.tmp_dir, "tail.wav")
+      music = "part(:x, note(:c4, 0.2, release: 0.01), synth: :saw, fx: [#{fx}: []])"
+      File.write!(path, @tails <> "import Mx\nsong(tempo: 120, music: #{music})\n")
+      File.rm(out)
+
+      capture_io(fn ->
+        refute match?({:error, _}, Mx.Render.render(path, out, ring_out: true))
+      end)
+
+      {:ok, %{rate: rate, samples: samples}} = Mx.Audio.read(out)
+
+      {length(samples) / rate,
+       samples |> Enum.drop(2 * rate) |> Enum.map(&abs/1) |> Enum.max(fn -> 0.0 end)}
+    end
+
+    assert {seconds, late} = render.("late_ringing")
+    assert_in_delta seconds, 3.1, 0.2
+    assert late > 0.01
+
+    assert {seconds, late} = render.("late")
+    assert_in_delta seconds, 1.1, 0.2
+    assert late == 0.0
+  end
+
+  test "a defeffect's tail named after an option in beats lasts those beats at the song's tempo",
+       ctx do
+    load = fn fx ->
+      path = Path.join(ctx.tmp_dir, "decaying.exs")
+      music = "part(:x, note(:c4, 1), synth: :saw, fx: [#{fx}])"
+      File.write!(path, @tails <> "import Mx\nsong(tempo: 120, music: #{music})\n")
+      {:ok, song} = Mx.Song.load(path)
+      song
+    end
+
+    assert Mx.Render.ring_out(load.("decaying: []")) ==
+             {:ok, %{seconds: 2.0, part: :x, effect: :decaying}}
+
+    assert Mx.Render.ring_out(load.("decaying: [decay: 2]")) ==
+             {:ok, %{seconds: 1.0, part: :x, effect: :decaying}}
   end
 
   test "a defeffect's option given a value outside the range its attr declares is refused when the song loads",
