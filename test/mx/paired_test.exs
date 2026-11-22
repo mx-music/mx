@@ -125,6 +125,12 @@ defmodule Mx.PairedTest do
     {Mx.Paired.Bandolim, :bandolim,
      [[note: 69, sustain: 1], [note: 76, vel: 1, tremolo: 8, sustain: 1.5], [note: 62, vel: 0.3]],
      2},
+    {Mx.Paired.Sitar, :sitar,
+     [
+       [note: 52, sustain: 2],
+       [note: 57, vel: 1, sustain: 2],
+       [note: 50, vel: 0.3, bend: 2, sustain: 2]
+     ], 3},
     {Mx.Paired.Supersaw, :supersaw,
      [[note: 45, sustain: 1], [note: 60, detune: 0.5, bend: -1, sustain: 1]], 2},
     {Mx.Paired.Acid, :acid,
