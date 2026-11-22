@@ -19,7 +19,8 @@ defmodule Mx.Paired.Kick do
     vel = clamp(o.vel, 0, 1)
     hard = o.beater
 
-    # The graph's envelopes start at 0, so the sweep from 26 semitones down is 26 less one rising to 26.
+    # The graph's envelopes start at 0, so the sweep from 26 semitones down is 26 less one rising
+    # to 26.
     sweep = hz(note + (26 - envelope([{0.07, 26, -6}])))
     body = sine(hz: sweep, phase: :math.pi() / 2) * hit(0.001 + 0.004 * (1 - hard), 0.55, -5)
 
@@ -27,13 +28,13 @@ defmodule Mx.Paired.Kick do
       highpass(noise(:white), hz: 1800, q: :math.sqrt(0.5)) * hit(0.0005, 0.012, -4) *
         (0.3 * hard * db((vel - 0.6) * 20))
 
-    shell = impulse() |> mode(hz: hz(note) * 1.75, level: 0.1, fade: 1.5)
+    shell = mode(impulse(), hz: hz(note) * 1.75, level: 0.1, fade: 1.5)
 
-    # tanh, written with the sound once, since an expression used twice is built twice and its noise drawn twice.
+    # tanh, written with the sound once, since an expression used twice is built twice and its
+    # noise drawn twice.
     struck = 1 - 2 / (exp(2 * (body + beater)) + 1)
 
-    ((struck + shell) * (vel / 0.6) ** 2.5)
-    |> rings(seconds: 1.5)
+    rings((struck + shell) * (vel / 0.6) ** 2.5, seconds: 1.5)
   end
 
   defsoundp hit(attack, decay, curve) do

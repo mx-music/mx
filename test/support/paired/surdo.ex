@@ -4,7 +4,7 @@ defmodule Mx.Paired.Surdo do
   """
 
   use Mx.Instrument
-  import Mx.Paired.Drums
+  import Mx.Paired.Drums, only: [hit: 3]
 
   @open [
     [1, 1.69, 2, 2.38, 2.61, 3, 3.32, 4.12],
@@ -35,7 +35,7 @@ defmodule Mx.Paired.Surdo do
   defsynth surdo(o) do
     vel = clamp(o.vel, 0, 1)
     mute = clamp(o.muted, 0, 1)
-    f = hz(o.note)
+    pitch = hz(o.note)
 
     mallet =
       impulse() +
@@ -45,7 +45,7 @@ defmodule Mx.Paired.Surdo do
     [open_ratios, open_levels, open_rings] = @open
     [muted_ratios, muted_levels, muted_rings] = @muted
     [high_ratios, high_levels, high_rings, tail_rings] = @high
-    freqs = &Enum.map(&1, fn r -> f * r end)
+    freqs = &Enum.map(&1, fn r -> pitch * r end)
 
     head =
       mode(mallet,
@@ -55,13 +55,16 @@ defmodule Mx.Paired.Surdo do
         level:
           Enum.map(open_levels, &(db(&1) * (1 - mute))) ++
             Enum.map(muted_levels, &(db(&1) * (mute * db(-6)))) ++
-            Enum.map(high_levels, &db(&1)) ++ Enum.map(high_levels, &db(&1 - 20)),
+            Enum.map(high_levels, fn level -> db(level) end) ++
+            Enum.map(high_levels, &db(&1 - 20)),
         fade:
           open_rings ++
             muted_rings ++ high_rings ++ Enum.map(tail_rings, &(&1 * (1 - 0.6 * mute)))
       )
 
-    (highshelf(head, hz: 800, q: 0.707, db: (vel - 0.6) * 6) * (0.05 * (vel / 0.6) ** 1.6))
-    |> rings(seconds: 2 - 0.8 * mute)
+    rings(
+      highshelf(head, hz: 800, q: 0.707, db: (vel - 0.6) * 6) * (0.05 * (vel / 0.6) ** 1.6),
+      seconds: 2 - 0.8 * mute
+    )
   end
 end

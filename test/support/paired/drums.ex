@@ -24,19 +24,20 @@ defmodule Mx.Paired.Drums do
 
   @doc "Bands of noise at the ride's bands from `first`, scaled by `scale`, each struck and fading over its ring."
   defsound band_noise(levels, rings, first, scale) do
-    Enum.zip([Enum.drop(@ride_bands, first), levels, rings])
-    |> Enum.reduce(0, fn {f, l, r}, sound ->
-      f = f * scale
-      level = exp_hit(0.0005, r)
+    bands = Enum.zip([Enum.drop(@ride_bands, first), levels, rings])
+
+    Enum.reduce(bands, 0, fn {centre, decibels, ring}, sound ->
+      centre = centre * scale
+      level = exp_hit(0.0005, ring)
 
       band =
         (noise(:white) * level)
-        |> bpf(f, 0.5)
-        |> highpass(hz: f * 0.6)
-        |> lowpass(hz: f * 1.7)
-        |> lowpass(hz: f * 1.7)
+        |> bpf(centre, 0.5)
+        |> highpass(hz: centre * 0.6)
+        |> lowpass(hz: centre * 1.7)
+        |> lowpass(hz: centre * 1.7)
 
-      sound + band * (db(l) * (200 / f) ** 0.5)
+      sound + band * (db(decibels) * (200 / centre) ** 0.5)
     end)
   end
 
@@ -112,17 +113,17 @@ defmodule Mx.Paired.Drums do
       (vel / 0.6) ** 2
   end
 
-  @doc "A value read at `x` from `table` given at each of `bands`, in a straight line between the two bands around it, and held beyond the ends; numbers only."
-  def between(x, bands, table) do
-    x = x |> Kernel.max(hd(bands)) |> Kernel.min(List.last(bands))
+  @doc "A value read at `value` from `table` given at each of `bands`, in a straight line between the two bands around it, and held beyond the ends; numbers only."
+  def between(value, bands, table) do
+    value = value |> Kernel.max(hd(bands)) |> Kernel.min(List.last(bands))
 
-    k =
-      Enum.find_index(Enum.chunk_every(bands, 2, 1, :discard), fn [_, high] -> x <= high end) ||
+    index =
+      Enum.find_index(Enum.chunk_every(bands, 2, 1, :discard), fn [_, high] -> value <= high end) ||
         length(bands) - 2
 
-    [low, high] = Enum.slice(bands, k, 2)
-    along = (x - low) / (high - low)
-    Enum.at(table, k) + (Enum.at(table, k + 1) - Enum.at(table, k)) * along
+    [low, high] = Enum.slice(bands, index, 2)
+    along = (value - low) / (high - low)
+    Enum.at(table, index) + (Enum.at(table, index + 1) - Enum.at(table, index)) * along
   end
 
   @doc "The pandeiro's stroke `s` at `f`, struck at `vel`, its head pressed `mute` of the way: a hand ringing the head's modes, a crack of band-passed noise, and the jingles' rattle ringing the discs."
@@ -131,8 +132,10 @@ defmodule Mx.Paired.Drums do
     rings = Enum.map(s.rings, &(&1 * 0.2 ** mute))
 
     stick =
-      (impulse() + noise(:white) * hit(0.0005, 0.004, -4))
-      |> lowpass(hz: clamp(800 + vel * 4000, 20, 20_000))
+      lowpass(
+        impulse() + noise(:white) * hit(0.0005, 0.004, -4),
+        hz: clamp(800 + vel * 4000, 20, 20_000)
+      )
 
     skin =
       mode(stick,
@@ -183,5 +186,30 @@ defmodule Mx.Paired.Drums do
 
     highshelf(skin + body + jingles, hz: 2000, q: 0.707, db: (vel - 0.6) * 5) *
       (s.gain * (vel / 0.6) ** 0.75)
+  end
+
+  @doc "A tom at the MIDI `note`, tuned from `own`, struck at `vel`: a stick through a pole at 20 Hz ringing the head's modes briefly and long, and the skin's noise with a click, each tilted by vel."
+  defsound tom(note, own, vel, t) do
+    pitch = hz(note)
+    below = min(vel - 0.65, 0)
+    above = max(vel - 0.65, 0)
+    [corner, low_tilt, mid_tilt, high_tilt] = t.bright
+
+    tilt = fn sound ->
+      sound
+      |> highshelf(hz: corner, q: 0.707, db: below * low_tilt)
+      |> highshelf(hz: 2500, q: 0.707, db: below * mid_tilt + above * high_tilt)
+    end
+
+    struck = impulse() + noise(:white) * hit(0.0005, 0.003, -4) * 0.3
+    stick = struck |> lowpass(hz: 20, poles: 1) |> lowpass(hz: 2000) |> tilt.()
+    freqs = Enum.map(t.ratios, &(pitch * &1))
+    levels = Enum.zip_with(t.levels, freqs, &(db(&1) * &2 / 20))
+    fades = Enum.map(t.rings, &(&1 * 0.08)) ++ t.rings
+    head = mode(stick, hz: freqs ++ freqs, level: levels ++ levels, fade: fades)
+    click = (noise(:white) * hit(0.0005, 0.004, -4)) |> highpass(hz: 1500) |> lowpass(hz: 4000)
+    # mxs draws the click's noise before the skin's, so it comes first.
+    dense = tilt.(click * db(16) + band_noise(t.skin, t.skin_rings, 2, pitch / hz(own)))
+    (head + dense * db(-11)) * (db(t.gain) * (vel / 0.65) ** t.curve)
   end
 end

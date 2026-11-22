@@ -21,7 +21,8 @@ defmodule Mx.Paired.Acid do
   defsynth acid(o) do
     pitch = hz(follow(o.note) + follow(o.bend))
 
-    # The graph's envelopes start at 0, so the spring from 30 semitones down to 0 is 30 less one rising to 30.
+    # The graph's envelopes start at 0, so the spring from 30 semitones down to 0 is 30 less one
+    # rising to 30.
     spring = 30 - envelope([{0.18, 30, -4}])
     sound = saw(hz: pitch) * db(-4.5) + pulse(hz: pitch * 0.5, width: 0.5) * db(-4.5) * 0.25
 
@@ -33,7 +34,6 @@ defmodule Mx.Paired.Acid do
 
     rising = exp(2 * 1.6 * filtered)
 
-    ((rising - 1) / (rising + 1) * 0.45)
-    |> note_envelope(o)
+    note_envelope((rising - 1) / (rising + 1) * 0.45, o)
   end
 end

@@ -4,7 +4,7 @@ defmodule Mx.Paired.Clap do
   """
 
   use Mx.Instrument
-  import Mx.Paired.Drums
+  import Mx.Paired.Drums, only: [bpf: 3]
 
   @doc "A hand clap: band-passed noise in four quick bursts."
   attr :note, :note, default: 60, doc: "The clap's pitch."
@@ -22,7 +22,6 @@ defmodule Mx.Paired.Clap do
         {0.32, 0, -6}
       ])
 
-    (bpf(noise(:white), hz(o.note) * 4.2, 0.9) * hands * 1.8)
-    |> rings(seconds: 0.6)
+    rings(bpf(noise(:white), hz(o.note) * 4.2, 0.9) * hands * 1.8, seconds: 0.6)
   end
 end

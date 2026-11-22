@@ -4,13 +4,14 @@ defmodule Mx.Paired.Crash do
   """
 
   use Mx.Instrument
-  import Mx.Paired.Drums
+  import Mx.Paired.Drums, only: [hit: 3, bpf: 3, band_noise: 4, between: 3]
 
   @bands [300, 500, 800, 1300, 2000, 3200, 5000, 8000, 12_500]
   @levels [-19.4, -46.4, -46.5, -32, -32.8, -36.5, -27.1, -31.8, -19.3]
   @rings [9.6, 9.6, 5.2, 5.28, 4.36, 3.38, 2.83, 1.93, 0.8]
   @shorter [0.75, 0.75, 0.68, 0.51, 0.4, 0.31, 0.18, 0, 0]
-  # The fitted dBs after the bands' levels: the noise, the plate, the crack, the bank and the early rings' longest.
+  # The fitted dBs after the bands' levels: the noise, the plate, the crack, the bank and the
+  # early rings' longest.
   @noise_db 50
   @plate_db 6
   @crack_db -20
@@ -82,7 +83,9 @@ defmodule Mx.Paired.Crash do
     choke = 1 - envelope([{held, 0}, {release, 1, -4}])
 
     # mxs trims the crash 4.9 dB quieter.
-    ((plate * 0.1 + crack + thud) * 0.9 * choke * (vel / 0.6) ** 1.7 * db(-4.9))
-    |> rings(seconds: held + release)
+    rings(
+      (plate * 0.1 + crack + thud) * 0.9 * choke * (vel / 0.6) ** 1.7 * db(-4.9),
+      seconds: held + release
+    )
   end
 end

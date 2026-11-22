@@ -4,7 +4,7 @@ defmodule Mx.Paired.Pandeiro do
   """
 
   use Mx.Instrument
-  import Mx.Paired.Drums
+  import Mx.Paired.Drums, only: [pandeiro: 4]
 
   @strokes %{
     thumb: %{
@@ -65,7 +65,6 @@ defmodule Mx.Paired.Pandeiro do
   defsynth pandeiro(%{stroke: :jingles} = o), do: played(o, @strokes.jingles)
 
   defsoundp played(o, s) do
-    pandeiro(hz(o.note), clamp(o.vel, 0, 1), clamp(o.muted, 0, 1), s)
-    |> rings(seconds: s.length)
+    rings(pandeiro(hz(o.note), clamp(o.vel, 0, 1), clamp(o.muted, 0, 1), s), seconds: s.length)
   end
 end

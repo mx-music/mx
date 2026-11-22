@@ -4,7 +4,7 @@ defmodule Mx.Paired.HighBongo do
   """
 
   use Mx.Instrument
-  import Mx.Paired.Drums
+  import Mx.Paired.Drums, only: [bongo: 4]
 
   @bongo %{
     ratios: [0.26, 0.45, 0.63, 0.665, 0.97, 0.987, 1.7, 2.7, 4.3, 7, 11, 17, 27],
@@ -25,7 +25,6 @@ defmodule Mx.Paired.HighBongo do
   attr :muted, :float, default: 0, range: 0..1, doc: "1 mutes the head with the hand."
 
   defsynth high_bongo(o) do
-    bongo(hz(o.note), clamp(o.vel, 0, 1), clamp(o.muted, 0, 1), @bongo)
-    |> rings(seconds: 1.18)
+    rings(bongo(hz(o.note), clamp(o.vel, 0, 1), clamp(o.muted, 0, 1), @bongo), seconds: 1.18)
   end
 end

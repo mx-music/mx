@@ -4,8 +4,8 @@ defmodule Mx.Paired.Berimbau do
   """
 
   use Mx.Instrument
-  alias Mx.Instrument.Vocabulary, as: V
   import Mx.Paired.Draws, only: [rnd1: 1]
+  alias Mx.Instrument.Vocabulary, as: V
 
   @ratios [2, 3, 4, 5, 6, 7, 9, 10, 12, 14, 16, 19.35, 20.38, 21, 21.47, 35, 37, 39, 44]
   @open [
@@ -59,9 +59,9 @@ defmodule Mx.Paired.Berimbau do
   @tails [-60, -60, -60, -40, -22, -28, -24]
   @wire_fit [-10, -15.8, -12.9, -14.3, -7, -6.6, -12.8]
   @seed 7000
-  @wire (for i <- 0..95 do
-           f = 700 * :math.pow(16_000 / 700, (i + rnd1(2 * i + @seed)) / 96)
-           {f, 0.2 * :math.pow(30, rnd1(2 * i + @seed + 1)), rem(i, 4) == 0}
+  @wire (for index <- 0..95 do
+           band = 700 * :math.pow(16_000 / 700, (index + rnd1(2 * index + @seed)) / 96)
+           {band, 0.2 * :math.pow(30, rnd1(2 * index + @seed + 1)), rem(index, 4) == 0}
          end)
 
   @doc "The berimbau: the string's partials struck by the stick, swung by the gourd, over the wire's close modes and the stick's thud."
@@ -88,16 +88,19 @@ defmodule Mx.Paired.Berimbau do
     buzz = o.buzz
     coin = max(o.coin, buzz)
     mix = fn a, b -> a + (b - a) * coin end
-    f = hz(o.note) * 1.0621 ** coin
+    pitch = hz(o.note) * 1.0621 ** coin
     damp = 1 - buzz * 0.96
     gourd = o.gourd
     stick = lowpass(impulse(), hz: 5000)
 
-    # The gourd starts open and swings some harmonics up and others down as it closes against the belly.
+    # The gourd starts open and swings some harmonics up and others down as it closes against the
+    # belly.
+    partials = Enum.zip([@ratios, @open, @pressed, @rings])
+
     string =
-      Enum.zip([@ratios, @open, @pressed, @rings])
-      |> Enum.reduce(0, fn {ratio, open, pressed, ring}, string ->
-        partial = mode(stick, hz: f * ratio, level: db(mix.(open, pressed)), fade: ring * damp)
+      Enum.reduce(partials, 0, fn {ratio, open, pressed, ring}, string ->
+        partial =
+          mode(stick, hz: pitch * ratio, level: db(mix.(open, pressed)), fade: ring * damp)
 
         case @swings[ratio] do
           nil ->
@@ -109,7 +112,8 @@ defmodule Mx.Paired.Berimbau do
         end
       end)
 
-    # The wire's levels, rings and tails read at a frequency along its bands; the levels move with the coin.
+    # The wire's levels, rings and tails read at a frequency along its bands; the levels move with
+    # the coin.
     wire_levels =
       Enum.zip_with([@wire_open, @wire_pressed, @wire_fit], fn [a, b, fit] -> mix.(a, b) + fit end)
 
@@ -126,7 +130,8 @@ defmodule Mx.Paired.Berimbau do
           end)
       )
 
-    # The stick's dull thud, in three bands of noise that rise at once and fall away exponentially.
+    # The stick's dull thud, in three bands of noise that rise at once and fall away
+    # exponentially.
     thud =
       [{200, -20, 0.3}, {316, -20, 0.3}, {502, -10, 0.5}]
       |> Enum.with_index()
@@ -144,24 +149,29 @@ defmodule Mx.Paired.Berimbau do
 
     tick = highpass(impulse(), hz: 200) * 0.1
 
-    # With buzz, the coin rests on the wire and rattles against it; at 0 the rattle is silent, where mxs leaves it out.
+    # With buzz, the coin rests on the wire and rattles against it; at 0 the rattle is silent,
+    # where mxs leaves it out.
     rattle =
-      highpass(V.pulse(hz: f, width: 0.08) * 0.5 + 0.42, hz: 1200) *
+      highpass(V.pulse(hz: pitch, width: 0.08) * 0.5 + 0.42, hz: 1200) *
         perc(attack: 0.002, release: 0.12) *
         (buzz * 0.3)
 
     sound = string * 0.05 + thud + wire * 0.05 + tick + rattle
 
-    (highshelf(sound, hz: 1500, q: 0.707, db: (vel - 0.6) * 5) * (0.2 * (vel / 0.6) ** 1.5))
-    |> rings(seconds: 2.9)
+    rings(
+      highshelf(sound, hz: 1500, q: 0.707, db: (vel - 0.6) * 5) * (0.2 * (vel / 0.6) ** 1.5),
+      seconds: 2.9
+    )
   end
 
-  # A value read at `f` from `table` along the wire's bands, held beyond them.
-  defsoundp at(f, table) do
-    f = f |> Kernel.max(hd(@bands)) |> Kernel.min(List.last(@bands))
-    i = Kernel.min(Enum.count(@bands, &(&1 <= f)) - 1, 5)
-    low = Enum.at(@bands, i)
-    high = Enum.at(@bands, i + 1)
-    Enum.at(table, i) + (Enum.at(table, i + 1) - Enum.at(table, i)) * ((f - low) / (high - low))
+  # A value read at `freq` from `table` along the wire's bands, held beyond them.
+  defsoundp at(freq, table) do
+    freq = freq |> Kernel.max(hd(@bands)) |> Kernel.min(List.last(@bands))
+    index = Kernel.min(Enum.count(@bands, &(&1 <= freq)) - 1, 5)
+    low = Enum.at(@bands, index)
+    high = Enum.at(@bands, index + 1)
+
+    Enum.at(table, index) +
+      (Enum.at(table, index + 1) - Enum.at(table, index)) * ((freq - low) / (high - low))
   end
 end

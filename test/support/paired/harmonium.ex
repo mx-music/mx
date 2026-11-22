@@ -4,7 +4,7 @@ defmodule Mx.Paired.Harmonium do
   """
 
   use Mx.Instrument
-  import Mx.Paired.Sounds
+  import Mx.Paired.Sounds, only: [pitch: 1, tilted: 2, swell: 2, along: 3]
 
   @centres [
     65.4,
@@ -18,7 +18,7 @@ defmodule Mx.Paired.Harmonium do
     3162.0,
     5019.0,
     7937.0,
-    12649.0
+    12_649.0
   ]
   @table [0.0, 6.85, 3.1, 3.8, -6.5, 3.9, 4.7, -1.0, -10.4, -27.1, -45.7, -55.6]
   @noise [2.4, 0.9, -8.8, -5.7, -5.6, -6.5, -7.0, -10.5, -17.5, -27.5, -40.5]
@@ -39,15 +39,15 @@ defmodule Mx.Paired.Harmonium do
     freq = hz(o.note)
 
     levels =
-      for n <- 1..48 do
+      for harmonic <- 1..48 do
         select(
-          freq * n < 16_000,
-          db(along(@centres, @table, freq * n) + (vel - 0.6) * 3 * :math.log2(n)),
+          freq * harmonic < 16_000,
+          db(along(@centres, @table, freq * harmonic) + (vel - 0.6) * 3 * :math.log2(harmonic)),
           0
         )
       end
 
-    phases = for n <- 1..48, do: :math.pi() * n * (n - 1) / 24
+    phases = for harmonic <- 1..48, do: :math.pi() * harmonic * (harmonic - 1) / 24
     tone = partials(pitch(o), ratios: Enum.to_list(1..48), levels: levels, phases: phases)
 
     noise =
@@ -57,7 +57,6 @@ defmodule Mx.Paired.Harmonium do
             db(level)
       end)
 
-    tilted(o, (tone + noise) * swell(o, 0.3) * (0.006 * (vel / 0.6) ** 1.2))
-    |> note_envelope(o)
+    note_envelope(tilted(o, (tone + noise) * swell(o, 0.3) * (0.006 * (vel / 0.6) ** 1.2)), o)
   end
 end

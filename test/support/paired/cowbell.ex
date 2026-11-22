@@ -4,7 +4,7 @@ defmodule Mx.Paired.Cowbell do
   """
 
   use Mx.Instrument
-  import Mx.Paired.Drums
+  import Mx.Paired.Drums, only: [hit: 3]
 
   @ratios [
     0.925,
@@ -83,7 +83,7 @@ defmodule Mx.Paired.Cowbell do
   defsynth cowbell(o) do
     vel = clamp(o.vel, 0.05, 1)
     muted = clamp(o.muted, 0, 1)
-    f = hz(o.note)
+    pitch = hz(o.note)
     bright = vel - 0.6
     worn = 0.6 + 0.4 * vel
     strike = impulse() + highpass(noise(:white), hz: 3000) * hit(0.0002, 0.002, -4) * 0.3
@@ -95,7 +95,7 @@ defmodule Mx.Paired.Cowbell do
       Enum.take(@rings, 12) ++
         Enum.map(Enum.slice(@rings, 12..13), &(&1 * worn)) ++ Enum.drop(@rings, 14)
 
-    freqs = Enum.map(@ratios, &(f * &1))
+    freqs = Enum.map(@ratios, &(pitch * &1))
 
     bell =
       mode(strike,
@@ -104,7 +104,6 @@ defmodule Mx.Paired.Cowbell do
         fade: Enum.map(rings, &(&1 * 0.13)) ++ Enum.map(rings, &(&1 * (1 - muted * 0.1)))
       )
 
-    (bell * (db(-27.5) * (vel / 0.6) ** 2.3))
-    |> rings(seconds: 1.5)
+    rings(bell * (db(-27.5) * (vel / 0.6) ** 2.3), seconds: 1.5)
   end
 end

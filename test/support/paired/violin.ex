@@ -40,7 +40,7 @@ defmodule Mx.Paired.Violin do
     doc: "Where the bow meets the string, as a fraction of its length from the bridge."
 
   attr :cutoff_hz, :float,
-    range: 1000..20000,
+    range: 1000..20_000,
     doc: "The lowpass after the body, in place of the fitted one; for fitting."
 
   attr :swell, :float,
@@ -48,7 +48,7 @@ defmodule Mx.Paired.Violin do
     doc: "The seconds a note rises from silence, in place of the fitted one; for fitting."
 
   attr :shelf_hz, :float,
-    range: 1000..16000,
+    range: 1000..16_000,
     doc: "The air shelf's corner, in place of the fitted one; for fitting."
 
   attr :shelf_db, :float,
@@ -76,7 +76,7 @@ defmodule Mx.Paired.Violin do
       "How far each band of the body drifts while a note holds, in dB, in place of the fitted one; for fitting."
 
   attr :hiss_hz, :float,
-    range: 200..12000,
+    range: 200..12_000,
     doc: "The centre of the bow's hiss, in place of the fitted one; for fitting."
 
   attr :hiss_db, :float,
@@ -156,7 +156,8 @@ defmodule Mx.Paired.Violin do
     swell = max(from_silence + (min(0.06, from_silence) - from_silence) * legato, 1.0e-3)
     rising = 1 - (1 - min(time() / swell, 1)) ** 2
 
-    # The bow catching the string scratches before the string speaks, unless it changes bow from a sounding note.
+    # The bow catching the string scratches before the string speaks, unless it changes bow from a
+    # sounding note.
     scratch =
       noise(:white)
       |> highpass(hz: 400, q: 0.707)
@@ -169,12 +170,13 @@ defmodule Mx.Paired.Violin do
       (vel ** 0.6 * db(by_vel.(-25.05, -28.90, -30.45)))
   end
 
-  # A slow drift of a standard deviation near 1: three sines at unrelated rates, their phases set by `which` and the note.
-  # mxs's filters stop at 20 Hz, so noise cannot be slowed this far; mx-00231's drift would replace this.
+  # A slow drift of a standard deviation near 1: three sines at unrelated rates, their phases set
+  # by `which` and the note.
+  # mxs's filters stop at 20 Hz, so noise cannot be slowed this far.
   defsoundp wander(bowed, which) do
     mix(
-      for {rate, k} <- Enum.with_index([0.23, 0.41, 0.67]) do
-        phase = bowed.note * (1.7 + k) + which * (2.3 + 0.9 * k)
+      for {rate, index} <- Enum.with_index([0.23, 0.41, 0.67]) do
+        phase = bowed.note * (1.7 + index) + which * (2.3 + 0.9 * index)
         sin(2 * :math.pi() * rate * (1 + 0.05 * which) * time() + phase) * 0.816
       end
     )
@@ -195,9 +197,7 @@ defmodule Mx.Paired.Violin do
     strike = impulse()
 
     bank =
-      mix(
-        for {n, level, fade} <- modes, do: strike |> mode(hz: freq * n, level: level, fade: fade)
-      )
+      mix(for {n, level, fade} <- modes, do: mode(strike, hz: freq * n, level: level, fade: fade))
 
     gain = 0.13 * pizz * vel ** 0.6
 

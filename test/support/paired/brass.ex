@@ -32,13 +32,13 @@ defmodule Mx.Paired.Brass do
     pitch = hz(note)
     gain = (follow(o.brightness) - 0.5) * 12
 
-    # An expression used twice is built twice, so a select between the dry and shelved sound would play a second noise; at brightness 0.5 the shelves' 0 dB leaves the sound as it is.
+    # An expression used twice is built twice, so a select between the dry and shelved sound would
+    # play a second noise; at brightness 0.5 the shelves' 0 dB leaves the sound as it is.
     tilted =
       Enum.reduce(0..3, sound, fn k, shelved ->
         highshelf(shelved, hz: min(pitch * (2 * 4 ** k), 18_000), q: 0.707, db: gain)
       end)
 
-    tilted
-    |> note_envelope(o)
+    note_envelope(tilted, o)
   end
 end

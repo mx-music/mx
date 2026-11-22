@@ -43,7 +43,7 @@ defmodule Mx.PairedTest do
     20 * :math.log10(max(rms(difference), 1.0e-12) / rms(rust))
   end
 
-  # Each twin of mx-00229, with the options each is checked at and the seconds rendered.
+  # Each twin, with the options each is checked at and the seconds rendered.
   @twins [
     {Mx.Paired.Saw, :saw, [[note: 45, sustain: 1], [note: 69, cutoff: 80, res: 0.8, sustain: 1]],
      2},
@@ -53,7 +53,7 @@ defmodule Mx.PairedTest do
     {Mx.Paired.Pulse, :pulse, [[note: 45, sustain: 1], [note: 60, pulse_width: 0.1, sustain: 1]],
      2},
     {Mx.Paired.Noise, :noise, [[sustain: 1], [cutoff: 70, res: 0.7, sustain: 1]], 2},
-    {Mx.Paired.Fm, :fm, [[note: 45, sustain: 1], [note: 64, divisor: 0.5, depth: 3, sustain: 1]],
+    {Mx.Paired.FM, :fm, [[note: 45, sustain: 1], [note: 64, divisor: 0.5, depth: 3, sustain: 1]],
      2},
     {Mx.Paired.Viola, :viola,
      [[note: 60, vel: 0.3], [note: 67, vel: 1, vibrato: 0.5], [note: 55, pizz: 1]], 3},
@@ -84,6 +84,9 @@ defmodule Mx.PairedTest do
     {Mx.Paired.PedalHihat, :pedal_hihat, [[vel: 0.3], [note: 62, vel: 1]], 1},
     {Mx.Paired.Crash, :crash,
      [[vel: 0.3, sustain: 2], [note: 62, vel: 1, sustain: 1, release: 0.5]], 3},
+    {Mx.Paired.LowTom, :low_tom, [[vel: 0.3], [note: 40, vel: 1]], 3},
+    {Mx.Paired.MidTom, :mid_tom, [[vel: 0.3], [note: 45, vel: 1]], 3},
+    {Mx.Paired.HighTom, :high_tom, [[vel: 0.3], [note: 47, vel: 1]], 3},
     {Mx.Paired.Berimbau, :berimbau,
      [[vel: 0.3], [vel: 1, coin: 1], [note: 41, gourd: 0], [buzz: 0.5]], 3},
     {Mx.Paired.TimbaleShell, :timbale_shell, [[], [note: 91]], 1},

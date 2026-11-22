@@ -4,7 +4,7 @@ defmodule Mx.Paired.PandeiroJingles do
   """
 
   use Mx.Instrument
-  import Mx.Paired.Drums
+  import Mx.Paired.Drums, only: [pandeiro: 4]
 
   @stroke Mx.Paired.Pandeiro.strokes().jingles
 
@@ -19,7 +19,9 @@ defmodule Mx.Paired.PandeiroJingles do
       "1 presses a finger of the holding hand on the head from behind, so it rings higher and shorter."
 
   defsynth pandeiro_jingles(o) do
-    pandeiro(hz(o.note), clamp(o.vel, 0, 1), clamp(o.muted, 0, 1), @stroke)
-    |> rings(seconds: @stroke.length)
+    rings(
+      pandeiro(hz(o.note), clamp(o.vel, 0, 1), clamp(o.muted, 0, 1), @stroke),
+      seconds: @stroke.length
+    )
   end
 end

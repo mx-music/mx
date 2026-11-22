@@ -4,7 +4,7 @@ defmodule Mx.Paired.PedalHihat do
   """
 
   use Mx.Instrument
-  import Mx.Paired.Drums
+  import Mx.Paired.Drums, only: [fitted: 3]
 
   @stroke %{
     note: 60,
@@ -23,7 +23,6 @@ defmodule Mx.Paired.PedalHihat do
   attr :vel, :float, default: 0.6, range: 0..1, doc: "How hard it is struck."
 
   defsynth pedal_hihat(o) do
-    fitted(2 ** ((o.note - @stroke.note) / 12), clamp(o.vel, 0, 1), @stroke)
-    |> rings(seconds: 0.97)
+    rings(fitted(2 ** ((o.note - @stroke.note) / 12), clamp(o.vel, 0, 1), @stroke), seconds: 0.97)
   end
 end

@@ -4,7 +4,7 @@ defmodule Mx.Paired.Ride do
   """
 
   use Mx.Instrument
-  import Mx.Paired.Drums
+  import Mx.Paired.Drums, only: [hit: 3, band_noise: 4, between: 3]
 
   @bands [200, 300, 500, 800, 1300, 2000, 3200, 5000, 8000, 12_500]
   @levels [0, -7.4, -5.6, -20.4, 2.4, -13.5, 6.5, 8, 2.1, 11.3]
@@ -26,7 +26,8 @@ defmodule Mx.Paired.Ride do
   ]
   @bell_levels [-3, -4.5, -6.1, -4.5, -7.7, -5.2, 0, -0.2, -1.1, -5.2, -3.9, -5.1, -4.5]
   @bell_rings [6.38, 6.38, 3.26, 2.98, 2.83, 2.2, 1.44, 1.4, 1.94, 1.44, 1.12, 1.26, 0.97]
-  # The fitted dBs after the bands' levels: the high bands' noise, how much quieter the plate is above 1 kHz, the tick, and the ping.
+  # The fitted dBs after the bands' levels: the high bands' noise, how much quieter the plate is
+  # above 1 kHz, the tick, and the ping.
   @high_db 30
   @quieter_db 22
   @tick_db 26
@@ -87,11 +88,12 @@ defmodule Mx.Paired.Ride do
 
     cup_levels =
       Enum.map(Enum.take(@bell_levels, 2), &db(&1 + @cup_low)) ++
-        Enum.map(Enum.drop(@bell_levels, 2), &db(&1))
+        Enum.map(Enum.drop(@bell_levels, 2), fn level -> db(level) end)
 
     cup_level = bell * db(@cup_db)
 
-    # The wash, the ping and the cup are each a bank struck by the stick and scaled by a number fixed as the note starts, so one bank holds all three and the stick's noise is drawn once.
+    # The wash, the ping and the cup are each a bank struck by the stick and scaled by a number
+    # fixed as the note starts, so one bank holds all three and the stick's noise is drawn once.
     struck =
       mode(stick,
         hz: wash_hz ++ ping_hz ++ Enum.map(@bell_hz, &(&1 * scale)),
@@ -115,8 +117,11 @@ defmodule Mx.Paired.Ride do
     # The damping falls from 1, so it is 1 less an envelope rising from the graph's 0.
     choke = 1 - envelope([{held, 0}, {release, 1, -4}])
 
-    ((struck + wash_noise * db(wash_db) + ping_noise * db(ping_db) + tick) * 0.007 * db(bell * -4) *
-       choke * (vel / 0.6) ** 1.7)
-    |> rings(seconds: held + release)
+    rings(
+      (struck + wash_noise * db(wash_db) + ping_noise * db(ping_db) + tick) * 0.007 *
+        db(bell * -4) *
+        choke * (vel / 0.6) ** 1.7,
+      seconds: held + release
+    )
   end
 end

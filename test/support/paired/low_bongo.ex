@@ -4,7 +4,7 @@ defmodule Mx.Paired.LowBongo do
   """
 
   use Mx.Instrument
-  import Mx.Paired.Drums
+  import Mx.Paired.Drums, only: [bongo: 4]
 
   @bongo %{
     ratios: [0.46, 0.906, 1.005, 1.05, 1.548, 1.976, 2.9, 4.8, 7.6, 12.4, 19.5, 30],
@@ -26,7 +26,9 @@ defmodule Mx.Paired.LowBongo do
 
   defsynth low_bongo(o) do
     # mxs trims the low bongo 5.2 dB louder.
-    (bongo(hz(o.note), clamp(o.vel, 0, 1), clamp(o.muted, 0, 1), @bongo) * db(5.2))
-    |> rings(seconds: 1.18)
+    rings(
+      bongo(hz(o.note), clamp(o.vel, 0, 1), clamp(o.muted, 0, 1), @bongo) * db(5.2),
+      seconds: 1.18
+    )
   end
 end

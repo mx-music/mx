@@ -1,4 +1,4 @@
-defmodule Mx.Paired.Fm do
+defmodule Mx.Paired.FM do
   @moduledoc """
   mxs's fm written with defsynth, node for node, so the two can be compared and timed.
   """

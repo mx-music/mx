@@ -4,7 +4,7 @@ defmodule Mx.Paired.Tamborim do
   """
 
   use Mx.Instrument
-  import Mx.Paired.Drums
+  import Mx.Paired.Drums, only: [hit: 3]
 
   @ratios [0.38, 0.55, 1, 1.8, 2.5, 3.2, 4, 5, 6.3, 8, 10, 13, 17]
   @levels [-26, -17, 0, -2, -3.5, -8, -9, -10, -11, -15, -18, -18, -22]
@@ -16,13 +16,13 @@ defmodule Mx.Paired.Tamborim do
 
   defsynth tamborim(o) do
     vel = clamp(o.vel, 0, 1)
-    f = hz(o.note)
+    pitch = hz(o.note)
     stick = impulse() + highpass(noise(:white), hz: 2000) * hit(0.0003, 0.004, -4) * 0.3
 
     head =
       mode(stick,
-        hz: Enum.map(@ratios, &(f * &1)),
-        level: Enum.map(@levels, &db(&1)),
+        hz: Enum.map(@ratios, &(pitch * &1)),
+        level: Enum.map(@levels, fn level -> db(level) end),
         fade: @rings
       )
 
@@ -30,8 +30,10 @@ defmodule Mx.Paired.Tamborim do
       (noise(:white) |> highpass(hz: 3000) |> lowpass(hz: 12_000)) * hit(0.0005, 0.03, -4) *
         db(-12)
 
-    (highshelf(head + crack, hz: 2000, q: 0.707, db: (vel - 0.6) * 6) *
-       (0.02 * (vel / 0.6) ** 1.4))
-    |> rings(seconds: 1.4)
+    rings(
+      highshelf(head + crack, hz: 2000, q: 0.707, db: (vel - 0.6) * 6) *
+        (0.02 * (vel / 0.6) ** 1.4),
+      seconds: 1.4
+    )
   end
 end

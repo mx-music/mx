@@ -4,7 +4,7 @@ defmodule Mx.Paired.Organ do
   """
 
   use Mx.Instrument
-  import Mx.Paired.Sounds
+  import Mx.Paired.Sounds, only: [pitch: 1, tilted: 2]
 
   @doc "A pipe organ: a quiet stopped flute, or a loud principal chorus with a bourdon an octave down."
   attr :note, :note, default: 52, doc: "The pitch."
@@ -30,23 +30,23 @@ defmodule Mx.Paired.Organ do
     loud_level = -0.83 * max(60 - key, 0) - 0.25 * max(note - 60, 0) + 6
 
     levels =
-      for n <- 1..24 do
-        octave = :math.log2(n)
-        flute = if(rem(n, 2) == 1, do: (-8 - 0.25 * (key - 36)) * octave, else: -45)
-        flute = if(n == 3, do: flute + 10 * max((42 - key) / 6, 0), else: flute)
+      for harmonic <- 1..24 do
+        octave = :math.log2(harmonic)
+        flute = if(rem(harmonic, 2) == 1, do: (-8 - 0.25 * (key - 36)) * octave, else: -45)
+        flute = if(harmonic == 3, do: flute + 10 * max((42 - key) / 6, 0), else: flute)
         chorus = (4 - 0.4 * (key - 36)) * octave
         slope = 18 - loud * 2
 
         top =
-          slope * min(max(log2(freq * n / max(freq, 740 + loud * 220)), 0), 27 / slope) +
-            30 * max(log2(freq * n / 5000), 0)
+          slope * min(max(log2(freq * harmonic / max(freq, 740 + loud * 220)), 0), 27 / slope) +
+            30 * max(log2(freq * harmonic / 5000), 0)
 
         quiet_level = min(1.5 * (key - 45), 0)
         level = db(flute + quiet_level - top) * (1 - loud) + db(chorus + loud_level - top) * loud
-        select(freq * n < 16_000, level, 0)
+        select(freq * harmonic < 16_000, level, 0)
       end
 
-    phases = for n <- 1..24, do: :math.pi() * n * (n - 1) / 24
+    phases = for harmonic <- 1..24, do: :math.pi() * harmonic * (harmonic - 1) / 24
     pipes = partials(pitch(o), ratios: Enum.to_list(1..24), levels: levels, phases: phases)
     bourdon_level = select(note >= 60, loud * db(-13) * db(loud_level), 0)
 
@@ -60,7 +60,6 @@ defmodule Mx.Paired.Organ do
     speak = envelope([{0.12 + loud * 0.04, 1, 3}])
     wind = bandpass(noise(:pink), hz: freq * 2, q: 1) * speak * 0.005
 
-    tilted(o, (pipes + bourdon) * speak * 0.03 + wind)
-    |> note_envelope(o)
+    note_envelope(tilted(o, (pipes + bourdon) * speak * 0.03 + wind), o)
   end
 end

@@ -4,7 +4,7 @@ defmodule Mx.Paired.Cajon do
   """
 
   use Mx.Instrument
-  import Mx.Paired.Drums
+  import Mx.Paired.Drums, only: [hit: 3]
 
   @doc "A cajon: a hand ringing the box and the front plate, and a click ringing its shimmer."
   attr :note, :note, default: 40, doc: "The drum's pitch."
@@ -18,7 +18,7 @@ defmodule Mx.Paired.Cajon do
   defsynth cajon(o) do
     vel = clamp(o.vel, 0, 1)
     slap = clamp(o.slap, 0, 1)
-    f = hz(o.note)
+    pitch = hz(o.note)
     mix = fn bass, slapped -> bass + (slapped - bass) * slap end
 
     hand =
@@ -29,7 +29,7 @@ defmodule Mx.Paired.Cajon do
 
     box =
       ringing(
-        f,
+        pitch,
         [0.983, 1.61, 2.2, 3.7],
         [1, 0.45, mix.(0.05, 1.1), mix.(0.033, 0.23)],
         [mix.(0.46, 0.9), 0.3, mix.(0.33, 0.44), mix.(0.7, 0.46)],
@@ -38,14 +38,15 @@ defmodule Mx.Paired.Cajon do
 
     plate =
       ringing(
-        f,
+        pitch,
         [6.3, 6.5, 6.7, 6.9, 9.8],
         [1, 1, 1, 1, mix.(0.4, 0.55)],
         List.duplicate(mix.(0.45, 0.26), 4) ++ [mix.(0.6, 0.32)],
         List.duplicate(0.15, 5)
       )
 
-    # The box is struck by the impulse and by the hand at 0.3, the plate by the hand; one bank over the hand holds both, so its noise is drawn once.
+    # The box is struck by the impulse and by the hand at 0.3, the plate by the hand; one bank
+    # over the hand holds both, so its noise is drawn once.
     by_hand = scaled(box, 0.05 * 0.3) ++ scaled(plate, mix.(0.0014, 0.0225))
 
     levels =
@@ -62,21 +63,23 @@ defmodule Mx.Paired.Cajon do
         &mix.(0.5 * &1, &2)
       )
 
-    shimmer_hz = Enum.map([16, 23, 31, 44, 58, 75, 97, 128, 160], &(f * &1))
+    shimmer_hz = Enum.map([16, 23, 31, 44, 58, 75, 97, 128, 160], &(pitch * &1))
 
     sound =
       bank(hand, by_hand) + bank(impulse(), scaled(box, 0.05)) +
         mode(click, hz: shimmer_hz, level: levels, fade: rings) * mix.(0.00175, 0.0078)
 
     # mxs trims the cajon 3.5 dB louder.
-    (highshelf(sound, hz: 1500, q: 0.707, db: (vel - 0.6) * 5) *
-       (mix.(1, 0.106) * (vel / 0.6) ** 1.6) * db(3.5))
-    |> rings(seconds: 1.72)
+    rings(
+      highshelf(sound, hz: 1500, q: 0.707, db: (vel - 0.6) * 5) *
+        (mix.(1, 0.106) * (vel / 0.6) ** 1.6) * db(3.5),
+      seconds: 1.72
+    )
   end
 
   # A part of the cajon as its modes struck briefly and in a tail: {hz, levels, fades}.
-  defsoundp ringing(f, ratios, levels, rings, tail) do
-    freqs = Enum.map(ratios, &(f * &1))
+  defsoundp ringing(pitch, ratios, levels, rings, tail) do
+    freqs = Enum.map(ratios, &(pitch * &1))
     tails = Enum.zip_with(levels, tail, &(&1 * &2))
     {freqs ++ freqs, levels ++ tails, Enum.map(rings, &(&1 * 0.25)) ++ rings}
   end

@@ -4,7 +4,7 @@ defmodule Mx.Paired.Triangle do
   """
 
   use Mx.Instrument
-  import Mx.Paired.Drums
+  import Mx.Paired.Drums, only: [hit: 3, between: 3]
   alias Mx.Instrument.Vocabulary, as: V
 
   @bands [1300, 2000, 3200, 5000, 8000, 12_500]
@@ -31,7 +31,8 @@ defmodule Mx.Paired.Triangle do
         highpass(noise(:white), hz: clamp(3000 + vel * 5000, 20, 20_000)) * hit(0.0002, 0.002, -4) *
           vel
 
-    # The beater rings every group, each damped by its own hand, so it is shared, its noise drawn once.
+    # The beater rings every group, each damped by its own hand, so it is shared, its noise drawn
+    # once.
     bar =
       share(beater, fn beater ->
         Enum.reduce(@plate, 0, fn some, bar ->
@@ -57,7 +58,9 @@ defmodule Mx.Paired.Triangle do
       |> lowshelf(hz: 3500, q: 0.707, db: hard * 5)
 
     # mxs trims the triangle 3.5 dB quieter.
-    (sound * (db(-46) * (vel / 0.6) ** 2.6) * db(-3.5))
-    |> rings(seconds: min(held + release, held + 12))
+    rings(
+      sound * (db(-46) * (vel / 0.6) ** 2.6) * db(-3.5),
+      seconds: min(held + release, held + 12)
+    )
   end
 end

@@ -4,7 +4,7 @@ defmodule Mx.Paired.Accordion do
   """
 
   use Mx.Instrument
-  import Mx.Paired.Sounds
+  import Mx.Paired.Sounds, only: [pitch: 1, tilted: 2, swell: 2, along: 3]
 
   @centres [
     65.4,
@@ -18,7 +18,7 @@ defmodule Mx.Paired.Accordion do
     3162.0,
     5019.0,
     7937.0,
-    12649.0
+    12_649.0
   ]
   @table [0.0, -1.3, 1.8, 9.2, 7.7, 2.4, 0.5, -1.5, -4.8, -8.3, -23.0, -41.5]
   @noise [-8.2, -8.2, -13.6, -16.3, -14.7, -9.9, -10.1, -8.4, -13.1, 1.4, -27.8]
@@ -47,15 +47,15 @@ defmodule Mx.Paired.Accordion do
     detune = o.detune
 
     levels =
-      for n <- 1..48 do
+      for harmonic <- 1..48 do
         select(
-          freq * n < 16_000,
-          db(along(@centres, @table, freq * n) + (vel - 0.6) * 3 * :math.log2(n)),
+          freq * harmonic < 16_000,
+          db(along(@centres, @table, freq * harmonic) + (vel - 0.6) * 3 * :math.log2(harmonic)),
           0
         )
       end
 
-    phases = for n <- 1..48, do: :math.pi() * n * (n - 1) / 24
+    phases = for harmonic <- 1..48, do: :math.pi() * harmonic * (harmonic - 1) / 24
 
     reed = fn pitch ->
       partials(pitch, ratios: Enum.to_list(1..48), levels: levels, phases: phases)
@@ -72,7 +72,6 @@ defmodule Mx.Paired.Accordion do
             db(level)
       end)
 
-    tilted(o, (tone + noise) * swell(o, 0.065) * (0.036 * (vel / 0.6) ** 1.2))
-    |> note_envelope(o)
+    note_envelope(tilted(o, (tone + noise) * swell(o, 0.065) * (0.036 * (vel / 0.6) ** 1.2)), o)
   end
 end

@@ -4,7 +4,7 @@ defmodule Mx.Paired.CrossStick do
   """
 
   use Mx.Instrument
-  import Mx.Paired.Drums
+  import Mx.Paired.Drums, only: [fitted: 3]
 
   @stroke %{
     note: 53.6,
@@ -36,7 +36,6 @@ defmodule Mx.Paired.CrossStick do
   attr :vel, :float, default: 0.6, range: 0..1, doc: "How hard it is struck."
 
   defsynth cross_stick(o) do
-    fitted(2 ** ((o.note - @stroke.note) / 12), clamp(o.vel, 0, 1), @stroke)
-    |> rings(seconds: 1.2)
+    rings(fitted(2 ** ((o.note - @stroke.note) / 12), clamp(o.vel, 0, 1), @stroke), seconds: 1.2)
   end
 end

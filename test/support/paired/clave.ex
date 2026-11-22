@@ -4,7 +4,7 @@ defmodule Mx.Paired.Clave do
   """
 
   use Mx.Instrument
-  import Mx.Paired.Drums
+  import Mx.Paired.Drums, only: [hit: 3]
 
   @ratios [0.65, 1, 1.08, 1.5, 2.72, 3.6, 6.2]
   @levels [-24, 0, -6, -6, -9.5, -20, -22]
@@ -17,11 +17,11 @@ defmodule Mx.Paired.Clave do
 
   defsynth clave(o) do
     vel = clamp(o.vel, 0.05, 1)
-    f = hz(o.note)
+    pitch = hz(o.note)
     bright = (vel - 0.6) * 30
     strike = impulse() + highpass(noise(:white), hz: 1000) * hit(0.0002, 0.002, -4) * 0.3
     levels = Enum.zip_with(@levels, @bright, fn l, b -> db(l + b * bright) end)
-    freqs = Enum.map(@ratios, &(f * &1))
+    freqs = Enum.map(@ratios, &(pitch * &1))
 
     stick =
       mode(strike,
@@ -31,7 +31,6 @@ defmodule Mx.Paired.Clave do
       )
 
     # mxs trims the clave 4.4 dB quieter.
-    (stick * (db(-21.8) * (vel / 0.6) ** 1.72) * db(-4.4))
-    |> rings(seconds: 1)
+    rings(stick * (db(-21.8) * (vel / 0.6) ** 1.72) * db(-4.4), seconds: 1)
   end
 end

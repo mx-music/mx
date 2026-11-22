@@ -4,10 +4,12 @@ defmodule Mx.Paired.OpenHihat do
   """
 
   use Mx.Instrument
-  import Mx.Paired.Drums
+  import Mx.Paired.Drums, only: [hit: 3, exp_hit: 2, bpf: 3, band_noise: 4]
 
   @levels [-21.0, -14.9, 7.9, -22.7, 5.6, -2.4, 8.4, 11.1, 11.0, 15.0]
   @rings [2.0, 3.5, 2.37, 2.49, 2.32, 2.96, 2.63, 2.49, 2.71, 2.6]
+  # mxs mutes the open hat's thud but still builds it, so its noise is drawn.
+  @thud_gain 0
 
   @doc "An open hi-hat, which rings until it is closed."
   attr :note, :note, default: 92, doc: "The drum's pitch."
@@ -21,7 +23,7 @@ defmodule Mx.Paired.OpenHihat do
     held = o.sustain
     release = o.release
     soft = (1 - vel) / 0.7
-    dark = band_noise(@levels, @rings, 0, scale) |> highshelf(hz: 4000, db: (0.333 - soft) * 10)
+    dark = highshelf(band_noise(@levels, @rings, 0, scale), hz: 4000, db: (0.333 - soft) * 10)
     sizzle = highpass(noise(:white), hz: 7000 * scale) * hit(0.001, 0.05, -4) * 0.035
     # The choke falls from 1, so it is 1 less an envelope rising from the graph's 0.
     choke = 1 - envelope([{held, 0}, {release, 1, -4}])
@@ -32,10 +34,12 @@ defmodule Mx.Paired.OpenHihat do
       |> highpass(hz: 285 * scale)
       |> highpass(hz: 285 * scale)
       |> lowpass(hz: 400 * scale)
-      |> gain(max(soft, 0) ** 0.5 * 0)
+      |> gain(max(soft, 0) ** 0.5 * @thud_gain)
 
     # mxs turns the hat down by the dB its default stroke measured louder than scsynth's.
-    ((dark * 0.1 + sizzle + thud) * 3.3 * choke * ((vel / 0.6) ** 2.8 * db(-5.4)))
-    |> rings(seconds: held + release)
+    rings(
+      (dark * 0.1 + sizzle + thud) * 3.3 * choke * ((vel / 0.6) ** 2.8 * db(-5.4)),
+      seconds: held + release
+    )
   end
 end

@@ -12,9 +12,9 @@ defmodule Mx.Paired.Draws do
     {numbers, _} =
       Enum.map_reduce(1..count//1, seed, fn _, state ->
         state = state + 0x9E37_79B9_7F4A_7C15 &&& @mask
-        z = bxor(state, state >>> 30) * 0xBF58_476D_1CE4_E5B9 &&& @mask
-        z = bxor(z, z >>> 27) * 0x94D0_49BB_1331_11EB &&& @mask
-        {bxor(z, z >>> 31) / @mask, state}
+        mixed = bxor(state, state >>> 30) * 0xBF58_476D_1CE4_E5B9 &&& @mask
+        mixed = bxor(mixed, mixed >>> 27) * 0x94D0_49BB_1331_11EB &&& @mask
+        {bxor(mixed, mixed >>> 31) / @mask, state}
       end)
 
     numbers
@@ -29,11 +29,11 @@ defmodule Mx.Paired.Draws do
   end
 
   @doc "FunDSP's `rnd1`: a number from 0 up to 1 hashed from the integer `x`."
-  def rnd1(x) do
-    x = bxor(x, 0x5555_5555_5555_5555)
-    x = x * 0x9E37_79B9_7F4A_7C15 &&& @mask
-    x = bxor(x, x >>> 30) * 0xBF58_476D_1CE4_E5B9 &&& @mask
-    x = bxor(x, x >>> 27) * 0x94D0_49BB_1331_11EB &&& @mask
-    (bxor(x, x >>> 31) >>> 11) * (1 / (1 <<< 53))
+  def rnd1(bits) do
+    bits = bxor(bits, 0x5555_5555_5555_5555)
+    bits = bits * 0x9E37_79B9_7F4A_7C15 &&& @mask
+    bits = bxor(bits, bits >>> 30) * 0xBF58_476D_1CE4_E5B9 &&& @mask
+    bits = bxor(bits, bits >>> 27) * 0x94D0_49BB_1331_11EB &&& @mask
+    (bxor(bits, bits >>> 31) >>> 11) * (1 / (1 <<< 53))
   end
 end

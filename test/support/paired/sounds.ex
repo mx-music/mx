@@ -27,13 +27,13 @@ defmodule Mx.Paired.Sounds do
 
   @doc "The value at `f` Hz of `values` at `centres`, straight between them on a scale of octaves, going on below the first for two bands."
   defsound along(centres, values, f) do
-    x = log2(f)
+    octave = log2(f)
 
     Enum.zip([centres, tl(centres), values, tl(values)])
     |> Enum.with_index()
-    |> Enum.reduce(hd(values), fn {{low, high, from, to}, i}, sum ->
+    |> Enum.reduce(hd(values), fn {{low, high, from, to}, index}, sum ->
       {low, high} = {:math.log2(low), :math.log2(high)}
-      sum + (to - from) * clamp((x - low) / (high - low), if(i == 0, do: -2, else: 0), 1)
+      sum + (to - from) * clamp((octave - low) / (high - low), if(index == 0, do: -2, else: 0), 1)
     end)
   end
 end
