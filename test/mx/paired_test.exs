@@ -131,6 +131,7 @@ defmodule Mx.PairedTest do
        [note: 57, vel: 1, sustain: 2],
        [note: 50, vel: 0.3, bend: 2, sustain: 2]
      ], 3},
+    {Mx.Paired.Tanpura, :tanpura, [[], [note: 48, vel: 1, gap: 0.5]], 8},
     {Mx.Paired.Supersaw, :supersaw,
      [[note: 45, sustain: 1], [note: 60, detune: 0.5, bend: -1, sustain: 1]], 2},
     {Mx.Paired.Acid, :acid,
