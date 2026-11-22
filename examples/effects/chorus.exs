@@ -34,8 +34,8 @@ defmodule Effects.Chorus do
   defp picking do
     seq(
       for chord <- [[45, 52, 59, 60, 64], [41, 48, 57, 60, 64]] do
-        [a, b, c, d, e] = chord
-        seq(for note <- [a, b, c, d, e, d, c, b], do: note(note, 0.5, sustain: 2))
+        down = chord |> Enum.slice(1..3) |> Enum.reverse()
+        seq(for note <- chord ++ down, do: note(note, 0.5, sustain: 2))
       end
     )
   end

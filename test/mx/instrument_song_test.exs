@@ -288,10 +288,10 @@ defmodule Mx.InstrumentSongTest do
     music = "part(:x, note(:c4, 1), synth: :saw, fx: #{fx})"
     File.write!(path, @zeroed <> "import Mx\nsong(tempo: 120, music: #{music})\n")
     File.rm(out)
-    me = self()
+    parent = self()
 
     capture_io(:stderr, fn ->
-      capture_io(fn -> send(me, {:rendered, Mx.Render.render(path, out, [])}) end)
+      capture_io(fn -> send(parent, {:rendered, Mx.Render.render(path, out, [])}) end)
     end)
 
     receive do

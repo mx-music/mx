@@ -746,13 +746,13 @@ defmodule Mx.Engine.MxsTest do
     rate = Mxs.render_rate()
 
     Enum.max_by(-100..300//5, fn cents ->
-      w = 2 * :math.pi() * hz * 2 ** (cents / 1200) / rate
+      radians = 2 * :math.pi() * hz * 2 ** (cents / 1200) / rate
 
       {re, im} =
         samples
         |> Enum.with_index()
         |> Enum.reduce({0.0, 0.0}, fn {x, i}, {re, im} ->
-          {re + x * :math.cos(w * i), im - x * :math.sin(w * i)}
+          {re + x * :math.cos(radians * i), im - x * :math.sin(radians * i)}
         end)
 
       re * re + im * im

@@ -136,7 +136,7 @@ defmodule Mx.ViolinFitTest do
   defp mean(values), do: Enum.sum(values) / length(values)
 
   defp deviation(values) do
-    m = mean(values)
-    :math.sqrt(mean(Enum.map(values, &((&1 - m) ** 2))))
+    average = mean(values)
+    :math.sqrt(mean(Enum.map(values, &((&1 - average) ** 2))))
   end
 end

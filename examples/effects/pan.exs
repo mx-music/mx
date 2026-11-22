@@ -34,9 +34,11 @@ defmodule Effects.Pan do
   # Eighths, the thumb on the bass string and three fingers above it, each note left to ring.
   defp picking do
     seq(
-      for [bass | upper] <- [[45, 57, 60, 64], [41, 57, 60, 65]] do
-        [a, b, c] = upper
-        seq(for note <- [bass, b, c, b, a, b, c, b], do: note(note, 0.5, sustain: 2))
+      for [bass, low, middle, high] <- [[45, 57, 60, 64], [41, 57, 60, 65]] do
+        seq(
+          for note <- [bass, middle, high, middle, low, middle, high, middle],
+              do: note(note, 0.5, sustain: 2)
+        )
       end
     )
   end

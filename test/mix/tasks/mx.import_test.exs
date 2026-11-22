@@ -428,13 +428,13 @@ defmodule Mix.Tasks.Mx.ImportTest do
 
   describe "with a recording" do
     test "a recording that is not a WAV file is refused, naming it", %{tmp_dir: dir} do
-      mp3 = Path.join(dir, "anderson.mp3")
+      recording = Path.join(dir, "anderson.mp3")
 
-      assert_raise Mix.Error, "give the recording as a WAV file, not #{mp3}", fn ->
+      assert_raise Mix.Error, "give the recording as a WAV file, not #{recording}", fn ->
         import!([
           "examples/erbarme_dich/bwv244.39.mxl",
           "--recording",
-          mp3,
+          recording,
           "--out",
           Path.join(dir, "aria.exs")
         ])
