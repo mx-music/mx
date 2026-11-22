@@ -886,7 +886,8 @@ defmodule Mx.MusicTest do
       path = write(ctx, "defmodule MusicTest.Notes do\n  def bar, do: [60, 62]\nend")
       assert Song.read(path) == :module
       assert Song.load(path) == {:error, "#{path} does not end with a song"}
-      assert apply(MusicTest.Notes, :bar, []) == [60, 62]
+      notes = Module.concat(MusicTest, Notes)
+      assert notes.bar() == [60, 62]
     end
 
     @tag :tmp_dir
