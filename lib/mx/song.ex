@@ -63,8 +63,21 @@ defmodule Mx.Song do
   @modules_key :mx_song_modules
 
   defmacro __using__(opts) do
+    # A module that already uses Mx.Instrument keeps Mx's meaning of a name the nodes share, as delay, outside its synths and effects.
+    nodes =
+      if List.keymember?(__CALLER__.functions, Mx.Instrument.Vocabulary, 0) do
+        shared =
+          Enum.filter(
+            Mx.__info__(:functions),
+            &(&1 in Mx.Instrument.Vocabulary.__info__(:functions))
+          )
+
+        quote(do: import(Mx.Instrument.Vocabulary, except: unquote(shared)))
+      end
+
     quote do
       import Mx, except: [part: 2, together: 1]
+      unquote(nodes)
       import Mx.Song, only: [part: 2, together: 1, kit: 2, kit: 3, kit: 4]
       Module.register_attribute(__MODULE__, :mx_parts, accumulate: true)
       Module.register_attribute(__MODULE__, :mx_kits, accumulate: true)

@@ -14,7 +14,7 @@ defmodule Mx.Instrument do
   An option is read once, when the note starts, unless the synth reads it with `follow/1`, which glides with each change the song makes while the note sounds.
   """
 
-  alias Mx.Instrument.{Expr, Ops}
+  alias Mx.Instrument.{Expr, Ops, Vocabulary}
 
   @envelope [
     attack: {:beats, 0.0, "How long the note takes to rise to attack_level."},
@@ -41,6 +41,8 @@ defmodule Mx.Instrument do
   }
 
   defmacro __using__(_opts) do
+    taken = taken(__CALLER__)
+
     quote do
       import Mx.Instrument,
         only: [
@@ -55,12 +57,28 @@ defmodule Mx.Instrument do
           defsoundp: 2
         ]
 
-      import Mx.Instrument.Vocabulary, only: :functions
+      import Mx.Instrument.Vocabulary, except: unquote(taken)
       Module.register_attribute(__MODULE__, :mx_pending_attrs, accumulate: true)
       Module.register_attribute(__MODULE__, :mx_synths, accumulate: true)
       Module.register_attribute(__MODULE__, :mx_effects, accumulate: true)
       @before_compile Mx.Instrument
       @after_compile Mx.Instrument
+    end
+  end
+
+  @doc """
+  The nodes whose names a module already imports from elsewhere, as Mx's `delay/2` where music is written.
+  Outside a `defsynth`, `defeffect` or `defsound` such a name keeps the meaning it had, and inside one it is the node.
+  """
+  def taken(env) do
+    nodes = Vocabulary.__info__(:functions)
+
+    for {module, functions} <- env.functions,
+        module not in [Kernel, Vocabulary],
+        function <- functions,
+        function in nodes,
+        uniq: true do
+      function
     end
   end
 
@@ -404,6 +422,9 @@ defmodule Mx.Instrument do
 
   defp matches(_pattern), do: []
 
+  # A node is called by its module, so a name the caller also imports from elsewhere, as Mx's delay, still means the node.
+  @nodes Vocabulary.__info__(:functions)
+
   defp rewrite(body, caller) do
     Macro.prewalk(body, fn
       {op, meta, [a, b]} when is_map_key(@operators, op) ->
@@ -435,6 +456,14 @@ defmodule Mx.Instrument do
           )
 
         {:if, meta, [checked | rest]}
+
+      {:|>, meta, [left, {name, call, args}]}
+      when is_atom(name) and is_list(args) and {name, length(args) + 1} in @nodes ->
+        {:|>, meta, [left, {{:., call, [Vocabulary, name]}, call, args}]}
+
+      {name, meta, args}
+      when is_atom(name) and is_list(args) and {name, length(args)} in @nodes ->
+        {{:., meta, [Vocabulary, name]}, meta, args}
 
       other ->
         other

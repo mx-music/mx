@@ -24,7 +24,11 @@ defmodule Mx.InstrumentSongTest do
             Mx.InstrumentSongTest.Bell,
             Mx.InstrumentSongTest.Quieter,
             Mx.InstrumentSongTest.Pulse,
-            Mx.InstrumentSongTest.Tails
+            Mx.InstrumentSongTest.Tails,
+            Mx.InstrumentSongTest.Later,
+            Mx.InstrumentSongTest.Shared,
+            Mx.InstrumentSongTest.SongFirst,
+            Mx.InstrumentSongTest.InstrumentFirst
           ] do
         :code.purge(module)
         :code.delete(module)
@@ -173,6 +177,89 @@ defmodule Mx.InstrumentSongTest do
 
     assert Mx.Render.ring_out(load.("decaying: [decay: 2]")) ==
              {:ok, %{seconds: 1.0, part: :x, effect: :decaying}}
+  end
+
+  @later """
+  defmodule Mx.InstrumentSongTest.Later do
+    use Mx.Instrument
+
+    defeffect later(sound, _opts), do: sound |> delay(seconds: 0.1, max: 1)
+
+    attr :note, :note, default: 69
+    envelope_attrs sustain: 0.2, release: 0.01
+    defsynth held_back(o), do: clamp(delay(sine(hz: hz(o.note)), seconds: 0.1, max: 1), -1, 1) |> note_envelope(o)
+  end
+  """
+
+  # Where a render of music first sounds, in seconds.
+  defp starts(ctx, source, music) do
+    path = Path.join(ctx.tmp_dir, "later.exs")
+    out = Path.join(ctx.tmp_dir, "later.wav")
+    File.write!(path, source <> "song(tempo: 120, music: #{music})\n")
+    File.rm(out)
+    capture_io(fn -> refute match?({:error, _}, Mx.Render.render(path, out, [])) end)
+    {:ok, %{rate: rate, samples: samples}} = Mx.Audio.read(out)
+    Enum.find_index(samples, &(abs(&1) > 1.0e-4)) / rate
+  end
+
+  test "a song file that imports Mx at its top defines an effect and a synth that call the delay node",
+       ctx do
+    source = "import Mx\n" <> @later
+    assert_in_delta starts(ctx, source, "part(:x, note(:c4, 1), synth: :saw)"), 0.0, 0.01
+
+    assert_in_delta starts(ctx, source, "part(:x, note(:c4, 1), synth: :saw, fx: [later: []])"),
+                    0.1,
+                    0.01
+
+    assert_in_delta starts(ctx, source, "part(:x, note(:c4, 1), synth: :held_back)"), 0.1, 0.01
+
+    assert_in_delta starts(ctx, source, "part(:x, delay(note(:c4, 1), 2), synth: :saw)"),
+                    1.0,
+                    0.01
+  end
+
+  test "every name Mx and the nodes share is the node inside a defeffect below import Mx" do
+    nodes = MapSet.new(Mx.Instrument.Vocabulary.__info__(:functions))
+    shared = Mx.__info__(:functions) |> Enum.filter(&(&1 in nodes)) |> Enum.sort()
+    assert shared == [clamp: 3, delay: 2]
+
+    source = """
+    import Mx
+
+    defmodule Mx.InstrumentSongTest.Shared do
+      use Mx.Instrument
+      defeffect shared(sound, _opts), do: clamp(delay(sound, seconds: 0.1, max: 1), -1, 1)
+    end
+    """
+
+    assert [{Mx.InstrumentSongTest.Shared, _}] = Code.compile_string(source, "shared.exs")
+  end
+
+  test "a module that uses Mx.Song and Mx.Instrument, in either order, has the delay node in an effect and Mx's delay in its music",
+       ctx do
+    for {name, uses} <- [
+          {"SongFirst", "use Mx.Song, tempo: 120\n  use Mx.Instrument"},
+          {"InstrumentFirst", "use Mx.Instrument\n  use Mx.Song, tempo: 120"}
+        ] do
+      source = """
+      defmodule Mx.InstrumentSongTest.#{name} do
+        #{uses}
+
+        defeffect later_too(sound, _opts), do: sound |> delay(seconds: 0.1, max: 1)
+
+        part :x, synth: :saw, fx: [later_too: []]
+
+        def song, do: part(:x, delay(note(:c4, 1), 2))
+      end
+      """
+
+      path = Path.join(ctx.tmp_dir, name <> ".exs")
+      out = Path.join(ctx.tmp_dir, name <> ".wav")
+      File.write!(path, source)
+      capture_io(fn -> refute match?({:error, _}, Mx.Render.render(path, out, [])) end)
+      {:ok, %{rate: rate, samples: samples}} = Mx.Audio.read(out)
+      assert_in_delta Enum.find_index(samples, &(abs(&1) > 1.0e-4)) / rate, 1.1, 0.01
+    end
   end
 
   test "a defeffect's option given a value outside the range its attr declares is refused when the song loads",

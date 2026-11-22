@@ -46,6 +46,10 @@
   * [mx] `chord_at/3` reads a chart, a `~MX` pattern of chord names such as `"D7 G Am:1/2 C#dim7:1/2"`, at a beat, going round past its end, and `chord/2` takes a chord's name with `from:`, its root the lowest of its letter at or above that pitch
   * [mx] A song that defines a function of its own named `seq`, `together`, `at`, `form`, `without`, `only`, `kit`, `each`, `feel`, `slur` or `chord_at`, at the arity of one of those above, no longer compiles, and must rename it; four examples renamed a `kit` helper to `drums`, and four a `slur` helper to `legato` or `in_slur`
 
+### 2. Bug fixes
+
+  * [instruments] A `defsynth`, `defeffect` or `defsound` below `import Mx`, or in a module that uses `Mx.Song`, calls the `delay` and `clamp` nodes, where the file stopped with "conflicting delay/2 import"; outside them the names keep Mx's meaning
+
 ## v0.2.2 (2026-11-16)
 
 ### 1. Enhancements
