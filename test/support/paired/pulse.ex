@@ -5,7 +5,6 @@ defmodule Mx.Paired.Pulse do
 
   use Mx.Instrument
   # The synth is named after the pulse node, so the node is called by its module.
-  import Mx.Instrument.Vocabulary, except: [pulse: 1]
   alias Mx.Instrument.Vocabulary, as: V
 
   @doc "A pulse wave under a resonant low-pass."

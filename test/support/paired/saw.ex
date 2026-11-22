@@ -5,7 +5,6 @@ defmodule Mx.Paired.Saw do
 
   use Mx.Instrument
   # The synth is named after the saw node, so the node is called by its module.
-  import Mx.Instrument.Vocabulary, except: [saw: 1]
   alias Mx.Instrument.Vocabulary, as: V
 
   @doc "A saw wave under a resonant low-pass."

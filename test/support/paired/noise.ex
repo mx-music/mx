@@ -5,7 +5,6 @@ defmodule Mx.Paired.Noise do
 
   use Mx.Instrument
   # The synth is named after the noise node, so the node is called by its module.
-  import Mx.Instrument.Vocabulary, except: [noise: 1]
   alias Mx.Instrument.Vocabulary, as: V
 
   @doc "White noise under a resonant low-pass."
