@@ -58,11 +58,12 @@ defmodule Mx.PairedTest do
     {Mx.Paired.Viola, :viola,
      [[note: 60, vel: 0.3], [note: 67, vel: 1, vibrato: 0.5], [note: 55, pizz: 1]], 3},
     {Mx.Paired.DoubleBass, :double_bass,
-     [[note: 31, vel: 0.6], [note: 43, vel: 1, brightness: 0.7], [note: 36, pizz: 1, vel: 0.4]],
+     [[note: 31, vel: 0.6], [note: 43, vel: 1, brightness: 0.7], [note: 36, pizz: 1, vel: 0.3]],
      3},
     {Mx.Paired.Organ, :organ,
      [[note: 40], [note: 64, loud: 1], [note: 72, loud: 0.5, brightness: 0.3]], 2},
-    {Mx.Paired.Harmonium, :harmonium, [[note: 52], [note: 64, vel: 1, sustain: 1]], 2},
+    {Mx.Paired.Harmonium, :harmonium,
+     [[note: 52], [note: 64, vel: 1, sustain: 1], [note: 57, vel: 0.3]], 2},
     {Mx.Paired.Accordion, :accordion,
      [[note: 60], [note: 67, vel: 0.3, detune: 0], [note: 55, vel: 1, brightness: 0.8]], 2},
     {Mx.Paired.Kick, :kick, [[], [note: 30, vel: 1], [vel: 0.3, beater: 0]], 2},
@@ -70,7 +71,7 @@ defmodule Mx.PairedTest do
     {Mx.Paired.Rimshot, :rimshot, [[], [note: 79]], 1},
     {Mx.Paired.ClosedHihat, :closed_hihat, [[], [note: 96, vel: 0.3], [vel: 1, release: 0.2]], 2},
     {Mx.Paired.OpenHihat, :open_hihat,
-     [[sustain: 1], [note: 88, vel: 0.9, sustain: 0.5, release: 0.3]], 3},
+     [[sustain: 1, vel: 0.3], [note: 88, vel: 1, sustain: 0.5, release: 0.3]], 3},
     {Mx.Paired.Supersaw, :supersaw,
      [[note: 45, sustain: 1], [note: 60, detune: 0.5, bend: -1, sustain: 1]], 2},
     {Mx.Paired.Acid, :acid,
@@ -121,10 +122,14 @@ defmodule Mx.PairedTest do
 
   @tag :bench
   test "prints each paired instrument's render time per second of sound in both forms" do
+    twins =
+      for {module, synth, [options | _], seconds} <- @twins, do: {module, synth, options, seconds}
+
     for {module, synth, options, seconds} <- [
           {Mx.Paired.Flute, :flute, [note: 72, vel: 1, sustain: 2], 3},
           {Mx.Paired.Tabla, :tabla, [bol: :ghe, vel: 1], 3},
           {Mx.Paired.Violin, :violin, [note: 69, vel: 1, sustain: 2], 3}
+          | twins
         ] do
       rust = Float.round(timed(nil, synth, options, seconds), 2)
       elixir = Float.round(timed(module, synth, options, seconds), 2)
