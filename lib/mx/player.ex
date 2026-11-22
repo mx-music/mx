@@ -12,6 +12,7 @@ defmodule Mx.Player do
     force: :boolean,
     share: :float,
     ring_out: :boolean,
+    loudness: :float,
     mute: :keep,
     solo: :keep,
     part: :keep,
@@ -31,7 +32,7 @@ defmodule Mx.Player do
   @doc "The options `play/2` takes, parsed from command line arguments, and the arguments left."
   def parse(args) when is_list(args), do: OptionParser.parse!(args, strict: @switches)
 
-  @doc "Plays a song file with `record:` and `force:`, or renders it offline with `render:`, `seconds:`, `ring_out:` and `force:`, either at `share:` of its tempo, and returns `:ok` once it stops, or `{:error, message}`."
+  @doc "Plays a song file with `record:` and `force:`, or renders it offline with `render:`, `seconds:`, `ring_out:`, `loudness:` and `force:`, either at `share:` of its tempo, and returns `:ok` once it stops, or `{:error, message}`."
   def play(path, opts) when is_binary(path) and is_list(opts) do
     with :ok <- Mx.Band.check_share(Keyword.get(opts, :share, 1)),
          :ok <- check_import(path, opts) do
@@ -58,12 +59,15 @@ defmodule Mx.Player do
         Mx.Render.render(
           path,
           out,
-          Keyword.take(opts, [:seconds, :force, :share, :ring_out | @import]) ++
+          Keyword.take(opts, [:seconds, :force, :share, :ring_out, :loudness | @import]) ++
             [mute: Keyword.get_values(opts, :mute), solo: Keyword.get_values(opts, :solo)]
         )
 
       Keyword.has_key?(opts, :ring_out) ->
         {:error, "--ring-out goes with --render"}
+
+      Keyword.has_key?(opts, :loudness) ->
+        {:error, "--loudness goes with --render"}
 
       Keyword.has_key?(opts, :mute) or Keyword.has_key?(opts, :solo) ->
         {:error, "--mute and --solo go with --render"}

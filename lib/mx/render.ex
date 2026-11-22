@@ -14,7 +14,7 @@ defmodule Mx.Render do
   While it renders it prints a line such as `rendered 37.5 of 148.2 seconds` about four times a second, and once more when the music has rendered, giving the seconds of music rendered and the seconds it renders in all, until the music ends or for `seconds:`, the fade after it left out.
   """
 
-  alias Mx.{Band, Clock, Inputs, Pass, Recording, Song, Tempo}
+  alias Mx.{Band, Clock, Inputs, Loudness, Pass, Recording, Song, Tempo}
   alias Mx.Engine.Mxs
 
   @ahead_us 500_000
@@ -22,7 +22,7 @@ defmodule Mx.Render do
   @fade_us 4_000_000
   @progress_ms 250
 
-  @doc "Renders the song at `path` to the WAV file `out`, with `seconds:`, `force:`, `ring_out:`, `mute:`, `solo:` and `share:`, the share of its tempo to play it at, 1 unless given, and returns `:ok` once written, or `{:error, message}`; the process given as `follow:` is sent where the beat is, as `Mx.Beat` describes, in the render's own time."
+  @doc "Renders the song at `path` to the WAV file `out`, with `seconds:`, `force:`, `ring_out:`, `mute:`, `solo:`, `loudness:`, the loudness in LUFS to scale the finished file to, no further than a peak of -1 dB, and `share:`, the share of its tempo to play it at, 1 unless given, and returns `:ok` once written, or `{:error, message}`; the process given as `follow:` is sent where the beat is, as `Mx.Beat` describes, in the render's own time."
   def render(path, out, opts) when is_binary(path) and is_binary(out) and is_list(opts) do
     seconds = opts[:seconds]
     share = Keyword.get(opts, :share, 1)
@@ -30,6 +30,7 @@ defmodule Mx.Render do
 
     with :ok <- Band.check_share(share),
          :ok <- check_ring_out(ring_out),
+         :ok <- check_loudness(opts[:loudness]),
          :ok <- Recording.check(out, Keyword.get(opts, :force, false)),
          {:ok, _apps} <- Application.ensure_all_started(:mx),
          {:ok, song} <- load(path, opts),
@@ -46,7 +47,8 @@ defmodule Mx.Render do
         if (ring_out == nil and ring) && ring.seconds >= 0.05,
           do: IO.puts(cut_short(ring, playing))
 
-        Enum.each(Recording.report(out), &IO.puts/1)
+        loudness = settle(out, opts[:loudness])
+        Enum.each(Recording.report(out, loudness), &IO.puts/1)
       end
     end
   end
@@ -242,6 +244,41 @@ defmodule Mx.Render do
 
   # Every render starts at the same time, so each beat's time rounds the same way on every run.
   @start_us 0
+
+  defp check_loudness(nil), do: :ok
+  defp check_loudness(target) when is_number(target) and target <= 0, do: :ok
+
+  defp check_loudness(_target) do
+    {:error,
+     "--loudness takes the loudness to bring the file to in LUFS, a number at or below 0, such as -14"}
+  end
+
+  @ceiling -1.0
+
+  # Scales the file towards the loudness asked for, no further than a peak at the ceiling, and returns the loudness it has.
+  defp settle(out, target) do
+    measured = Loudness.measure(out)
+
+    if measured && target do
+      %{peak: peak} = Recording.level(out)
+      wanted = target - measured
+      gain = if wanted > 0, do: min(wanted, max(@ceiling - peak, 0.0)), else: wanted
+      if gain != 0, do: Loudness.scale(out, gain)
+
+      if gain < wanted do
+        reached = :erlang.float_to_binary(measured + gain, decimals: 1)
+        target = if target == trunc(target), do: trunc(target), else: target
+
+        IO.puts(
+          "The loudness reached #{reached} LUFS, not #{target}: more would push the peak past -1 dB. A limiter on the song, fx: [limiter: []], allows more."
+        )
+      end
+
+      measured + gain
+    else
+      measured
+    end
+  end
 
   defp run(song, out, seconds, follow, share, total, {ring_out, ring}, heard) do
     start_us = @start_us

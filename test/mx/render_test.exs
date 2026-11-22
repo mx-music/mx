@@ -112,7 +112,7 @@ defmodule Mx.RenderTest do
     assert micros / 1_000_000 < seconds
 
     assert output =~
-             ~r/^Recorded #{seconds} seconds to #{Regex.escape(out)}, peaking at -?\d+\.\d dB\.$/m
+             ~r/^Recorded #{seconds} seconds to #{Regex.escape(out)}, peaking at -?\d+\.\d dB, loudness -\d+\.\d LUFS\.$/m
   end
 
   test "rendering a song twice writes the same file", %{tmp_dir: dir} do

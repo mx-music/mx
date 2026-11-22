@@ -62,12 +62,14 @@ defmodule Mx.Recording do
     %{peak: peak, clips: clips, first_clip: first_clip}
   end
 
-  @doc "The lines mx prints after recording: the length and peak, and a warning when the recording clipped."
-  def report(path) when is_binary(path) do
+  @doc "The lines mx prints after recording: the length and peak, the loudness in LUFS when one is given, and a warning when the recording clipped."
+  def report(path, loudness \\ nil) when is_binary(path) do
     seconds = Float.round(seconds(path), 1)
     %{peak: peak, clips: clips, first_clip: first_clip} = level(path)
     peak = if peak, do: :erlang.float_to_binary(peak, decimals: 1), else: "-inf"
-    recorded = "Recorded #{seconds} seconds to #{path}, peaking at #{peak} dB."
+    heard = if loudness, do: :erlang.float_to_binary(loudness / 1, decimals: 1)
+    loudness = if heard, do: ", loudness #{heard} LUFS", else: ""
+    recorded = "Recorded #{seconds} seconds to #{path}, peaking at #{peak} dB#{loudness}."
 
     if clips > 0 do
       times = if clips == 1, do: "time", else: "times"

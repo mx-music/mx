@@ -45,6 +45,10 @@ While it renders, mx prints its progress about four times a second, as a line su
 A last line gives all of them once the music has rendered, such as `rendered 148.0 of 148.0 seconds`, and a render that fails prints none.
 A program that runs the render reads each line as it is printed, and tells them from the report by their start.
 mx then prints the same report as for a recording, and refuses a file that exists unless you add `--force`.
+After a render the report also gives how loud the file is heard, as `Recorded 180.0 seconds to song.wav, peaking at -1.0 dB, loudness -14.2 LUFS.`
+The loudness is the integrated loudness of ITU-R BS.1770, the measure streaming services turn each track by, and a file shorter than 0.4 seconds or too quiet to measure has none.
+`--loudness` with a number at or below 0, such as `--loudness -14`, scales the finished file so its loudness is that number.
+When that would push a peak past -1 dB, mx scales the file only as far as a peak of -1 dB and says which loudness it reached; a limiter on the song, `fx: [limiter: []]`, allows more.
 A render sends no MIDI or OSC and has no input, so mx names each part that sends MIDI or OSC, or waits for input, and leaves it out.
 `--render` cannot go with `--record`, nor with a song that has `live_audio`.
 
