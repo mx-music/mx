@@ -474,9 +474,9 @@ defmodule Virtuosity do
   # A stroke from 1, the softest, to 9: the strength picks the recording, and the level is left
   # nearly as recorded.
   defp strengths do
-    for strength <- 1..9 do
+    for {stroke, strength} <- Enum.zip(~w(1 2 3 4 5 6 7 8 9)a, 1..9) do
       vel = strength / 9
-      {:"#{strength}", [vel: vel, amp: :math.pow(vel, -0.7)]}
+      {stroke, [vel: vel, amp: :math.pow(vel, -0.7)]}
     end
   end
 end

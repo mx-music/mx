@@ -289,7 +289,10 @@ defmodule RumbaYMontuno do
     together(rows, fn {sound, patterns} ->
       {file, gain} = @sounds[sound]
 
-      strengths = for digit <- 1..9, do: {:"#{digit}", [amp: gain * digit / 9]}
+      strengths =
+        for {stroke, digit} <- Enum.zip(~w(1 2 3 4 5 6 7 8 9)a, 1..9),
+            do: {stroke, [amp: gain * digit / 9]}
+
       repeat(steps(patterns, @pulse, sample: file, strokes: strengths), times)
     end)
   end

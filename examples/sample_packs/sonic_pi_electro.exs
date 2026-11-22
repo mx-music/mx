@@ -148,7 +148,10 @@ defmodule DialTone do
   defp strokes(name, [%{} | _] = pattern, bars), do: strokes(name, [pattern], bars)
 
   defp strokes(name, patterns, bars) do
-    levels = for strength <- 1..9, do: {:"#{strength}", [amp: strength / 9]}
+    levels =
+      for {stroke, strength} <- Enum.zip(~w(1 2 3 4 5 6 7 8 9)a, 1..9),
+          do: {stroke, [amp: strength / 9]}
+
     bar = fn pattern -> steps(pattern, 0.25, sample: {:sonic_pi, name}, strokes: levels) end
     repeat(seq(patterns, bar), bars)
   end

@@ -375,8 +375,8 @@ defmodule TwelveBars do
   # stroke of that level, a dot is silence.
   defp drums(rows, bars \\ 1) do
     strokes =
-      for strength <- 1..9,
-          do: {:"#{strength}", [amp: strength / 9, sustain: 1.5, release: 0.5]}
+      for {stroke, strength} <- Enum.zip(~w(1 2 3 4 5 6 7 8 9)a, 1..9),
+          do: {stroke, [amp: strength / 9, sustain: 1.5, release: 0.5]}
 
     repeat(
       together(rows, fn {piece, pattern} ->

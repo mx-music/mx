@@ -339,6 +339,11 @@ defmodule Cosmonauta do
 
   # A stroke from 1, the softest, to 9: the strength picks the recording, and the level is left
   # nearly as recorded.
-  defp strokes, do: for(strength <- 1..9, do: {:"#{strength}", dyn(strength / 9)})
+  defp strokes do
+    for {stroke, strength} <- Enum.zip(~w(1 2 3 4 5 6 7 8 9)a, 1..9) do
+      {stroke, dyn(strength / 9)}
+    end
+  end
+
   defp dyn(vel), do: [vel: vel, amp: :math.pow(vel, -0.7)]
 end

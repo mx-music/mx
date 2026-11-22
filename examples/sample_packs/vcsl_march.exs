@@ -212,8 +212,8 @@ defmodule Parade do
       {file, gain} = @sounds[sound]
 
       strokes =
-        for strength <- 1..9,
-            do: {:"#{strength}", [amp: gain * strength / 9, sustain: 3, release: 1]}
+        for {stroke, strength} <- Enum.zip(~w(1 2 3 4 5 6 7 8 9)a, 1..9),
+            do: {stroke, [amp: gain * strength / 9, sustain: 3, release: 1]}
 
       bars =
         for pattern <- if(match?([%{} | _], patterns), do: [patterns], else: patterns),
