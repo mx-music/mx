@@ -147,21 +147,41 @@ defmodule Mx.SongModuleTest do
       end
     end
 
-    assert kit.(~s|kit(:drum, ~MX"o h h o", 0.25)|) == %{
+    strokes = """
+    kit(:drum, ~MX"o h h o", 0.25)
+    """
+
+    assert kit.(strokes) == %{
              thumb: {[{0, 0.75}, {0.75, 0.75}], 1.0},
              heel: {[{0.25, 0.55}, {0.5, 0.55}], 1.0}
            }
 
+    both = """
+    kit(:drum, ~MX"both _", 0.25)
+    """
+
     assert %{thumb: {[{0, 0.75}], _}, heel: {[{0, 0.55}], _}} =
-             kit.(~s|kit(:drum, ~MX"both _", 0.25)|)
+             kit.(both)
+
+    accented = """
+    kit(:drum, ~MX"o >h", 0.25, accent: [vel: 0.9])
+    """
 
     assert %{heel: {[{0.25, 0.9}], _}} =
-             kit.(~s|kit(:drum, ~MX"o >h", 0.25, accent: [vel: 0.9])|)
+             kit.(accented)
 
-    assert %{heel: {[{0.25, _}, {0.375, _}], 1.0}} = kit.(~s|kit(:drum, ~MX"o [h h] _ _", 0.25)|)
+    grouped = """
+    kit(:drum, ~MX"o [h h] _ _", 0.25)
+    """
+
+    assert %{heel: {[{0.25, _}, {0.375, _}], 1.0}} = kit.(grouped)
+
+    dotted = """
+    kit(:drum, ~MX"o.h."s, 0.25)
+    """
 
     assert %{thumb: {[{0, _}], 1.0}, heel: {[{0.5, _}], 1.0}} =
-             kit.(~s|kit(:drum, ~MX"o.h."s, 0.25)|)
+             kit.(dotted)
 
     module = Module.concat([name(ctx) <> "Silent"])
 
@@ -204,10 +224,18 @@ defmodule Mx.SongModuleTest do
       """)
     end
 
-    assert {:error, message} = Song.load(path.(~s|kit(:drum, ~MX"o q", 0.25)|))
+    unknown = """
+    kit(:drum, ~MX"o q", 0.25)
+    """
+
+    assert {:error, message} = Song.load(path.(unknown))
     assert message =~ "kit drum has no stroke q"
 
-    assert {:error, message} = Song.load(path.(~s|part(:thumb, kit(:drum, ~MX"o", 1))|))
+    inside_part = """
+    part(:thumb, kit(:drum, ~MX"o", 1))
+    """
+
+    assert {:error, message} = Song.load(path.(inside_part))
     assert message =~ "a kit plays beside parts"
   end
 

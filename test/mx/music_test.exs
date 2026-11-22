@@ -196,10 +196,14 @@ defmodule Mx.MusicTest do
 
     @tag :tmp_dir
     test "a grace note leaves the note before it its length as sustain", ctx do
+      music = """
+      song(music: part(:flute, steps(~MX"c4 ^d4 e4", 1, vel: 0.7), synth: :flute))
+      """
+
       {:ok, song} =
         load(
           ctx,
-          ~s|song(music: part(:flute, steps(~MX"c4 ^d4 e4", 1, vel: 0.7), synth: :flute))|
+          music
         )
 
       assert [{0, 60, c4}, {d4, 62, grace}, {1, 64, _}] = events(song, :flute)
@@ -212,6 +216,7 @@ defmodule Mx.MusicTest do
     test "each gives every note and hit options it does not give itself, or those a function of its beat returns",
          ctx do
       vels = fn music, synth ->
+        music = String.trim_trailing(music)
         {:ok, song} = load(ctx, "song(music: part(:a, #{music}, synth: :#{synth}))")
         for {beat, note, opts} <- events(song, :a), do: {beat, note, opts[:vel]}
       end
@@ -232,7 +237,11 @@ defmodule Mx.MusicTest do
              ) ==
                [{1, 60, 0.1}, {2, 64, 0.6}]
 
-      assert vels.(~s|each(steps(~MX"x.x."s, 0.5), vel: 0.4)|, :kick) ==
+      each = """
+      each(steps(~MX"x.x."s, 0.5), vel: 0.4)
+      """
+
+      assert vels.(each, :kick) ==
                [{0, :own_note, 0.4}, {1.0, :own_note, 0.4}]
 
       {:ok, song} =
@@ -278,6 +287,7 @@ defmodule Mx.MusicTest do
     test "feel pushes the notes on each step by its number in push:, and leaves a note between steps",
          ctx do
       beats = fn music ->
+        music = String.trim_trailing(music)
         {:ok, song} = load(ctx, "song(music: part(:a, #{music}, synth: :kick))")
         for {beat, _note, _opts} <- events(song, :a), do: beat
       end
@@ -289,7 +299,11 @@ defmodule Mx.MusicTest do
 
       push = "push: [0, 0.035, 0, 0.035]"
 
-      close.(beats.(~s|feel(steps(~MX"xxxx"s, 0.25), step: 0.25, #{push})|), [
+      pushed = """
+      feel(steps(~MX"xxxx"s, 0.25), step: 0.25, #{push})
+      """
+
+      close.(beats.(pushed), [
         0,
         0.285,
         0.5,
@@ -298,9 +312,18 @@ defmodule Mx.MusicTest do
 
       at = "at([{0, hit()}, {0.125, hit()}, {0.25, hit()}], 1)"
       close.(beats.("feel(#{at}, step: 0.25, #{push})"), [0, 0.125, 0.285])
-      assert beats.(~s|feel(steps(~MX"x"s, 1), step: 1, push: [-0.1])|) == [0]
 
-      close.(beats.(~s|seq([rest(1), feel(steps(~MX"xx"s, 0.5), step: 0.5, push: [0.1])])|), [
+      pushed_back = """
+      feel(steps(~MX"x"s, 1), step: 1, push: [-0.1])
+      """
+
+      assert beats.(pushed_back) == [0]
+
+      after_rest = """
+      seq([rest(1), feel(steps(~MX"xx"s, 0.5), step: 0.5, push: [0.1])])
+      """
+
+      close.(beats.(after_rest), [
         1.1,
         1.6
       ])
@@ -312,25 +335,42 @@ defmodule Mx.MusicTest do
     test "feel multiplies the vel of the notes on each step by its number in lean:, the note's own or its part's",
          ctx do
       vels = fn music, defaults ->
+        music = String.trim_trailing(music)
         {:ok, song} = load(ctx, "song(music: part(:a, #{music}, synth: :kick#{defaults}))")
         for {_beat, _note, opts} <- events(song, :a), do: opts[:vel]
       end
 
-      assert vels.(~s|feel(steps(~MX"xxxx"s, 0.25, vel: 0.8), step: 0.25, lean: [1, 0.5])|, "") ==
+      leaned = """
+      feel(steps(~MX"xxxx"s, 0.25, vel: 0.8), step: 0.25, lean: [1, 0.5])
+      """
+
+      assert vels.(leaned, "") ==
                [0.8, 0.4, 0.8, 0.4]
 
-      assert vels.(~s|feel(steps(~MX"xx"s, 0.25, vel: 0.8), step: 0.25, lean: [2])|, "") == [1, 1]
+      doubled = """
+      feel(steps(~MX"xx"s, 0.25, vel: 0.8), step: 0.25, lean: [2])
+      """
+
+      assert vels.(doubled, "") == [1, 1]
+
+      halved = """
+      feel(steps(~MX"xx"s, 0.25), step: 0.25, lean: [0.5])
+      """
 
       assert vels.(
-               ~s|feel(steps(~MX"xx"s, 0.25), step: 0.25, lean: [0.5])|,
+               halved,
                ", defaults: [vel: 0.6]"
              ) == [
                0.3,
                0.3
              ]
 
+      pushed_and_leaned = """
+      feel(steps(~MX"xxx"s, 0.25, vel: 0.8), step: 0.25, push: [0, 0.01], lean: [1, 0.5, 0.25])
+      """
+
       assert vels.(
-               ~s|feel(steps(~MX"xxx"s, 0.25, vel: 0.8), step: 0.25, push: [0, 0.01], lean: [1, 0.5, 0.25])|,
+               pushed_and_leaned,
                ""
              ) == [0.8, 0.4, 0.2]
     end
@@ -338,10 +378,14 @@ defmodule Mx.MusicTest do
     @tag :tmp_dir
     test "feel's loose: and touch: move each start and vel a little, the same on every load",
          ctx do
+      source = """
+      song(music: part(:a, feel(steps(~MX"xxxxxxxx"s, 0.25, vel: 0.5), step: 0.25, loose: 0.01, touch: 0.1), synth: :kick))
+      """
+
       path =
         write(
           ctx,
-          ~s|song(music: part(:a, feel(steps(~MX"xxxxxxxx"s, 0.25, vel: 0.5), step: 0.25, loose: 0.01, touch: 0.1), synth: :kick))|
+          source
         )
 
       :rand.seed(:exsss, 1)
@@ -364,12 +408,18 @@ defmodule Mx.MusicTest do
     test "slur plays notes one after another as one note whose pitch changes, as a pattern's ~ does",
          ctx do
       events = fn music, synth ->
+        music = String.trim_trailing(music)
         {:ok, song} = load(ctx, "song(music: part(:a, #{music}, synth: :#{synth}))")
         events(song, :a)
       end
 
       slurred = events.("slur(seq(g4: 0.5, bb4: 0.5), slide: 0.05)", :flute)
-      assert slurred == events.(~s|steps(~MX"g4:2 ~bb4:2", 0.25, slide: 0.05)|, :flute)
+
+      stepped = """
+      steps(~MX"g4:2 ~bb4:2", 0.25, slide: 0.05)
+      """
+
+      assert slurred == events.(stepped, :flute)
 
       assert [{0, 67, [sustain: 1.0]}, {0.5, {:control, _, :flute}, [note: 70, note_slide: 0.05]}] =
                slurred
@@ -560,11 +610,18 @@ defmodule Mx.MusicTest do
                {:error,
                 "#{path}:3: part x: synth saw takes cutoff a number, not c6, in note(60, 1, cutoff: :c6)"}
 
-      path = write(ctx, ~s|song(music: part(:x, note(:c4, 1, cutoff: "x"), synth: :saw))|)
+      source = """
+      song(music: part(:x, note(:c4, 1, cutoff: "x"), synth: :saw))
+      """
+
+      path = write(ctx, source)
+
+      expected = """
+      #{path}:3: part x: synth saw takes cutoff a number, not "x", in note(60, 1, cutoff: "x")
+      """
 
       assert Song.load(path) ==
-               {:error,
-                ~s|#{path}:3: part x: synth saw takes cutoff a number, not "x", in note(60, 1, cutoff: "x")|}
+               {:error, String.trim_trailing(expected)}
     end
 
     @tag :tmp_dir
@@ -691,10 +748,14 @@ defmodule Mx.MusicTest do
     @tag :tmp_dir
     test "feel refuses a note with no vel to lean, and options, tables and steps it cannot use",
          ctx do
+      source = """
+      song(music: part(:kick, feel(steps(~MX"xx"s, 0.25), step: 0.25, lean: [0.5]), synth: :kick))
+      """
+
       path =
         write(
           ctx,
-          ~s|song(music: part(:kick, feel(steps(~MX"xx"s, 0.25), step: 0.25, lean: [0.5]), synth: :kick))|
+          source
         )
 
       assert {:error, message} = Song.load(path)
@@ -709,10 +770,14 @@ defmodule Mx.MusicTest do
             {"step: 0.25, shove: [1]", "shove"},
             {"step: 0.25, loose: :a", "loose: :a"}
           ] do
+        source = """
+        song(music: part(:kick, feel(steps(~MX"xx"s, 0.25), #{opts}), synth: :kick))
+        """
+
         path =
           write(
             ctx,
-            ~s|song(music: part(:kick, feel(steps(~MX"xx"s, 0.25), #{opts}), synth: :kick))|
+            source
           )
 
         assert {:error, message} = Song.load(path)
