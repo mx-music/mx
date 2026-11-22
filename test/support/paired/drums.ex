@@ -212,4 +212,62 @@ defmodule Mx.Paired.Drums do
     dense = tilt.(click * db(16) + band_noise(t.skin, t.skin_rings, 2, pitch / hz(own)))
     (head + dense * db(-11)) * (db(t.gain) * (vel / 0.65) ** t.curve)
   end
+
+  @doc "A conga at the pitch `pitch`, struck at `vel`, tapped by `mute`, slapped by `slap` and stopped by `damp`: the hand through a pole at 20 Hz ringing the head's modes, the skin's noise and a slap's crack."
+  defsound conga(pitch, vel, mute, slap, damp, c) do
+    held = 0.09 + 0.25 * vel * vel
+    mix = fn open, tapped -> open + (tapped - open) * mute end
+
+    hand =
+      impulse() +
+        lowpass(noise(:white), hz: clamp(2000 + vel * 6000 + slap * 6000, 20, 20_000)) *
+          hit(0.0005, 0.003 + slap * 0.01, -4) * 0.3
+
+    soft = (max(vel, 0.1) / 0.6) ** -c.soft
+    freqs = Enum.map(c.ratios, &(pitch * &1))
+
+    levels =
+      [c.levels, c.head_tap, freqs]
+      |> Enum.zip()
+      |> Enum.map(fn {level, tap, freq} -> db(level + mute * tap - slap * 6) * freq / 20 end)
+
+    rings =
+      Enum.zip_with(c.rings, c.ratios, fn ring, ratio ->
+        ring = ring * mix.(1, 0.7) * (1 - slap * 0.75)
+        ring = if ratio > 3, do: ring * mix.(soft, 1), else: ring
+        ring + (held - ring) * damp
+      end)
+
+    # mxs rings the first mode once more as the hand stops the head, over the same struck sound.
+    stopped = db(hd(c.levels) - 12) * damp * hd(freqs) / 20
+    rest = lowpass(hand, hz: 20, poles: 1)
+
+    head =
+      mode(rest,
+        hz: freqs ++ [hd(freqs)],
+        level: levels ++ [stopped],
+        fade: rings ++ [hd(c.rings)]
+      )
+
+    skin_levels = Enum.zip_with(c.skin, c.tap, &(mix.(&1, &2) + slap * 16))
+
+    skin_rings =
+      Enum.zip_with(c.skin_rings, c.tap_rings, fn open, tapped ->
+        ring = mix.(open * soft, tapped) * (1 - slap * 0.75)
+        ring + (0.6 * held - ring) * damp
+      end)
+
+    skin =
+      highshelf(band_noise(skin_levels, skin_rings, 2, 1),
+        hz: 2000,
+        q: 0.707,
+        db: (vel - 0.6) * 10
+      )
+
+    crack = bpf(noise(:white), 3000, 0.7) * hit(0.0005, 0.04, -4) * (slap * 4)
+    [darker, brighter] = c.bright
+    tone = min(vel - 0.6, 0) / -0.3 * darker + max(vel - 0.6, 0) / 0.4 * brighter
+    sound = peak(head + skin + crack, hz: 900, q: 0.5, db: tone)
+    sound * (db(c.gain + mute * c.tap_gain) * (vel / 0.6) ** c.curve)
+  end
 end
