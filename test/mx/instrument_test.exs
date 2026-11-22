@@ -2,6 +2,7 @@ defmodule Mx.InstrumentTest do
   use ExUnit.Case, async: true
 
   alias Mx.Engine.Mxs.Native
+  alias Mx.Instrument.{Expr, Vocabulary}
 
   defp render(module, synth, options, seconds \\ 1.0) do
     {:ok, engine} = Native.start(false, false)
@@ -96,6 +97,15 @@ defmodule Mx.InstrumentTest do
     assert error.file =~ "iffy.exs"
     assert error.line == 8
     assert Exception.message(error) =~ "select(condition, then, else)"
+  end
+
+  test "mod gives the remainder from 0 up to its divisor, below 0 included, and records it on a value worked out from the note" do
+    assert Vocabulary.mod(-0.25, 1) == 0.75
+    assert Vocabulary.mod(2.5, 1) == 0.5
+    time = Vocabulary.time()
+
+    assert %Expr{op: :mod, args: [^time, 0.1]} =
+             Vocabulary.mod(time, 0.1)
   end
 
   test "a synth with neither an envelope nor rings fails when its module compiles" do
