@@ -1,11 +1,14 @@
 defmodule Effects.Eq do
   @moduledoc """
-  The equaliser on a piano, whose notes reach from the bass to the top, so each band has something to act on.
+  The equaliser on a piano, whose notes reach from the bass to the top, so each band has something
+  to act on.
   Four bars of a bass note and chords, A minor, F, C and G, play five times:
 
   1. the equaliser as it comes, with no band given, which changes nothing;
-  2. `low: [at: 60, gain: -15]`, everything below middle C turned down, so the bass notes thin out;
-  3. `mid: [at: 72, gain: 9, q: 2]`, a peak around the C above middle C, which makes the piano sound boxed in;
+  2. `low: [at: 60, gain: -15]`, everything below middle C turned down, so the bass notes thin
+     out;
+  3. `mid: [at: 72, gain: 9, q: 2]`, a peak around the C above middle C, which makes the piano
+     sound boxed in;
   4. `high: [at: 72, gain: 9]`, everything above that C turned up, the hammers brighter;
   5. the mid peak again, narrower at `q: 4`, its `at` gliding from 48 up to 96 over the four bars.
   """

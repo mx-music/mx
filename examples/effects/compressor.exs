@@ -7,10 +7,14 @@ defmodule Effects.Compressor do
   Two bars in A minor play five times:
 
   1. dry, the notes from 7 to 15 dB below full scale;
-  2. the compressor as it comes: every note is over `threshold: -18`, and at `ratio: 4` the line comes out within 4 dB, about 7 dB lower;
-  3. `threshold: -10`, which only the hard notes pass, so they come down 2 dB and the soft ones stay as they were;
-  4. `threshold: -18, ratio: 20, makeup: 9`, where almost nothing rises above the threshold, and `makeup` brings the line back up;
-  5. `ratio: 4, makeup: 7, relax_ms: 1200`, which takes over a second to let go, so a soft note after a hard one stays down.
+  2. the compressor as it comes: every note is over `threshold: -18`, and at `ratio: 4` the line
+     comes out within 4 dB, about 7 dB lower;
+  3. `threshold: -10`, which only the hard notes pass, so they come down 2 dB and the soft ones
+     stay as they were;
+  4. `threshold: -18, ratio: 20, makeup: 9`, where almost nothing rises above the threshold, and
+     `makeup` brings the line back up;
+  5. `ratio: 4, makeup: 7, relax_ms: 1200`, which takes over a second to let go, so a soft note
+     after a hard one stays down.
   """
 
   use Mx.Song, tempo: 96
