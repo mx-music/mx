@@ -100,8 +100,9 @@ defmodule Mx.Session do
   end
 
   @doc "Stops the recording `play_recording/4` plays on the part `name`, within 150 ms, while the part and the song go on."
-  def stop_recording(session, name) when is_pid(session),
-    do: Band.stop_recording(band(session), name)
+  def stop_recording(session, name) when is_pid(session) do
+    Band.stop_recording(band(session), name)
+  end
 
   @doc "Plays the part `name` as the song gives it again, from its next note within a bar."
   def stop_trying(session, name) when is_pid(session), do: Band.stop_trying(band(session), name)

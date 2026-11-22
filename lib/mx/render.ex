@@ -44,8 +44,9 @@ defmodule Mx.Render do
       heard = Keyword.take(opts, [:mute, :solo])
 
       with :ok <- run(playing, out, seconds, follow, share, total, {ring_out, ring}, heard) do
-        if (ring_out == nil and ring) && ring.seconds >= 0.05,
-          do: IO.puts(cut_short(ring, playing))
+        if (ring_out == nil and ring) && ring.seconds >= 0.05 do
+          IO.puts(cut_short(ring, playing))
+        end
 
         loudness = settle(out, opts[:loudness])
         Enum.each(Recording.report(out, loudness), &IO.puts/1)

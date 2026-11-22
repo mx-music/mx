@@ -174,8 +174,9 @@ defmodule Mx.Page do
     end
   end
 
-  defp played_note?(step),
-    do: is_number(step) or step == :own_note or match?({:midi_note, _}, step)
+  defp played_note?(step) do
+    is_number(step) or step == :own_note or match?({:midi_note, _}, step)
+  end
 
   defp sample_name({_collection, name}) when is_atom(name), do: Atom.to_string(name)
   defp sample_name({_collection, path}) when is_binary(path), do: sample_name(path)

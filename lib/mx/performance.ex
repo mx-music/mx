@@ -57,9 +57,11 @@ defmodule Mx.Performance do
   end
 
   defp wav(path) do
-    if String.downcase(Path.extname(path)) == ".wav",
-      do: :ok,
-      else: {:error, "give the recording as a WAV file, not #{path}"}
+    if String.downcase(Path.extname(path)) == ".wav" do
+      :ok
+    else
+      {:error, "give the recording as a WAV file, not #{path}"}
+    end
   end
 
   defp keep_bars(score, nil), do: {:ok, score}
@@ -75,9 +77,11 @@ defmodule Mx.Performance do
   end
 
   defp once(score) do
-    if length(Enum.uniq(score.order)) == length(score.order),
-      do: :ok,
-      else: {:error, "a score that repeats bars cannot take a recording's timing yet"}
+    if length(Enum.uniq(score.order)) == length(score.order) do
+      :ok
+    else
+      {:error, "a score that repeats bars cannot take a recording's timing yet"}
+    end
   end
 
   # Each bar in the order the score plays it, as {number, start, length} in beats.
@@ -219,9 +223,11 @@ defmodule Mx.Performance do
     {softest, loudest} = Enum.min_max(louds, fn -> {0, 0} end)
 
     vel = fn loud ->
-      if loudest > softest,
-        do: Float.round(0.3 + 0.7 * (loud - softest) / (loudest - softest), 2),
-        else: 1.0
+      if loudest > softest do
+        Float.round(0.3 + 0.7 * (loud - softest) / (loudest - softest), 2)
+      else
+        1.0
+      end
     end
 
     parts =

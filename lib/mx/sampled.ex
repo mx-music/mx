@@ -259,9 +259,11 @@ defmodule Mx.Sampled do
         {[collection], [_ | _] = folder} ->
           folder = Path.join(folder)
 
-          if collection,
-            do: "sampled instrument #{folder} of #{collection}",
-            else: "sampled instrument #{folder}"
+          if collection do
+            "sampled instrument #{folder} of #{collection}"
+          else
+            "sampled instrument #{folder}"
+          end
 
         _apart ->
           first = paths |> hd() |> file() |> Path.basename()

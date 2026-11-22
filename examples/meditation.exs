@@ -90,13 +90,13 @@ defmodule Meditation do
 
   defp cells(:antara), do: ~MX"P D S' - [S' R'] G' R' S' D S' [D P] G [P D] [P G] [R S] [.D S]"
 
-  defp cells(:taan),
-    do:
-      ~MX"G R S [.D S] R G - [P G] [S R G P] [D S' D P] [G R S R] [G P D S'] [D P G R] [S R G P] [D S' D P] [G R S .D]"
+  defp cells(:taan) do
+    ~MX"G R S [.D S] R G - [P G] [S R G P] [D S' D P] [G R S R] [G P D S'] [D P G R] [S R G P] [D S' D P] [G R S .D]"
+  end
 
-  defp cells(:fast_taan),
-    do:
-      ~MX"[S R G P] [D P G R] [R G P D] [S' D P G] [G P D S'] [R' S' D P] [P D S' R'] [G' R' S' D] [S' D P G] [D P G R] [P G R S] [G R S .D] S - [P G] [G R]"
+  defp cells(:fast_taan) do
+    ~MX"[S R G P] [D P G R] [R G P D] [S' D P G] [G P D S'] [R' S' D P] [P D S' R'] [G' R' S' D] [S' D P G] [D P G R] [P G R S] [G R S .D] S - [P G] [G R]"
+  end
 
   # Three times D P G R S, the last S landing on the next cycle's sam, where shanti begins.
   defp cells(:tihai), do: ~MX"D P G R S - D P G R S - D P G R"

@@ -257,8 +257,9 @@ defmodule Mx.Song do
       def __mx_parts__, do: unquote(Macro.escape(parts))
 
       @doc false
-      def __mx_kits__,
-        do: unquote(Macro.escape(for {name, strokes, _} <- kits, do: {name, strokes}))
+      def __mx_kits__ do
+        unquote(Macro.escape(for {name, strokes, _} <- kits, do: {name, strokes}))
+      end
 
       @doc false
       def __mx_song__ do
@@ -383,9 +384,11 @@ defmodule Mx.Song do
 
         try do
           {value, _binding} =
-            if source,
-              do: Code.eval_string(source, [], file: path),
-              else: Code.eval_file(path)
+            if source do
+              Code.eval_string(source, [], file: path)
+            else
+              Code.eval_file(path)
+            end
 
           {:ok, written(value, path)}
         rescue

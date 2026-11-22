@@ -322,18 +322,19 @@ defmodule Mx.Import do
 
   defp tempos_line([]), do: nil
 
-  defp tempos_line(_tempos),
-    do: "The tempo changes where the file's does, at the beat of each change."
+  defp tempos_line(_tempos) do
+    "The tempo changes where the file's does, at the beat of each change."
+  end
 
   defp imported(title, file, nil), do: "#{title}, imported from #{file} by mix mx.import."
 
-  defp imported(title, file, recording),
-    do:
-      "#{title}, imported from #{file} by mix mx.import, with the timing and loudness of the recording #{recording}."
+  defp imported(title, file, recording) do
+    "#{title}, imported from #{file} by mix mx.import, with the timing and loudness of the recording #{recording}."
+  end
 
-  defp vels(_file, recording) when is_binary(recording),
-    do:
-      "A note's vel is the recording's loudness where it starts, from 0.3 at its softest note to 1 at its loudest."
+  defp vels(_file, recording) when is_binary(recording) do
+    "A note's vel is the recording's loudness where it starts, from 0.3 at its softest note to 1 at its loudest."
+  end
 
   defp vels(file, nil) do
     if Path.extname(file) in [".mid", ".midi"] do

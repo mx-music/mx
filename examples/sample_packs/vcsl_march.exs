@@ -216,8 +216,9 @@ defmodule Parade do
             do: {stroke, [amp: gain * strength / 9, sustain: 3, release: 1]}
 
       bars =
-        for pattern <- if(match?([%{} | _], patterns), do: [patterns], else: patterns),
-            do: steps(pattern, 2 / length(pattern), sample: file, strokes: strokes)
+        for pattern <- if(match?([%{} | _], patterns), do: [patterns], else: patterns) do
+          steps(pattern, 2 / length(pattern), sample: file, strokes: strokes)
+        end
 
       repeat(seq(bars), times)
     end)

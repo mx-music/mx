@@ -54,8 +54,9 @@ defmodule Mx.PhaserTest do
         do: corner * :math.tan(:math.pi() * (2 * notch + 1) / (2 * stages))
   end
 
-  defp held(stages, more \\ ""),
-    do: "[phaser: [stages: #{stages}, low: 72, high: 72, mix: 0.5#{more}]]"
+  defp held(stages, more \\ "") do
+    "[phaser: [stages: #{stages}, low: 72, high: 72, mix: 0.5#{more}]]"
+  end
 
   # The level of the left and of the right every 10 ms, from 0.5 seconds on.
   defp levels(ctx, fx) do

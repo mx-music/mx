@@ -122,9 +122,11 @@ defmodule Mx.Notes do
 
     name =
       Enum.reduce_while(chart, 0, fn %{steps: steps} = cell, start ->
-        if beat < start + steps * step,
-          do: {:halt, chart_word(cell)},
-          else: {:cont, start + steps * step}
+        if beat < start + steps * step do
+          {:halt, chart_word(cell)}
+        else
+          {:cont, start + steps * step}
+        end
       end)
 
     chord_name(name)

@@ -41,10 +41,11 @@ defmodule Mx.Player do
   end
 
   defp check_import(path, opts) do
-    if Mx.Import.score?(path) or Keyword.take(opts, @import) == [],
-      do: :ok,
-      else:
-        {:error, "--part, --tempo, --grid and --tune go with a score, a MIDI file or an ABC tune"}
+    if Mx.Import.score?(path) or Keyword.take(opts, @import) == [] do
+      :ok
+    else
+      {:error, "--part, --tempo, --grid and --tune go with a score, a MIDI file or an ABC tune"}
+    end
   end
 
   defp play_or_render(path, opts) do
@@ -118,9 +119,11 @@ defmodule Mx.Player do
           playing = Enum.join(parts, " and ")
           IO.puts("Playing #{playing} from #{path} at #{song.tempo} bpm.")
 
-          if session_opts[:watch] == false,
-            do: IO.puts("Press Enter to stop."),
-            else: IO.puts("Save the file to change it, and press Enter to stop.")
+          if session_opts[:watch] == false do
+            IO.puts("Press Enter to stop.")
+          else
+            IO.puts("Save the file to change it, and press Enter to stop.")
+          end
 
           wait_for_end()
           Supervisor.stop(session)

@@ -348,9 +348,11 @@ defmodule Mx.Music do
         time = Map.get(times, name, 0)
 
         item =
-          if is_function(fun, 1),
-            do: fun.(name),
-            else: fun.(name, %{pass: pass, time: time, coming: coming})
+          if is_function(fun, 1) do
+            fun.(name)
+          else
+            fun.(name, %{pass: pass, time: time, coming: coming})
+          end
 
         {item, Map.put(times, name, time + 1)}
       end)
@@ -365,8 +367,9 @@ defmodule Mx.Music do
           "form takes a list of sections and a function of one or two arguments, not #{given}"
   end
 
-  defp form_names({name, count}) when is_atom(name) and is_integer(count) and count >= 1,
-    do: List.duplicate(name, count)
+  defp form_names({name, count}) when is_atom(name) and is_integer(count) and count >= 1 do
+    List.duplicate(name, count)
+  end
 
   defp form_names(name) when is_atom(name), do: [name]
 
@@ -450,8 +453,9 @@ defmodule Mx.Music do
     if out?.(name), do: silence(music), else: %{part | music: left_out(music, out?)}
   end
 
-  defp left_out(%Seq{items: items} = seq, out?),
-    do: %{seq | items: kept(items, &left_out(&1, out?))}
+  defp left_out(%Seq{items: items} = seq, out?) do
+    %{seq | items: kept(items, &left_out(&1, out?))}
+  end
 
   defp left_out(%Together{items: items} = together, out?) do
     %{together | items: kept(items, &left_out(&1, out?))}
@@ -478,8 +482,9 @@ defmodule Mx.Music do
   defp silence(%Part{music: music}), do: silence(music)
   defp silence(%Seq{items: items} = seq), do: %{seq | items: kept(items, &silence/1)}
 
-  defp silence(%Together{items: items} = together),
-    do: %{together | items: kept(items, &silence/1)}
+  defp silence(%Together{items: items} = together) do
+    %{together | items: kept(items, &silence/1)}
+  end
 
   defp silence(%At{entries: entries} = at), do: %{at | entries: kept_entries(entries, &silence/1)}
   defp silence(%Repeat{music: music} = repeat), do: kept_in(repeat, silence(music))
@@ -554,9 +559,11 @@ defmodule Mx.Music do
     {own, _} =
       Enum.map_reduce(rest, {first.beats, first.pitch}, fn note, {beat, previous} ->
         change =
-          if note.pitch == previous,
-            do: [],
-            else: [{beat, [note: note.pitch] ++ slid(slide, previous, note.pitch)}]
+          if note.pitch == previous do
+            []
+          else
+            [{beat, [note: note.pitch] ++ slid(slide, previous, note.pitch)}]
+          end
 
         {change, {beat + note.beats, note.pitch}}
       end)
@@ -584,8 +591,9 @@ defmodule Mx.Music do
 
   defp slurred(%Seq{items: items}), do: Enum.flat_map(items, &slurred/1)
 
-  defp slurred(%Repeat{music: music, times: times}) when is_integer(times),
-    do: Enum.flat_map(1..times//1, fn _ -> slurred(music) end)
+  defp slurred(%Repeat{music: music, times: times}) when is_integer(times) do
+    Enum.flat_map(1..times//1, fn _ -> slurred(music) end)
+  end
 
   defp slurred(%Note{pitch: pitch} = note) when is_number(pitch), do: [note]
 
@@ -673,8 +681,9 @@ defmodule Mx.Music do
     %{loop | fun: fn pass, inputs -> %Each{music: returned(fun.(pass, inputs)), opts: opts} end}
   end
 
-  defp each_loop(music, opts),
-    do: map_notes(music, & &1, fn child, _ -> each_loop(child, opts) end)
+  defp each_loop(music, opts) do
+    map_notes(music, & &1, fn child, _ -> each_loop(child, opts) end)
+  end
 
   defp each_opts(%Note{opts: own} = note, opts) do
     added = for {name, value} <- opts, not Keyword.has_key?(own, name), do: {name, value}
@@ -861,9 +870,11 @@ defmodule Mx.Music do
 
         fn opts ->
           Enum.reduce(replaced, opts, fn {name, value}, opts ->
-            if Keyword.has_key?(opts, name),
-              do: Keyword.replace(opts, name, value),
-              else: opts ++ [{name, value}]
+            if Keyword.has_key?(opts, name) do
+              Keyword.replace(opts, name, value)
+            else
+              opts ++ [{name, value}]
+            end
           end)
         end
 
@@ -911,8 +922,9 @@ defmodule Mx.Music do
     end
   end
 
-  defp named_in(list, token),
-    do: Enum.find(list || [], fn {name, _} -> to_string(name) == token end)
+  defp named_in(list, token) do
+    Enum.find(list || [], fn {name, _} -> to_string(name) == token end)
+  end
 
   defp pitched(token, own) do
     case named_in(own[:words], token) do
@@ -1171,9 +1183,11 @@ defmodule Mx.Music do
       end
 
       later =
-        if match?({:triggered, _, _, _, _}, music),
-          do: names,
-          else: for({name, bus} <- changed, name == part.name, do: bus)
+        if match?({:triggered, _, _, _, _}, music) do
+          names
+        else
+          for({name, bus} <- changed, name == part.name, do: bus)
+        end
 
       zero = for bus <- Enum.uniq(later), not Keyword.has_key?(part.send, bus), do: {bus, 0}
       {%{part | send: part.send ++ zero}, music}
@@ -1981,8 +1995,9 @@ defmodule Mx.Music do
   defp own_notes(%Repeat{music: music}), do: own_notes(music)
   defp own_notes(%Swing{music: music}), do: own_notes(music)
 
-  defp own_notes(%Each{music: music, opts: opts}) when is_list(opts),
-    do: Enum.map(own_notes(music), &each_opts(&1, opts))
+  defp own_notes(%Each{music: music, opts: opts}) when is_list(opts) do
+    Enum.map(own_notes(music), &each_opts(&1, opts))
+  end
 
   defp own_notes(%Each{music: music}), do: own_notes(music)
   defp own_notes(%Feel{music: music}), do: own_notes(music)

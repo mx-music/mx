@@ -101,9 +101,9 @@ defmodule Sitar do
 
   defp cells(1), do: ~MX"P [M G] M D N S' - S' [N R'] G' R' S' [N D] P [M G] [R S]"
 
-  defp cells(2),
-    do:
-      ~MX"[N R G M] [D N S' N] [D P M G] [R S .N R] [G M P M] [G R S .N] [R G M D] [N S' N D] [P M G R] [S .N R G] [M G R S] - [.N R G R] S [P M] [G R]"
+  defp cells(2) do
+    ~MX"[N R G M] [D N S' N] [D P M G] [R S .N R] [G M P M] [G R S .N] [R G M D] [N S' N D] [P M G R] [S .N R G] [M G R S] - [.N R G R] S [P M] [G R]"
+  end
 
   defp cells(3), do: ~MX"G R G M P - [M G] [R S] .N R G - [M D] [N S'] [N D] P"
 

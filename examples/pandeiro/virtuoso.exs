@@ -29,8 +29,9 @@ defmodule Virtuoso do
     repeat(form([groove: 2, ruffs: 2, threes: 6, fives: 5, sextuplets: 4, groove: 2], &pass/2))
   end
 
-  defp pass(section, _) when section in [:groove, :ruffs],
-    do: kit(:pandeiro, cells(section), 0.25)
+  defp pass(section, _) when section in [:groove, :ruffs] do
+    kit(:pandeiro, cells(section), 0.25)
+  end
 
   defp pass(section, %{time: time}) do
     together(

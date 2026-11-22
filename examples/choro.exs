@@ -490,8 +490,9 @@ defmodule Choro do
 
   # Every player reads the same chart, a word to each bar of two beats, and two chords in a bar
   # each half of it.
-  defp chart(:a),
-    do: ~MX"D7 G B7 Em Am:1/2 C#dim7:1/2 G D7 G  D7 G B7 Em Am:1/2 C#dim7:1/2 G D7 G"
+  defp chart(:a) do
+    ~MX"D7 G B7 Em Am:1/2 C#dim7:1/2 G D7 G  D7 G B7 Em Am:1/2 C#dim7:1/2 G D7 G"
+  end
 
   defp chart(:b) do
     ~MX"Em F#7 B7 Em Em Bm F#7 B7  Em F#7 B7 E7 Am Em F#7:1/2 B7:1/2 Em"

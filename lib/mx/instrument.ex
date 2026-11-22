@@ -508,9 +508,11 @@ defmodule Mx.Instrument do
       end
 
       input =
-        if sides == 2,
-          do: {%Expr{op: :left, args: []}, %Expr{op: :right, args: []}},
-          else: %Expr{op: :input, args: []}
+        if sides == 2 do
+          {%Expr{op: :left, args: []}, %Expr{op: :right, args: []}}
+        else
+          %Expr{op: :input, args: []}
+        end
 
       sound =
         case {sides, apply(module, name, [input, placeholders])} do
