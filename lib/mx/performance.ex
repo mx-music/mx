@@ -148,7 +148,7 @@ defmodule Mx.Performance do
         frames = trunc(start / step)..max(trunc((start + length) / step) - 1, trunc(start / step))
 
         mean =
-          Enum.sum(for f <- frames, f < tuple_size(costs), do: elem(costs, f)) /
+          Enum.sum(for frame <- frames, frame < tuple_size(costs), do: elem(costs, frame)) /
             Enum.count(frames)
 
         speed = if length > 0, do: (at.(start + length) - at.(start)) / (length * pace), else: 1

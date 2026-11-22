@@ -14,9 +14,9 @@ defmodule Mx.LoudnessTest do
     frames = round(seconds * @rate)
 
     data =
-      for n <- 0..(frames - 1)//1, {hz, db} <- sides, into: <<>> do
+      for frame <- 0..(frames - 1)//1, {hz, db} <- sides, into: <<>> do
         level = if db, do: :math.pow(10, db / 20), else: 0.0
-        <<level * :math.sin(2 * :math.pi() * hz * n / @rate)::little-float-32>>
+        <<level * :math.sin(2 * :math.pi() * hz * frame / @rate)::little-float-32>>
       end
 
     fmt =

@@ -50,8 +50,8 @@ defmodule Mx.PhaserTest do
   defp notches(stages) do
     corner = 440 * :math.pow(2, 3 / 12)
 
-    for k <- 0..(div(stages, 2) - 1),
-        do: corner * :math.tan(:math.pi() * (2 * k + 1) / (2 * stages))
+    for notch <- 0..(div(stages, 2) - 1),
+        do: corner * :math.tan(:math.pi() * (2 * notch + 1) / (2 * stages))
   end
 
   defp held(stages, more \\ ""),
@@ -62,7 +62,7 @@ defmodule Mx.PhaserTest do
     {left, right} = render(ctx, sine(1000, 4, fx))
 
     every = fn samples ->
-      for i <- 0..119, do: rms(between(samples, 0.5 + i / 100, 0.51 + i / 100))
+      for step <- 0..119, do: rms(between(samples, 0.5 + step / 100, 0.51 + step / 100))
     end
 
     {every.(left), every.(right)}
