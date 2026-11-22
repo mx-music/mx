@@ -2,9 +2,9 @@ defmodule Salsa do
   @moduledoc """
   A salsa in A minor at 184 bpm, round four bars of Am7, D7, Fmaj7 and E7, with the son clave
   running 2-3 across every two bars.
-  The bass and the baby bass play the tumbao, the piano the montuno, the congas their tumbao, the
-  bongocero the martillo and then the bell, the timbales the cáscara, and the maracas and the
-  güiro fill in the eighths.
+  The bass and the baby bass play the tumbao, the electric piano the montuno, the congas their
+  tumbao, the bongocero the martillo and then the bell, the timbales the cáscara, and the maracas
+  and the güiro fill in the eighths.
   It goes from an intro through the band, horn stabs, a piano solo, the mambo and a horn solo,
   back to the mambo and the stabs, with a timbale fill before the stabs, the mambo and the horn
   solo first come in.
@@ -12,31 +12,55 @@ defmodule Salsa do
 
   use Mx.Song, tempo: 184
 
-  part :clave, synth: :clave
-  part :bass, synth: :pluck
-  part :baby_bass, synth: :double_bass, defaults: [pizz: 1, amp: 0.8]
-  part :piano, synth: :piano, fx: [reverb: [room: 0.35, mix: 0.2]]
+  # The one small room the drums, the bells and the clave share.
+  @room {:reverb, [room: 0.3, mix: 0.12]}
+
+  part :clave, synth: :clave, fx: [@room, level: [amp: 2]]
+
+  part :bass,
+    synth: :pluck,
+    fx: [hpf: [cutoff: 50], eq: [mid: [at: 69, gain: 3]]]
+
+  part :baby_bass,
+    synth: :double_bass,
+    defaults: [pizz: 1, amp: 0.8],
+    fx: [eq: [low: [at: 40, gain: 2], mid: [at: 57, gain: 6, q: 0.8]], level: [amp: 0.8]]
+
+  part :piano,
+    synth: :electric_piano,
+    fx: [
+      eq: [low: [at: 48, gain: -6], mid: [at: 86, gain: 3, q: 1.2], high: [at: 98, gain: 3]],
+      compressor: [threshold: 0.03, slope_above: 0.25, relax_ms: 80, amp: 2.6],
+      tremolo: [phase: 3, wave: 3, depth: 0.35],
+      pan: [],
+      ping_pong: [phase: 0.75, feedback: 0.35, mix: 0],
+      reverb: [room: 0.35, mix: 0.2],
+      level: [amp: 1]
+    ]
 
   part :horns,
     synth: :supersaw,
     fx: [
-      distortion: [distort: 0.35, mix: 0.3],
+      eq: [low: [at: 55, gain: -9], mid: [at: 88, gain: 4, q: 1.5], high: [at: 100, gain: 3]],
+      distortion: [distort: 0.25, mix: 0.35],
+      chorus: [phase: 3, mix: 0.35],
+      compressor: [threshold: 0.1, slope_above: 0.3, relax_ms: 120],
       echo: [phase: 0.75, decay: 3, mix: 0.3],
       pan: [],
-      reverb: [room: 0.4, mix: 0.3],
-      level: [amp: 0.55]
+      reverb: [room: 0.5, damp: 0.6, mix: 0.25],
+      level: [amp: 0.9]
     ]
 
-  part :high_conga, synth: :high_conga
-  part :low_conga, synth: :low_conga, fx: [level: [amp: 2.5]]
-  part :cascara, synth: :timbale_shell, fx: [level: [amp: 0.5]]
-  part :cowbell, synth: :cowbell
-  part :high_bongo, synth: :high_bongo, defaults: [amp: 0.5, pan: 0.3]
-  part :low_bongo, synth: :low_bongo, defaults: [amp: 0.5, pan: 0.3]
-  part :maracas, synth: :shaker, defaults: [amp: 0.5, pan: -0.3]
-  part :fill_high, synth: :high_timbale
-  part :fill_low, synth: :low_timbale
-  part :guiro, synth: :guiro, fx: [level: [amp: 2]]
+  part :high_conga, synth: :high_conga, fx: [{:pan, [pan: -0.12]}, @room, level: [amp: 1.26]]
+  part :low_conga, synth: :low_conga, fx: [{:pan, [pan: 0.12]}, @room, level: [amp: 3.15]]
+  part :cascara, synth: :timbale_shell, defaults: [pan: -0.4], fx: [@room, level: [amp: 0.63]]
+  part :cowbell, synth: :cowbell, defaults: [pan: 0.3], fx: [@room, level: [amp: 1.07]]
+  part :high_bongo, synth: :high_bongo, defaults: [amp: 0.63, pan: 0.3], fx: [@room]
+  part :low_bongo, synth: :low_bongo, defaults: [amp: 0.63, pan: 0.3], fx: [@room]
+  part :maracas, synth: :shaker, defaults: [amp: 0.63, pan: -0.3]
+  part :fill_high, synth: :high_timbale, defaults: [pan: -0.35], fx: [@room, level: [amp: 1.26]]
+  part :fill_low, synth: :low_timbale, defaults: [pan: -0.45], fx: [@room, level: [amp: 1.26]]
+  part :guiro, synth: :guiro, defaults: [pan: 0.45], fx: [level: [amp: 2.52]]
 
   # Each pass is four bars of Am7, D7, Fmaj7 and E7, with the son clave running 2-3 across every
   # two bars.
@@ -53,7 +77,7 @@ defmodule Salsa do
           mambo_again: 1,
           stabs_again: 1
         ],
-        fn section, %{coming: coming} -> section(section, coming) end,
+        fn section, at -> section(section, at) end,
         round: true
       )
     )
@@ -86,13 +110,13 @@ defmodule Salsa do
 
   # A section, with a timbale fill at its end when the stabs, the mambo or the horn solo first
   # come next.
-  defp section(section, coming) do
+  defp section(section, %{coming: coming, time: time}) do
     together([
       part(:clave, clave()),
       part(:bass, bass()),
       part(:baby_bass, baby_bass()),
-      part(:piano, loop(16, fn pass, _ -> piano(section, pass) end)),
-      part(:horns, loop(16, fn pass, _ -> horns(section, pass) end)),
+      part(:piano, loop(16, fn pass, _ -> piano_pass(section, pass) end)),
+      part(:horns, loop(16, fn pass, _ -> horns(section, pass, time) end)),
       part(:high_conga, high_conga()),
       part(:low_conga, low_conga()),
       part(:cascara, cascara()),
@@ -140,6 +164,29 @@ defmodule Salsa do
       end
 
     seq(bars)
+  end
+
+  defp piano_pass(section, pass) do
+    together([at(piano_moves(section), 16), piano(section, pass)])
+  end
+
+  # While the piano leads it comes up, a dotted echo answers it from side to side, and it sways
+  # from one side to the other, two bars each way.
+  defp piano_moves(:piano_solo) do
+    [
+      {0, change({:piano, :level}, amp: 1.8)},
+      {0, change({:piano, :ping_pong}, mix: 0.22, mix_slide: 0)},
+      {0, change({:piano, :pan}, pan: -0.5, pan_slide: 8)},
+      {8, change({:piano, :pan}, pan: 0.5, pan_slide: 8)}
+    ]
+  end
+
+  defp piano_moves(_section) do
+    [
+      {0, change({:piano, :level}, amp: 1)},
+      {0, change({:piano, :ping_pong}, mix: 0, mix_slide: 2)},
+      {0, change({:piano, :pan}, pan: 0, pan_slide: 4)}
+    ]
   end
 
   defp piano(:piano_solo, _pass) do
@@ -215,7 +262,7 @@ defmodule Salsa do
   end
 
   # Every hit starts dark and opens, like a wah pedal.
-  defp stab(notes, length, opts \\ []) do
+  defp stab(notes, length, opts) do
     opts =
       Keyword.merge(
         [
@@ -233,12 +280,55 @@ defmodule Salsa do
     note(notes, length, opts)
   end
 
-  # The horns as a synth section: detuned saws through a resonant filter that opens on every hit,
-  # grit, a dotted echo and a slow stereo sweep.
-  defp horns(section, pass) do
-    sweep = change({:horns, :pan}, pan: if(rem(pass, 2) == 0, do: 0.6, else: -0.6), pan_slide: 16)
-    together([sweep, horn_part(section)])
+  # A long hit is louder and slides up into its pitch from a semitone below.
+  defp scoop(length) do
+    [
+      amp: 0.18,
+      bend: -1,
+      changes: [{0, cutoff: 126, cutoff_slide: min(length, 0.2)}, {0, bend: 0, bend_slide: 0.1}]
+    ]
   end
+
+  # The horns as a synth section: detuned saws through a resonant filter that opens on every hit,
+  # an equaliser that thins the low end, grit, a chorus, a compressor, a dotted echo and a pan that
+  # moves.
+  defp horns(section, pass, time) do
+    moves = pan_moves(section, pass, time) ++ echo_moves(section, time)
+    together([at(moves, 16), horn_part(section)])
+  end
+
+  # The first stabs jump from side to side over their first two bars and then come back to the
+  # centre, the horn solo swings across from one side to the other a bar at a time, and every
+  # other pass drifts slowly to one side, the next pass to the other.
+  defp pan_moves(:stabs, _pass, 0) do
+    [
+      {2.25, pan(pan: -0.8, pan_slide: 0)},
+      {3.25, pan(pan: 0.8, pan_slide: 0)},
+      {6.25, pan(pan: -0.8, pan_slide: 0)},
+      {7.25, pan(pan: 0.8, pan_slide: 0)},
+      {8, pan(pan: 0, pan_slide: 8)}
+    ]
+  end
+
+  defp pan_moves(:horn_solo, _pass, _time) do
+    for bar <- 0..3 do
+      side = if rem(bar, 2) == 0, do: 0.8, else: -0.8
+      {bar * 4, pan(pan: side, pan_slide: 4)}
+    end
+  end
+
+  defp pan_moves(_section, pass, _time) do
+    side = if rem(pass, 2) == 0, do: 0.6, else: -0.6
+    [{0, pan(pan: side, pan_slide: 16)}]
+  end
+
+  defp pan(opts), do: change({:horns, :pan}, opts)
+
+  # The echo comes up over the last two bars of the horn solo, and goes back down after it.
+  defp echo_moves(:horn_solo, 1), do: [{8, echo(mix: 0.55, mix_slide: 8)}]
+  defp echo_moves(_section, _time), do: [{0, echo(mix: 0.3, mix_slide: 0)}]
+
+  defp echo(opts), do: change({:horns, :echo}, opts)
 
   defp horn_part(section) when section in [:mambo, :mambo_again] do
     # The mambo, a written line for the section, from E5 up to D6.
@@ -269,7 +359,9 @@ defmodule Salsa do
     hits =
       for {beat, name, length} <- line do
         chord = chord_on(beat)
-        {beat, stab(voicing(pitch(name), chord), Float.round(length * 0.7, 2))}
+        sustain = Float.round(length * 0.7, 2)
+        opts = if length > 1, do: scoop(sustain), else: []
+        {beat, stab(voicing(pitch(name), chord), sustain, opts)}
       end
 
     at(hits, 16)

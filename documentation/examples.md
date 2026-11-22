@@ -14,7 +14,7 @@ mx play examples/tranquility_base.exs
 
 `examples/ambient.exs` is a demo to start from, a slow ambient piece of pads, keys, bells and samples through reverb and echo.
 
-`examples/salsa.exs` is a salsa band played only on mx's own synths: son clave, a tumbao on bass and congas, a piano montuno, cáscara, güiro and maracas, a horn section on filtered supersaws, and solos by the piano and the horns.
+`examples/salsa.exs` is a salsa band played only on mx's own synths: son clave, a tumbao on bass and congas, an electric piano montuno, cáscara, güiro and maracas, a horn section on filtered supersaws, and solos by the electric piano and the horns.
 The bongos play the martillo until the mambo, where the bongocero takes up the campana, the hand bell.
 
 `examples/choro.exs` is Ernesto Nazareth's Apanhei-te, cavaquinho, a polca of 1914 in the public domain that choro took for its own, played by a regional on mx's measured synths, in the form A A B B A C C A. The flute slurs the pianist's right hand a bar to a breath, with its mordents and grace notes, the clarinet takes the repeats and joins it an octave below, the cavaquinho strums the left hand's rhythm, the 7-string guitar runs down to each new phrase, and the pandeiro plays as its hand rocks and strikes the trio's chords with the whole regional.
