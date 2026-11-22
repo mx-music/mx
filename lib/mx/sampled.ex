@@ -253,7 +253,7 @@ defmodule Mx.Sampled do
     def to_string(%{source: files}) when is_list(files) do
       paths = Enum.map(files, &elem(&1, 0))
       collections = paths |> Enum.map(&collection/1) |> Enum.uniq()
-      folders = Enum.map(paths, &(&1 |> file() |> Path.dirname() |> Path.split()))
+      folders = Enum.map(paths, &folder_parts/1)
 
       case {collections, shared(folders)} do
         {[collection], [_ | _] = folder} ->
@@ -275,6 +275,8 @@ defmodule Mx.Sampled do
 
     defp file({_collection, path}), do: path
     defp file(path), do: path
+
+    defp folder_parts(path), do: path |> file() |> Path.dirname() |> Path.split()
 
     defp shared(folders) do
       folders
