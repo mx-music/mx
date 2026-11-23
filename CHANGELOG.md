@@ -4,6 +4,7 @@
 
 ### 1. Enhancements
 
+  * [effects] `distortion` adds only harmonics of the note, from the next mxs: a saw at C7 driven hard had energy 20 dB under it at pitches that are not its harmonics, and has it 50 dB under; it takes `curve: :hard`, which cuts the sound off flat, and `tone`, a MIDI note for a low-pass after it
   * [effects] `echo` and `ping_pong` take `high_cut`, `low_cut` and `drive`, from the next mxs: each echo is cut above and below the two notes and rounded off once more than the one before, as a tape echo's repeats grow duller, and `examples/dubwise.exs` wears its tape so
   * [effects] `phaser` given no `mix` is half dry, where its notches are deepest
   * [effects] Add `phaser`, from the next mxs: `stages` all-pass filters sweep one notch for every two between the notes `low` and `high` once every `phase`, deepest at `mix: 0.5`, with `feedback` and `stereo_invert_wave`; `examples/dubwise.exs` plays its hi-hat through it
