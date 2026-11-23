@@ -1006,6 +1006,9 @@ Pitches are note numbers, so they are plain arithmetic: `pitch(:c4) + 7` is G4.
 | `chord(:a3, :minor7)` | `[57, 60, 64, 67]` | the chord's notes from its root |
 | `scale(:e3, :minor_pentatonic)` | `[52, 55, 57, 59, 62, 64]` | the scale's notes, up to the octave |
 | `scale(:e3, :minor_pentatonic, octaves: 2)` | eleven notes, from 52 to 76 | the scale over two octaves |
+| `scale(:f4, :major, from: :bb3, to: :f6)` | nineteen notes, from 58 to 89 | every note of the scale in the range, in any octave of the root, both ends kept when they are in the scale |
+| `scale(:g5, [0, 2, 3.5, 5, 7, 9, 10])` | `[79, 81, 82.5, 84, 86, 88, 89, 91]` | a scale given as its steps from the root, rising from 0 to below 12; a fraction is a note between a piano's keys |
+| `degree(:g5, :major, 9)` | `95` | the pitch so many steps of the scale from the root: 0 is the root, 7 in a scale of seven notes the octave, and below 0 goes down |
 
 - Chords: aug, dim, dim7, dom7, dom7_flat9, dom9, half_dim7, major, major6, major7, minor, minor6, minor7, sus2, sus4.
 - Scales: blues, chromatic, dorian, harmonic_minor, major, major_pentatonic, minor, minor_pentatonic, mixolydian.

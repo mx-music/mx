@@ -54,7 +54,7 @@ defmodule TenorSax do
 
   # A run down the F major scale in sixteenths from E5 to its low A flat, held.
   defp strokes(:ending, _pass) do
-    run = Enum.filter(76..45//-1, &(rem(&1, 12) in [0, 2, 4, 5, 7, 9, 10]))
+    run = Enum.reverse(scale(:f4, :major, from: 45, to: 76))
 
     Enum.with_index(run, fn note, i ->
       {i / 4, note, 0, vel: 0.65, sustain: 0.2, release: 0.05}

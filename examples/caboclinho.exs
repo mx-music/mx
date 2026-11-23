@@ -135,10 +135,7 @@ defmodule Caboclinho do
 
   # The gaita's notes as steps from its tonic, G5: a neutral third, 3.5 semitones up, in place of
   # the minor or the major third.
-  defp gaita_note(step) do
-    degrees = [0, 2, 3.5, 5, 7, 9, 10]
-    79 + 12 * Integer.floor_div(step, 7) + Enum.at(degrees, Integer.mod(step, 7))
-  end
+  defp gaita_note(step), do: degree(:g5, [0, 2, 3.5, 5, 7, 9, 10], step)
 
   # The caracaxás shake sixteenths, the third of each beat accented, written for one beat: d is
   # down and u is up, in capitals where accented.

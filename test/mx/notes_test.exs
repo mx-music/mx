@@ -8,6 +8,7 @@ defmodule Mx.NotesTest do
       sigil_MX: 2,
       scale: 2,
       scale: 3,
+      degree: 3,
       ring: 2,
       intervals: 1,
       melody: 2,
@@ -135,6 +136,44 @@ defmodule Mx.NotesTest do
 
   test "an unknown scale is refused, naming it" do
     assert_raise ArgumentError, "unknown scale lydianish", fn -> scale(:c4, :lydianish) end
+  end
+
+  test "a scale from: to: is every note of it in that range, in any octave of its root" do
+    f_major = [58, 60, 62, 64, 65, 67, 69, 70, 72, 74, 76, 77, 79, 81, 82, 84, 86, 88, 89]
+    assert scale(:f4, :major, from: :bb3, to: :f6) == f_major
+    assert scale(:f2, :major, from: 58, to: 89) == f_major
+    assert scale(:c4, :major, from: :cs4, to: :ds4) == [62]
+  end
+
+  test "from: above to:, one of them alone, either beside octaves: and an unknown option are refused" do
+    assert_raise ArgumentError, ~r/from: no higher than to:/, fn ->
+      scale(:c4, :major, from: :c5, to: :c4)
+    end
+
+    assert_raise ArgumentError, ~r/from: and to: together/, fn ->
+      scale(:c4, :major, from: :c4)
+    end
+
+    assert_raise ArgumentError, ~r/octaves:, or from: and to:, not both/, fn ->
+      scale(:c4, :major, from: :c4, to: :c5, octaves: 2)
+    end
+
+    assert_raise ArgumentError, ~r/not octave:/, fn -> scale(:c4, :major, octave: 2) end
+  end
+
+  test "a scale's kind can be its steps from the root, fractions among them, rising from 0 to below 12" do
+    assert scale(:g5, [0, 2, 3.5, 5, 7, 9, 10]) == [79, 81, 82.5, 84, 86, 88, 89, 91]
+    assert scale(:e3, :minor_pentatonic) == [52, 55, 57, 59, 62, 64]
+
+    for steps <- [[2, 4], [0, 4, 2], [0, 7, 12]] do
+      assert_raise ArgumentError, fn -> scale(:c4, steps) end
+    end
+  end
+
+  test "degree is the pitch so many steps of a scale from its root, below 0 going down" do
+    assert Enum.map([0, 7, 9, -1], &degree(:g5, :major, &1)) == [79, 91, 95, 78]
+    assert degree(:g5, [0, 2, 3.5, 5, 7, 9, 10], 2) == 82.5
+    assert degree(:g5, [0, 2, 3.5, 5, 7, 9, 10], 9) == 94.5
   end
 
   test "a scale works with ring" do

@@ -144,13 +144,84 @@ defmodule Mx.Notes do
     raise ArgumentError, "a chart takes one chord to a step, not #{tokens}"
   end
 
-  @doc "The notes of a scale from a root, ending on the octave above it, over `octaves:` octaves (1 by default)."
-  def scale(root, name, opts \\ [])
-      when (is_number(root) or is_atom(root)) and is_atom(name) and is_list(opts) do
-    steps = fetch!(@scales, name, "scale")
-    octaves = Keyword.get(opts, :octaves, 1)
-    steps = steps |> List.duplicate(octaves) |> List.flatten()
-    Enum.scan(steps, note(root), &(&1 + &2)) |> then(&[note(root) | &1])
+  @doc "The notes of a scale from a root, ending on the octave above it, over `octaves:` octaves (1 by default), or every note of the scale from `from:` up to `to:`; the kind is a name or the steps from the root in semitones, from 0 up to below 12."
+  def scale(root, kind, opts \\ []) when (is_number(root) or is_atom(root)) and is_list(opts) do
+    offsets = offsets!(kind)
+    root = note(root)
+
+    case Enum.find(Keyword.keys(opts), &(&1 not in [:octaves, :from, :to])) do
+      nil -> :ok
+      name -> raise ArgumentError, "scale takes octaves:, or from: and to:, not #{name}:"
+    end
+
+    case {Keyword.has_key?(opts, :from), Keyword.has_key?(opts, :to)} do
+      {false, false} ->
+        octaves = Keyword.get(opts, :octaves, 1)
+
+        notes =
+          for octave <- 0..(octaves - 1)//1, offset <- offsets, do: root + 12 * octave + offset
+
+        notes ++ [root + 12 * octaves]
+
+      {true, true} ->
+        if Keyword.has_key?(opts, :octaves) do
+          raise ArgumentError, "scale takes octaves:, or from: and to:, not both"
+        end
+
+        between(root, offsets, note(opts[:from]), note(opts[:to]))
+
+      _ ->
+        raise ArgumentError, "scale takes from: and to: together"
+    end
+  end
+
+  @doc "The pitch `number` steps of a scale from its root: 0 is the root, the scale's count of notes the root an octave up, and below 0 goes down."
+  def degree(root, kind, number) when (is_number(root) or is_atom(root)) and is_integer(number) do
+    offsets = offsets!(kind)
+    count = length(offsets)
+    octave = Integer.floor_div(number, count)
+    note(root) + 12 * octave + Enum.at(offsets, Integer.mod(number, count))
+  end
+
+  defp between(_root, _offsets, low, high) when low > high do
+    raise ArgumentError, "scale takes from: no higher than to:, not from #{low} to #{high}"
+  end
+
+  defp between(root, offsets, low, high) do
+    lowest = Integer.floor_div(floor(low - root), 12) - 1
+    highest = Integer.floor_div(ceil(high - root), 12) + 1
+
+    for octave <- lowest..highest,
+        offset <- offsets,
+        pitch = root + 12 * octave + offset,
+        pitch >= low and pitch <= high,
+        do: pitch
+  end
+
+  # A scale's notes as their steps from the root within one octave, 0 first.
+  defp offsets!(kind) when is_atom(kind) do
+    steps = fetch!(@scales, kind, "scale")
+    [0 | Enum.scan(Enum.drop(steps, -1), &(&1 + &2))]
+  end
+
+  defp offsets!([0 | _] = steps) do
+    rising? = Enum.all?(steps, &is_number/1) and steps == Enum.sort(Enum.uniq(steps))
+
+    if not rising? or List.last(steps) >= 12 do
+      steps = inspect(steps)
+
+      raise ArgumentError,
+            "a scale's steps rise from 0 to below 12 semitones above the root, not #{steps}"
+    end
+
+    steps
+  end
+
+  defp offsets!(kind) do
+    kind = inspect(kind, charlists: :as_lists)
+
+    raise ArgumentError,
+          "a scale is a name, such as :major, or its steps from the root, starting at 0, not #{kind}"
   end
 
   @doc "The step from each note to the next, from notes given as names or numbers."

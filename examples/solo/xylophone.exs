@@ -59,5 +59,5 @@ defmodule Xylophone do
   end
 
   # The C major scale from F4, the xylophone's lowest bar, to B7, a bar below its highest.
-  defp scale, do: Enum.filter(65..107, &(rem(&1, 12) in [0, 2, 4, 5, 7, 9, 11]))
+  defp scale, do: scale(:c4, :major, from: 65, to: 107)
 end

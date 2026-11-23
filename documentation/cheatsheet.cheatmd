@@ -422,6 +422,9 @@ Use headphones.
 | `chord(:a3, :minor7)` | `[57, 60, 64, 67]` |
 | `chord("Am7", from: :d4)` | `[69, 72, 76, 79]` |
 | `scale(:e3, :minor_pentatonic)` | `[52, 55, 57, 59, 62, 64]` |
+| `scale(:f4, :major, from: :bb3, to: :f6)` | every note of F major from 58 to 89 |
+| `scale(:g5, [0, 2, 3.5, 5, 7, 9, 10])` | a scale of its own steps, here with a neutral third |
+| `degree(:g5, :major, 9)` | `95`, nine steps of the scale up |
 | `chord_at(~MX"D7 G", 2, 2)` | the chord a chart names at a beat |
 
 Chords: `major` `minor` `major6` `minor6` `major7` `minor7` `dom7` `dom9` `dom7_flat9` `dim` `dim7` `half_dim7` `aug` `sus2` `sus4`

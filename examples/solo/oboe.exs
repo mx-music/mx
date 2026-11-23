@@ -54,7 +54,7 @@ defmodule Oboe do
   # The F major scale in eighths from its low B flat up to F6, held, and an F major arpeggio in
   # quarters back down to F4.
   defp strokes(:range, _pass) do
-    scale = Enum.filter(58..89, &(rem(&1, 12) in [0, 2, 4, 5, 7, 9, 10]))
+    scale = scale(:f4, :major, from: :bb3, to: :f6)
     {climb, [top]} = Enum.split(scale, -1)
     last = length(climb) / 2
 

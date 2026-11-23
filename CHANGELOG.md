@@ -4,6 +4,7 @@
 
 ### 1. Enhancements
 
+  * [notes] `scale` takes `from:` and `to:` for every note of the scale in a range, and a kind given as its steps from the root, fractions among them; `degree(root, kind, number)` is the pitch so many steps of a scale from its root; `scale` refuses an option it does not take
   * [music] `slur` takes rests, each ending the note sounding and starting a new one after it, and `tongue:`, a function of the beat, the pitch before and the pitch that starts a new note where it returns true
   * [music] A note takes `held:`, the share of its length it sounds for, as its sustain: on a note, in a part's `defaults:`, in `each`, and in the options of `steps`, `kit` and `at`, each note in a pattern taking a share of its own length; a note's own `sustain:` is kept over a `held:` given around it, and a note given both, a `held:` not above 0 and a hit given one are refused
   * [music] `each` gives a note a `sustain:` it does not give, where before the note's length was kept

@@ -485,12 +485,30 @@ defmodule Mx do
   defdelegate chord_at(chart, step, beat), to: Mx.Notes
 
   @doc """
-  The notes of a scale, from a root note up to its octave, over `octaves:` octaves.
+  The notes of a scale, from a root note up to its octave, over `octaves:` octaves, or every note of the scale from `from:` up to `to:`, the scale's notes taken in every octave.
+  The kind is a name, such as `:major`, or the steps from the root in semitones, starting at 0 and rising to below 12; a step can be a fraction, for a note between a piano's keys.
+
+      # Every note of F major an oboe reaches, from B flat 3 to F6.
+      scale(:f4, :major, from: :bb3, to: :f6)
 
       iex> scale(:c4, :major_pentatonic)
       [60, 62, 64, 67, 69, 72]
+
+      iex> scale(:g5, [0, 2, 3.5, 5, 7, 9, 10])
+      [79, 81, 82.5, 84, 86, 88, 89, 91]
   """
-  defdelegate scale(root, name, opts \\ []), to: Mx.Notes
+  defdelegate scale(root, kind, opts \\ []), to: Mx.Notes
+
+  @doc """
+  The pitch so many steps of a scale from its root, which `scale/3` takes the kinds of: 0 is the root, the number of the scale's notes is the root an octave up, and a number below 0 goes down.
+
+      iex> degree(:g5, :major, 9)
+      95
+
+      iex> degree(:g5, :major, -1)
+      78
+  """
+  defdelegate degree(root, kind, number), to: Mx.Notes
 
   @doc """
   The notes reached by taking each step in turn from a start note.
