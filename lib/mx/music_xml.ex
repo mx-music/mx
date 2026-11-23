@@ -9,7 +9,7 @@ defmodule Mx.MusicXML do
   A note that crosses a bar line, or whose length no single note value writes, is written as tied notes.
   """
 
-  alias Mx.{Ok, Page, Pass, Song}
+  alias Mx.{Page, Pass, Render, Song}
 
   @divisions 24
 
@@ -519,7 +519,7 @@ defmodule Mx.MusicXML do
   # Each part as its notes through the whole of its music once, their vels and its length in
   # beats, or why it is left out.
   defp played(song) do
-    Ok.map(song.loops, fn
+    Render.map_ok(song.loops, fn
       %{on: on} = loop when on != nil ->
         {:ok, {loop.name, {:left_out, "it waits for input"}}}
 
