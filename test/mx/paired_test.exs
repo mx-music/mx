@@ -84,6 +84,54 @@ defmodule Mx.PairedTest do
     {Mx.Paired.Tambourine, :tambourine, [[vel: 0.3], [vel: 1], [note: 74]], 2},
     {Mx.Paired.TambourineShake, :tambourine_shake,
      [[vel: 0.3], [vel: 1, sustain: 0.6], [note: 64, sustain: 0.1]], 2},
+    {Mx.Paired.Clarinet, :clarinet,
+     [
+       [note: 60, vel: 0.3, sustain: 3],
+       [note: 55, vel: 1, sustain: 3],
+       [note: 60, vel: 0.6, vibrato: 0.3, sustain: 3]
+     ], 3.5},
+    {Mx.Paired.Oboe, :oboe,
+     [
+       [note: 69, vel: 0.3, sustain: 3],
+       [note: 74, vel: 1, sustain: 3],
+       [note: 69, vel: 0.6, vibrato: 0.3, sustain: 3]
+     ], 3.5},
+    {Mx.Paired.Bassoon, :bassoon,
+     [
+       [note: 43, vel: 0.3, sustain: 3],
+       [note: 50, vel: 1, sustain: 3],
+       [note: 43, vel: 0.6, vibrato: 0.3, sustain: 3]
+     ], 3.5},
+    {Mx.Paired.TenorSax, :tenor_sax,
+     [
+       [note: 55, vel: 0.3, sustain: 3],
+       [note: 62, vel: 1, sustain: 3],
+       [note: 55, vel: 0.6, vibrato: 0.3, sustain: 3]
+     ], 3.5},
+    {Mx.Paired.Trumpet, :trumpet,
+     [
+       [note: 67, vel: 0.3, sustain: 3],
+       [note: 72, vel: 1, sustain: 3],
+       [note: 67, vel: 0.6, vibrato: 0.3, sustain: 3]
+     ], 3.5},
+    {Mx.Paired.Trombone, :trombone,
+     [
+       [note: 48, vel: 0.3, sustain: 3],
+       [note: 53, vel: 1, sustain: 3],
+       [note: 48, vel: 0.6, vibrato: 0.3, sustain: 3]
+     ], 3.5},
+    {Mx.Paired.Horn, :horn,
+     [
+       [note: 53, vel: 0.3, sustain: 3],
+       [note: 60, vel: 1, sustain: 3],
+       [note: 53, vel: 0.6, vibrato: 0.3, sustain: 3]
+     ], 3.5},
+    {Mx.Paired.Tuba, :tuba,
+     [
+       [note: 36, vel: 0.3, sustain: 3],
+       [note: 41, vel: 1, sustain: 3],
+       [note: 36, vel: 0.6, vibrato: 0.3, sustain: 3]
+     ], 3.5},
     {Mx.Paired.Pluck, :pluck, [[], [note: 40, ring: 1, coef: 0.6], [note: 76, coef: 0]], 2},
     {Mx.Paired.Caxixi, :caxixi, [[vel: 0.3], [vel: 1]], 2},
     {Mx.Paired.Cajon, :cajon, [[vel: 0.3], [vel: 1], [note: 42, slap: 1]], 2},
@@ -195,6 +243,29 @@ defmodule Mx.PairedTest do
 
     rust = shakes.(nil)
     elixir = shakes.(Mx.Paired.Caxixi)
+    difference = Enum.zip_with(rust, elixir, &(&1 - &2))
+    apart = 20 * :math.log10(max(rms(difference), 1.0e-12) / rms(rust))
+    assert apart < -60, "#{apart} dB apart"
+  end
+
+  test "the trumpet slurring from C5 to G5 renders the same in its defsynth and Rust forms" do
+    slurred = fn module, to ->
+      {:ok, engine} = Native.start(false, false)
+      if module, do: :ok = Mx.Instrument.register(engine, module)
+
+      events = [
+        {0.0, Mx.Engine.Mxs.event({:note, 1, :trumpet, nil, [note: 72, sustain: 2.5], nil})},
+        {1.2, Mx.Engine.Mxs.event({:set, {:sounds, [1]}, note: to})}
+      ]
+
+      :ok = Native.play(engine, events)
+      {:ok, {left, _right}} = Native.render(engine, 3)
+      for <<x::float-32-native <- left>>, do: x
+    end
+
+    rust = slurred.(nil, 79)
+    elixir = slurred.(Mx.Paired.Trumpet, 79)
+    assert rust != slurred.(nil, 72)
     difference = Enum.zip_with(rust, elixir, &(&1 - &2))
     apart = 20 * :math.log10(max(rms(difference), 1.0e-12) / rms(rust))
     assert apart < -60, "#{apart} dB apart"

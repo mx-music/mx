@@ -205,7 +205,7 @@ Every synth ends with `note_envelope` or `rings`, which tells mxs when the note 
 | reading options | `hz`, `db`, `follow`, `select`, `clamp`, `mod` |
 | chance | `draw`, a number drawn as each note starts, and `noise` seeded from the same with `drawn:` |
 | ending the note | `note_envelope`, `rings` |
-| whole models | `bowed_string`, `air_jet`, `wind_bands`, `vibrato` |
+| whole models | `bowed_string`, `air_jet`, `reed`, a reed or the lips on a bore through its bell, `wind_bands`, `vibrato`, `fingers`, a note as a wind player's fingers hold it, and `sway`, a slow random drift as a player's while a note holds |
 
 `Mx.Instrument.Vocabulary` documents each of them.
 

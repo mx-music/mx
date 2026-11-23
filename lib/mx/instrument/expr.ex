@@ -157,8 +157,23 @@ defmodule Mx.Instrument.Vocabulary do
     Expr.call(:share, [sound], through: fun.(Expr.call(:input, [])))
   end
 
-  @doc "A wind's sound through peaks at mx's eight bands up to 3162 Hz, `gains:` eight in dB at each of pp, mf and ff, and `levels:` in dB at each, following `vel:`."
+  @doc "A wind's sound through peaks at mx's bands, `gains:` in dB at each of pp, mf and ff, eight to each for the bands up to 3162 Hz or eleven for all of them up to 12.6 kHz, and `levels:` in dB at each, following `vel:`."
   def wind_bands(sound, opts), do: Expr.call(:wind_bands, [sound], opts)
+
+  @doc "A slow random sway of about unit size, as a wind player's pitch and level drift while a note holds, its seed drawn from the note."
+  def sway, do: Expr.call(:sway, [], [])
+
+  @doc "A note as a wind player's fingers hold it: while `note` glides faster than 6 semitones a second they keep the one it left, for up to 80 ms, then take the one it reaches."
+  def fingers(note), do: Expr.call(:fingers, [note], [])
+
+  @doc """
+  A reed, or the lips, blown by `breath:` at `hz:` on a bore, sounding through its bell, as mxs's reed and brass winds are; its breath's turbulence draws its seed after its arguments.
+
+  The bore takes `corner:`, its corner as a multiple of the pitch, never under `least_corner:` Hz, `keep:`, what it keeps at each round trip, `conical: true` for a cone, whose missing apex is `apex:` of its length, 0.3 unless given, and `relative: true` for a breath that is a multiple of the least that sounds the note.
+  The reed takes `zeta:`, how freely it lets the air through, 0.4 unless given, `tongue:`, the part of the pressure the tongue's release sends in, and `gasp:` and `mend:`, how far the breath falls at a slur and the seconds it takes to come back to a third, 0.02 unless given.
+  The bell takes `bell:`, the corner in Hz it lets the sound out above, never under `bell_corner:` times the pitch, `smooth:`, the corner of its two rounding low-passes as a multiple of the pitch, `lift:`, the dB louder an octave up, `catch:`, how far the sound falls at a slur, and three sounds: `steep:`, how much earlier a unit of pressure arrives, `through:`, the part of the wave let through, 1 unless given, and `eased:`, the part of the steepening left, 1 unless given.
+  """
+  def reed(opts), do: Expr.call(:reed, [], opts)
 
   @doc "The note's `index`th number from 0 up to 1, counting from 0, drawn from a seed that moves with each note of the synth by `mix:`, a whole number, 0 unless given; each draw and drawn noise of a synth takes the same mix."
   def draw(index, opts \\ []), do: Expr.call(:draw, [index], opts)
