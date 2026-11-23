@@ -17,29 +17,24 @@ defmodule Glockenspiel do
   end
 
   # A pass of glockenspiel, as 8 beats.
-  defp glockenspiel(section, pass) do
-    notes =
-      for {beat, note, vel, sustain, release} <- strokes(section, pass),
-          do: {beat, note(note, sustain, vel: vel, release: release)}
-
-    at(notes, 8)
-  end
+  defp glockenspiel(section, pass), do: at(strokes(section, pass), 8)
 
   # Each note of the melody is damped when the next one comes, as a player stops a bar with a
   # finger.
   defp strokes(:melody, pass) do
-    for {beat, note, held} <- phrase(pass), do: {beat, note, 0.6, held - 0.1, 0.1}
+    for {beat, note, held} <- phrase(pass), do: {beat, note, held - 0.1, vel: 0.6, release: 0.1}
   end
 
   # A C major chord one bar at a time, every bar left to ring under the ones after it.
   defp strokes(:ring, _pass) do
-    for {note, index} <- Enum.with_index([72, 76, 79, 84]), do: {index * 2, note, 0.7, 1000, 0.3}
+    for {note, index} <- Enum.with_index([72, 76, 79, 84]),
+        do: {index * 2, note, 1000, vel: 0.7, release: 0.3}
   end
 
   # An arpeggio in eighths from C6 up to E8, the top bar, left to ring.
   defp strokes(:ending, _pass) do
     for {note, index} <- Enum.with_index([84, 88, 91, 96, 100, 103, 108, 112]),
-        do: {index / 2, note, 0.65, 1000, 0.3}
+        do: {index / 2, note, 1000, vel: 0.65, release: 0.3}
   end
 
   # Each phrase's notes as beat, note and beats held; the second ends on the tonic.

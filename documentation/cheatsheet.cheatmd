@@ -80,10 +80,12 @@ With no count it plays until mx stops, and holds the whole song.
 
 ```elixir
 at([{0, hit()}, {1.5, hit(vel: 0.5)}], 4)
+at([{0, :c4, 1}, {1, :e4, 1, vel: 0.9}], 4, vel: 0.6)
 delay(music, 7)
 ```
 
 `at` starts each item at its beat, in music of 4 beats.
+A note is placed as a beat, a pitch and a length, with options for every note after the length and its own in a fourth item.
 `delay` is the music after 7 beats of silence.
 
 ### Moved, and shaped

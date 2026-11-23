@@ -19,13 +19,7 @@ defmodule ElectricGuitar do
   end
 
   # A pass of the form as its 16 beats: each note at its beat, lasting its sustain.
-  defp electric_guitar(section, pass) do
-    notes =
-      for {beat, note, vel, sustain} <- notes(section, pass),
-          do: {beat, note(note, 0, vel: vel, sustain: sustain)}
-
-    at(notes, 16)
-  end
+  defp electric_guitar(section, pass), do: at(notes(section, pass), 16)
 
   # Each chord strummed down on the one and left to ring; the second pass strums it again, up
   # and softer, on the and of two.
@@ -43,9 +37,9 @@ defmodule ElectricGuitar do
     line =
       for {note, index} <- Enum.with_index(line()),
           note != nil,
-          do: {index * 0.5, note + up, if(rem(index, 2) == 0, do: 0.7, else: 0.55), 0.45}
+          do: {index * 0.5, note + up, 0.45, vel: if(rem(index, 2) == 0, do: 0.7, else: 0.55)}
 
-    [{0, 45, 0.6, 7.9}, {8, 45, 0.6, 7.9} | line]
+    [{0, 45, 7.9, vel: 0.6}, {8, 45, 7.9, vel: 0.6} | line]
   end
 
   # The low E and A muted in sixteenths, each bar answered by a chord stab cut short.
@@ -59,9 +53,9 @@ defmodule ElectricGuitar do
   defp notes(:high, _pass) do
     climb =
       for {note, index} <- Enum.with_index([69, 72, 74, 76, 79, 81, 84, 86]),
-          do: {index * 0.5, note, 0.6 + index * 0.04, 0.45}
+          do: {index * 0.5, note, 0.45, vel: 0.6 + index * 0.04}
 
-    climb ++ [{4, 86, 0.95, 3.5}] ++ strum(8, [40, 47, 52, 55, 59, 64], :down, 0.9, 7.5)
+    climb ++ [{4, 86, 3.5, vel: 0.95}] ++ strum(8, [40, 47, 52, 55, 59, 64], :down, 0.9, 7.5)
   end
 
   defp strums(pass) when rem(pass, 2) == 0, do: [{0, :down, 0.8, 3.9}]
@@ -73,7 +67,7 @@ defmodule ElectricGuitar do
     strings = if direction == :down, do: chord, else: Enum.reverse(chord)
 
     for {note, index} <- Enum.with_index(strings),
-        do: {beat + index * 0.05, note, vel, Float.round(sustain - index * 0.05, 2)}
+        do: {beat + index * 0.05, note, Float.round(sustain - index * 0.05, 2), vel: vel}
   end
 
   defp muted_bar(bar) do
@@ -82,7 +76,7 @@ defmodule ElectricGuitar do
 
     sixteenths =
       for step <- 0..9,
-          do: {bar * 4 + step * 0.25, root, if(rem(step, 4) == 0, do: 0.8, else: 0.5), 0.12}
+          do: {bar * 4 + step * 0.25, root, 0.12, vel: if(rem(step, 4) == 0, do: 0.8, else: 0.5)}
 
     sixteenths ++ strum(bar * 4 + 2.75, stab, :down, 0.85, 0.3)
   end

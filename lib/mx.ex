@@ -193,12 +193,15 @@ defmodule Mx do
 
   @doc """
   Music lasting some beats whose items start at their beats from its start, given as `{beat, music}`, so strokes at known beats need no rests between them.
-  An item placed at or past the length is refused.
+  A note can be written as `{beat, pitch, length}`, the pitch anything `note/3` takes, or as `{beat, pitch, length, options}` with options of its own.
+  A note of length 0 is struck: it takes no time and rings out by its own sustain, as `note/3` plays it.
+  An item placed at or past the length is refused, and so is a note of a length below 0.
 
       # The son clave, 3-2, over two bars of four beats.
       clave = for beat <- [0, 1.5, 3, 5, 6], do: {beat, steps("x", 0)}
       at(clave, 8)
       at([{0.5, note(:c4, 0.5)}, {1.5, note(:e4, 0.5)}], 2)
+      at([{0.5, :c4, 0.5}, {1.5, :e4, 0.5, vel: 0.9}], 2)
 
       iex> beats(at([{0.5, note(:c4, 0.5)}], 2))
       2
@@ -207,14 +210,18 @@ defmodule Mx do
 
   @doc """
   Music lasting some beats with, at each beat of the entries given as `{beat, value}`, the music the function returns for the value.
+  Given options instead of a function, it gives them to each note written as `{beat, pitch, length}`; a note's own options are kept over them, and music placed as `{beat, music}` takes none.
 
       # A fill, each stroke at its beat and its level.
       at([{0, 0.4}, {1.5, 0.8}, {3, 1}], 4, fn vel -> hit(vel: vel) end)
 
+      # A line at one level, its last note louder.
+      at([{0, :c4, 1}, {1, :e4, 1}, {2, :g4, 2, vel: 0.9}], 4, vel: 0.6)
+
       iex> beats(at([{0, 0.4}, {1.5, 0.8}], 4, fn vel -> hit(vel: vel) end))
       4
   """
-  defdelegate at(entries, beats, fun), to: Mx.Music
+  defdelegate at(entries, beats, fun_or_options), to: Mx.Music
 
   @doc """
   The music with each note started at the beat the function returns for the beat it was written on, its length unchanged, so some notes can be pushed late and others early.

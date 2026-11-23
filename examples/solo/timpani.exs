@@ -20,38 +20,40 @@ defmodule Timpani do
   end
 
   # A pass of timpani, as 16 beats.
-  defp timpani(section, _pass) do
-    hits = for {beat, note, vel} <- strokes(section), do: {beat, note(note, 0, vel: vel)}
-    at(hits, 16)
-  end
+  defp timpani(section, _pass), do: at(strokes(section), 16)
 
   # A roll on A2 that swells over eight beats from soft to loud, and fades over the next six.
   defp strokes(:swell), do: roll(0, 8, 45, 0.3, 1) ++ roll(8, 6, 45, 1, 0.3)
 
   # D3 and A2 in turn, loud, in quarters and then eighths, as a tonic and dominant are pounded.
   defp strokes(:pounding) do
-    quarters = for beat <- 0..7, do: {beat, Enum.at([50, 45], rem(beat, 2)), 0.9}
-    eighths = for index <- 0..15, do: {8 + index / 2, Enum.at([50, 45], rem(index, 2)), 0.8}
+    quarters = for beat <- 0..7, do: {beat, Enum.at([50, 45], rem(beat, 2)), 0, vel: 0.9}
+
+    eighths =
+      for index <- 0..15, do: {8 + index / 2, Enum.at([50, 45], rem(index, 2)), 0, vel: 0.8}
+
     quarters ++ eighths
   end
 
   defp strokes(:melody) do
-    for {beat, note} <- melody(), do: {beat, note, 0.65}
+    for {beat, note} <- melody(), do: {beat, note, 0, vel: 0.65}
   end
 
   defp strokes(:soft) do
-    for {beat, note} <- melody(), do: {beat, note, 0.3}
+    for {beat, note} <- melody(), do: {beat, note, 0, vel: 0.3}
   end
 
   # A roll on D3 that swells over six beats, then A2 and a last D3 struck hard and left to ring.
-  defp strokes(:ending), do: roll(0, 6, 50, 0.4, 0.9) ++ [{6, 45, 1}, {8, 50, 1}]
+  defp strokes(:ending), do: roll(0, 6, 50, 0.4, 0.9) ++ [{6, 45, 0, vel: 1}, {8, 50, 0, vel: 1}]
 
   # A roll as quick repeated strokes, six to a beat, from one strength to another.
   defp roll(from, beats, note, soft, loud) do
     count = beats * 6
 
     for index <- 0..(count - 1),
-        do: {from + index / 6, note, Float.round(soft + (loud - soft) * index / (count - 1), 2)}
+        do:
+          {from + index / 6, note, 0,
+           vel: Float.round(soft + (loud - soft) * index / (count - 1), 2)}
   end
 
   # A melody as beat and note, on the five drums.

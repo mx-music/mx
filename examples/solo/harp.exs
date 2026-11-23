@@ -17,13 +17,7 @@ defmodule Harp do
   end
 
   # A pass of harp, as 12 beats.
-  defp harp(section, pass) do
-    notes =
-      for {beat, note, vel, sustain} <- strokes(section, pass),
-          do: {beat, note(note, sustain, vel: vel)}
-
-    at(notes, 12)
-  end
+  defp harp(section, pass), do: at(strokes(section, pass), 12)
 
   # The bass marks the three beats of each bar; the arpeggio runs in eighths in two groups of
   # three, accented at the start of each,
@@ -33,7 +27,7 @@ defmodule Harp do
       notes ->
         low =
           for beat <- 0..2,
-              do: {bar * 3 + beat, if(beat == 0, do: bass, else: bass + 12), 0.7, 0.9}
+              do: {bar * 3 + beat, if(beat == 0, do: bass, else: bass + 12), 0.9, vel: 0.7}
 
         shape =
           if rem(pass, 2) == 0 do
@@ -44,7 +38,8 @@ defmodule Harp do
 
         high =
           for {note, index} <- Enum.with_index(shape),
-              do: {bar * 3 + index / 2, note, if(rem(index, 3) == 0, do: 0.75, else: 0.5), 0.9}
+              do:
+                {bar * 3 + index / 2, note, 0.9, vel: if(rem(index, 3) == 0, do: 0.75, else: 0.5)}
 
         notes ++ low ++ high
     end
@@ -54,13 +49,13 @@ defmodule Harp do
   defp strokes(:ring, _pass) do
     for {{bass, chord}, bar} <- Enum.with_index(chords()),
         {note, index} <- Enum.with_index([bass, bass + 12 | chord]),
-        do: {bar * 3 + index / 4, note, 0.6, 1000}
+        do: {bar * 3 + index / 4, note, 1000, vel: 0.6}
   end
 
   # A minor from A2 up to E6, left to ring.
   defp strokes(:ending, _pass) do
     for {note, index} <- Enum.with_index([45, 52, 57, 60, 64, 69, 72, 76, 81, 84, 88]),
-        do: {index / 4, note, 0.6, 1000}
+        do: {index / 4, note, 1000, vel: 0.6}
   end
 
   # A minor, D minor, E seven and A minor, a bar of three beats each, with each chord's bass note.

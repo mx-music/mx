@@ -19,20 +19,14 @@ defmodule DeepBass do
   end
 
   # A pass of the form as its 16 beats: each note at its beat, lasting its sustain.
-  defp deep_bass(section, pass) do
-    notes =
-      for {beat, note, vel, sustain} <- notes(section, pass),
-          do: {beat, note(note, 0, vel: vel, sustain: sustain)}
-
-    at(notes, 16)
-  end
+  defp deep_bass(section, pass), do: at(notes(section, pass), 16)
 
   # Roots held a bar each and played soft, walking down a step a bar: C, B, A and G, then F, E,
   # the low D, and G to lead into the groove.
   defp notes(:ballad, pass) do
     roots = if rem(pass, 2) == 0, do: [36, 35, 33, 31], else: [29, 28, 26, 31]
 
-    for {root, bar} <- Enum.with_index(roots), do: {bar * 4, root, 0.5, 3.9}
+    for {root, bar} <- Enum.with_index(roots), do: {bar * 4, root, 3.9, vel: 0.5}
   end
 
   # A minor and D, a bar each: the root held on the one, the octave off the beat, the fifth on
@@ -42,57 +36,57 @@ defmodule DeepBass do
     root = if rem(pass, 2) == 0, do: 0.75, else: 0.9
 
     for bar <- 0..3,
-        {beat, note, vel, sustain} <- groove_bar(rem(bar, 2), root),
-        do: {bar * 4 + beat, note, vel, sustain}
+        {beat, note, sustain, vel: vel} <- groove_bar(rem(bar, 2), root),
+        do: {bar * 4 + beat, note, sustain, vel: vel}
   end
 
   # A phrase in E minor high up the neck, rising to D sharp over B and falling back down to the
   # E an octave and a half below.
   defp notes(:high, _pass) do
     [
-      {0, 52, 0.6, 1},
-      {1, 55, 0.6, 0.5},
-      {1.5, 57, 0.6, 0.5},
-      {2, 59, 0.7, 1.5},
-      {3.5, 62, 0.75, 0.5},
-      {4, 63, 0.8, 1.5},
-      {5.5, 59, 0.6, 0.5},
-      {6, 57, 0.6, 1},
-      {7, 54, 0.6, 1},
-      {8, 55, 0.65, 2},
-      {10, 52, 0.6, 2},
-      {12, 47, 0.6, 2},
-      {14, 40, 0.6, 2}
+      {0, 52, 1, vel: 0.6},
+      {1, 55, 0.5, vel: 0.6},
+      {1.5, 57, 0.5, vel: 0.6},
+      {2, 59, 1.5, vel: 0.7},
+      {3.5, 62, 0.5, vel: 0.75},
+      {4, 63, 1.5, vel: 0.8},
+      {5.5, 59, 0.5, vel: 0.6},
+      {6, 57, 1, vel: 0.6},
+      {7, 54, 1, vel: 0.6},
+      {8, 55, 2, vel: 0.65},
+      {10, 52, 2, vel: 0.6},
+      {12, 47, 2, vel: 0.6},
+      {14, 40, 2, vel: 0.6}
     ]
   end
 
   # C and B a bar each, then the low D leading into the low E, plucked hard and left to ring.
   defp notes(:ending, _pass) do
     [
-      {0, 36, 0.55, 3.9},
-      {4, 35, 0.55, 3.9},
-      {8, 26, 0.7, 0.9},
-      {9, 28, 1.0, 6.5}
+      {0, 36, 3.9, vel: 0.55},
+      {4, 35, 3.9, vel: 0.55},
+      {8, 26, 0.9, vel: 0.7},
+      {9, 28, 6.5, vel: 1.0}
     ]
   end
 
   defp groove_bar(0, root) do
     [
-      {0, 33, root, 1.4},
-      {1.5, 45, 0.55, 0.4},
-      {2, 40, 0.65, 0.9},
-      {3, 43, 0.6, 0.4},
-      {3.5, 37, 0.6, 0.4}
+      {0, 33, 1.4, vel: root},
+      {1.5, 45, 0.4, vel: 0.55},
+      {2, 40, 0.9, vel: 0.65},
+      {3, 43, 0.4, vel: 0.6},
+      {3.5, 37, 0.4, vel: 0.6}
     ]
   end
 
   defp groove_bar(1, root) do
     [
-      {0, 38, root, 1.4},
-      {1.5, 50, 0.55, 0.4},
-      {2, 45, 0.65, 0.9},
-      {3, 48, 0.6, 0.4},
-      {3.5, 34, 0.6, 0.4}
+      {0, 38, 1.4, vel: root},
+      {1.5, 50, 0.4, vel: 0.55},
+      {2, 45, 0.9, vel: 0.65},
+      {3, 48, 0.4, vel: 0.6},
+      {3.5, 34, 0.4, vel: 0.6}
     ]
   end
 end

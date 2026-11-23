@@ -18,18 +18,12 @@ defmodule Clarinet do
   end
 
   # A pass of the form as its 16 beats: each stroke at its beat, lasting its sustain.
-  defp clarinet(section, pass) do
-    strokes =
-      for {beat, note, vel, opts} <- strokes(section, pass),
-          do: {beat, note(note, Keyword.get(opts, :sustain, 0), [vel: vel] ++ opts)}
-
-    at(strokes, 16)
-  end
+  defp clarinet(section, pass), do: at(strokes(section, pass), 16)
 
   # The melody in its low register, softly, each note held to just before the next.
   defp strokes(:low, _pass) do
     for {beat, note, held} <- melody(),
-        do: {beat, note, 0.4, sustain: held - 0.1, release: 0.15}
+        do: {beat, note, 0, vel: 0.4, sustain: held - 0.1, release: 0.15}
   end
 
   # G minor, E flat, C minor and D, each chord's notes up two octaves and a third in sixteenths
@@ -43,21 +37,21 @@ defmodule Clarinet do
           |> Enum.flat_map(fn octave -> Enum.map(chord, &(&1 + 12 * octave + shift)) end)
           |> Enum.take(8),
         {note, index} <- Enum.with_index(up ++ Enum.drop(Enum.reverse(up), 1)) do
-      {bar * 4 + index / 4, note, if(rem(index, 4) == 0, do: 0.75, else: 0.6),
-       sustain: 0.15, release: 0.05}
+      {bar * 4 + index / 4, note, 0,
+       vel: if(rem(index, 4) == 0, do: 0.75, else: 0.6), sustain: 0.15, release: 0.05}
     end
   end
 
   # The melody an octave and a fifth up, in its clear middle register.
   defp strokes(:melody, _pass) do
     for {beat, note, held} <- melody(),
-        do: {beat, note + 19, 0.65, sustain: held - 0.1, release: 0.2}
+        do: {beat, note + 19, 0, vel: 0.65, sustain: held - 0.1, release: 0.2}
   end
 
   # The melody's opening two octaves up and loud, climbing to G6 and held.
   defp strokes(:high, _pass) do
     for {beat, note, held} <- Enum.take(melody(), 3) ++ [{3, 67, 6}],
-        do: {beat, note + 24, 0.85, sustain: held - 0.1, release: 0.4}
+        do: {beat, note + 24, 0, vel: 0.85, sustain: held - 0.1, release: 0.4}
   end
 
   # The melody's notes as beat, note and beats held, starting on its low G.

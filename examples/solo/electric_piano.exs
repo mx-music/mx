@@ -19,20 +19,14 @@ defmodule ElectricPiano do
   end
 
   # A pass of the form as its 16 beats: each note at its beat, lasting its sustain.
-  defp electric_piano(section, pass) do
-    notes =
-      for {beat, notes, vel, sustain} <- notes(section, pass),
-          do: {beat, note(notes, 0, vel: vel, sustain: sustain)}
-
-    at(notes, 16)
-  end
+  defp electric_piano(section, pass), do: at(notes(section, pass), 16)
 
   # Each chord struck softly on the one and left to ring; the second pass strikes it again on
   # the and of three.
   defp notes(:chords, pass) do
     for {chord, bar} <- Enum.with_index(chords()),
         {beat, sustain} <- strikes(pass),
-        do: {bar * 4 + beat, chord, 0.3, sustain}
+        do: {bar * 4 + beat, chord, sustain, vel: 0.3}
   end
 
   # The chords held soft under a melody struck harder, a phrase a bar; the second pass answers
@@ -40,11 +34,11 @@ defmodule ElectricPiano do
   defp notes(:melody, pass) do
     up = if rem(pass, 2) == 0, do: 0, else: 12
 
-    chords = for {chord, bar} <- Enum.with_index(chords()), do: {bar * 4, chord, 0.25, 3.9}
+    chords = for {chord, bar} <- Enum.with_index(chords()), do: {bar * 4, chord, 3.9, vel: 0.25}
 
     melody =
-      for {beat, note, vel, sustain} <- melody(),
-          do: {beat, [note + up], vel, sustain}
+      for {beat, note, sustain, vel: vel} <- melody(),
+          do: {beat, [note + up], sustain, vel: vel}
 
     chords ++ melody
   end
@@ -52,14 +46,14 @@ defmodule ElectricPiano do
   # Octaves in the left hand walking down to the low E, each answered by a soft chord.
   defp notes(:low, _pass) do
     [
-      {0, [38, 50], 0.7, 1.4},
-      {1.5, [62, 65, 69, 72], 0.3, 2.4},
-      {4, [31, 43], 0.7, 1.4},
-      {5.5, [59, 65, 69, 71], 0.3, 2.4},
-      {8, [36, 48], 0.7, 1.4},
-      {9.5, [59, 64, 67, 71], 0.3, 2.4},
-      {12, [28, 40], 0.85, 3.9},
-      {13.5, [56, 62, 67, 71], 0.3, 2.4}
+      {0, [38, 50], 1.4, vel: 0.7},
+      {1.5, [62, 65, 69, 72], 2.4, vel: 0.3},
+      {4, [31, 43], 1.4, vel: 0.7},
+      {5.5, [59, 65, 69, 71], 2.4, vel: 0.3},
+      {8, [36, 48], 1.4, vel: 0.7},
+      {9.5, [59, 64, 67, 71], 2.4, vel: 0.3},
+      {12, [28, 40], 3.9, vel: 0.85},
+      {13.5, [56, 62, 67, 71], 2.4, vel: 0.3}
     ]
   end
 
@@ -67,9 +61,9 @@ defmodule ElectricPiano do
   defp notes(:high, _pass) do
     climb =
       for {note, index} <- Enum.with_index([69, 72, 74, 76, 79, 81, 84, 86, 88]),
-          do: {index * 0.5, [note], 0.5 + index * 0.04, 0.6}
+          do: {index * 0.5, [note], 0.6, vel: 0.5 + index * 0.04}
 
-    climb ++ [{6, [88], 0.85, 2}, {8, [50, 57, 60, 64, 65], 0.35, 7.9}]
+    climb ++ [{6, [88], 2, vel: 0.85}, {8, [50, 57, 60, 64, 65], 7.9, vel: 0.35}]
   end
 
   # D minor 9, G 13, C major 9 and A 7 with a flat ninth, voiced around middle C.
@@ -82,18 +76,18 @@ defmodule ElectricPiano do
 
   defp melody do
     [
-      {0, 76, 0.75, 1},
-      {1, 74, 0.6, 0.5},
-      {1.5, 72, 0.6, 1.5},
-      {4, 74, 0.75, 1},
-      {5, 77, 0.65, 0.5},
-      {5.5, 76, 0.6, 1.5},
-      {8, 79, 0.8, 1.5},
-      {9.5, 76, 0.6, 0.5},
-      {10, 74, 0.6, 1.5},
-      {12, 73, 0.75, 1},
-      {13, 76, 0.65, 1},
-      {14, 74, 0.6, 2}
+      {0, 76, 1, vel: 0.75},
+      {1, 74, 0.5, vel: 0.6},
+      {1.5, 72, 1.5, vel: 0.6},
+      {4, 74, 1, vel: 0.75},
+      {5, 77, 0.5, vel: 0.65},
+      {5.5, 76, 1.5, vel: 0.6},
+      {8, 79, 1.5, vel: 0.8},
+      {9.5, 76, 0.5, vel: 0.6},
+      {10, 74, 1.5, vel: 0.6},
+      {12, 73, 1, vel: 0.75},
+      {13, 76, 1, vel: 0.65},
+      {14, 74, 2, vel: 0.6}
     ]
   end
 end

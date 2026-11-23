@@ -17,17 +17,14 @@ defmodule Marimba do
   end
 
   # A pass of marimba, as 8 beats.
-  defp marimba(section, pass) do
-    notes = for {beat, note, vel} <- strokes(section, pass), do: {beat, note(note, 0, vel: vel)}
-    at(notes, 8)
-  end
+  defp marimba(section, pass), do: at(strokes(section, pass), 8)
 
   defp strokes(:sweep, _pass) do
     notes = keyboard() ++ Enum.reverse(keyboard())
 
     notes
     |> Enum.with_index()
-    |> Enum.map(fn {note, index} -> {index * 8 / length(notes), note, 0.6} end)
+    |> Enum.map(fn {note, index} -> {index * 8 / length(notes), note, 0, vel: 0.6} end)
   end
 
   # Two mallets roll each note of the melody, one on the note and one a sixth below it, in turn
@@ -38,25 +35,28 @@ defmodule Marimba do
     rolls =
       for {beat, note, held} <- melody, step <- 0..(held * 8 - 1) do
         if rem(step, 2) == 0 do
-          {beat + step / 8, note, 0.5}
+          {beat + step / 8, note, 0, vel: 0.5}
         else
-          {beat + step / 8, sixth_below(note), 0.4}
+          {beat + step / 8, sixth_below(note), 0, vel: 0.4}
         end
       end
 
-    Enum.with_index(bass, fn note, half -> {half * 4, note, 0.7} end) ++ rolls
+    Enum.with_index(bass, fn note, half -> {half * 4, note, 0, vel: 0.7} end) ++ rolls
   end
 
   # The same arpeggio on the low bars and then on the high ones.
   defp strokes(:low_high, _pass) do
-    low = for {note, index} <- Enum.with_index([36, 40, 43, 48]), do: {index, note, 0.7}
-    high = for {note, index} <- Enum.with_index([84, 88, 91, 96]), do: {4 + index, note, 0.7}
+    low = for {note, index} <- Enum.with_index([36, 40, 43, 48]), do: {index, note, 0, vel: 0.7}
+
+    high =
+      for {note, index} <- Enum.with_index([84, 88, 91, 96]), do: {4 + index, note, 0, vel: 0.7}
+
     low ++ high
   end
 
   defp strokes(:ending, _pass) do
     for {note, index} <- Enum.with_index([29, 36, 48, 55, 64, 72, 79, 84]),
-        do: {index / 8, note, 0.65}
+        do: {index / 8, note, 0, vel: 0.65}
   end
 
   # Every C, E, G and A from F1 to C7, the marimba's lowest and highest bars.

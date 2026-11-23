@@ -18,28 +18,24 @@ defmodule Horn do
   end
 
   # A pass of the form as its 16 beats: each stroke at its beat, lasting its sustain.
-  defp horn(section, pass) do
-    strokes =
-      for {beat, note, vel, opts} <- strokes(section, pass),
-          do: {beat, note(note, Keyword.get(opts, :sustain, 0), [vel: vel] ++ opts)}
-
-    at(strokes, 16)
-  end
+  defp horn(section, pass), do: at(strokes(section, pass), 16)
 
   # The melody with a little vibrato, each note held to just before the next, the second time an
   # octave lower.
   defp strokes(:melody, pass) do
     for {beat, note, held} <- melody(),
-        do: {beat, note - pass * 12, 0.55, sustain: held - 0.15, release: 0.3, vibrato: 0.05}
+        do:
+          {beat, note - pass * 12, 0,
+           vel: 0.55, sustain: held - 0.15, release: 0.3, vibrato: 0.05}
   end
 
   # The call, then its answer a fourth lower, twice; notes under a beat are tongued short.
   defp strokes(:calls, _pass) do
     for {from, down} <- [{0, 0}, {4, 5}, {8, 0}, {12, 5}], {beat, note, held} <- call() do
       if held < 1 do
-        {from + beat, note - down, 0.75, sustain: 0.15, release: 0.05}
+        {from + beat, note - down, 0, vel: 0.75, sustain: 0.15, release: 0.05}
       else
-        {from + beat, note - down, 0.7, sustain: held - 0.2, release: 0.15}
+        {from + beat, note - down, 0, vel: 0.7, sustain: held - 0.2, release: 0.15}
       end
     end
   end
@@ -48,15 +44,17 @@ defmodule Horn do
   defp strokes(:extremes, _pass) do
     for {vel, from} <- [{0.2, 0}, {1, 8}],
         {beat, note} <- [{0, 63}, {4, 67}],
-        do: {from + beat, note, vel, sustain: 3.6, release: 0.3}
+        do: {from + beat, note, 0, vel: vel, sustain: 3.6, release: 0.3}
   end
 
   # A run down the Eb major chord in eighths from Eb5 to a held low Eb2.
   defp strokes(:ending, _pass) do
     run = [75, 70, 67, 63, 58, 55, 51, 46, 43]
 
-    Enum.with_index(run, fn note, i -> {i / 2, note, 0.75, sustain: 0.3, release: 0.05} end) ++
-      [{length(run) / 2, 39, 0.85, sustain: 16 - length(run) / 2 - 0.5, release: 0.5}]
+    Enum.with_index(run, fn note, i ->
+      {i / 2, note, 0, vel: 0.75, sustain: 0.3, release: 0.05}
+    end) ++
+      [{length(run) / 2, 39, 0, vel: 0.85, sustain: 16 - length(run) / 2 - 0.5, release: 0.5}]
   end
 
   # The melody as beat, note and beats held.

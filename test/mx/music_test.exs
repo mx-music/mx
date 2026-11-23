@@ -540,6 +540,49 @@ defmodule Mx.MusicTest do
     end
   end
 
+  describe "notes placed by at" do
+    test "a beat, a pitch and a length is a note, a list of pitches a chord, and the music lasts its length" do
+      music = Mx.at([{0, :c4, 1}, {1.5, [:e4, :g4], 0.5}], 4)
+      assert Mx.beats(music) == 4
+      assert music.entries == [{0, Mx.note(:c4, 1)}, {1.5, Mx.note([:e4, :g4], 0.5)}]
+
+      struck = Mx.at([{0, :c5, 0, vel: 0.6}], 1)
+      assert struck.entries == [{0, Mx.note(:c5, 0, vel: 0.6)}]
+    end
+
+    test "options after the length go to every note, and a note's own options are kept over them" do
+      both = Mx.at([{0, :c4, 1}, {2, :d4, 1}], 4, vel: 0.7)
+      assert both.entries == [{0, Mx.note(:c4, 1, vel: 0.7)}, {2, Mx.note(:d4, 1, vel: 0.7)}]
+
+      own = Mx.at([{0, :c4, 1, vel: 0.9}, {2, :d4, 1}], 4, vel: 0.7)
+      assert own.entries == [{0, Mx.note(:c4, 1, vel: 0.9)}, {2, Mx.note(:d4, 1, vel: 0.7)}]
+    end
+
+    test "music placed at its beat takes none of the options, and a function still makes the music" do
+      mixed = Mx.at([{0, Mx.hit()}, {1, :c4, 1}], 4, vel: 0.7)
+      assert mixed.entries == [{0, Mx.hit()}, {1, Mx.note(:c4, 1, vel: 0.7)}]
+
+      made = Mx.at([{0, 0.4}, {1.5, 0.8}], 2, fn vel -> Mx.hit(vel: vel) end)
+      assert made.entries == [{0, Mx.hit(vel: 0.4)}, {1.5, Mx.hit(vel: 0.8)}]
+    end
+
+    test "a length below 0, a pitch note refuses and a beat below 0 are refused, naming the entry" do
+      assert_raise ArgumentError,
+                   "at plays a note for a length from 0 up, not {0, :c4, -1}",
+                   fn ->
+                     Mx.at([{0, :c4, -1}], 4)
+                   end
+
+      assert_raise ArgumentError, ~r/^at cannot play \{0, :h9, 1\}: /, fn ->
+        Mx.at([{0, :h9, 1}], 4)
+      end
+
+      assert_raise ArgumentError, "at takes {beat, music} from beat 0 up, not {-1, :c4, 1}", fn ->
+        Mx.at([{-1, :c4, 1}], 4)
+      end
+    end
+  end
+
   describe "refusals" do
     @tag :tmp_dir
     test "an unknown note is refused with the line that made it", ctx do

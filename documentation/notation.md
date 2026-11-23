@@ -277,6 +277,7 @@ part(:cajon, at([{0, hit(slap: 1, vel: 0.8)}, {1.5, hit(vel: 0.5)}], 2), synth: 
 - `hit(vel: 0.5)` is one hit of a drum at its own pitch, taking no time.
 - `at([{0.5, music}, {1.5, music}], 2)` is music of 2 beats that starts each item at its beat, so hits at known beats need no rests between them.
 - `at([{0, 0.4}, {1.5, 0.8}], 2, fn vel -> hit(vel: vel) end)` takes a value at each beat instead of music, and places there the music the function returns for it.
+- `at([{0, :c4, 1}, {1.5, [:e4, :g4], 0.5, vel: 0.9}], 2, vel: 0.6)` places notes written as a beat, a pitch or a chord, and a length, so a line known beat by beat needs no comprehension to turn it into notes. Options after the length go to every such note, a note's own options in a fourth item are kept over them, and music placed as `{beat, music}` takes none.
 
 ### Feel
 

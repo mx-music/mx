@@ -508,12 +508,18 @@ defmodule Mx.Music do
   defp kept_in(_container, nil), do: nil
   defp kept_in(container, music), do: %{container | music: music}
 
-  @doc "Music lasting some beats whose items start at their beats from its start, given as `{beat, music}`."
-  def at(entries, beats) when is_list(entries) do
+  @doc "Music lasting some beats whose items start at their beats from its start, given as `{beat, music}`, or as `{beat, pitch, length}` and `{beat, pitch, length, options}` for a note."
+  def at(entries, beats) when is_list(entries), do: at(entries, beats, [])
+
+  @doc "Music lasting some beats with, at each beat of the entries given as `{beat, value}`, the music the function returns for the value, or with the options given to each note written as `{beat, pitch, length}`, its own options kept over them."
+  def at(entries, beats, opts) when is_list(entries) and is_list(opts) do
     check_beats("at", beats)
+    check_keyword("at", opts)
 
     entries =
-      Enum.map(entries, fn
+      entries
+      |> Enum.map(&noted(&1, opts))
+      |> Enum.map(fn
         {beat, music} when is_number(beat) and beat >= 0 and beat < beats ->
           {beat, item(music)}
 
@@ -528,7 +534,6 @@ defmodule Mx.Music do
     %At{entries: entries, beats: beats}
   end
 
-  @doc "Music lasting some beats with, at each beat of the entries given as `{beat, value}`, the music the function returns for the value."
   def at(entries, beats, fun) when is_function(fun, 1) do
     entries =
       Enum.map(entries, fn
@@ -543,7 +548,35 @@ defmodule Mx.Music do
     other = inspect(other)
 
     raise ArgumentError,
-          "at takes {beat, value} entries, a length and a function of one argument that makes the music at each beat, not #{other}"
+          "at takes {beat, value} entries, a length and a function of one argument that makes the music at each beat, or options for its notes, not #{other}"
+  end
+
+  defp noted({beat, pitch, length} = entry, opts) when is_number(beat) and beat >= 0 do
+    placed(entry, beat, pitch, length, opts, [])
+  end
+
+  defp noted({beat, pitch, length, own} = entry, opts) when is_number(beat) and beat >= 0 do
+    placed(entry, beat, pitch, length, opts, own)
+  end
+
+  defp noted(entry, _opts), do: entry
+
+  defp placed(entry, beat, pitch, length, opts, own) do
+    written = inspect(entry)
+
+    if not (is_number(length) and length >= 0) do
+      raise ArgumentError, "at plays a note for a length from 0 up, not #{written}"
+    end
+
+    check_keyword("at's note #{written}", own)
+
+    try do
+      {beat, note(pitch, length, Keyword.merge(opts, own))}
+    rescue
+      error in ArgumentError ->
+        reason = Exception.message(error)
+        reraise ArgumentError, [message: "at cannot play #{written}: #{reason}"], __STACKTRACE__
+    end
   end
 
   @doc "The music with each note started at the beat the function returns for the beat it was written on, its length unchanged."

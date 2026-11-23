@@ -18,13 +18,7 @@ defmodule DoubleBass do
   end
 
   # A pass of the form as its 16 beats: each stroke at its beat, lasting its sustain.
-  defp double_bass(section, pass) do
-    strokes =
-      for {beat, note, vel, opts} <- strokes(section, pass),
-          do: {beat, note(note, Keyword.get(opts, :sustain, 0), [vel: vel] ++ opts)}
-
-    at(strokes, 16)
-  end
+  defp double_bass(section, pass), do: at(strokes(section, pass), 16)
 
   # Each bar walks up the root, third and fifth in quarters, and steps to a semitone below the
   # next bar's root; the beat is plucked harder.
@@ -36,7 +30,7 @@ defmodule DoubleBass do
         {root, third} = Enum.at(bars, at),
         {next, _third} = Enum.at(bars, rem(at + 1, 12)),
         {note, beat} <- Enum.with_index([root, root + third, root + 7, next - 1]) do
-      {bar * 4 + beat, note, if(beat == 0, do: 0.8, else: 0.6), pizz: 1, sustain: 0.9}
+      {bar * 4 + beat, note, 0, vel: if(beat == 0, do: 0.8, else: 0.6), pizz: 1, sustain: 0.9}
     end
   end
 
@@ -44,7 +38,8 @@ defmodule DoubleBass do
   # second sliding down to the low C.
   defp strokes(:bowed, _pass) do
     [
-      {0, 41, 0.65,
+      {0, 41, 0,
+       vel: 0.65,
        sustain: 7.8,
        release: 0.4,
        vibrato: 0.08,
@@ -55,7 +50,8 @@ defmodule DoubleBass do
          {6, note: 43, note_slide: 0.01},
          {4, amp: 0.6, amp_slide: 4}
        ]},
-      {8, 41, 0.65,
+      {8, 41, 0,
+       vel: 0.65,
        sustain: 7.8,
        release: 0.4,
        vibrato: 0.08,
@@ -72,12 +68,13 @@ defmodule DoubleBass do
   defp strokes(:ending, _pass) do
     walk =
       Enum.with_index([41, 39, 38, 36, 34, 33, 31, 30], fn note, beat ->
-        {beat, note, 0.7, pizz: 1, sustain: 0.9}
+        {beat, note, 0, vel: 0.7, pizz: 1, sustain: 0.9}
       end)
 
     walk ++
       [
-        {8, 29, 0.8,
+        {8, 29, 0,
+         vel: 0.8,
          sustain: 6,
          release: 1,
          vibrato: 0.08,

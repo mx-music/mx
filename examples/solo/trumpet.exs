@@ -18,22 +18,16 @@ defmodule Trumpet do
   end
 
   # A pass of the form as its 16 beats: each stroke at its beat, lasting its sustain.
-  defp trumpet(section, pass) do
-    strokes =
-      for {beat, note, vel, opts} <- strokes(section, pass),
-          do: {beat, note(note, Keyword.get(opts, :sustain, 0), [vel: vel] ++ opts)}
-
-    at(strokes, 16)
-  end
+  defp trumpet(section, pass), do: at(strokes(section, pass), 16)
 
   # The call and its answer, the second time a fourth higher; notes under a beat are tongued
   # short.
   defp strokes(:fanfare, pass) do
     for {beat, note, held} <- call() ++ answer() do
       if held < 1 do
-        {beat, note + pass * 5, 0.8, sustain: 0.15, release: 0.05}
+        {beat, note + pass * 5, 0, vel: 0.8, sustain: 0.15, release: 0.05}
       else
-        {beat, note + pass * 5, 0.75, sustain: held - 0.2, release: 0.1}
+        {beat, note + pass * 5, 0, vel: 0.75, sustain: held - 0.2, release: 0.1}
       end
     end
   end
@@ -41,14 +35,14 @@ defmodule Trumpet do
   # The slow phrase with vibrato, each note held to just before the next.
   defp strokes(:lyrical, _pass) do
     for {beat, note, held} <- phrase(),
-        do: {beat, note, 0.5, sustain: held - 0.15, release: 0.25, vibrato: 0.1}
+        do: {beat, note, 0, vel: 0.5, sustain: held - 0.15, release: 0.25, vibrato: 0.1}
   end
 
   # The call at its loudest, then again at its softest as an echo.
   defp strokes(:echo, _pass) do
     for {vel, from} <- [{1, 0}, {0.2, 8}],
         {beat, note, held} <- call() do
-      {from + beat, note, vel, sustain: max(held - 0.2, 0.15), release: 0.1}
+      {from + beat, note, 0, vel: vel, sustain: max(held - 0.2, 0.15), release: 0.1}
     end
   end
 
@@ -56,10 +50,10 @@ defmodule Trumpet do
   defp strokes(:ending, _pass) do
     run = [58, 62, 65, 70, 74, 77]
 
-    Enum.with_index(run, fn note, i -> {i / 2, note, 0.8, sustain: 0.3, release: 0.05} end) ++
+    Enum.with_index(run, fn note, i -> {i / 2, note, 0, vel: 0.8, sustain: 0.3, release: 0.05} end) ++
       [
-        {length(run) / 2, 82, 0.9,
-         sustain: 16 - length(run) / 2 - 0.5, release: 0.4, vibrato: 0.1}
+        {length(run) / 2, 82, 0,
+         vel: 0.9, sustain: 16 - length(run) / 2 - 0.5, release: 0.4, vibrato: 0.1}
       ]
   end
 

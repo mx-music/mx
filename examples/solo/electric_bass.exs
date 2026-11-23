@@ -18,20 +18,14 @@ defmodule ElectricBass do
   end
 
   # A pass of the form as its 16 beats: each note at its beat, lasting its sustain.
-  defp electric_bass(section, pass) do
-    notes =
-      for {beat, note, vel, sustain} <- notes(section, pass),
-          do: {beat, note(note, 0, vel: vel, sustain: sustain)}
-
-    at(notes, 16)
-  end
+  defp electric_bass(section, pass), do: at(notes(section, pass), 16)
 
   # Each bar lands hard on the low E on the one, answers with the octave and the seventh off the
   # beat, and climbs back through G, A and B; every second bar ends on a run up to the octave.
   defp notes(:funk, _pass) do
     for bar <- 0..3,
-        {beat, note, vel, sustain} <- funk_bar(rem(bar, 2)),
-        do: {bar * 4 + beat, note, vel, sustain}
+        {beat, note, sustain, vel: vel} <- funk_bar(rem(bar, 2)),
+        do: {bar * 4 + beat, note, sustain, vel: vel}
   end
 
   # Quarters through the chords, a bar each: the root on the one, plucked harder, chord notes on
@@ -41,17 +35,17 @@ defmodule ElectricBass do
 
     for {bar, at} <- Enum.with_index(lines),
         {note, beat} <- Enum.with_index(bar),
-        do: {at * 4 + beat, note, if(beat == 0, do: 0.8, else: 0.6), 0.9}
+        do: {at * 4 + beat, note, 0.9, vel: if(beat == 0, do: 0.8, else: 0.6)}
   end
 
   # Roots held a bar each and played soft, the third bar answering its root an octave up.
   defp notes(:ballad, _pass) do
     [
-      {0, 36, 0.5, 3.9},
-      {4, 33, 0.5, 3.9},
-      {8, 29, 0.5, 1.9},
-      {10, 41, 0.45, 1.9},
-      {12, 31, 0.5, 3.9}
+      {0, 36, 3.9, vel: 0.5},
+      {4, 33, 3.9, vel: 0.5},
+      {8, 29, 1.9, vel: 0.5},
+      {10, 41, 1.9, vel: 0.45},
+      {12, 31, 3.9, vel: 0.5}
     ]
   end
 
@@ -59,38 +53,38 @@ defmodule ElectricBass do
   defp notes(:ending, _pass) do
     bars =
       for bar <- 0..1,
-          {beat, note, vel, sustain} <- funk_bar(bar),
-          do: {bar * 4 + beat, note, vel, sustain}
+          {beat, note, sustain, vel: vel} <- funk_bar(bar),
+          do: {bar * 4 + beat, note, sustain, vel: vel}
 
-    bars ++ [{8, 28, 1.0, 7.5}]
+    bars ++ [{8, 28, 7.5, vel: 1.0}]
   end
 
   defp funk_bar(0) do
     [
-      {0, 28, 0.95, 0.75},
-      {0.75, 28, 0.5, 0.75},
-      {1.5, 40, 0.8, 0.25},
-      {1.75, 38, 0.6, 0.25},
-      {2, 28, 0.85, 0.5},
-      {2.5, 31, 0.6, 0.25},
-      {2.75, 33, 0.65, 0.5},
-      {3.25, 35, 0.7, 0.25},
-      {3.5, 38, 0.75, 0.5}
+      {0, 28, 0.75, vel: 0.95},
+      {0.75, 28, 0.75, vel: 0.5},
+      {1.5, 40, 0.25, vel: 0.8},
+      {1.75, 38, 0.25, vel: 0.6},
+      {2, 28, 0.5, vel: 0.85},
+      {2.5, 31, 0.25, vel: 0.6},
+      {2.75, 33, 0.5, vel: 0.65},
+      {3.25, 35, 0.25, vel: 0.7},
+      {3.5, 38, 0.5, vel: 0.75}
     ]
   end
 
   defp funk_bar(1) do
     [
-      {0, 28, 0.95, 0.75},
-      {0.75, 28, 0.5, 0.75},
-      {1.5, 40, 0.8, 0.25},
-      {1.75, 38, 0.6, 0.25},
-      {2, 28, 0.85, 0.75},
-      {2.75, 33, 0.65, 0.25},
-      {3, 34, 0.65, 0.25},
-      {3.25, 35, 0.7, 0.25},
-      {3.5, 38, 0.75, 0.25},
-      {3.75, 39, 0.8, 0.25}
+      {0, 28, 0.75, vel: 0.95},
+      {0.75, 28, 0.75, vel: 0.5},
+      {1.5, 40, 0.25, vel: 0.8},
+      {1.75, 38, 0.25, vel: 0.6},
+      {2, 28, 0.75, vel: 0.85},
+      {2.75, 33, 0.25, vel: 0.65},
+      {3, 34, 0.25, vel: 0.65},
+      {3.25, 35, 0.25, vel: 0.7},
+      {3.5, 38, 0.25, vel: 0.75},
+      {3.75, 39, 0.25, vel: 0.8}
     ]
   end
 

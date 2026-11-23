@@ -18,13 +18,7 @@ defmodule TenorSax do
   end
 
   # A pass of the form as its 16 beats: each stroke at its beat, lasting its sustain.
-  defp tenor_sax(section, pass) do
-    strokes =
-      for {beat, note, vel, opts} <- strokes(section, pass),
-          do: {beat, note(note, Keyword.get(opts, :sustain, 0), [vel: vel] ++ opts)}
-
-    at(strokes, 16)
-  end
+  defp tenor_sax(section, pass), do: at(strokes(section, pass), 16)
 
   # The choro twice through, short notes in the runs and the notes on the beat held, louder on the
   # beat.
@@ -34,33 +28,40 @@ defmodule TenorSax do
 
     for half <- [0, 8],
         {{beat, note}, next} <- Enum.zip(bar, ends) do
-      {half + beat, note, if(beat == trunc(beat), do: 0.7, else: 0.55),
-       sustain: (next - beat) * 0.8, release: 0.05}
+      {half + beat, note, 0,
+       vel: if(beat == trunc(beat), do: 0.7, else: 0.55),
+       sustain: (next - beat) * 0.8,
+       release: 0.05}
     end
   end
 
   # The slow phrase with full vibrato, each note held to just before the next.
   defp strokes(:slow, _pass) do
     for {beat, note, held} <- phrase(),
-        do: {beat, note, 0.6, sustain: held - 0.15, release: 0.2, vibrato: 0.145}
+        do: {beat, note, 0, vel: 0.6, sustain: held - 0.15, release: 0.2, vibrato: 0.145}
   end
 
   # The phrase's first half at its softest, then its second half at its loudest.
   defp strokes(:extremes, _pass) do
     for {beat, note, held} <- phrase(),
         do:
-          {beat, note, if(beat < 8, do: 0.2, else: 1),
-           sustain: held - 0.15, release: 0.2, vibrato: 0.0725}
+          {beat, note, 0,
+           vel: if(beat < 8, do: 0.2, else: 1),
+           sustain: held - 0.15,
+           release: 0.2,
+           vibrato: 0.0725}
   end
 
   # A run down the F major scale in sixteenths from E5 to its low A flat, held.
   defp strokes(:ending, _pass) do
     run = Enum.filter(76..45//-1, &(rem(&1, 12) in [0, 2, 4, 5, 7, 9, 10]))
 
-    Enum.with_index(run, fn note, i -> {i / 4, note, 0.65, sustain: 0.2, release: 0.05} end) ++
+    Enum.with_index(run, fn note, i ->
+      {i / 4, note, 0, vel: 0.65, sustain: 0.2, release: 0.05}
+    end) ++
       [
-        {length(run) / 4, 44, 0.8,
-         sustain: 16 - length(run) / 4 - 0.5, release: 0.4, vibrato: 0.145}
+        {length(run) / 4, 44, 0,
+         vel: 0.8, sustain: 16 - length(run) / 4 - 0.5, release: 0.4, vibrato: 0.145}
       ]
   end
 

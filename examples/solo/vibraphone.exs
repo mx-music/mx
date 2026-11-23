@@ -17,13 +17,7 @@ defmodule Vibraphone do
   end
 
   # A pass of vibraphone, as 8 beats.
-  defp vibraphone(section, _pass) do
-    notes =
-      for {beat, note, vel, motor, sustain, release} <- strokes(section),
-          do: {beat, note(note, sustain, vel: vel, motor: motor, release: release)}
-
-    at(notes, 8)
-  end
+  defp vibraphone(section, _pass), do: at(strokes(section), 8)
 
   # Each chord rings for its two beats, and the pedal damps it as the next one is struck.
   defp strokes(section) when section in [:chords, :motor] do
@@ -31,7 +25,7 @@ defmodule Vibraphone do
 
     for {chord, index} <- Enum.with_index(chords()),
         note <- chord,
-        do: {index * 2, note, 0.5, motor, 1.9, 0.1}
+        do: {index * 2, note, 1.9, vel: 0.5, motor: motor, release: 0.1}
   end
 
   # A line in eighths, each note damped at once, over each chord's lowest note held for its two
@@ -41,14 +35,17 @@ defmodule Vibraphone do
 
     held =
       for {chord, index} <- Enum.with_index(chords()),
-          do: {index * 2, hd(chord), 0.4, 0, 1.9, 0.1}
+          do: {index * 2, hd(chord), 1.9, vel: 0.4, motor: 0, release: 0.1}
 
-    short = for {note, index} <- Enum.with_index(line), do: {index * 0.5, note, 0.6, 0, 0.2, 0.05}
+    short =
+      for {note, index} <- Enum.with_index(line),
+          do: {index * 0.5, note, 0.2, vel: 0.6, motor: 0, release: 0.05}
+
     held ++ short
   end
 
   defp strokes(:ending) do
-    for note <- [48, 55, 59, 62, 64, 71], do: {0, note, 0.55, 2, 6, 1}
+    for note <- [48, 55, 59, 62, 64, 71], do: {0, note, 6, vel: 0.55, motor: 2, release: 1}
   end
 
   # D minor nine, G thirteen, C major nine and A seven, two beats each.

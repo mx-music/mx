@@ -29,11 +29,7 @@ defmodule Trombone do
 
       at(glides, 16)
     else
-      notes =
-        for {beat, note, vel, opts} <- strokes(section),
-            do: {beat, note(note, Keyword.get(opts, :sustain, 0), [vel: vel] ++ opts)}
-
-      at(notes, 16)
+      at(strokes(section), 16)
     end
   end
 
@@ -55,9 +51,9 @@ defmodule Trombone do
   defp strokes(:march) do
     for {beat, note} <- march() do
       if beat == 14 do
-        {beat, note, 0.8, sustain: 1.5, release: 0.3}
+        {beat, note, 0, vel: 0.8, sustain: 1.5, release: 0.3}
       else
-        {beat, note, 0.8, sustain: 0.25, release: 0.05}
+        {beat, note, 0, vel: 0.8, sustain: 0.25, release: 0.05}
       end
     end
   end
@@ -66,7 +62,7 @@ defmodule Trombone do
   defp strokes(:extremes) do
     for {vel, from} <- [{0.2, 0}, {1, 8}],
         {beat, note} <- [{0, 53}, {4, 58}],
-        do: {from + beat, note, vel, sustain: 3.6, release: 0.3, vibrato: 0.1}
+        do: {from + beat, note, 0, vel: vel, sustain: 3.6, release: 0.3, vibrato: 0.1}
   end
 
   # The march as beat and note, in short notes but for the last, which is held.

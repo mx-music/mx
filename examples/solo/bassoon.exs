@@ -18,18 +18,12 @@ defmodule Bassoon do
   end
 
   # A pass of the form as its 16 beats: each stroke at its beat, lasting its sustain.
-  defp bassoon(section, pass) do
-    strokes =
-      for {beat, note, vel, opts} <- strokes(section, pass),
-          do: {beat, note(note, Keyword.get(opts, :sustain, 0), [vel: vel] ++ opts)}
-
-    at(strokes, 16)
-  end
+  defp bassoon(section, pass), do: at(strokes(section, pass), 16)
 
   # The melody with a little vibrato, each note held to just before the next.
   defp strokes(:tenor, _pass) do
     for {beat, note, held} <- melody(),
-        do: {beat, note, 0.6, sustain: held - 0.1, release: 0.15, vibrato: 0.1}
+        do: {beat, note, 0, vel: 0.6, sustain: held - 0.1, release: 0.15, vibrato: 0.1}
   end
 
   # B flat, E flat, F and B flat again, a walking bass line in quarters, each bar's root louder.
@@ -37,7 +31,7 @@ defmodule Bassoon do
     line = [34, 38, 41, 43, 39, 43, 46, 48, 41, 45, 48, 45, 46, 41, 38, 34]
 
     Enum.with_index(line, fn note, i ->
-      {i, note, if(rem(i, 4) == 0, do: 0.7, else: 0.55), sustain: 0.8, release: 0.1}
+      {i, note, 0, vel: if(rem(i, 4) == 0, do: 0.7, else: 0.55), sustain: 0.8, release: 0.1}
     end)
   end
 
@@ -61,8 +55,8 @@ defmodule Bassoon do
     for repeat <- 0..3,
         {beat, note} <- bar,
         do:
-          {repeat * 4 + beat, note + shift, if(beat in [0, 2], do: 0.7, else: 0.55),
-           sustain: 0.08, release: 0.04}
+          {repeat * 4 + beat, note + shift, 0,
+           vel: if(beat in [0, 2], do: 0.7, else: 0.55), sustain: 0.08, release: 0.04}
   end
 
   # The melody's first bars again, then down to its low B flat, held.
@@ -70,10 +64,13 @@ defmodule Bassoon do
     first =
       for {beat, note, held} <- melody(),
           beat < 8,
-          do: {beat, note, 0.6, sustain: held - 0.1, release: 0.15, vibrato: 0.1}
+          do: {beat, note, 0, vel: 0.6, sustain: held - 0.1, release: 0.15, vibrato: 0.1}
 
     first ++
-      [{8, 46, 0.6, sustain: 1.9, release: 0.15}, {10, 34, 0.75, sustain: 5.5, release: 0.6}]
+      [
+        {8, 46, 0, vel: 0.6, sustain: 1.9, release: 0.15},
+        {10, 34, 0, vel: 0.75, sustain: 5.5, release: 0.6}
+      ]
   end
 
   # The melody's notes as beat, note and beats held, in its tenor register.

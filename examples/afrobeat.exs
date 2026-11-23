@@ -331,10 +331,7 @@ defmodule Afrobeat do
   end
 
   # Notes placed on the vamp's two bars as beat, note and beats held, repeated to four bars.
-  defp vamp(notes) do
-    entries = for {beat, pitch, held} <- notes, do: {beat, note(pitch, 0, sustain: held)}
-    repeat(at(entries, 8), 2)
-  end
+  defp vamp(notes), do: repeat(at(notes, 8), 2)
 
   # The theme, bowed: each phrase is its beat, the beats it lasts and its notes, each at the beat
   # it comes after the first.
@@ -363,17 +360,13 @@ defmodule Afrobeat do
   # The keyboard in the drop: A flat with its major seventh for two bars, then the same chord a
   # third higher, with its ninth.
   defp keys(:drop) do
-    chords = [{0, [:ab3, :c4, :eb4, :g4]}, {8, [:c4, :eb4, :g4, :bb4]}]
-    chords = for {beat, chord} <- chords, do: {beat, note(chord, 0, sustain: 7)}
-    at(chords, 16)
+    at([{0, [:ab3, :c4, :eb4, :g4], 7}, {8, [:c4, :eb4, :g4, :bb4], 7}], 16)
   end
 
   # In the way out it holds G minor with its seventh and then the drop's A flat, which falls back
   # to G on the last chord.
   defp keys(:way_out) do
-    chords = [{0, [:g3, :bb3, :d4, :f4]}, {8, [:ab3, :c4, :eb4, :g4]}]
-    chords = for {beat, chord} <- chords, do: {beat, note(chord, 0, sustain: 7)}
-    at(chords, 16)
+    at([{0, [:g3, :bb3, :d4, :f4], 7}, {8, [:ab3, :c4, :eb4, :g4], 7}], 16)
   end
 
   defp keys(:ending), do: note([:g3, :bb3, :d4, :f4], 8, sustain: 6)

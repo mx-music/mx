@@ -18,18 +18,12 @@ defmodule Oboe do
   end
 
   # A pass of the form as its 16 beats: each stroke at its beat, lasting its sustain.
-  defp oboe(section, pass) do
-    strokes =
-      for {beat, note, vel, opts} <- strokes(section, pass),
-          do: {beat, note(note, Keyword.get(opts, :sustain, 0), [vel: vel] ++ opts)}
-
-    at(strokes, 16)
-  end
+  defp oboe(section, pass), do: at(strokes(section, pass), 16)
 
   # The melody, each note held to just before the next.
   defp strokes(:melody, _pass) do
     for {beat, note, held} <- melody(),
-        do: {beat, note, 0.55, sustain: held - 0.1, release: 0.15}
+        do: {beat, note, 0, vel: 0.55, sustain: held - 0.1, release: 0.15}
   end
 
   # A dance in eighths and sixteenths, every note short and detached, louder on the first and
@@ -53,8 +47,8 @@ defmodule Oboe do
     for repeat <- 0..3,
         {beat, note} <- bar,
         do:
-          {repeat * 4 + beat, note + shift, if(beat in [0, 2], do: 0.7, else: 0.55),
-           sustain: 0.08, release: 0.04}
+          {repeat * 4 + beat, note + shift, 0,
+           vel: if(beat in [0, 2], do: 0.7, else: 0.55), sustain: 0.08, release: 0.04}
   end
 
   # The F major scale in eighths from its low B flat up to F6, held, and an F major arpeggio in
@@ -65,19 +59,19 @@ defmodule Oboe do
     last = length(climb) / 2
 
     Enum.with_index(climb, fn note, index ->
-      {index / 2, note, 0.6, sustain: 0.4, release: 0.1}
+      {index / 2, note, 0, vel: 0.6, sustain: 0.4, release: 0.1}
     end) ++
-      [{last, top, 0.7, sustain: 12 - last - 0.1, release: 0.15}] ++
+      [{last, top, 0, vel: 0.7, sustain: 12 - last - 0.1, release: 0.15}] ++
       for {note, index} <- Enum.with_index([81, 77, 72, 65]),
-          do: {12 + index, note, 0.6, sustain: 0.85, release: 0.15}
+          do: {12 + index, note, 0, vel: 0.6, sustain: 0.85, release: 0.15}
   end
 
   # The melody an octave up and louder, its last note held.
   defp strokes(:ending, _pass) do
     for {beat, note, held} <- melody(),
         do:
-          {beat, note + 12, 0.75,
-           sustain: held - 0.1, release: if(beat == 12, do: 0.8, else: 0.15)}
+          {beat, note + 12, 0,
+           vel: 0.75, sustain: held - 0.1, release: if(beat == 12, do: 0.8, else: 0.15)}
   end
 
   # The melody's notes as beat, note and beats held.

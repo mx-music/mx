@@ -17,10 +17,7 @@ defmodule Xylophone do
   end
 
   # A pass of xylophone, as 8 beats.
-  defp xylophone(section, pass) do
-    notes = for {beat, note, vel} <- strokes(section, pass), do: {beat, note(note, 0, vel: vel)}
-    at(notes, 8)
-  end
+  defp xylophone(section, pass), do: at(strokes(section, pass), 8)
 
   # Sixteenths up two octaves from a starting note and back down, the second pass a fifth higher.
   defp strokes(:runs, pass) do
@@ -31,7 +28,7 @@ defmodule Xylophone do
     notes
     |> Enum.with_index()
     |> Enum.map(fn {note, index} ->
-      {index / 4, note, if(rem(index, 4) == 0, do: 0.8, else: 0.6)}
+      {index / 4, note, 0, vel: if(rem(index, 4) == 0, do: 0.8, else: 0.6)}
     end)
   end
 
@@ -41,24 +38,24 @@ defmodule Xylophone do
     melody = [76, 77, 76, 74, 72, 74, 76, 72]
 
     repeated =
-      for index <- 0..31, do: {index / 4, 79, if(rem(index, 4) == 0, do: 0.75, else: 0.5)}
+      for index <- 0..31, do: {index / 4, 79, 0, vel: if(rem(index, 4) == 0, do: 0.75, else: 0.5)}
 
-    repeated ++ Enum.with_index(melody, fn note, beat -> {beat, note, 0.7} end)
+    repeated ++ Enum.with_index(melody, fn note, beat -> {beat, note, 0, vel: 0.7} end)
   end
 
   # A melody in eighths on the top two octaves.
   defp strokes(:bright, _pass) do
     melody = [96, 100, 103, 100, 98, 96, 93, 91, 93, 96, 98, 100, 103, 105, 103, 100]
-    Enum.with_index(melody, fn note, index -> {index / 2, note, 0.7} end)
+    Enum.with_index(melody, fn note, index -> {index / 2, note, 0, vel: 0.7} end)
   end
 
   # A run up the scale in thirty-seconds to C8, the top bar, and the last C struck in three
   # octaves at once.
   defp strokes(:ending, _pass) do
     run = Enum.filter(scale(), &(&1 >= 84))
-    rising = Enum.with_index(run, fn note, index -> {index / 8, note, 0.6} end)
+    rising = Enum.with_index(run, fn note, index -> {index / 8, note, 0, vel: 0.6} end)
     last = length(run) / 8
-    rising ++ [{last, 108, 0.9}] ++ Enum.map([72, 84, 96], &{last + 1, &1, 0.9})
+    rising ++ [{last, 108, 0, vel: 0.9}] ++ Enum.map([72, 84, 96], &{last + 1, &1, 0, vel: 0.9})
   end
 
   # The C major scale from F4, the xylophone's lowest bar, to B7, a bar below its highest.

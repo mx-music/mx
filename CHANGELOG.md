@@ -4,6 +4,7 @@
 
 ### 1. Enhancements
 
+  * [music] `at` places a note written as `{beat, pitch, length}`, or `{beat, pitch, length, options}` with options of its own, and `at(entries, beats, options)` gives options to every such note; a note's own are kept over them, and music placed as `{beat, music}` takes none
   * [effects] Add `wah`, from the next mxs: a resonant low-pass that opens on each note, further the harder it is played, and closes as the note fades, between the notes `cutoff_min` and `cutoff_max`, with `sensitivity` in dB, `clamp_ms`, `relax_ms` and `res`; its song is `examples/effects/wah.exs`
   * [effects] Add `width`, from the next mxs: `side` narrows a part to mono at 0 and widens it up to 2, twice the difference between its sides, and `mono_below` puts everything below a MIDI note in the centre; its song is `examples/effects/width.exs`
   * [effects] `tremolo` and `slicer` take `spread`, from the next mxs: the right side's cycle runs that share of half a cycle after the left's, so at `spread: 1` a tremolo moves the sound from side to side and a slicer sounds on one side at a time
