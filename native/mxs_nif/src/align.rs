@@ -77,8 +77,9 @@ pub fn path(score: &[[f64; 12]], recording: &[[f64; 12]], free: usize) -> (Vec<f
     for i in 1..n {
         for j in 1..m {
             let mut best = (total[at(i - 1, j - 1)], steps[at(i - 1, j - 1)]);
-            if i >= 2 && total[at(i - 2, j - 1)] < best.0 {
-                best = (total[at(i - 2, j - 1)], steps[at(i - 2, j - 1)]);
+            // Two score frames on one recording frame pay for both, so a path cannot lower its cost by skipping score.
+            if i >= 2 && total[at(i - 2, j - 1)] + cost(i - 1, j) < best.0 {
+                best = (total[at(i - 2, j - 1)] + cost(i - 1, j), steps[at(i - 2, j - 1)] + 1);
             }
             if j >= 2 && total[at(i - 1, j - 2)] < best.0 {
                 best = (total[at(i - 1, j - 2)], steps[at(i - 1, j - 2)]);
@@ -105,7 +106,7 @@ pub fn path(score: &[[f64; 12]], recording: &[[f64; 12]], free: usize) -> (Vec<f
     while i > 0 {
         let mut options = vec![(total[at(i - 1, j - 1)], i - 1, j - 1)];
         if i >= 2 {
-            options.push((total[at(i - 2, j - 1)], i - 2, j - 1));
+            options.push((total[at(i - 2, j - 1)] + cost(i - 1, j), i - 2, j - 1));
         }
         if j >= 2 {
             options.push((total[at(i - 1, j - 2)], i - 1, j - 2));
