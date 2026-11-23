@@ -9,17 +9,19 @@ defmodule Mx.TablesTest do
   @moduletag :tmp_dir
 
   setup do
-    modules = Mx.Instrument.modules()
-
     on_exit(fn ->
-      :persistent_term.put({Mx.Instrument, :modules}, modules)
-      Mx.Synths.forget()
-
       for module <- [Mx.TablesTest.Mine, Mx.TablesTest.Nothing] do
         :code.purge(module)
         :code.delete(module)
       end
     end)
+  end
+
+  # Compiled as mix compiles, the module stays unknown, so other tests' engines never build it.
+  defp compiled_file(file, source) do
+    File.write!(file, source)
+    {:ok, [module], _warnings} = Kernel.ParallelCompiler.compile([file])
+    module
   end
 
   # A module that declares `table` at the path `at`, written beside `file`, and plays it.
@@ -40,8 +42,7 @@ defmodule Mx.TablesTest do
     end
     """
 
-    [{module, _}] = Code.compile_string(source, file)
-    module
+    compiled_file(file, source)
   end
 
   # Fits a table to two struck recordings of C4, written as `out`.
@@ -101,18 +102,15 @@ defmodule Mx.TablesTest do
     file = Path.join(ctx.tmp_dir, "instrument.ex")
 
     module =
-      Code.compile_string(
-        """
-        defmodule Mx.TablesTest.Nothing do
-          use Mx.Instrument
-          attr :note, :note, default: 60
-          defsynth plays_nothing(_o), do: figures(:"nothing.mxh", play: :kept, level: 1)
-        end
-        """,
-        file
-      )
-      |> then(fn [{module, _}] -> module end)
+      compiled_file(file, """
+      defmodule Mx.TablesTest.Nothing do
+        use Mx.Instrument
+        attr :note, :note, default: 60
+        defsynth plays_nothing(_o), do: figures(:"nothing.mxh", play: :kept, level: 1)
+      end
+      """)
 
+    refute module in Mx.Instrument.modules()
     {:ok, engine} = Native.start(false, false)
     assert {:error, reason} = Mx.Instrument.register(engine, module)
     assert reason =~ "nothing.mxh"
