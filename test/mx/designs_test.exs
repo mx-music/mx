@@ -3486,12 +3486,13 @@ defmodule Mx.DesignsTest do
     end
   end
 
+  # The recordings' pressed thumbs are 0.8 times as loud as the open ones, 0.15 to 0.4 s in.
   test "the pandeiro's thumb rings higher and shorter with the head muted", ctx do
     open = render(ctx, :pandeiro_thumb, [], 1)
     muted = render(ctx, :pandeiro_thumb, [muted: 1], 1)
 
     assert loudest_hz(muted) > loudest_hz(open)
-    assert rms(muted, 0.15, 0.4) < rms(open, 0.15, 0.4) / 2
+    assert rms(muted, 0.15, 0.4) < rms(open, 0.15, 0.4) * 0.8
   end
 
   # Measured from the cabasa of the Versilian Community Sample Library.
