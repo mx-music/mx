@@ -8,6 +8,20 @@ defmodule Mx.TablesTest do
 
   @moduletag :tmp_dir
 
+  setup do
+    modules = Mx.Instrument.modules()
+
+    on_exit(fn ->
+      :persistent_term.put({Mx.Instrument, :modules}, modules)
+      Mx.Synths.forget()
+
+      for module <- [Mx.TablesTest.Mine, Mx.TablesTest.Nothing] do
+        :code.purge(module)
+        :code.delete(module)
+      end
+    end)
+  end
+
   # A module that declares `table` at the path `at`, written beside `file`, and plays it.
   defp compiled(file, name, table, at) do
     source = """
