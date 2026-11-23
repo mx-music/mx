@@ -12,7 +12,7 @@ defmodule Mx.Page do
   Each part's `synth` names its sound: the synth it plays notes on, such as `flute`; a sampled instrument by its folder and collection, such as `sampled instrument Samples/kickmic/kick of virtuosity_drums`, a list of files by the folder they share or else by the first file and the count of the others; and a part that plays only samples by its sample, such as `vinyl_hiss`, or by the first it plays and the count of the others, such as `kick and 1 other`.
   """
 
-  alias Mx.{Pass, Recording, Render, Samples, Song, Synths, Tempo}
+  alias Mx.{Ok, Pass, Recording, Render, Samples, Song, Synths, Tempo}
 
   @unheld_beats 0.5
 
@@ -44,7 +44,7 @@ defmodule Mx.Page do
       when is_binary(path) and is_number(seconds) do
     loops = Enum.filter(song.loops, &(&1.on == nil))
 
-    with {:ok, played} <- map_ok(loops, &passes(&1, song, seconds)) do
+    with {:ok, played} <- Ok.map(loops, &passes(&1, song, seconds)) do
       [{timeline, _, _, _} | _] = longest = Enum.max_by(played, &length/1)
       beats = longest |> Enum.map(fn {_, start, _, beats} -> start + beats end) |> Enum.max()
       files = files(played)
@@ -257,22 +257,6 @@ defmodule Mx.Page do
   end
 
   defp seconds_at(timeline, beat), do: Float.round(Tempo.time_at(timeline, beat) / 1_000_000, 3)
-
-  defp map_ok(items, fun) do
-    mapped =
-      items
-      |> Enum.reduce_while({:ok, []}, fn item, {:ok, done} ->
-        case fun.(item) do
-          {:ok, value} -> {:cont, {:ok, [value | done]}}
-          error -> {:halt, error}
-        end
-      end)
-
-    case mapped do
-      {:ok, done} -> {:ok, Enum.reverse(done)}
-      error -> error
-    end
-  end
 
   @doc "Checks a file can be written to `out`: `:ok`, or `{:error, message}` when it exists without `force` or its folder does not."
   def check(out, force) when is_binary(out) and is_boolean(force) do

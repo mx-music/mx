@@ -14,7 +14,7 @@ defmodule Mx.Render do
   While it renders it prints a line such as `rendered 37.5 of 148.2 seconds` about four times a second, and once more when the music has rendered, giving the seconds of music rendered and the seconds it renders in all, until the music ends or for `seconds:`, the fade after it left out.
   """
 
-  alias Mx.{Band, Clock, Inputs, Loudness, Pass, Recording, Song, Tempo}
+  alias Mx.{Band, Clock, Inputs, Loudness, Ok, Pass, Recording, Song, Tempo}
   alias Mx.Engine.Mxs
 
   @ahead_us 500_000
@@ -90,12 +90,12 @@ defmodule Mx.Render do
   defp ring(song, seconds, share) do
     with {:ok, bpm} <- end_tempo(song, seconds),
          {:ok, main} <- chain_rings(:song, song.fx, bpm * share),
-         {:ok, buses} <- map_ok(song.buses, &chain_rings(&1.name, &1.fx, bpm * share)) do
+         {:ok, buses} <- Ok.map(song.buses, &chain_rings(&1.name, &1.fx, bpm * share)) do
       buses = Map.new(Enum.zip(Enum.map(song.buses, & &1.name), buses))
       sends = Map.new(song.buses, &{&1.name, Keyword.keys(&1.send)})
 
       song.loops
-      |> map_ok(fn loop ->
+      |> Ok.map(fn loop ->
         with {:ok, own} <- chain_rings(loop.name, loop.fx, bpm * share) do
           rings = own ++ sent_rings(Keyword.keys(loop.send), buses, sends) ++ main
           {:ok, {loop.name, rings |> Enum.map(&elem(&1, 2)) |> Enum.sum(), rings}}
@@ -158,7 +158,7 @@ defmodule Mx.Render do
   defp end_tempo(song, seconds) do
     ending = Enum.filter(song.loops, &(&1.passes != nil))
 
-    with {:ok, ends} <- map_ok(ending, &ends(&1, song)) do
+    with {:ok, ends} <- Ok.map(ending, &ends(&1, song)) do
       case {ends, seconds} do
         {[], _seconds} ->
           {:ok, song.tempo}
@@ -201,7 +201,7 @@ defmodule Mx.Render do
     ending = Enum.filter(song.loops, &(&1.passes != nil))
     endless? = length(ending) < length(song.loops)
 
-    with {:ok, ends} <- map_ok(ending, &ends(&1, song)) do
+    with {:ok, ends} <- Ok.map(ending, &ends(&1, song)) do
       music = ends |> Enum.map(&elem(&1, 0)) |> Enum.max(fn -> 0 end) |> Kernel./(share)
       {:ok, if(endless?, do: seconds, else: min(music, seconds || music))}
     end
@@ -224,15 +224,6 @@ defmodule Mx.Render do
       {timeline, _start} = Tempo.through(song.tempos, song.tempo, max(loop.passes - 1, 0), window)
       {:ok, {Tempo.time_at(timeline, beats) / 1_000_000, Tempo.tempo_at(timeline, beats)}}
     end
-  end
-
-  defp map_ok(items, fun) do
-    Enum.reduce_while(items, {:ok, []}, fn item, {:ok, done} ->
-      case fun.(item) do
-        {:ok, value} -> {:cont, {:ok, done ++ [value]}}
-        error -> {:halt, error}
-      end
-    end)
   end
 
   defp left_out(song) do
