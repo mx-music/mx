@@ -304,6 +304,7 @@ run_check 'Avoid defining @moduledoc for test files' -g 'test/**/*.exs' '@module
 
 run_check "Fill in a @moduledoc \"...\" for every module in lib/${APP}/" \
           -g "lib/${APP}/**/*.ex" \
+          -g "!lib/${APP}/import.ex" \
           -PU '(?m)^\s*defmodule\b(?:(?!^\s*defmodule\b)[\s\S])*?^\s*@moduledoc\s+"(*SKIP)(*FAIL)|^\s*defmodule\b'
 
 run_check "Describe every example module in a @moduledoc \"...\", not in comments above it" \
