@@ -4,6 +4,7 @@
 
 ### 1. Enhancements
 
+  * [effects] `echo` and `ping_pong` take `high_cut`, `low_cut` and `drive`, from the next mxs: each echo is cut above and below the two notes and rounded off once more than the one before, as a tape echo's repeats grow duller, and `examples/dubwise.exs` wears its tape so
   * [effects] `phaser` given no `mix` is half dry, where its notches are deepest
   * [effects] Add `phaser`, from the next mxs: `stages` all-pass filters sweep one notch for every two between the notes `low` and `high` once every `phase`, deepest at `mix: 0.5`, with `feedback` and `stereo_invert_wave`; `examples/dubwise.exs` plays its hi-hat through it
   * [mix mx.play] A render reports the file's loudness beside its peak, as `peaking at -1.0 dB, loudness -14.2 LUFS`, the integrated loudness of ITU-R BS.1770, and `--loudness -14` scales the finished file to a loudness, no further than a peak of -1 dB

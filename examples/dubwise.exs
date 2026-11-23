@@ -28,7 +28,7 @@ defmodule Dubwise do
 
   bus :tape,
     fx: [
-      echo: [phase: 0.75, decay: 4, max_phase: 2],
+      echo: [phase: 0.75, decay: 4, max_phase: 2, high_cut: 93, low_cut: 57, drive: 0.3],
       eq: [low: [at: 57, gain: -12], high: [at: 93, gain: -12]]
     ],
     send: [room: 0.43]
