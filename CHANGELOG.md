@@ -65,6 +65,7 @@
   * [mx] `slur/2` plays notes one after another as one note whose pitch changes while it sounds, as `~` writes in a pattern, gliding over `slide:` beats or what a function of the two pitches returns
   * [mx] `chord_at/3` reads a chart, a `~MX` pattern of chord names such as `"D7 G Am:1/2 C#dim7:1/2"`, at a beat, going round past its end, and `chord/2` takes a chord's name with `from:`, its root the lowest of its letter at or above that pitch
   * [mx] A song that defines a function of its own named `seq`, `together`, `at`, `form`, `without`, `only`, `kit`, `each`, `feel`, `slur` or `chord_at`, at the arity of one of those above, no longer compiles, and must rename it; four examples renamed a `kit` helper to `drums`, and four a `slur` helper to `legato` or `in_slur`
+  * [measure] `mx measure --hits` prints how bright the hits are over time: the sound above 1, 2, 4 and 8 kHz in dB under the whole sound, from 0 to 20, 20 to 80 and 80 to 200 ms after the hit starts, and when the sound above 4 kHz is loudest, beside the synth's with `--synth`; `Mx.Measure.Hits` gives them as `brightness` and `highs_peak`
 
 ### 2. Bug fixes
 

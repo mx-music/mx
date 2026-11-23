@@ -234,6 +234,18 @@ defmodule Mix.Tasks.Mx.MeasureTest do
     assert output =~ ~r/^250-400 Hz +\+0 +-3 +-6 +-12$/m
   end
 
+  test "with --hits, prints the share of the sound above 1, 2, 4 and 8 kHz over three stretches, and when the highs peak",
+       ctx do
+    path = write_wav(ctx, "hit.wav", hit(300, 1.0))
+    output = capture_io(fn -> Mix.Tasks.Mx.Measure.run(["--hits", path]) end)
+
+    assert output =~
+             "the sound above each frequency in dB under the whole sound, from 0 to 20, 20 to 80 and 80 to 200 ms after the hit starts"
+
+    assert output =~ ~r/^above 4000 Hz( +-[4-6]\d){3}$/m
+    assert output =~ "nothing above 4 kHz to peak"
+  end
+
   test "with --hits, a moment after the recording ends prints as -", ctx do
     path = write_wav(ctx, "short.wav", hit(300, 0.125))
     output = capture_io(fn -> Mix.Tasks.Mx.Measure.run(["--hits", path]) end)
@@ -341,7 +353,8 @@ defmodule Mix.Tasks.Mx.MeasureTest do
     end
   end
 
-  test "--hits without --partials prints the bands, then the levels over time", ctx do
+  test "--hits without --partials prints the bands, the levels over time, then the brightness",
+       ctx do
     path = write_wav(ctx, "hit.wav", hit(300, 1.0))
     output = capture_io(fn -> Mix.Tasks.Mx.Measure.run(["--hits", path]) end)
 
@@ -359,6 +372,14 @@ defmodule Mix.Tasks.Mx.MeasureTest do
            band              0   50  100  200
            250-400 Hz       +0   -3   -6  -12
            1000-1600 Hz     -6   -9  -12  -18
+
+           the sound above each frequency in dB under the whole sound, from 0 to 20, 20 to 80 and 80 to 200 ms after the hit starts
+                             0   20   80
+           above 1000 Hz    -9   -9   -9
+           above 2000 Hz   -38  -45  -45
+           above 4000 Hz   -47  -60  -60
+           above 8000 Hz   -53  -60  -60
+           nothing above 4 kHz to peak
            """
   end
 

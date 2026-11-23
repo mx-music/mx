@@ -7,6 +7,12 @@ const HOP: f64 = 0.01;
 const LONGEST: f64 = 4.0;
 const PEAKS: usize = 6;
 const MOMENTS: [f64; 4] = [0.0, 50.0, 100.0, 200.0];
+/// The frequencies a hit's brightness is taken above, and the stretches in ms after the hit starts it is taken over.
+const ABOVE: [u32; 4] = [1000, 2000, 4000, 8000];
+const STRETCHES: [(f64, f64); 3] = [(0.0, 20.0), (20.0, 80.0), (80.0, 200.0)];
+/// The frequency above which the highs are followed to where they peak, and the seconds of each step they are followed in.
+const HIGHS: f64 = 4000.0;
+const HIGHS_STEP: f64 = 0.005;
 /// The semitones above its first note a run of hits may reach, short of the octave that would name a note by its octave's fundamental.
 const RUN: i64 = 11;
 
@@ -24,6 +30,12 @@ pub struct Moments {
 }
 
 #[derive(NifMap)]
+pub struct Brightness {
+    pub above: u32,
+    pub levels: Vec<Option<f64>>,
+}
+
+#[derive(NifMap)]
 pub struct Partial {
     pub hz: f64,
     pub ratio: f64,
@@ -37,6 +49,8 @@ pub struct Hit {
     pub note: Option<i64>,
     pub bands: Vec<Band>,
     pub moments: Vec<Moments>,
+    pub brightness: Vec<Brightness>,
+    pub highs_peak: Option<f64>,
     pub peaks: Vec<f64>,
     pub partials: Vec<Partial>,
 }
@@ -95,6 +109,8 @@ fn measure(sound: &[f64], start: f64, note: Option<i64>, rate: f64, cutoff: f64,
         note,
         bands: bands(&tracks, &times),
         moments: track_moments(&tracks),
+        brightness: brightness(sound, rate),
+        highs_peak: highs_peak(sound, rate),
         peaks: peaks(sound, rate, cutoff, spectra),
         partials: match count {
             Some(count) => partials(sound, &frames, &times, rate / size as f64, rate, cutoff, count, spectra),
@@ -162,6 +178,56 @@ fn track_moments(tracks: &[((u32, u32), Vec<f64>)]) -> Vec<Moments> {
                 .collect(),
         })
         .collect()
+}
+
+// Where the hit starts: the first millisecond within 20 dB of the loudest one.
+fn speaks(sound: &[f64], rate: f64) -> usize {
+    let step = (rate / 1000.0).round() as usize;
+    let powers: Vec<f64> = sound.chunks(step).map(power).collect();
+    let loudest = powers.iter().cloned().fold(0.0, f64::max);
+    powers.iter().position(|p| *p >= loudest / 100.0).unwrap_or(0) * step
+}
+
+fn power(samples: &[f64]) -> f64 {
+    samples.iter().map(|s| s * s).sum::<f64>() / samples.len().max(1) as f64
+}
+
+// The power above each frequency against the whole sound's, in dB, over each stretch after the hit starts; a stretch the hit ends within is None, and a share more than 60 dB down is -60.
+fn brightness(sound: &[f64], rate: f64) -> Vec<Brightness> {
+    let from = speaks(sound, rate);
+    let span = |(start, end): (f64, f64)| (from + (start / 1000.0 * rate).round() as usize, from + (end / 1000.0 * rate).round() as usize);
+    ABOVE
+        .iter()
+        .filter(|above| (**above as f64) < rate / 2.0)
+        .map(|&above| {
+            let highs = high_pass(sound, rate, above as f64);
+            let levels = STRETCHES
+                .iter()
+                .map(|&stretch| {
+                    let (start, end) = span(stretch);
+                    (end <= sound.len()).then(|| {
+                        let whole = power(&sound[start..end]);
+                        (10.0 * ((power(&highs[start..end]) + 1.0e-30) / (whole + 1.0e-30)).log10()).max(-60.0)
+                    })
+                })
+                .collect();
+            Brightness { above, levels }
+        })
+        .collect()
+}
+
+// The milliseconds after the hit starts at which the sound above `HIGHS` is loudest, or None when it never comes within 40 dB of the whole sound's loudest step.
+fn highs_peak(sound: &[f64], rate: f64) -> Option<f64> {
+    if HIGHS >= rate / 2.0 {
+        return None;
+    }
+    let from = speaks(sound, rate);
+    let step = (HIGHS_STEP * rate).round() as usize;
+    let highs = high_pass(sound, rate, HIGHS);
+    let loudest = sound[from..].chunks(step).map(power).fold(0.0, f64::max);
+    let steps: Vec<f64> = highs[from..].chunks(step).map(power).collect();
+    let top = steps.iter().cloned().fold(0.0, f64::max);
+    (top > loudest * 1.0e-4).then(|| (steps.iter().position(|p| *p == top).unwrap() as f64 + 0.5) * HIGHS_STEP * 1000.0)
 }
 
 // The strongest peaks of a spectrum of the hit's start, each at least 3% and four bins from a stronger one.

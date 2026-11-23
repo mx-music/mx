@@ -107,6 +107,54 @@ defmodule Mx.Measure.HitsTest do
     assert_in_delta fifty, -3, 1.5
   end
 
+  test "gives the share of the sound above 1, 2, 4 and 8 kHz over three stretches after the hit starts" do
+    [hit] = Hits.hits(swelling(), @rate, nil)
+    above = Map.new(hit.brightness, &{&1.above, &1.levels})
+
+    assert Map.keys(above) == [1000, 2000, 4000, 8000]
+    [strike, swell, after_it] = above[4000]
+    # Over the first 20 ms the high tone rises to 0.4 of its level: a mean power 12.7 dB under
+    # its full one.
+    assert_in_delta strike, -12.9, 2
+    assert_in_delta swell, -3, 2
+    assert after_it < swell - 3
+    for {low, high} <- Enum.zip(above[1000], above[4000]), do: assert_in_delta(low, high, 0.5)
+    # The filter at 8 kHz takes 20 dB from a tone at 6 kHz.
+    for {top, high} <- Enum.zip(above[8000], above[4000]), do: assert(top <= high - 15)
+  end
+
+  test "gives the milliseconds after the hit starts at which the sound above 4 kHz is loudest" do
+    [hit] = Hits.hits(swelling(), @rate, nil)
+    assert_in_delta hit.highs_peak, 50, 8
+  end
+
+  test "a stretch after the hit ends has no share, and a hit with nothing above 4 kHz has no peak there" do
+    [hit] = Hits.hits(hit(300, [{1, 1}], 0.125), @rate, nil)
+    assert [strike, _swell, nil] = Enum.find(hit.brightness, &(&1.above == 4000)).levels
+    assert strike <= -45
+    assert hit.highs_peak == nil
+  end
+
+  test "brightness gives the medians over the hits, and highs_peak the median peak" do
+    silence = List.duplicate(0.0, @rate)
+    hits = Hits.hits(swelling() ++ silence ++ swelling(), @rate, nil)
+    assert length(hits) == 2
+    %{levels: [_strike, swell, _after]} = Enum.find(Hits.brightness(hits), &(&1.above == 4000))
+    assert_in_delta swell, -3, 2
+    assert_in_delta Hits.highs_peak(hits), 50, 8
+  end
+
+  # A tone at 150 Hz struck at once and fading 60 dB in a second, under one at 6 kHz as loud as
+  # it at its loudest, which swells in over 50 ms and fades 60 dB over the next 300 ms.
+  defp swelling do
+    for index <- 0..(@rate - 1) do
+      time = index / @rate
+      low = 10 ** (-3 * time) * :math.sin(2 * :math.pi() * 150 * time)
+      rise = if time < 0.05, do: time / 0.05, else: 10 ** (-3 * (time - 0.05) / 0.3)
+      0.2 * (low + rise * :math.sin(2 * :math.pi() * 6000 * time))
+    end
+  end
+
   # Partials at ratios of the lowest, each at its level, all fading 60 dB over `fade` seconds,
   # struck at once.
   defp hit(lowest, partials, fade) do

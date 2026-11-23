@@ -7,6 +7,7 @@ defmodule Mx.Measure.Hits do
   Rumble is filtered out below three quarters of the note given, or below 30 Hz without one, and the bands are measured from there up.
   For each hit it finds the level of each band as the hit starts, against the loudest band, and the seconds each band takes to fade 60 dB.
   It also lists the frequencies of the hit's strongest peaks, up to six within 30 dB of the loudest, as ratios to the lowest of them, so the partials of a bar or a drum show whatever their pitch.
+  It also gives the hit's brightness, the power above 1, 2, 4 and 8 kHz against the whole sound's in dB, from 0 to 20, 20 to 80 and 80 to 200 ms after the hit starts, where it first comes within 20 dB of its loudest millisecond, nil for a stretch the hit ends within and -60 for a share more than 60 dB down, and the milliseconds after the hit starts at which the sound above 4 kHz is loudest, nil when there is none.
   It also gives each band's level at 0, 50, 100 and 200 ms after the hit's loudest moment, against the loudest band then, nil past the hit's end and -40 for a level more than 40 dB down, and the second the hit starts at in the sound.
   With `partials:` a count, it also lists up to that many of the strongest partials within 40 dB of the loudest, lowest first, each with its frequency in Hz, its ratio to the lowest, its level in dB against the loudest and the seconds it takes to fade 60 dB, or nil when it does not fade; two partials closer than 1% are one.
   """
@@ -15,6 +16,7 @@ defmodule Mx.Measure.Hits do
   alias Mx.Signal
 
   @moments [0, 50, 100, 200]
+  @stretches [{0, 20}, {20, 80}, {80, 200}]
 
   @doc "Measures each hit of a recording, with the note it plays or nil, and returns `{:ok, hits}` or `{:error, message}` naming the file."
   def file(path, note, opts \\ [])
@@ -63,6 +65,37 @@ defmodule Mx.Measure.Hits do
         end)
 
       %{band: band, levels: levels}
+    end
+  end
+
+  @doc "The milliseconds from each stretch's start to its end, after a hit starts, that its brightness is taken over."
+  def stretches, do: @stretches
+
+  @doc "The median share of the sound above each frequency over each stretch, over the hits that reach it, or nil when none does."
+  def brightness(hits) when is_list(hits) do
+    found = Enum.flat_map(hits, & &1.brightness)
+
+    for above <- found |> Enum.map(& &1.above) |> Enum.uniq() |> Enum.sort() do
+      levels =
+        found
+        |> Enum.filter(&(&1.above == above))
+        |> Enum.map(& &1.levels)
+        |> Enum.zip_with(fn levels ->
+          case Enum.reject(levels, &is_nil/1) do
+            [] -> nil
+            reached -> Signal.median(reached)
+          end
+        end)
+
+      %{above: above, levels: levels}
+    end
+  end
+
+  @doc "The median over the hits of the milliseconds after a hit starts at which its sound above 4 kHz is loudest, or nil when no hit has any."
+  def highs_peak(hits) when is_list(hits) do
+    case for %{highs_peak: peak} <- hits, peak != nil, do: peak do
+      [] -> nil
+      peaks -> Signal.median(peaks)
     end
   end
 
