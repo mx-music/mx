@@ -20,7 +20,11 @@ defmodule Mx.TablesTest do
   # Compiled as mix compiles, the module stays unknown, so other tests' engines never build it.
   defp compiled_file(file, source) do
     File.write!(file, source)
-    {:ok, [module], _warnings} = Kernel.ParallelCompiler.compile([file])
+
+    {:ok, [module], diagnostics} =
+      Kernel.ParallelCompiler.compile([file], return_diagnostics: true)
+
+    assert diagnostics == %{compile_warnings: [], runtime_warnings: []}
     module
   end
 

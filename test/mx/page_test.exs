@@ -82,15 +82,19 @@ defmodule Mx.PageTest do
        %{tmp_dir: dir} do
     [kick, snare] = for name <- ["kick", "snare"], do: silent(Path.join(dir, "#{name}.wav"))
 
-    {song, path} =
-      load(dir, """
-      song(tempo: 120, music: together([
-        part(:hiss, sample(#{kick}, 2)),
-        part(:kit, seq([sample(#{kick}, 1), sample(#{snare}, 1), sample(#{kick}, 1)])),
-        part(:both, seq([note(:c4, 1), sample(#{snare}, 1)]), synth: :fm),
-        part(:flute, seq(c4: 2), synth: :flute)
-      ]))
-      """)
+    {{song, path}, warnings} =
+      with_io(:stderr, fn ->
+        load(dir, """
+        song(tempo: 120, music: together([
+          part(:hiss, sample(#{kick}, 2)),
+          part(:kit, seq([sample(#{kick}, 1), sample(#{snare}, 1), sample(#{kick}, 1)])),
+          part(:both, seq([note(:c4, 1), sample(#{snare}, 1)]), synth: :fm),
+          part(:flute, seq(c4: 2), synth: :flute)
+        ]))
+        """)
+      end)
+
+    assert warnings == "sample #{dir}/kick.wav is silent\nsample #{dir}/snare.wav is silent\n"
 
     assert {:ok, %{parts: parts}} = Page.data(song, path, 2.0)
 

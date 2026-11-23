@@ -2,6 +2,7 @@ defmodule Mx.InstrumentSongTest do
   use ExUnit.Case, async: false
 
   import ExUnit.CaptureIO
+  import ExUnit.CaptureLog
 
   alias Mx.Engine.Mxs
 
@@ -233,7 +234,13 @@ defmodule Mx.InstrumentSongTest do
     end
     """
 
-    assert [{Mx.InstrumentSongTest.Shared, _}] = Code.compile_string(source, "shared.exs")
+    # Mx's clamp and delay go unused, as the nodes take their names inside the defeffect.
+    warnings =
+      capture_io(:stderr, fn ->
+        assert [{Mx.InstrumentSongTest.Shared, _}] = Code.compile_string(source, "shared.exs")
+      end)
+
+    assert warnings =~ "unused import Mx"
   end
 
   test "a module that uses Mx.Song and Mx.Instrument, in either order, has the delay node in an effect and Mx's delay in its music",
@@ -330,7 +337,11 @@ defmodule Mx.InstrumentSongTest do
 
   test "an effect that cannot be built ends the render with an error naming the part and the effect",
        ctx do
-    {micros, result} = :timer.tc(fn -> zeroed(ctx, "[broken: []]") end)
+    {{micros, result}, log} =
+      with_log(fn -> :timer.tc(fn -> zeroed(ctx, "[broken: []]") end) end)
+
+    assert log =~
+             "effect broken could not be built: a delay's max must be known when the note starts"
 
     assert result ==
              {:error,

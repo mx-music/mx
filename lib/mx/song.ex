@@ -371,30 +371,49 @@ defmodule Mx.Song do
     end
   end
 
+  # A module the song file defines is compiled again on every load, which is no conflict to warn
+  # about. The option is global, so it goes back as it was only when the last load at once ends.
+  defp eval_once(path, source) do
+    loading(1)
+
+    try do
+      {value, _binding} =
+        if source do
+          Code.eval_string(source, [], file: path)
+        else
+          Code.eval_file(path)
+        end
+
+      {:ok, written(value, path)}
+    rescue
+      error -> {:error, error, __STACKTRACE__}
+    after
+      loading(-1)
+    end
+  end
+
+  defp loading(change) do
+    :global.trans({{__MODULE__, :loading}, self()}, fn -> count_loads(change) end, [node()])
+  end
+
+  defp count_loads(change) do
+    {count, ignoring} = Application.get_env(:mx, :songs_loading, {0, nil})
+
+    ignoring =
+      if count == 0, do: Code.get_compiler_option(:ignore_module_conflict), else: ignoring
+
+    count = count + change
+    Code.put_compiler_option(:ignore_module_conflict, count > 0 or ignoring)
+    Application.put_env(:mx, :songs_loading, {count, ignoring})
+  end
+
   # Elixir logs why a module did not compile and raises without the line, so the first error it
   # logged names it.
   defp eval_file(path, source) do
     {result, diagnostics} =
       Code.with_diagnostics([log: true], fn ->
-        # A module the song file defines is compiled again on every load, which is no conflict to
-        # warn about.
-        ignoring = Code.get_compiler_option(:ignore_module_conflict)
-        Code.put_compiler_option(:ignore_module_conflict, true)
-
-        try do
-          {value, _binding} =
-            if source do
-              Code.eval_string(source, [], file: path)
-            else
-              Code.eval_file(path)
-            end
-
-          {:ok, written(value, path)}
-        rescue
-          error -> {:error, error, __STACKTRACE__}
-        after
-          Code.put_compiler_option(:ignore_module_conflict, ignoring)
-        end
+        # Two loads of one file at once would define its modules at once, which clashes.
+        :global.trans({{__MODULE__, path}, self()}, fn -> eval_once(path, source) end, [node()])
       end)
 
     case result do

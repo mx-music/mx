@@ -424,9 +424,14 @@ defmodule Mix.Tasks.Mx.FitTest do
       write_wav(ctx.tmp_dir, "d4.wav", struck_note(62, 2))
       list = write_list(ctx, ["C4 127 kept c4.wav", "D4 100 kept d4.wav"])
 
-      assert_raise Mix.Error, "no recording of c8 vel 100; the nearest is d4 vel 100", fn ->
-        Mix.Tasks.Mx.Fit.run(~w(piano --struck #{list} --check --note C8 --vel 100))
-      end
+      listed =
+        capture_io(fn ->
+          assert_raise Mix.Error, "no recording of c8 vel 100; the nearest is d4 vel 100", fn ->
+            Mix.Tasks.Mx.Fit.run(~w(piano --struck #{list} --check --note C8 --vel 100))
+          end
+        end)
+
+      assert listed == "c4.wav: c4\nd4.wav: d4\n"
 
       assert_raise Mix.Error, "--note and --vel go together, with --check", fn ->
         Mix.Tasks.Mx.Fit.run(~w(piano --struck #{list} --check --note C4))

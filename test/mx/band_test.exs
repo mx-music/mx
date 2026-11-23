@@ -1488,7 +1488,10 @@ defmodule Mx.BandTest do
       ids = :counters.new(1, [])
 
       opts = [
-        start_fx: fn chain -> send(test, {:started_fx, chain}) && %{key: :voice_chain} end,
+        start_fx: fn chain ->
+          send(test, {:started_fx, chain})
+          %{key: :voice_chain}
+        end,
         new_id: fn -> :counters.add(ids, 1, 1) && :counters.get(ids, 1) end
       ]
 
