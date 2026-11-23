@@ -68,6 +68,7 @@
 
 ### 2. Bug fixes
 
+  * [effects] A sweep stays on the beat for as long as it runs, from mxs 0.6.4: `slicer`, `tremolo`, `wobble`, `flanger` and `phaser` fell 4 ms behind for every minute they ran at a cycle of half a second, and a slicer's pulse is now on its beat after four minutes; a render with a sweep has other samples than before
   * [instruments] A `defsynth`, `defeffect` or `defsound` below `import Mx`, or in a module that uses `Mx.Song`, calls the `delay` and `clamp` nodes, where the file stopped with "conflicting delay/2 import"; outside them the names keep Mx's meaning
   * [instruments] A `defeffect` whose input is multiplied by 0, as in `sound * opts.wet + sound` at a `wet` of 0, or is in the side a `select` leaves out, plays the rest, where the part failed and started again without end
   * [effects] A change to slicer's `smooth_ms`, to flanger's `invert_flange` and `stereo_invert_wave`, to wobble's `filter`, to ping_pong's `pan_start`, or to the `phase_offset` of slicer, tremolo, flanger and wobble is heard from where it is written, where the song loaded and the sound stayed as it was
