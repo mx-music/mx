@@ -10,7 +10,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 cpal = "0.18"
-mxs = "0.6.0"
+mxs = "0.6.1"
 nalgebra = "0.35"
 pyin = { version = "1.2.0", default-features = false }
 rustfft = "6.4"
