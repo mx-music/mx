@@ -1,5 +1,5 @@
 defmodule Mx.Examples.MidnightTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: true, group: :engine
 
   import ExUnit.CaptureIO
 
@@ -83,17 +83,11 @@ defmodule Mx.Examples.MidnightTest do
   @tag :timing
   @tag :tmp_dir
   @tag timeout: 200_000
-  test "a minute of the piece records without reaching full scale", %{tmp_dir: dir} do
+  test "a minute of the piece renders without reaching full scale", %{tmp_dir: dir} do
     out = Path.join(dir, "midnight.wav")
-    input = spawn(fn -> enter_after(60_000) end)
-    leader = Process.group_leader()
-    Process.group_leader(self(), input)
-
-    try do
-      Mix.Tasks.Mx.Play.run([@song, "--record", out])
-    after
-      Process.group_leader(self(), leader)
-    end
+    args = [@song, "--render", out, "--seconds", "60"]
+    report = capture_io(fn -> Mix.Tasks.Mx.Play.run(args) end)
+    assert report =~ "Recorded "
 
     assert %{peak: peak, clips: 0} = Mx.Recording.level(out)
     assert peak < -0.1
@@ -118,20 +112,5 @@ defmodule Mx.Examples.MidnightTest do
 
   defp notes(part) do
     for [_, note] <- Regex.scan(~r/play ([\d.]+) /, part), do: note
-  end
-
-  # An input device that answers the first line asked for after a delay, as a person pressing
-  # Enter would.
-  defp enter_after(ms) do
-    receive do
-      {:io_request, from, ref, {:get_line, _, _}} ->
-        Process.sleep(ms)
-        send(from, {:io_reply, ref, "\n"})
-        enter_after(ms)
-
-      {:io_request, from, ref, _request} ->
-        send(from, {:io_reply, ref, :ok})
-        enter_after(ms)
-    end
   end
 end

@@ -1,5 +1,5 @@
 defmodule Mx.Examples.CaboclinhoTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: true, group: :engine
 
   import ExUnit.CaptureIO
 
@@ -115,19 +115,14 @@ defmodule Mx.Examples.CaboclinhoTest do
   @tag :timing
   @tag :tmp_dir
   @tag timeout: 120_000
-  test "a minute of the demo records without reaching full scale", %{tmp_dir: dir} do
+  test "a minute of the demo renders without reaching full scale", %{tmp_dir: dir} do
     out = Path.join(dir, "caboclinho.wav")
-    input = spawn(fn -> enter_after(60_000) end)
-    leader = Process.group_leader()
-    Process.group_leader(self(), input)
+    args = [@song, "--render", out, "--seconds", "60"]
+    report = capture_io(fn -> Mix.Tasks.Mx.Play.run(args) end)
+    assert report =~ "Recorded "
 
-    try do
-      Mix.Tasks.Mx.Play.run([@song, "--record", out])
-    after
-      Process.group_leader(self(), leader)
-    end
-
-    assert peak(out) < 0.99
+    assert %{peak: peak, clips: 0} = Mx.Recording.level(out)
+    assert peak < -0.1
   end
 
   defp toque(pass) do
@@ -190,28 +185,5 @@ defmodule Mx.Examples.CaboclinhoTest do
       [part | _] -> part |> String.split("\n") |> Enum.take_while(&(&1 != "")) |> Enum.join("\n")
       [] -> ""
     end
-  end
-
-  # An input device that answers the first line asked for after a delay, as a person pressing
-  # Enter would.
-  defp enter_after(ms) do
-    receive do
-      {:io_request, from, ref, {:get_line, _, _}} ->
-        Process.sleep(ms)
-        send(from, {:io_reply, ref, "\n"})
-        enter_after(ms)
-
-      {:io_request, from, ref, _request} ->
-        send(from, {:io_reply, ref, :ok})
-        enter_after(ms)
-    end
-  end
-
-  defp peak(wav) do
-    <<"RIFF", _::32, "WAVE", chunks::binary>> = File.read!(wav)
-    [_, <<size::little-32, data::binary>>] = :binary.split(chunks, "data")
-    data = binary_part(data, 0, min(size, byte_size(data)))
-    full = 8_388_608
-    Enum.max(for <<sample::signed-little-24 <- data>>, do: abs(sample) / full)
   end
 end

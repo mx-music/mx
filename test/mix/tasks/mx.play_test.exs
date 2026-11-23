@@ -6,7 +6,8 @@ defmodule Mix.Tasks.Mx.PlayTest do
   alias Mix.Tasks.Mx.Play
   alias Mx.Engine.Mxs
 
-  @song "import Mx\nsong(tempo: 240, music: part(:a, loop(1, fn _, _ -> seq([note(72, 0, release: 0.05), rest(1)]) end)))\n"
+  # At -80 dB the notes are not heard, but a recording holds them.
+  @song "import Mx\nsong(tempo: 240, music: part(:a, loop(1, fn _, _ -> seq([note(72, 0, amp: 0.0001, release: 0.05), rest(1)]) end)))\n"
 
   @moduletag :tmp_dir
 
@@ -311,10 +312,8 @@ defmodule Mix.Tasks.Mx.PlayTest do
       "import Mx\nsong(music: part(:a, loop(8, fn _, _ -> #{music} end)#{part_opts}))\n"
     )
 
-    {:ok, song} = Mx.Song.load(song_path)
-    {:ok, session} = Mx.Session.start_link(path: song_path, song: song, record: out)
-    Process.sleep(2500)
-    Supervisor.stop(session)
+    # Rendered rather than played, so a level test is not heard.
+    capture_io(fn -> assert Mx.Render.render(song_path, out, seconds: 2.5) == :ok end)
     {Mx.Recording.report(out), out}
   end
 
@@ -398,13 +397,14 @@ defmodule Mix.Tasks.Mx.PlayTest do
   @tag :engine
   test "an engine plays through the output named, at the rate and buffer size given" do
     name = default_device(true)
-    {:ok, _engine} = Mxs.start_link(devices: [output: name, rate: 44_100, buffer: 64])
-    assert %{device: ^name, rate: rate} = Mxs.output(self())
-    assert rate == 44_100
+    rate = other_rate()
+    {:ok, _engine} = Mxs.start_link(devices: [output: name, rate: rate, buffer: 64])
+    assert %{device: ^name, rate: output_rate} = Mxs.output(self())
+    assert output_rate == rate
     Mxs.buffer_load()
     Process.sleep(1000)
     %{buffers: buffers} = Mxs.buffer_load()
-    assert_in_delta buffers, 44_100 / 64, 70
+    assert_in_delta buffers, rate / 64, 70
     GenServer.stop(Mxs)
   end
 
@@ -472,12 +472,14 @@ defmodule Mix.Tasks.Mx.PlayTest do
     out = Path.join(ctx.tmp_dir, "rate.wav")
     {:ok, song} = Mx.Song.load(ctx.song)
 
+    rate = other_rate()
+
     {:ok, session} =
-      Mx.Session.start_link(path: ctx.song, song: song, record: out, devices: [rate: 44_100])
+      Mx.Session.start_link(path: ctx.song, song: song, record: out, devices: [rate: rate])
 
     Process.sleep(500)
     Supervisor.stop(session)
-    assert {:ok, %{rate: 44_100}} = Mx.Audio.read(out)
+    assert {:ok, %{rate: ^rate}} = Mx.Audio.read(out)
   end
 
   @tag :engine
@@ -501,6 +503,19 @@ defmodule Mix.Tasks.Mx.PlayTest do
 
     assert said =~ "--rate and --buffer do not apply to a render, which runs at 48000 Hz\n"
     assert {:ok, %{rate: 48_000}} = Mx.Audio.read(out)
+  end
+
+  # A rate the default output takes other than the 48000 Hz a render runs at, 44100 where it can.
+  defp other_rate do
+    {:ok, devices} = Mxs.Native.devices()
+    {_, true, true, _, ranges, _} = Enum.find(devices, &match?({_, true, true, _, _, _}, &1))
+    rates = for {low, high} <- ranges, rate <- [low, high], rate != 48_000, do: rate
+
+    if Enum.any?(ranges, fn {low, high} -> low <= 44_100 and 44_100 <= high end) do
+      44_100
+    else
+      Enum.max(rates)
+    end
   end
 
   defp default_device(output?) do
