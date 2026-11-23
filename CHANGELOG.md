@@ -4,6 +4,7 @@
 
 ### 1. Enhancements
 
+  * [effects] `phaser` given no `mix` is half dry, where its notches are deepest
   * [effects] Add `phaser`, from the next mxs: `stages` all-pass filters sweep one notch for every two between the notes `low` and `high` once every `phase`, deepest at `mix: 0.5`, with `feedback` and `stereo_invert_wave`; `examples/dubwise.exs` plays its hi-hat through it
   * [mix mx.play] A render reports the file's loudness beside its peak, as `peaking at -1.0 dB, loudness -14.2 LUFS`, the integrated loudness of ITU-R BS.1770, and `--loudness -14` scales the finished file to a loudness, no further than a peak of -1 dB
   * [effects] `reverb` is a new reverb, from the next mxs: a room of `size` metres whose sound fades 60 dB in `decay_seconds`, starts after `predelay_ms`, is cut below the note `low_cut` and dulled by `damp`, and is louder on the side its sound is on. The reverb it replaces and its `room` option are gone, and every example is rewritten to the new options

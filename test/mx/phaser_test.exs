@@ -118,6 +118,17 @@ defmodule Mx.PhaserTest do
   end
 
   @tag :engine
+  test "a phaser given no mix is half dry, so it cuts its notches", ctx do
+    for gain <- gains(ctx, notches(4), "[phaser: [low: 72, high: 72]]"), do: assert(gain <= -12)
+  end
+
+  test "the phaser's own mix of 0.5 replaces the mix of 1 every effect has" do
+    catalog = Mx.Engine.Mxs.catalog()
+    assert catalog["fx_phaser"]["mix"] == 0.5
+    assert catalog["fx_echo"]["mix"] == 1.0
+  end
+
+  @tag :engine
   test "a saw through a phaser with mix: 0 is the dry saw", ctx do
     saw = fn fx -> "part(:x, note(:a3, 2), synth: :saw, fx: #{fx})" end
     {dry, _} = render(ctx, saw.("[]"))

@@ -64,7 +64,8 @@ defmodule Mx.Engine.Mxs do
     end)
   end
 
-  # Each entry's own options, then those every note or effect takes, which win over its own.
+  # Each entry's own options, then those every note or effect takes, which win over its own; an
+  # effect's own option wins over the one every effect takes.
   defp entries do
     {_synths, note, sample, effects, effect, input} = Native.catalog()
 
@@ -73,7 +74,10 @@ defmodule Mx.Engine.Mxs do
     synths ++
       [{"mono_player", sample}, {"stereo_player", sample}] ++
       [{"live_audio_mono", input}, {"live_audio_stereo", input}] ++
-      for {name, specs} <- effects ++ effect_specs(), do: {"fx_" <> name, specs ++ effect}
+      for {name, specs} <- effects ++ effect_specs() do
+        own = MapSet.new(specs, & &1.name)
+        {"fx_" <> name, specs ++ Enum.reject(effect, &(&1.name in own))}
+      end
   end
 
   @doc "Each synth's and effect's options that take a range or a set of names, as `{:range, low, high}`, with nil for an open end, or `{:names, names}`."
