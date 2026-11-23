@@ -17,6 +17,7 @@ defmodule Mx.Fit.Struck do
   A drum given in Hz is measured with that frequency as its pitch, and its figures go under the nearest MIDI note.
 
   Fitting renders each note's partials as sines, measures the render the same way, and corrects each partial's level at 37 times from the strike to 28 seconds until the render matches the recording, then fits the strike's noise in each band one ERB wide from 50 Hz to 8 kHz to what the recording holds beyond the sines.
+  A recording with `top:`, a frequency in Hz, is followed up to it instead of 8 kHz, its partials and its bands of noise.
   After the last time a recording reaches, each partial falls on at its last slope.
   The figures keep every partial of every recording, each at its own level, for mxs to play: a note or velocity that was not recorded takes its figures from the recordings nearest it.
 
@@ -31,6 +32,7 @@ defmodule Mx.Fit.Struck do
   alias Mx.Engine.Mxs.Native
 
   @nsynth 2.9
+  @top 8000
   @longest 30.0
   @whole 0xFFFF_FFFF_FFFF
 
@@ -433,7 +435,8 @@ defmodule Mx.Fit.Struck do
 
   defp struck(recording, raws) do
     {raws[recording.path], recording.span,
-     {recording.pitch, recording.velocity, recording.seconds / 1, recording.exact}}
+     {recording.pitch, recording.velocity, recording.seconds / 1, recording.exact,
+      Map.get(recording, :top, @top) / 1}}
   end
 
   defp render(synth, recording, options) do
@@ -469,7 +472,7 @@ defmodule Mx.Fit.Struck do
   defp own_path(recording) do
     built = :mx |> :code.priv_dir() |> Path.join("native/*mxs_nif*") |> Path.wildcard()
     files = Enum.map([recording.path | built], &{Path.expand(&1), Mx.Fit.stamp(&1)})
-    fitted = Map.take(recording, [:span, :pitch, :velocity, :seconds, :exact])
+    fitted = Map.take(recording, [:span, :pitch, :velocity, :seconds, :exact, :top])
     key = :erlang.phash2({files, fitted}, 4_294_967_296)
     Path.join([System.tmp_dir!(), "mx-fit-struck", "#{key}.term"])
   end

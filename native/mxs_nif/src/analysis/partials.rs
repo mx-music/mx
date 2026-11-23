@@ -7,7 +7,7 @@ use std::f64::consts::PI;
 
 /// The seconds between two frames.
 pub const HOP: f64 = 0.0025;
-/// The highest partial followed, in Hz.
+/// The highest partial followed, in Hz, unless a fit is given another.
 pub const TOP: f64 = 8000.0;
 /// The dB a partial stands above the floor to count.
 pub const CLEAR: f64 = 10.0;
@@ -291,9 +291,9 @@ impl Banded {
     }
 }
 
-/// Measures a note: its pitch near `note`, or with `exact` the note's own frequency, its harmonics up to 8 kHz or the highest the recording holds, and the peaks that are not harmonics as the note starts.
+/// Measures a note: its pitch near `note`, or with `exact` the note's own frequency, its harmonics up to `top` Hz or the highest the recording holds, and the peaks that are not harmonics as the note starts.
 /// A partial between harmonics with no strike, standing no more than 3 dB above its level once settled as the note starts, and hardly any fall, moving less than 12 dB after, is a line that is not the instrument's, and is left out.
-pub fn measure(sound: &[f64], rate: f64, note: f64, seconds: f64, exact: bool) -> Note {
+pub fn measure(sound: &[f64], rate: f64, note: f64, seconds: f64, exact: bool, top: f64) -> Note {
     let guess = hz(note);
     let spectra = spectra(sound, rate, guess, seconds);
     let f0 = if exact {
@@ -303,7 +303,7 @@ pub fn measure(sound: &[f64], rate: f64, note: f64, seconds: f64, exact: bool) -
         // The grid's pitch can sit a few cents off where the bell's partials pull its score, so the first harmonics settle it.
         median(&(1..=4).map(|n| settle(&spectra, n as f64 * rough, (n as f64 * rough * 0.03).max(spectra.resolution)) / n as f64).collect::<Vec<_>>())
     };
-    let top = TOP.min(0.45 * rate);
+    let top = top.min(0.45 * rate);
     let harmonics: Vec<f64> = (1..).map(|n| n as f64 * f0).take_while(|f| *f <= top).collect();
     let first_floor = Floor::new(&spectra, &harmonics);
     // A drum's partials are not harmonics, so with its pitch given they are looked for from just above it; a string's from halfway to its second harmonic, clear of the fundamental's skirt.

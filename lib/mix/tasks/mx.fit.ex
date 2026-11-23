@@ -26,6 +26,7 @@ defmodule Mix.Tasks.Mx.Fit do
   `--note` and `--vel` with `--check`, such as `--note C2 --vel 80`, print that one recording beside the synth and the fit's own render instead, frame by frame: each partial within 60 dB of the loudest and each ERB band, every 5 ms from 5 ms before the strike to 100 ms after, with the fit's sines and noise apart.
   `--until` with seconds carries the rows on to that time in 24 steps, and `--csv` with a file name also writes the figures as a table.
   `--tour` writes a WAV file of twelve recordings, or as many as `--count` gives, each followed by the synth.
+  `--top` with a frequency in Hz, such as `--top 16000`, follows the partials and fits the strike's noise up to it instead of 8 kHz, for an instrument that is bright above that, such as a drum with jingles.
   `--option` with a synth's option and its value, such as `--option pedal=1`, renders the synth with it in `--check` and `--tour`; it can be given more than once.
 
       mx fit clarinet --held clarinet.txt --out clarinet.mxh
@@ -109,7 +110,8 @@ defmodule Mix.Tasks.Mx.Fit do
           tour: :string,
           count: :integer,
           option: :keep,
-          steady: :boolean
+          steady: :boolean,
+          top: :float
         ]
       )
 
@@ -122,6 +124,7 @@ defmodule Mix.Tasks.Mx.Fit do
       |> Keyword.get_values(kind)
       |> Enum.flat_map(&struck_recordings!(&1, notes, kind))
       |> Enum.sort_by(&{&1.note, &1.velocity})
+      |> topped(opts[:top])
 
     if out = opts[:out] do
       figures = figures(kind, recordings, opts)
@@ -172,6 +175,13 @@ defmodule Mix.Tasks.Mx.Fit do
       kind == :held and opts[:note] ->
         Mx.Command.fail("--note and --vel go with --struck, not --held")
 
+      opts[:top] && kind == :held ->
+        Mx.Command.fail("--top goes with --struck, not --held")
+
+      opts[:top] && opts[:top] < 1000 ->
+        top = opts[:top]
+        Mx.Command.fail("give --top as a frequency of 1000 Hz or more, not #{top}")
+
       kind == :struck and opts[:steady] ->
         Mx.Command.fail("--steady goes with --held, not --struck")
 
@@ -209,6 +219,9 @@ defmodule Mix.Tasks.Mx.Fit do
       _ -> Mx.Command.fail("give --option as a name and a number, such as pedal=1, not #{text}")
     end
   end
+
+  defp topped(recordings, nil), do: recordings
+  defp topped(recordings, top), do: Enum.map(recordings, &Map.put(&1, :top, top))
 
   defp struck_recordings!(path, notes, kind) do
     found =

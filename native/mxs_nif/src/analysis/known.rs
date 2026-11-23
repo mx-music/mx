@@ -133,7 +133,7 @@ pub(crate) fn sound(note: &Note) -> Vec<f64> {
 pub fn known(kind: &str, note: f64) -> Known {
     let made = made(kind, note);
     let sound = sound(&made);
-    let measured = partials::measure(&sound, RATE, note, SECONDS, false);
+    let measured = partials::measure(&sound, RATE, note, SECONDS, false, partials::TOP);
     let onset = BEFORE * RATE;
     let start = measured.spectra.struck() - partials::LEAD * RATE;
     // The time after the true onset that each frame's window is centred on.

@@ -245,6 +245,41 @@ defmodule Mix.Tasks.Mx.FitTest do
       for {ratio, want} <- Enum.zip(ratios, expected), do: assert_in_delta(ratio, want, 0.002)
     end
 
+    test "--top fits partials and noise up to that frequency, where without it they stop at 8 kHz",
+         ctx do
+      write_wav(ctx.tmp_dir, "drum.wav", struck_note(125.6, 2, ratios: [1, 1.5, 95.5]))
+      list = write_list(ctx, ["125.6Hz 127 drum.wav"])
+      out = Path.join(ctx.tmp_dir, "drum.mxf")
+      high = 95.5 * 125.6 / Mx.Signal.hz(47)
+
+      fitted = fn flags ->
+        capture_io(fn ->
+          Mix.Tasks.Mx.Fit.run(["timpani", "--struck", list, "--out", out] ++ flags)
+        end)
+
+        data = File.read!(out)
+        {_times, [%{partials: partials}]} = figures(data)
+        {Enum.map(partials, & &1.ratio), band_edges(data)}
+      end
+
+      {ratios, edges} = fitted.([])
+      refute Enum.any?(ratios, &(abs(&1 - high) < 0.05))
+      assert_in_delta Enum.max(edges), 8000, 1
+
+      {ratios, edges} = fitted.(["--top", "16000"])
+      assert Enum.any?(ratios, &(abs(&1 - high) < 0.05))
+      assert_in_delta Enum.max(edges), 16_000, 1
+    end
+
+    test "refuses a --top under 1000 Hz", ctx do
+      write_wav(ctx.tmp_dir, "drum.wav", struck_note(125.6, 2, ratios: [1, 1.5]))
+      list = write_list(ctx, ["125.6Hz 127 drum.wav"])
+
+      assert_raise Mix.Error, "give --top as a frequency of 1000 Hz or more, not 500.0", fn ->
+        Mix.Tasks.Mx.Fit.run(["timpani", "--struck", list, "--check", "--own", "--top", "500"])
+      end
+    end
+
     test "a note is fitted over its whole ring, and falls on at its last slope after it", ctx do
       write_wav(ctx.tmp_dir, "long.wav", struck_note(60, 12, harmonics: [1], fade: 6))
       list = write_list(ctx, ["C4 100 long.wav"])
@@ -1180,7 +1215,9 @@ defmodule Mix.Tasks.Mx.FitTest do
 
   defp struck(samples) do
     {data, packing} = Mx.Signal.packed(samples)
-    {{data, packing, Mxs.render_rate() / 1}, {0, length(samples)}, {60.0, 127, 2.9, false}}
+
+    {{data, packing, Mxs.render_rate() / 1}, {0, length(samples)},
+     {60.0, 127, 2.9, false, 8000.0}}
   end
 
   defp packed(samples) do
@@ -1192,6 +1229,15 @@ defmodule Mix.Tasks.Mx.FitTest do
     path = Path.join(ctx.tmp_dir, "list.txt")
     File.write!(path, Enum.join(lines, "\n") <> "\n")
     path
+  end
+
+  # The edges in Hz of the noise bands of figures as mxs reads them.
+  defp band_edges(<<"MXF1", count::little-16, rest::binary>>) do
+    time_bytes = count * 4
+    <<_times::binary-size(^time_bytes), bands::little-16, rest::binary>> = rest
+    edge_bytes = bands * 8
+    <<edges::binary-size(^edge_bytes), _rest::binary>> = rest
+    for <<edge::float-little-32 <- edges>>, do: edge
   end
 
   # The times of figures as mxs reads them, and each recording's note, velocity and partials,
