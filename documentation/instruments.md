@@ -204,7 +204,7 @@ Every synth ends with `note_envelope` or `rings`, which tells mxs when the note 
 | combining | `mix`, `delay`, `fed_back`, a delay fed back into itself through filters in its loop, `share`, a sound built once and used several times, and `+` and `*` on sounds |
 | reading options | `hz`, `db`, `follow`, `select`, `clamp`, `mod` |
 | chance | `draw`, a number drawn as each note starts, and `noise` seeded from the same with `drawn:` |
-| ending the note | `note_envelope`, `rings` |
+| ending the note | `note_envelope`, `rings`, and `figures`, a note played from one of mxs's tables fitted to recordings, as `figures(:marimba, play: :kept, level: 1.53)` plays the marimba |
 | whole models | `bowed_string`, `air_jet`, `reed`, a reed or the lips on a bore through its bell, `wind_bands`, `vibrato`, `fingers`, a note as a wind player's fingers hold it, and `sway`, a slow random drift as a player's while a note holds |
 
 `Mx.Instrument.Vocabulary` documents each of them.

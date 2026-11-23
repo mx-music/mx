@@ -77,7 +77,7 @@ defmodule Mx.Instrument.Vocabulary do
   Distortion: `saturate/2` rounds a sound off towards `level:`, `clip/2` cuts it off at `level:`, and `fold/2` folds it back at `level:`, each after a `drive:` in dB, worked out at twice the engine's rate.
   Shapes: `envelope/1` and `perc/1` are levels over time, and `envelope/2` and `perc/2` scale a sound by them.
   Mixing: `mix/1` adds a list of sounds, `gain/2` scales one, and `share/2` builds a sound once for a function that uses it several times.
-  A synth ends with `note_envelope/2`, shaping its sound by the note's envelope, or `rings/2`, ending it after `seconds:`.
+  A synth ends with `note_envelope/2`, shaping its sound by the note's envelope, `rings/2`, ending it after `seconds:`, or `figures/2`, a struck note from one of mxs's tables.
   """
 
   alias Mx.Instrument.Expr
@@ -159,6 +159,9 @@ defmodule Mx.Instrument.Vocabulary do
 
   @doc "A wind's sound through peaks at mx's bands, `gains:` in dB at each of pp, mf and ff, eight to each for the bands up to 3162 Hz or eleven for all of them up to 12.6 kHz, and `levels:` in dB at each, following `vel:`."
   def wind_bands(sound, opts), do: Expr.call(:wind_bands, [sound], opts)
+
+  @doc "A struck note from one of mxs's tables fitted to recordings, named by its file with or without its extension, such as `:marimba`: `play:` is `:kept`, whose figures carry its loudness, `:fitted`, louder by vel to the power `growth:`, or `:evened`, every note at vel 1 as loud, each at `level:`; it ends the note, as `rings/2` does, and a synth naming a table mxs has not is refused when it registers."
+  def figures(table, opts), do: Expr.call(:figures, [table], opts)
 
   @doc "A slow random sway of about unit size, as a wind player's pitch and level drift while a note holds, its seed drawn from the note."
   def sway, do: Expr.call(:sway, [], [])

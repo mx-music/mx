@@ -84,6 +84,33 @@ defmodule Mx.PairedTest do
     {Mx.Paired.Tambourine, :tambourine, [[vel: 0.3], [vel: 1], [note: 74]], 2},
     {Mx.Paired.TambourineShake, :tambourine_shake,
      [[vel: 0.3], [vel: 1, sustain: 0.6], [note: 64, sustain: 0.1]], 2},
+    {Mx.Paired.Vibraphone, :vibraphone,
+     [[note: 65, vel: 0.3], [note: 77, vel: 1], [note: 65, vel: 0.6, motor: 5]], 3},
+    {Mx.Paired.Piano, :piano,
+     [
+       [note: 60, vel: 0.3],
+       [note: 84, vel: 1],
+       [note: 60, vel: 0.3, pedal: 1],
+       [note: 84, vel: 1, pedal: 1]
+     ], 3},
+    {Mx.Paired.Cello, :cello, [[note: 48, vel: 0.3, sustain: 2], [note: 60, vel: 1, sustain: 2]],
+     3},
+    {Mx.Paired.FluteFigured, :flute_figured,
+     [
+       [note: 72, vel: 0.3, sustain: 2],
+       [note: 84, vel: 1, sustain: 2],
+       [note: 76, vibrato: 0.2, sustain: 2]
+     ], 3},
+    {Mx.Paired.Marimba, :marimba, [[note: 60, vel: 0.3], [note: 72, vel: 1]], 3},
+    {Mx.Paired.Xylophone, :xylophone, [[note: 72, vel: 0.3], [note: 84, vel: 1]], 3},
+    {Mx.Paired.Glockenspiel, :glockenspiel, [[note: 84, vel: 0.3], [note: 91, vel: 1]], 3},
+    {Mx.Paired.Timpani, :timpani, [[note: 43, vel: 0.3], [note: 50, vel: 1]], 3},
+    {Mx.Paired.Guitar, :guitar, [[note: 40, vel: 0.3], [note: 64, vel: 1]], 3},
+    {Mx.Paired.ElectricBass, :electric_bass, [[note: 28, vel: 0.3], [note: 40, vel: 1]], 3},
+    {Mx.Paired.DeepBass, :deep_bass, [[note: 28, vel: 0.3], [note: 36, vel: 1]], 3},
+    {Mx.Paired.Harp, :harp, [[note: 48, vel: 0.3], [note: 72, vel: 1]], 3},
+    {Mx.Paired.ElectricPiano, :electric_piano, [[note: 52, vel: 0.3], [note: 64, vel: 1]], 3},
+    {Mx.Paired.ElectricGuitar, :electric_guitar, [[note: 45, vel: 0.3], [note: 64, vel: 1]], 3},
     {Mx.Paired.Clarinet, :clarinet,
      [
        [note: 60, vel: 0.3, sustain: 3],
@@ -243,6 +270,29 @@ defmodule Mx.PairedTest do
 
     rust = shakes.(nil)
     elixir = shakes.(Mx.Paired.Caxixi)
+    difference = Enum.zip_with(rust, elixir, &(&1 - &2))
+    apart = 20 * :math.log10(max(rms(difference), 1.0e-12) / rms(rust))
+    assert apart < -60, "#{apart} dB apart"
+  end
+
+  test "the cello sliding from C3 to E-flat 3 renders the same in its defsynth and Rust forms" do
+    slid = fn module, to ->
+      {:ok, engine} = Native.start(false, false)
+      if module, do: :ok = Mx.Instrument.register(engine, module)
+
+      events = [
+        {0.0, Mx.Engine.Mxs.event({:note, 1, :cello, nil, [note: 48, sustain: 2.5], nil})},
+        {1.2, Mx.Engine.Mxs.event({:set, {:sounds, [1]}, note: to})}
+      ]
+
+      :ok = Native.play(engine, events)
+      {:ok, {left, _right}} = Native.render(engine, 3)
+      for <<x::float-32-native <- left>>, do: x
+    end
+
+    rust = slid.(nil, 51)
+    elixir = slid.(Mx.Paired.Cello, 51)
+    assert rust != slid.(nil, 48)
     difference = Enum.zip_with(rust, elixir, &(&1 - &2))
     apart = 20 * :math.log10(max(rms(difference), 1.0e-12) / rms(rust))
     assert apart < -60, "#{apart} dB apart"

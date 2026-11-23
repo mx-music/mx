@@ -8,7 +8,7 @@ defmodule Mx.Instrument do
 
   When the module compiles, each clause runs once with the note's options as placeholders, and what its body does with them is recorded as a graph.
   Data written in the module takes any Elixir, while a placeholder takes only arithmetic, comparisons, `select/3` and the vocabulary of `Mx.Instrument.Vocabulary`.
-  An `if` on a placeholder fails then, with its file and line, and so does a synth that ends with neither `note_envelope/2` nor `rings/2`.
+  An `if` on a placeholder fails then, with its file and line, and so does a synth that ends with none of `note_envelope/2`, `rings/2` and `figures/2`.
   A module compiled outside mix's own compilation, such as one a song file defines, becomes known to mx as it compiles: songs play its synths by name, and mxs builds them from then on, so a `defsynth` saved in a song plays without restarting mx.
 
   An option is read once, when the note starts, unless the synth reads it with `follow/1`, which glides with each change the song makes while the note sounds.
@@ -163,7 +163,7 @@ defmodule Mx.Instrument do
   Clauses of one synth sit next to each other, and the one whose pattern matches the note plays.
   Mx records a match only on atoms and numbers, such as `%{bol: :na}`.
 
-  The body takes the arithmetic, comparisons and `select/3` described in the moduledoc, and ends with `note_envelope/2` or `rings/2`.
+  The body takes the arithmetic, comparisons and `select/3` described in the moduledoc, and ends with `note_envelope/2`, `rings/2` or `figures/2`.
   Use `select/3` where you would write an `if` on an option.
 
   ## Examples
@@ -483,12 +483,12 @@ defmodule Mx.Instrument do
         for {_, _, matches, line} <- clauses do
           sound = apply(module, name, [Map.merge(placeholders, Map.new(matches))])
 
-          if not match?(%Expr{op: op} when op in [:note_envelope, :rings], sound) do
+          if not match?(%Expr{op: op} when op in [:note_envelope, :rings, :figures], sound) do
             raise CompileError,
               file: file,
               line: line,
               description:
-                "#{name} ends with neither note_envelope nor rings, so mx cannot tell when its notes end"
+                "#{name} ends with none of note_envelope, rings and figures, so mx cannot tell when its notes end"
           end
 
           {matches, sound}
@@ -517,9 +517,9 @@ defmodule Mx.Instrument do
 
       sound =
         case {sides, apply(module, name, [input, placeholders])} do
-          {_, %Expr{op: op}} when op in [:note_envelope, :rings] ->
+          {_, %Expr{op: op}} when op in [:note_envelope, :rings, :figures] ->
             refuse.(
-              "#{name} is an effect, so it returns its sound, without note_envelope or rings"
+              "#{name} is an effect, so it returns its sound, without note_envelope, rings or figures"
             )
 
           {2, {left, right}} ->
