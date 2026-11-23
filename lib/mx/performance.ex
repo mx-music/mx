@@ -246,8 +246,7 @@ defmodule Mx.Performance do
                 for {group, onset} <- onsets(voice, bar_start) do
                   loud = vel.(loudness.(at.(onset)))
 
-                  notes =
-                    Enum.map(group.notes, &if(&1.continues, do: &1, else: %{&1 | vel: loud}))
+                  notes = Enum.map(group.notes, &played_at(&1, loud))
 
                   length = beat.(onset + group.length) - beat.(onset)
                   %{group | notes: notes, onset: beat.(onset) - beat.(bar_start), length: length}
@@ -263,6 +262,9 @@ defmodule Mx.Performance do
     bars = for {number, start, _length} <- timeline, do: {number, Float.round(at.(start), 2)}
     {:ok, %{score: %{score | parts: parts, tempo: tempo, tempos: []}, tempo: tempo, bars: bars}}
   end
+
+  defp played_at(%{continues: true} = note, _vel), do: note
+  defp played_at(note, vel), do: %{note | vel: vel}
 
   # The loudest of the recording's 50 ms levels from 50 ms before a second to 150 ms after it.
   defp loudness(levels) do

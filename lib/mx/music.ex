@@ -828,19 +828,21 @@ defmodule Mx.Music do
         note(pitch, beats, accented.(each) ++ [changes: changes])
 
       sounds ->
-        case Enum.split_with(sounds, &match?({:hit, _}, &1)) do
-          {hits, []} ->
-            together(
-              for {:hit, opts} <- hits, do: stroke(own[:sample], beats, accented.(opts ++ each))
-            )
+        together_item(sounds, tokens, own[:sample], beats, accented, each)
+    end
+  end
 
-          {[], notes} ->
-            note(List.flatten(Keyword.values(notes)), beats, accented.(each))
+  defp together_item(sounds, tokens, sample, beats, accented, each) do
+    case Enum.split_with(sounds, &match?({:hit, _}, &1)) do
+      {hits, []} ->
+        together(for {:hit, opts} <- hits, do: stroke(sample, beats, accented.(opts ++ each)))
 
-          _ ->
-            raise ArgumentError,
-                  "steps cannot play a stroke and a note together, as in #{Enum.join(tokens, "/")}"
-        end
+      {[], notes} ->
+        note(List.flatten(Keyword.values(notes)), beats, accented.(each))
+
+      _ ->
+        word = Enum.join(tokens, "/")
+        raise ArgumentError, "steps cannot play a stroke and a note together, as in #{word}"
     end
   end
 

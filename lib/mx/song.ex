@@ -279,34 +279,32 @@ defmodule Mx.Song do
         refuse(at, "kit #{name} takes its strokes, such as kit :#{name}, o: [part: :thumb]")
       end
 
-      for {stroke, given} <- strokes do
-        case given do
-          [other | _] = others when is_atom(other) ->
-            for other <- others, not Keyword.has_key?(strokes, other) do
-              refuse(
-                at,
-                "kit #{name}'s stroke #{stroke} names stroke #{other}, which the kit does not have"
-              )
-            end
-
-          opts when is_list(opts) ->
-            case Keyword.fetch(opts, :part) do
-              {:ok, part} when is_atom(part) ->
-                if part not in parts do
-                  refuse(at, "kit #{name} names part #{part}, which is not declared")
-                end
-
-              _ ->
-                refuse(
-                  at,
-                  "kit #{name}'s stroke #{stroke} names no part:, as #{stroke}: [part: :thumb]"
-                )
-            end
-        end
-      end
+      for {stroke, given} <- strokes, do: check_stroke(at, name, strokes, parts, stroke, given)
 
       [name | seen]
     end)
+  end
+
+  defp check_stroke(at, name, strokes, _parts, stroke, [other | _] = others)
+       when is_atom(other) do
+    for other <- others, not Keyword.has_key?(strokes, other) do
+      refuse(
+        at,
+        "kit #{name}'s stroke #{stroke} names stroke #{other}, which the kit does not have"
+      )
+    end
+  end
+
+  defp check_stroke(at, name, _strokes, parts, stroke, opts) when is_list(opts) do
+    case Keyword.fetch(opts, :part) do
+      {:ok, part} when is_atom(part) ->
+        if part not in parts do
+          refuse(at, "kit #{name} names part #{part}, which is not declared")
+        end
+
+      _ ->
+        refuse(at, "kit #{name}'s stroke #{stroke} names no part:, as #{stroke}: [part: :thumb]")
+    end
   end
 
   @doc false
