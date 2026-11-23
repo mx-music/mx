@@ -601,11 +601,55 @@ defmodule Mx.Music do
   @doc "The music with each note started at the beat the function returns for the beat it was written on, its length unchanged."
   def swing(music, fun) when is_function(fun, 1), do: %Swing{music: item(music), fun: fun}
 
-  @doc "Notes one after another as one note, of the first note's pitch and options, lasting them all and changing to each later note's pitch at its beat, gliding over slide: beats."
+  @doc "Notes one after another as one note, of the first note's pitch and options, lasting them all and changing to each later note's pitch at its beat, gliding over slide: beats; a rest, or a note tongue: returns true for, starts a new one."
   def slur(music, opts \\ []) do
     check_keyword("slur", opts)
-    [first | rest] = notes = slurred(item(music))
+    {tongue, opts} = Keyword.pop(opts, :tongue)
+
+    if tongue != nil and not is_function(tongue, 3) do
+      tongue = inspect(tongue)
+
+      raise ArgumentError,
+            "slur takes tongue: as a function of the beat, the pitch before and the pitch, not #{tongue}"
+    end
+
     {slide, opts} = Keyword.pop(opts, :slide)
+
+    case runs(slurred(item(music)), tongue) do
+      [[%Note{} | _] = run] -> slurred_note(run, slide, opts)
+      runs -> %Seq{items: Enum.map(runs, &slurred_run(&1, slide, opts))}
+    end
+  end
+
+  defp slurred_run(%Rest{} = rest, _slide, _opts), do: rest
+  defp slurred_run(run, slide, opts), do: slurred_note(run, slide, opts)
+
+  # The notes one after another as runs to slur and rests between them; a rest ends a run, and so
+  # does a note that tongue: says the player starts afresh.
+  defp runs(items, tongue) do
+    {runs, run, _beat} =
+      Enum.reduce(items, {[], [], 0}, fn
+        %Rest{beats: beats} = rest, {runs, run, beat} ->
+          {[rest | closed(run, runs)], [], beat + beats}
+
+        note, {runs, [], beat} ->
+          {runs, [note], beat + note.beats}
+
+        note, {runs, [previous | _] = run, beat} ->
+          if tongue && tongue.(beat, previous.pitch, note.pitch) == true do
+            {closed(run, runs), [note], beat + note.beats}
+          else
+            {runs, [note | run], beat + note.beats}
+          end
+      end)
+
+    Enum.reverse(closed(run, runs))
+  end
+
+  defp closed([], runs), do: runs
+  defp closed(run, runs), do: [Enum.reverse(run) | runs]
+
+  defp slurred_note([first | rest] = notes, slide, opts) do
     beats = Enum.sum(Enum.map(notes, & &1.beats))
 
     {own, _} =
@@ -648,18 +692,18 @@ defmodule Mx.Music do
   end
 
   defp slurred(%Note{pitch: pitch} = note) when is_number(pitch), do: [note]
+  defp slurred(%Rest{} = rest), do: [rest]
 
   defp slurred(other) do
     found =
       case other do
         %struct{} = written when struct in [Note, Sample, MIDI, Message] -> written(written)
-        %Rest{beats: beats} -> "a rest of #{beats} beats"
         %Together{} -> "notes together"
         %Part{name: name} -> "the part #{name}"
         other -> inspect(other)
       end
 
-    raise ArgumentError, "slur takes notes one after another, not #{found}"
+    raise ArgumentError, "slur takes notes and rests one after another, not #{found}"
   end
 
   defp slid(nil, _from, _to), do: []

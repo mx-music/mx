@@ -100,6 +100,7 @@ slur(seq(a4: 1, c5: 1, e5: 2), slide: 0.1)
 
 `each` gives options to every note that has none of its own.
 `slur` joins notes into one that changes pitch, with no new attack.
+A rest in a slur starts a new note after it, and `tongue: fn beat, from, to -> from == to end` starts one wherever it returns true.
 
 ### Measured
 

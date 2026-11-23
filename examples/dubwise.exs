@@ -590,36 +590,12 @@ defmodule Dubwise do
   end
 
   # Each run of different notes slurred into one held note that slides between them, moved by some
-  # semitones.
+  # semitones; a rest, a repeated note or a note on the beat starts a new note, as the player
+  # tongues it.
   defp legato(notes, shift \\ 0) do
-    {notes, _} =
-      Enum.map_reduce(notes, 0, fn {name, beats}, onset ->
-        {{name, beats, onset}, onset + beats}
-      end)
-
-    notes
-    |> Enum.chunk_while([], &run/2, fn
-      [] -> {:cont, []}
-      run -> {:cont, Enum.reverse(run), []}
-    end)
-    |> seq(&held(&1, shift))
-  end
-
-  # A rest, a repeated note or a note on the beat starts a new note, as the player tongues it.
-  defp run(item, []), do: {:cont, [item]}
-
-  defp run({name, _, onset} = item, [{last, _, _} | _] = run) do
-    if :r in [name, last] or name == last or onset == trunc(onset) do
-      {:cont, Enum.reverse(run), [item]}
-    else
-      {:cont, [item | run]}
-    end
-  end
-
-  defp held([{:r, length, _}], _shift), do: rest(length)
-
-  defp held(run, shift) do
-    slur(seq(run, fn {name, beats, _} -> note(pitch(name) + shift, beats) end))
+    slur(transpose(seq(notes), shift),
+      tongue: fn beat, from, to -> from == to or beat == trunc(beat) end
+    )
   end
 
   # The siren: a swoop up from A4 to A6, then a wail between A6 and E6, and down again.

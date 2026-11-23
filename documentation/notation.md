@@ -960,7 +960,9 @@ part(:lead, slur(seq(a4: 1, c5: 1, e5: 2), slide: 0.1, vibrato: 0.08), synth: :f
 - A note that repeats the pitch before it writes no change, so the note is held on, and a later note's options are left out.
 - `slide:` glides each change over that many beats, and without it a change jumps; given a function, it is called with the pitch left and the pitch reached, as numbers, and returns the beats, so `slide: fn from, to -> if(abs(to - from) > 4, do: 0.1, else: 0.01) end` slides audibly only on a shift of more than a third.
 - Every other option goes to the note, over the first note's own, and `changes:` are kept beside the slur's own, which come first at one beat.
-- The music is notes in a `seq`, with seqs and repeats inside it; a rest, a chord, a hit, a sample, notes together or a part is refused.
+- The music is notes and rests in a `seq`, with seqs and repeats inside it; a chord, a hit, a sample, notes together or a part is refused.
+- A rest ends the note sounding and lasts as silence, and the note after it starts a new slurred note, so `slur(seq(a4: 1, c5: 1, r: 1, e5: 1))` is a note that moves from A4 to C5, a beat of silence and E5; every note the slur makes takes the slur's options.
+- `tongue:` says where the player starts a new note, as a wind player tongues one: it is called for each note after the first of a run with the beat the note starts on, counted from the start of the music, the pitch before it and its own, as numbers, and where it returns true the note starts a new slurred note instead of a change. `slur(phrase, tongue: fn beat, from, to -> from == to or beat == trunc(beat) end)` tongues a repeated note and every note on the beat.
 
 ## Live audio
 

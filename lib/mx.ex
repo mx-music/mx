@@ -148,9 +148,12 @@ defmodule Mx do
   Notes one after another as one note whose pitch changes while it sounds, as `~` writes in a pattern: it starts on the first note, with its options, lasts as long as all of them, and changes to each later note's pitch at the beat that note starts.
   A note that repeats the pitch before it is held on, with no change, and a later note's options are left out.
   `slide:` glides each change over that many beats, or over what a function of the pitch left and the pitch reached returns; every other option goes to the note, and `changes:` are kept beside the slur's own.
-  The music is notes in a seq, with seqs and repeats inside it.
+  The music is notes and rests in a seq, with seqs and repeats inside it.
+  A rest ends the note sounding and lasts as silence, and the note after it starts a new slurred note, so a slur with rests is several notes and silences one after another.
+  `tongue:` takes a function of the beat a note starts on, counted from the start of the music, the pitch before it and its own, and the note starts a new slurred note where it returns true, as a player tongues it.
 
       slur(seq(g4: 0.5, bb4: 0.5, c5: 1), slide: 0.05, vibrato: 0.08)
+      slur(seq(a4: 0.5, c5: 0.5, r: 0.5, e5: 1.5), tongue: fn beat, _from, _to -> beat == trunc(beat) end)
 
       iex> slur(seq(c4: 1, e4: 1))
       %Mx.Music.Note{pitch: 60, beats: 2, opts: [changes: [{1, [note: 64]}]]}

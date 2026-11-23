@@ -358,33 +358,9 @@ defmodule MaracatuDub do
       [e4: 1, d4: 0.5, c4: 0.5, a3: 1.5, r: 0.5]
   end
 
-  # Each run of different notes slurred into one held note that slides between them.
+  # Each run of different notes slurred into one held note that slides between them; a rest, a
+  # repeated note or a note on the beat starts a new note, as the player tongues it.
   defp legato(notes) do
-    {notes, _} =
-      Enum.map_reduce(notes, 0, fn {name, beats}, onset ->
-        {{name, beats, onset}, onset + beats}
-      end)
-
-    notes
-    |> Enum.chunk_while([], &run/2, fn
-      [] -> {:cont, []}
-      run -> {:cont, Enum.reverse(run), []}
-    end)
-    |> seq(&held/1)
+    slur(seq(notes), tongue: fn beat, from, to -> from == to or beat == trunc(beat) end)
   end
-
-  # A rest, a repeated note or a note on the beat starts a new note, as the player tongues it.
-  defp run(item, []), do: {:cont, [item]}
-
-  defp run({name, _, onset} = item, [{last, _, _} | _] = run) do
-    if :r in [name, last] or name == last or onset == trunc(onset) do
-      {:cont, Enum.reverse(run), [item]}
-    else
-      {:cont, [item | run]}
-    end
-  end
-
-  defp held([{:r, length, _}]), do: rest(length)
-
-  defp held(run), do: slur(seq(run, fn {name, beats, _} -> note(pitch(name), beats) end))
 end

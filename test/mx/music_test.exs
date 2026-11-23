@@ -837,16 +837,54 @@ defmodule Mx.MusicTest do
       assert message =~ "feel cannot hold a loop"
     end
 
-    test "slur refuses anything but notes one after another" do
+    test "slur refuses anything but notes and rests one after another" do
       for music <- [
-            Mx.seq(c4: 1, r: 1, e4: 1),
+            Mx.seq([Mx.note(:a4, 1), Mx.note([:c4, :e4], 1)]),
             Mx.seq([Mx.note([60, 64], 1), Mx.note(:e4, 1)]),
             Mx.seq([Mx.hit(), Mx.note(:e4, 1)]),
             Mx.together([Mx.note(:c4, 1), Mx.note(:e4, 1)])
           ] do
         error = assert_raise ArgumentError, fn -> Mx.slur(music) end
-        assert error.message =~ ~r/^slur takes notes one after another, not /
+        assert error.message =~ ~r/^slur takes notes and rests one after another, not /
       end
+    end
+
+    test "a rest in a slur ends the note sounding and the note after it starts a new one, and rests at either end stay silence" do
+      music = Mx.slur(Mx.seq(a4: 1, c5: 1, r: 1, e5: 1))
+      assert Mx.beats(music) == 4
+
+      assert music.items == [
+               Mx.note(69, 2, changes: [{1, [note: 72]}]),
+               Mx.rest(1),
+               Mx.note(76, 1)
+             ]
+
+      edges = Mx.slur(Mx.seq(r: 1, a4: 1, c5: 1, r: 2))
+      assert Mx.beats(edges) == 5
+      assert edges.items == [Mx.rest(1), Mx.note(69, 2, changes: [{1, [note: 72]}]), Mx.rest(2)]
+    end
+
+    test "tongue: starts a new note where it returns true, given the beat from the music's start and both pitches" do
+      on_beat = fn beat, _from, _to -> beat == trunc(beat) end
+
+      assert Mx.slur(Mx.seq(a4: 0.5, c5: 0.5, e5: 1), tongue: on_beat).items == [
+               Mx.note(69, 1, changes: [{0.5, [note: 72]}]),
+               Mx.note(76, 1)
+             ]
+
+      repeated = fn _beat, from, to -> from == to end
+
+      assert Mx.slur(Mx.seq(a4: 1, a4: 1, c5: 1), tongue: repeated).items == [
+               Mx.note(69, 1),
+               Mx.note(69, 2, changes: [{1, [note: 72]}])
+             ]
+
+      assert Mx.slur(Mx.seq(a4: 1, a4: 1, c5: 1)) == Mx.note(69, 3, changes: [{2, [note: 72]}])
+    end
+
+    test "the slur's options go to each note it makes" do
+      music = Mx.slur(Mx.seq(a4: 1, r: 1, c5: 1), slide: 0.1, vel: 0.6)
+      assert [%{opts: [vel: 0.6]}, %Mx.Music.Rest{}, %{opts: [vel: 0.6]}] = music.items
     end
 
     @tag :tmp_dir

@@ -578,18 +578,12 @@ defmodule Dub do
     ]
   end
 
+  # Each run of different notes slurred into one held note an octave down; a rest, a repeated note
+  # or a note on the beat starts a new note, as the player tongues it.
   defp legato(notes) do
-    {notes, _} =
-      Enum.map_reduce(notes, 0, fn {name, beats}, onset ->
-        {{name, beats, onset}, onset + beats}
-      end)
-
-    notes
-    |> Enum.chunk_while([], &run/2, fn
-      [] -> {:cont, []}
-      run -> {:cont, Enum.reverse(run), []}
-    end)
-    |> seq(&held/1)
+    slur(transpose(seq(notes), -12),
+      tongue: fn beat, from, to -> from == to or rem(round(beat * 8), 12) == 0 end
+    )
   end
 
   # The ritornello's melody, bar by bar, with each bar's pickup into the next at its end.
@@ -762,19 +756,4 @@ defmodule Dub do
   # A snare pickup into the second half of the riddim.
   defp snare(4), do: at([{5, hit(vel: 0.4)}, {5.5, hit(vel: 0.7)}], 6)
   defp snare(_bar), do: rest(6)
-
-  # A rest, a repeated note or a note on the beat starts a new note, as the player tongues it.
-  defp run(item, []), do: {:cont, [item]}
-
-  defp run({name, _, onset} = item, [{last, _, _} | _] = run) do
-    if :r in [name, last] or name == last or rem(round(onset * 8), 12) == 0 do
-      {:cont, Enum.reverse(run), [item]}
-    else
-      {:cont, [item | run]}
-    end
-  end
-
-  defp held([{:r, length, _}]), do: rest(length)
-
-  defp held(run), do: slur(seq(run, fn {name, beats, _} -> note(pitch(name) - 12, beats) end))
 end
