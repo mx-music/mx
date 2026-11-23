@@ -494,6 +494,41 @@ defmodule Mix.Tasks.Mx.FitTest do
       assert_in_delta recording, 0, 0.2
     end
 
+    test "a check gives the 50 ms furthest off in ERB bands, and where it starts after the strike" do
+      rate = Mxs.render_rate()
+      base = with_floor(struck_note(60, 2))
+
+      # A tone at 3 kHz from 0.6 to 0.7 seconds after the strike, which the render lacks.
+      burst =
+        for {sample, index} <- Enum.with_index(base) do
+          time = index / rate - 0.8
+          tone = if time >= 0 and time < 0.1, do: 0.02 * :math.sin(2 * :math.pi() * 3000 * time)
+          sample + (tone || 0.0)
+        end
+
+      same = Mxs.Native.check_struck(struck(base), packed(base))
+      {gap, _from} = same.stretch
+      assert gap < 0.05
+
+      off = Mxs.Native.check_struck(struck(burst), packed(base))
+      {gap, from} = off.stretch
+      assert gap > 3 * off.erb
+      # A window of 80 ms holds part of the tone when it is centred from 0.56 to 0.74 seconds.
+      assert from >= 0.5 and from <= 0.74
+    end
+
+    test "--check prints the 50 ms furthest off in ERB bands, its note and where it starts",
+         ctx do
+      write_wav(ctx.tmp_dir, "c4.wav", struck_note(60, 2))
+      list = write_list(ctx, ["C4 127 kept c4.wav"])
+
+      output =
+        capture_io(fn -> Mix.Tasks.Mx.Fit.run(["piano", "--struck", list, "--check"]) end)
+
+      assert output =~
+               ~r/^furthest off over 50 ms: [\d.]+ dB from \d+ ms after the strike, c4 vel 127, the fit [\d.]+$/m
+    end
+
     test "the pitch of the checks names each note a render plays more than 5 cents from its name" do
       base = with_floor(struck_note(60, 2))
       sharp = with_floor(struck_note(Mx.Signal.hz(60) * 2 ** (8 / 1200), 2))

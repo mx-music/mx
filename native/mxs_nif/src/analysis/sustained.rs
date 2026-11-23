@@ -675,7 +675,9 @@ pub fn check(recording: &[f64], rate: f64, rendered: &[f64], render_rate: f64, b
     let mut per_band = vec![(0.0, 0usize); bands.len()];
     // The note is compared until a second after it is let go, so a sound later in its stretch, such as the same note played again, is not counted.
     let until = ((theirs.release + 1.0 + LEAD) / HOP).round() as usize;
+    let mut per_frame = vec![];
     for (fa, fb) in a.iter().zip(&b).take(until) {
+        per_frame.push((0.0, 0));
         for (k, (x, y)) in fa.iter().zip(fb).enumerate() {
             let (low, high) = bands[k];
             let floor = theirs.note.floor.at((low * high).sqrt()) + 10.0 * ((high - low) / theirs.note.spectra.bin).max(1.0).log10();
@@ -685,13 +687,16 @@ pub fn check(recording: &[f64], rate: f64, rendered: &[f64], render_rate: f64, b
                 gaps.push(gap.abs());
                 per_band[k].0 += gap;
                 per_band[k].1 += 1;
+                let frame = per_frame.last_mut().unwrap();
+                *frame = (frame.0 + gap.abs(), frame.1 + 1);
             }
         }
     }
+    let stretch = fit::furthest_stretch(&per_frame, theirs.note.spectra.window);
     let erb = if gaps.is_empty() { 0.0 } else { gaps.iter().sum::<f64>() / gaps.len() as f64 };
     let bands = bands.iter().zip(per_band).map(|((low, high), (sum, count))| ((low * high).sqrt(), sum / count.max(1) as f64, count)).collect();
     let cents = |freq: f64| 1200.0 * (freq / hz(note)).log2();
-    fit::Check { partials, erb, bands, levels: (total_theirs, total_ours), pitch: (cents(theirs.note.f0), cents(ours.note.f0)) }
+    fit::Check { partials, erb, bands, stretch, levels: (total_theirs, total_ours), pitch: (cents(theirs.note.f0), cents(ours.note.f0)) }
 }
 
 /// How far the fit's own render of a held note, its figures played as sines and noise with their vibrato and no synth, is from the recording.

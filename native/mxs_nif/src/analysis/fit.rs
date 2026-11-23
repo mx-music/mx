@@ -439,6 +439,8 @@ pub struct Check {
     pub partials: Vec<PartialGap>,
     pub erb: f64,
     pub bands: Vec<(f64, f64, usize)>,
+    /// The mean gap in ERB bands over the 50 ms furthest off, and the seconds after the strike its frames' windows are centred from.
+    pub stretch: (f64, f64),
     /// The recording's partials and the render's over their first half second, in dB.
     pub levels: (f64, f64),
     /// The cents the recording's fundamental and the render's are from the note's name.
@@ -504,10 +506,10 @@ pub fn check(recording: &[f64], rate: f64, rendered: &[f64], render_rate: f64, n
             }
         })
         .collect();
-    let (erb, bands) = erb_gap(&theirs, &ours, ratio, &erb_bands_under(top, rate));
+    let (erb, bands, stretch) = erb_gap(&theirs, &ours, ratio, &erb_bands_under(top, rate));
     let cents = |freq: f64| 1200.0 * (freq / hz(note)).log2();
     let pitch = (cents(anchor), cents(anchor * ratio));
-    Check { partials, erb, bands, levels: (10.0 * total_theirs.log10(), 10.0 * total_ours.log10()), pitch }
+    Check { partials, erb, bands, stretch, levels: (10.0 * total_theirs.log10(), 10.0 * total_ours.log10()), pitch }
 }
 
 /// How far the fit's own render of a recording, its figures played as sines and noise with no synth, is from the recording: the closest a synth playing the figures can come.
@@ -656,8 +658,9 @@ pub fn erb_levels(spectra: &partials::Spectra, bands: &[(f64, f64)]) -> Vec<Vec<
 }
 
 // The mean gap over every band and frame where either stands clear of the recording's floor, the render brought to the recording's total over its first half second.
-// Also each band's centre, its mean signed gap, and the frames it was compared in.
-fn erb_gap(theirs: &Note, ours: &partials::Spectra, ratio: f64, bands: &[(f64, f64)]) -> (f64, Vec<(f64, f64, usize)>) {
+// Also each band's centre, its mean signed gap, and the frames it was compared in, and the stretch furthest off.
+#[allow(clippy::type_complexity)]
+fn erb_gap(theirs: &Note, ours: &partials::Spectra, ratio: f64, bands: &[(f64, f64)]) -> (f64, Vec<(f64, f64, usize)>, (f64, f64)) {
     // The render's bands move with its pitch, so a partial a few cents off stays in the band it shares with the recording.
     let moved: Vec<(f64, f64)> = bands.iter().map(|(low, high)| (low * ratio, high * ratio)).collect();
     let (a, b) = (erb_levels(&theirs.spectra, &bands), erb_levels(ours, &moved));
@@ -666,7 +669,9 @@ fn erb_gap(theirs: &Note, ours: &partials::Spectra, ratio: f64, bands: &[(f64, f
     let shift = total(&a) - total(&b);
     let mut gaps = vec![];
     let mut per_band = vec![(0.0, 0); bands.len()];
+    let mut per_frame = vec![];
     for (fa, fb) in a.iter().zip(&b) {
+        per_frame.push((0.0, 0));
         for (k, (x, y)) in fa.iter().zip(fb).enumerate() {
             let (low, high) = bands[k];
             let floor = theirs.floor.at((low * high).sqrt()) + 10.0 * ((high - low) / theirs.spectra.bin).max(1.0).log10();
@@ -676,12 +681,29 @@ fn erb_gap(theirs: &Note, ours: &partials::Spectra, ratio: f64, bands: &[(f64, f
                 gaps.push(gap.abs());
                 per_band[k].0 += gap;
                 per_band[k].1 += 1;
+                let frame = per_frame.last_mut().unwrap();
+                *frame = (frame.0 + gap.abs(), frame.1 + 1);
             }
         }
     }
     let mean = if gaps.is_empty() { 0.0 } else { gaps.iter().sum::<f64>() / gaps.len() as f64 };
     let per_band = bands.iter().zip(per_band).map(|((low, high), (sum, count))| ((low * high).sqrt(), sum / count.max(1) as f64, count)).collect();
-    (mean, per_band)
+    (mean, per_band, furthest_stretch(&per_frame, theirs.spectra.window))
+}
+
+/// The seconds of the stretch a check names as furthest off.
+const STRETCH: f64 = 0.05;
+
+/// The mean gap over the `STRETCH` of frames furthest off, each frame given as the sum of its bands' gaps and their count, and the seconds after the strike the first of its frames is centred at.
+pub fn furthest_stretch(frames: &[(f64, usize)], window: f64) -> (f64, f64) {
+    let span = (STRETCH / HOP).round() as usize;
+    (0..frames.len().saturating_sub(span - 1))
+        .filter_map(|from| {
+            let (sum, count) = frames[from..from + span].iter().fold((0.0, 0), |(sum, count), frame| (sum + frame.0, count + frame.1));
+            (count > 0).then(|| (sum / count as f64, from as f64 * HOP - LEAD + window / 2.0))
+        })
+        .max_by(|a, b| a.0.total_cmp(&b.0))
+        .unwrap_or((0.0, 0.0))
 }
 
 /// The level of a note's loudest partial as it starts, for ordering.

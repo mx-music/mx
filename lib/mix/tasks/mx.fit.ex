@@ -22,6 +22,7 @@ defmodule Mix.Tasks.Mx.Fit do
   `--out` writes the figures to a file, for mxs to play.
   `--notes` with two notes, such as `E1:E6`, keeps the recordings from the first to the second.
   `--check` renders the synth at each recording's note and velocity and prints how far it is from the recordings, each figure followed by the same figure for the fit's own render, the figures played with no synth, which is the closest the synth can come.
+  The check also names the 50 ms furthest off in ERB bands, the note it is in and where it starts, as a sound can match on average over a note and still be far off for a moment of it.
   `--own` with `--check` prints the fit's figures alone and renders no synth, so it runs before the synth plays the figures.
   `--note` and `--vel` with `--check`, such as `--note C2 --vel 80`, print that one recording beside the synth and the fit's own render instead, frame by frame: each partial within 60 dB of the loudest and each ERB band, every 5 ms from 5 ms before the strike to 100 ms after, with the fit's sines and noise apart.
   `--until` with seconds carries the rows on to that time in 24 steps, and `--csv` with a file name also writes the figures as a table.
@@ -298,6 +299,7 @@ defmodule Mix.Tasks.Mx.Fit do
         " dB at the worst, #{note}" <> the_fit(fit && decimals(fit.erb.worst))
 
     IO.puts("ERB bands: #{median}; #{worst}")
+    print_stretch(checks, kind)
     print_pitch(Struck.pitch(checks), render)
     print_partials(checks, first_short)
 
@@ -473,6 +475,18 @@ defmodule Mix.Tasks.Mx.Fit do
   defp signed_cents(cents), do: :erlang.float_to_binary(cents, decimals: 1)
 
   defp off(check), do: Enum.count(check.partials, &(&1.below <= 30 and &1.mean > 2))
+
+  defp print_stretch(checks, kind) do
+    furthest = Enum.max_by(checks, &elem(&1.stretch, 0))
+    {gap, from} = furthest.stretch
+    gap = decimals(gap)
+    ms = round(from * 1000)
+    after_what = if kind == :held, do: "the note starts", else: "the strike"
+    note = Struck.label(furthest)
+    own = furthest[:own] && decimals(elem(furthest.own.stretch, 0))
+    fit = the_fit(own)
+    IO.puts("furthest off over 50 ms: #{gap} dB from #{ms} ms after #{after_what}, #{note}#{fit}")
+  end
 
   defp the_fit(nil), do: ""
   defp the_fit(false), do: ""

@@ -109,7 +109,7 @@ defmodule Mx.Fit.Struck do
 
   @doc """
   Renders `synth` at each recording's note and velocity, with `options` such as `[pedal: 1]`, and compares it with the recording.
-  Returns one check a recording, with its `note`, `velocity`, `kept`, `erb` gap, `levels` of the recording and the render over their first half second, and `partials`, each partial with its `ratio`, `harmonic`, `below` the loudest in dB, `strike` gap and `mean` gap.
+  Returns one check a recording, with its `note`, `velocity`, `kept`, `erb` gap, `stretch` as the mean gap in ERB bands over the 50 ms furthest off and the seconds after the strike it starts at, `levels` of the recording and the render over their first half second, and `partials`, each partial with its `ratio`, `harmonic`, `below` the loudest in dB, `strike` gap and `mean` gap.
   """
   def check(synth, recordings, options \\ []) when is_list(recordings) do
     recordings
