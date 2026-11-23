@@ -6,9 +6,9 @@ defmodule Mx.Examples.PandeiroTest do
   @song "examples/solo/pandeiro.exs"
   @virtuoso "examples/pandeiro/virtuoso.exs"
 
-  test "the solo plays only the pandeiro" do
-    for pass <- 0..13 do
-      loops = Regex.scan(~r/^(\w+), pass /m, print(pass), capture: :all_but_first)
+  test "the solo plays only the pandeiro, a strain of 32 beats to each pass" do
+    for pass <- 0..7 do
+      loops = Regex.scan(~r/^(\w+), pass \d, 32 beats/m, print(pass), capture: :all_but_first)
 
       assert Enum.sort(List.flatten(loops)) ==
                ["pandeiro_heel", "pandeiro_jingles", "pandeiro_slap", "pandeiro_thumb"]
@@ -17,37 +17,39 @@ defmodule Mx.Examples.PandeiroTest do
     refute print(0) =~ "sample "
   end
 
-  test "the choro closes the thumb's bass on each bar's first beat and opens it on its second" do
-    choro = print(0)
-    assert choro =~ ~r/pandeiro_thumb, pass 0.*\nbeat 0 +play vel: 0.4\nbeat 1 +play vel: 0.75\n/s
-    assert choro =~ ~r/pandeiro_heel, pass 0.*\nbeat 0.5 +play vel: 0.55\nbeat 1.5 +play /s
-    assert choro =~ ~r/pandeiro_jingles, pass 0.*\nbeat 0.25 +play vel: 0.5\nbeat 0.75 /s
-    assert choro =~ ~r/pandeiro_slap, pass 0, [^\n]*\n\z/
+  test "strain A mutes the thumb's bass on each bar's first beat and opens it on its second" do
+    thumb = strokes(print(0), "pandeiro_thumb")
+    assert [{first, 1}, {second, 0}, {third, 1}, {fourth, 0} | _] = thumb
+
+    for {beat, want} <- [{first, 0}, {second, 1}, {third, 2}, {fourth, 3}],
+        do: assert_in_delta(beat, want, 0.02)
   end
 
-  test "the samba de roda slaps around the first beat's bass" do
-    assert print(4) =~
-             ~r/pandeiro_slap, pass 4.*\nbeat 0.25 +play vel: 0.8\nbeat 0.75 +play vel: 0.8\n/s
+  test "the strains play in the order A A B B A C C A" do
+    slaps = fn pass -> pass |> print() |> strokes("pandeiro_slap") |> length() end
+    counts = Enum.map(0..7, slaps)
+    [first, second, trio] = [Enum.at(counts, 0), Enum.at(counts, 2), Enum.at(counts, 5)]
+    assert length(Enum.uniq([first, second, trio])) == 3
+    assert counts == [first, first, second, second, first, trio, trio, first]
   end
 
-  test "the baião accents the heel of its first bar and slaps in its second" do
-    baiao = print(6)
-    assert baiao =~ ~r/pandeiro_heel, pass 6.*\nbeat 1.5 +play vel: 0.9\n/s
-    assert baiao =~ ~r/pandeiro_slap, pass 6.*\nbeat 3.25 +play vel: 0.8\n/s
+  test "strain B slaps a sixteenth before the second beat of its first bar" do
+    assert [{beat, 1} | _] = strokes(print(2), "pandeiro_slap")
+    assert_in_delta beat, 0.75, 0.04
   end
 
-  test "the forró accents the fingertips of its second bar" do
-    assert print(8) =~ ~r/pandeiro_jingles, pass 8.*\nbeat 2.75 +play vel: 0.9\n/s
+  test "strain C strikes an accented open bass on its second bar, and a slap after it" do
+    strain = print(5)
+    thumb = strokes(strain, "pandeiro_thumb")
+    assert Enum.any?(thumb, fn {beat, muted} -> abs(beat - 2) < 0.02 and muted == 0 end)
+    assert strain =~ ~r/pandeiro_thumb, pass 5.*\nbeat 2\.\d+ +play vel: 0\.[89]\d*, muted: 0/s
+    assert [{beat, 1} | _] = strokes(strain, "pandeiro_slap")
+    assert_in_delta beat, 2.75, 0.04
   end
 
-  test "the coco slaps in each bar and doubles the thumb" do
-    coco = print(10)
-
-    assert coco =~
-             ~r/pandeiro_slap, pass 10.*\nbeat 1.25 +play vel: 0.8\nbeat 2.75 +play vel: 0.8\n/s
-
-    assert coco =~
-             ~r/pandeiro_thumb, pass 10.*\nbeat 3.25 +play vel: 0.75\nbeat 3.5 +play vel: 0.75\n/s
+  test "a strain ends on a roll of sixteen soft strokes on the jingles over its last beat" do
+    roll = for {beat, 1} <- strokes(print(0), "pandeiro_jingles"), beat >= 30.99, do: beat
+    assert length(roll) == 16
   end
 
   test "the virtuoso solo starts on a coco groove and splits sixteenths into ruffs" do
@@ -104,6 +106,17 @@ defmodule Mx.Examples.PandeiroTest do
 
     assert %{peak: peak, clips: 0} = Mx.Recording.level(out)
     assert peak < -0.1
+  end
+
+  # The strokes a part plays in a printed pass, as {beat, muted}.
+  defp strokes(printed, part) do
+    [_before, after_heading] = String.split(printed, ~r/^#{part}, pass [^\n]*\n/m, parts: 2)
+    [rows | _] = String.split(after_heading, ~r/^pandeiro_\w+, pass /m, parts: 2)
+
+    for [beat, muted] <-
+          Regex.scan(~r/^beat ([\d.]+) +play .*muted: (\d)/m, rows, capture: :all_but_first) do
+      {String.to_float(if(beat =~ ".", do: beat, else: beat <> ".0")), String.to_integer(muted)}
+    end
   end
 
   defp print(pass, song \\ @song) do

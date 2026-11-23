@@ -134,7 +134,7 @@ Its files are fetched as the song loads.
 
 `examples/solo/ganza.exs` is the ganzá in four samba patterns of sixteenths, down and up strokes, with the large shaker in eighths under it.
 
-`examples/solo/pandeiro.exs` is the pandeiro on its own, in choro, samba de roda, baião, forró and coco de embolada.
+`examples/solo/pandeiro.exs` is the pandeiro on its own, playing its line from `examples/choro.exs`: the choro groove with a muted and an open bass, a strain that leans to samba, and a trio of accented basses and slaps, each strain ending on a roll.
 
 `examples/pandeiro/virtuoso.exs` is a pandeiro solo whose hand never stops rocking: a coco groove and its ruffs, then accents every three and every five sixteenths that cross the bar line, and every fourth stroke of sextuplets.
 
