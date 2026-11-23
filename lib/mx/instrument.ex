@@ -14,6 +14,7 @@ defmodule Mx.Instrument do
   An option is read once, when the note starts, unless the synth reads it with `follow/1`, which glides with each change the song makes while the note sounds.
   """
 
+  alias Mx.Engine.Mxs.Native
   alias Mx.Instrument.{Expr, Ops, Vocabulary}
 
   @envelope [
@@ -594,7 +595,7 @@ defmodule Mx.Instrument do
       Enum.reduce_while(module.__effects__(), :ok, fn effect, :ok ->
         name = Atom.to_string(effect.name)
 
-        case Mx.Engine.Mxs.Native.register_effect_graph(
+        case Native.register_effect_graph(
                engine,
                name,
                specs(effect),
@@ -613,7 +614,7 @@ defmodule Mx.Instrument do
       table = Atom.to_string(name) <> Path.extname(file)
 
       with {:ok, bytes} <- File.read(file),
-           :ok <- Mx.Engine.Mxs.Native.load_table(table, bytes) do
+           :ok <- Native.load_table(table, bytes) do
         {:cont, :ok}
       else
         {:error, reason} when is_atom(reason) ->
@@ -631,7 +632,7 @@ defmodule Mx.Instrument do
         for {matches, sound} <- synth.clauses,
             do: {Enum.map(matches, &encode_match/1), encode(sound)}
 
-      case Mx.Engine.Mxs.Native.register_graph(
+      case Native.register_graph(
              engine,
              Atom.to_string(synth.name),
              specs(synth),

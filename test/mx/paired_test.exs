@@ -281,8 +281,8 @@ defmodule Mx.PairedTest do
       if module, do: :ok = Mx.Instrument.register(engine, module)
 
       events = [
-        {0.0, Mx.Engine.Mxs.event({:note, 1, :cello, nil, [note: 48, sustain: 2.5], nil})},
-        {1.2, Mx.Engine.Mxs.event({:set, {:sounds, [1]}, note: to})}
+        {0.0, Mxs.event({:note, 1, :cello, nil, [note: 48, sustain: 2.5], nil})},
+        {1.2, Mxs.event({:set, {:sounds, [1]}, note: to})}
       ]
 
       :ok = Native.play(engine, events)
@@ -304,8 +304,8 @@ defmodule Mx.PairedTest do
       if module, do: :ok = Mx.Instrument.register(engine, module)
 
       events = [
-        {0.0, Mx.Engine.Mxs.event({:note, 1, :trumpet, nil, [note: 72, sustain: 2.5], nil})},
-        {1.2, Mx.Engine.Mxs.event({:set, {:sounds, [1]}, note: to})}
+        {0.0, Mxs.event({:note, 1, :trumpet, nil, [note: 72, sustain: 2.5], nil})},
+        {1.2, Mxs.event({:set, {:sounds, [1]}, note: to})}
       ]
 
       :ok = Native.play(engine, events)
