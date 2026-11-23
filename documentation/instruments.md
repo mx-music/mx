@@ -224,6 +224,7 @@ song.exs:9: an if cannot depend on the note's options; pick between two values w
 **Going further.**
 
 - `Mx.Instrument` documents `attr`, `envelope_attrs`, `defsound` for pieces a synth calls, `defeffect` for an effect of your own, and the checks made at each step.
+- A table you fit with `mix mx.fit` is declared once in the module, as `table :my_harp, "figures/my_harp.mxf"` beside the module's file, and a synth plays it with `figures(:my_harp, play: :evened, level: 0.2)`; mx sends it to the engine once, when the module registers.
 - `examples/trap.exs`, `examples/amapiano.exs` and `examples/funk_br.exs` each define the synths their song needs, such as an 808 bass.
 - The folder `test/support/instruments` holds a marimba, a flute and a tabla written this way, as longer examples.
 - The folder `test/support/paired` holds mxs's own voices written this way, each checked to render as its Rust form does: `rimshot.ex` is a drum of modes, and `viola.ex` a bowed string, built on `bowed.ex`.

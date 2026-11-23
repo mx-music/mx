@@ -280,6 +280,15 @@ fn register_graph<'a>(env: Env<'a>, resource: ResourceArc<EngineResource>, name:
     }
 }
 
+/// Loads a table fitted to recordings outside mxs, such as one mx's fitting writes, under the name of its file, for a synth's figures to play.
+#[rustler::nif(schedule = "DirtyIo")]
+fn load_table<'a>(env: Env<'a>, file: String, bytes: Binary) -> Term<'a> {
+    match synths::load_table(&file, bytes.as_slice()) {
+        Ok(()) => ok().encode(env),
+        Err(reason) => (error(), reason).encode(env),
+    }
+}
+
 /// Registers an effect traced by defeffect: its options' declarations, and the graph of one channel.
 #[rustler::nif]
 fn register_effect_graph<'a>(env: Env<'a>, resource: ResourceArc<EngineResource>, name: String, specs: Vec<SpecTerm>, graph: Term<'a>) -> NifResult<Term<'a>> {

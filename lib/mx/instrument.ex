@@ -50,6 +50,7 @@ defmodule Mx.Instrument do
           attr: 3,
           envelope_attrs: 0,
           envelope_attrs: 1,
+          table: 2,
           defsynth: 2,
           defeffect: 2,
           tail: 1,
@@ -61,6 +62,7 @@ defmodule Mx.Instrument do
       Module.register_attribute(__MODULE__, :mx_pending_attrs, accumulate: true)
       Module.register_attribute(__MODULE__, :mx_synths, accumulate: true)
       Module.register_attribute(__MODULE__, :mx_effects, accumulate: true)
+      Module.register_attribute(__MODULE__, :mx_tables, accumulate: true)
       @before_compile Mx.Instrument
       @after_compile Mx.Instrument
     end
@@ -149,6 +151,26 @@ defmodule Mx.Instrument do
                              Keyword.get(unquote(defaults), unquote(name), unquote(default)),
                            doc: unquote(doc)}
       end
+    end
+  end
+
+  @doc """
+  Declares a table fitted to recordings outside mxs, such as one `mix mx.fit` writes, at `path` from the module's own file, for the module's synths to play with `figures/2` by `name`.
+
+  The table is read and sent to the engine once, when the module registers, never with a note.
+
+  ## Examples
+
+      table :my_harp, "figures/my_harp.mxf"
+
+      defsynth my_harp(_o), do: figures(:my_harp, play: :evened, level: 0.2)
+  """
+  defmacro table(name, path) do
+    file = Path.expand(path, Path.dirname(__CALLER__.file))
+
+    quote do
+      @external_resource unquote(file)
+      @mx_tables {unquote(name), unquote(file)}
     end
   end
 
@@ -356,8 +378,12 @@ defmodule Mx.Instrument do
   defmacro __before_compile__(env) do
     synths = env.module |> Module.get_attribute(:mx_synths) |> Enum.reverse() |> Macro.escape()
     effects = env.module |> Module.get_attribute(:mx_effects) |> Enum.reverse() |> Macro.escape()
+    tables = env.module |> Module.get_attribute(:mx_tables) |> Enum.reverse()
 
     quote do
+      @doc false
+      def __tables__, do: unquote(tables)
+
       @doc false
       def __synths__, do: Mx.Instrument.trace(__MODULE__, unquote(synths), unquote(env.file))
 
@@ -557,12 +583,14 @@ defmodule Mx.Instrument do
 
   @doc """
   Registers each synth and effect of `module` with the mxs engine `engine`, as mx's NIF module, Mx.Engine.Mxs.Native, starts it.
+  It first loads each table the module declares with `table/2`.
 
   Returns `:ok` once every one is registered, or `{:error, reason}` at the first the engine refuses; the ones after it are not registered.
   `known/1` calls it for a running engine, so call it yourself only with an engine you started.
   """
   def register(engine, module) do
-    with :ok <- register_synths(engine, module) do
+    with :ok <- load_tables(module),
+         :ok <- register_synths(engine, module) do
       Enum.reduce_while(module.__effects__(), :ok, fn effect, :ok ->
         name = Atom.to_string(effect.name)
 
@@ -577,6 +605,24 @@ defmodule Mx.Instrument do
         end
       end)
     end
+  end
+
+  # mxs keeps a table for every engine, under its figures name and the file's extension.
+  defp load_tables(module) do
+    Enum.reduce_while(module.__tables__(), :ok, fn {name, file}, :ok ->
+      table = Atom.to_string(name) <> Path.extname(file)
+
+      with {:ok, bytes} <- File.read(file),
+           :ok <- Mx.Engine.Mxs.Native.load_table(table, bytes) do
+        {:cont, :ok}
+      else
+        {:error, reason} when is_atom(reason) ->
+          {:halt, {:error, "no table #{table} at #{file}"}}
+
+        {:error, reason} ->
+          {:halt, {:error, reason}}
+      end
+    end)
   end
 
   defp register_synths(engine, module) do

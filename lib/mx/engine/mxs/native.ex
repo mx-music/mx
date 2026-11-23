@@ -45,6 +45,9 @@ defmodule Mx.Engine.Mxs.Native do
   @doc "Registers a synth traced by defsynth: its options' declarations, and each clause as the options it matches and its graph."
   def register_graph(_engine, _name, _specs, _clauses), do: :erlang.nif_error(:nif_not_loaded)
 
+  @doc "Loads a table fitted to recordings outside mxs under the name of its file, such as `my_harp.mxf`, for a synth's `figures` to play; it stays loaded."
+  def load_table(_file, _bytes), do: :erlang.nif_error(:nif_not_loaded)
+
   @doc "Registers an effect traced by defeffect: its options' declarations, and the graph of one channel."
   def register_effect_graph(_engine, _name, _specs, _graph) do
     :erlang.nif_error(:nif_not_loaded)
