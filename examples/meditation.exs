@@ -114,7 +114,7 @@ defmodule Meditation do
     steps(cells(gat(time)), 1,
       words: words,
       each: fn _step, length ->
-        [vel: 0.5, sustain: length * 0.85, release: min(length * 0.3, 0.3)]
+        [vel: 0.5, held: 0.85, release: min(length * 0.3, 0.3)]
       end
     )
   end

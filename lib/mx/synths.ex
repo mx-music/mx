@@ -33,6 +33,7 @@ defmodule Mx.Synths do
   end
 
   @doc "Whether a synth takes an option."
+  def option?(synth, :held), do: option?(synth, :sustain)
   def option?(%Mx.Sampled{}, option) when is_atom(option), do: Mx.Sampled.option?(option)
 
   def option?(synth, option) when (is_atom(synth) or is_binary(synth)) and is_atom(option) do
@@ -216,6 +217,12 @@ defmodule Mx.Synths do
 
   @doc "Refuses a value a synth's option, or with `{:effect, effect}` an effect's, cannot take: a number outside its range, a name it does not take, or anything but a number where it takes one, naming what it takes."
   def check_value(_synth, :note, _value), do: :ok
+  def check_value(_synth, :held, held) when is_number(held) and held > 0, do: :ok
+
+  def check_value(_synth, :held, held) do
+    held = inspect(held)
+    {:error, "held: takes the share of a note's length it sounds for, above 0, not #{held}"}
+  end
 
   def check_value(synth, option, values) when is_list(values) do
     Enum.find_value(values, :ok, fn value ->

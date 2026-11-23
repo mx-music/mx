@@ -29,7 +29,7 @@ defmodule Accordion do
     pattern
     |> steps(1,
       each: fn _step, beats ->
-        [vel: if(beats < 1, do: 0.5, else: 0.6), sustain: beats * held, release: 0.1] ++ extra
+        [vel: if(beats < 1, do: 0.5, else: 0.6), held: held, release: 0.1] ++ extra
       end
     )
     |> transpose(12 * Keyword.get(opts, :octaves, 0))

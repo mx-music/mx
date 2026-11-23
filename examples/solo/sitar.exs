@@ -69,7 +69,7 @@ defmodule Sitar do
     steps(cells(time), 1,
       words: words,
       each: fn _step, length ->
-        [vel: if(length < 0.5, do: 0.5, else: 0.65), sustain: length * 0.9, release: 0.25]
+        [vel: if(length < 0.5, do: 0.5, else: 0.65), held: 0.9, release: 0.25]
       end
     )
   end

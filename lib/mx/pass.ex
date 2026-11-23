@@ -120,7 +120,7 @@ defmodule Mx.Pass do
       when (is_number(notes) or is_atom(notes) or is_list(notes)) and is_list(opts) do
     %{synth: synth, defaults: defaults} = Process.get(@key)
     chord? = is_list(notes)
-    opts = opts ++ Keyword.drop(defaults, Keyword.keys(opts))
+    opts = opts ++ Keyword.drop(defaults, [:held | Keyword.keys(opts)])
     {strum, opts} = Keyword.pop(opts, :strum, 0)
     notes = Enum.map(List.wrap(notes), &if(&1 == :own_note, do: &1, else: Notes.note(&1)))
 

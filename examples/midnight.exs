@@ -414,7 +414,7 @@ defmodule Midnight do
   # A plain harmonium note; on a held one the bellows ease off.
   defp harmonium_note(name, beats, vel) do
     changes = if beats >= 2, do: [{0.2, amp: 0.35, amp_slide: beats}], else: []
-    note(swara(name, @sa), beats, vel: vel, sustain: beats * 0.9, release: 0.2, changes: changes)
+    note(swara(name, @sa), beats, vel: vel, held: 0.9, release: 0.2, changes: changes)
   end
 
   # In the alap the harmonium answers the last three notes of the oboe's phrase while it breathes.

@@ -12,10 +12,12 @@ In the examples `music` is any music, and lengths are in beats.
 ```elixir
 note(:a4, 1.5)
 note(:a4, 1.5, vel: 0.8, release: 2)
+note(:a4, 2, held: 0.9)
 rest(1)
 ```
 
 A pitch and a length, then options for the synth.
+`held:` sounds the note for a share of its length, here 1.8 beats.
 `rest` is silence.
 
 ### A chord

@@ -318,7 +318,7 @@ defmodule PoeiraNoTerreiro do
 
       [
         vel: min(vel + accent + wobble(step, 0.03), 1),
-        sustain: length * 0.25 * 0.88,
+        held: 0.88,
         release: 0.06
       ]
     end
@@ -363,7 +363,7 @@ defmodule PoeiraNoTerreiro do
 
     button = fn step, length ->
       vel = if rem(step, 8) in [0, 3], do: 0.72, else: 0.6
-      [vel: vel + wobble(step, 0.03), sustain: length * 0.25 * 0.6, release: 0.05]
+      [vel: vel + wobble(step, 0.03), held: 0.6, release: 0.05]
     end
 
     steps(Enum.map(chords, &bars[rhythm][&1]), 0.25, each: button)

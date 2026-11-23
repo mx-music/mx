@@ -4,6 +4,8 @@
 
 ### 1. Enhancements
 
+  * [music] A note takes `held:`, the share of its length it sounds for, as its sustain: on a note, in a part's `defaults:`, in `each`, and in the options of `steps`, `kit` and `at`, each note in a pattern taking a share of its own length; a note's own `sustain:` is kept over a `held:` given around it, and a note given both, a `held:` not above 0 and a hit given one are refused
+  * [music] `each` gives a note a `sustain:` it does not give, where before the note's length was kept
   * [music] `at` places a note written as `{beat, pitch, length}`, or `{beat, pitch, length, options}` with options of its own, and `at(entries, beats, options)` gives options to every such note; a note's own are kept over them, and music placed as `{beat, music}` takes none
   * [effects] Add `wah`, from the next mxs: a resonant low-pass that opens on each note, further the harder it is played, and closes as the note fades, between the notes `cutoff_min` and `cutoff_max`, with `sensitivity` in dB, `clamp_ms`, `relax_ms` and `res`; its song is `examples/effects/wah.exs`
   * [effects] Add `width`, from the next mxs: `side` narrows a part to mono at 0 and widens it up to 2, twice the difference between its sides, and `mono_below` puts everything below a MIDI note in the centre; its song is `examples/effects/width.exs`

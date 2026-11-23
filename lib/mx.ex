@@ -11,9 +11,11 @@ defmodule Mx do
 
   @doc """
   A note of a pitch, given as a name, a number or a list of them played together, lasting some beats, with options for the part's synth.
+  `held:` is the share of its length the note sounds for, taken as its `sustain`; a note given both is refused.
 
       note(:a4, 1.5)
       note(:a4, 1.5, vel: 0.8, sustain: 1)
+      note(:a4, 2, held: 0.9)
       note(chord(:c4, :major), 2, strum: 0.05)
       note([40, 47, 52], 1, vel: [0.8, 0.6, 0.5])
 

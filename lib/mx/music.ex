@@ -139,7 +139,21 @@ defmodule Mx.Music do
       end
     end
 
+    check_held(opts)
     %Note{pitch: pitch(pitch), beats: beats, opts: opts}
+  end
+
+  defp check_held(opts) do
+    if Keyword.has_key?(opts, :held) do
+      if Keyword.has_key?(opts, :sustain) do
+        raise ArgumentError,
+              "a note takes held: or sustain:, not both, as held: is the share of its length its sustain is"
+      end
+
+      with {:error, message} <- Synths.check_value(nil, :held, opts[:held]) do
+        raise ArgumentError, message
+      end
+    end
   end
 
   @doc "A WAV, AIFF or FLAC file by path, a file of a collection as `{collection, name}`, or a file of a GitHub repository as `{:github, repo, ref, path}`, lasting some beats, refusing a sample mx cannot find and an option samples do not take."
@@ -286,6 +300,11 @@ defmodule Mx.Music do
   @doc "A hit of a drum at its own pitch, taking no time, with options for the part's synth."
   def hit(opts \\ []) do
     check_keyword("hit", opts)
+
+    if Keyword.has_key?(opts, :held) do
+      raise ArgumentError, "a hit takes no held:, as it has no length to take a share of"
+    end
+
     %Note{pitch: :own_note, beats: 0, opts: opts}
   end
 
@@ -571,7 +590,7 @@ defmodule Mx.Music do
     check_keyword("at's note #{written}", own)
 
     try do
-      {beat, note(pitch, length, Keyword.merge(opts, own))}
+      {beat, note(pitch, length, own ++ Keyword.drop(opts, Keyword.keys(own)))}
     rescue
       error in ArgumentError ->
         reason = Exception.message(error)
@@ -718,8 +737,16 @@ defmodule Mx.Music do
     map_notes(music, & &1, fn child, _ -> each_loop(child, opts) end)
   end
 
+  # held: and sustain: both say how long a note sounds, so a note giving either takes neither.
   defp each_opts(%Note{opts: own} = note, opts) do
-    added = for {name, value} <- opts, not Keyword.has_key?(own, name), do: {name, value}
+    sounds? = Keyword.has_key?(own, :sustain) or Keyword.has_key?(own, :held)
+
+    added =
+      for {name, value} <- opts,
+          not Keyword.has_key?(own, name),
+          not (sounds? and name in [:sustain, :held]),
+          do: {name, value}
+
     %{note | opts: own ++ added}
   end
 
@@ -1073,7 +1100,7 @@ defmodule Mx.Music do
 
     for note <- own_notes(part.music), do: check_note!(part, note)
 
-    %{part | music: held(part.music, synth, part.defaults)}
+    part
   end
 
   defp load_sampled(name, %Mx.Sampled{} = sampled) do
@@ -1440,7 +1467,7 @@ defmodule Mx.Music do
   # A part's notes and loops in each section, the length each section plays as a pass, and the
   # number of loop passes before each.
   defp part_sections(part, played, lengths) do
-    held = Synths.option?(part.synth, :sustain) and not Keyword.has_key?(part.defaults, :sustain)
+    held = held_share(part)
 
     sections =
       Enum.zip_with(played, lengths, fn events, length ->
@@ -1569,8 +1596,7 @@ defmodule Mx.Music do
     for {part, music} <- song.parts do
       case music do
         {:triggered, on, fun, line, grid} ->
-          held =
-            Synths.option?(part.synth, :sustain) and not Keyword.has_key?(part.defaults, :sustain)
+          held = held_share(part)
 
           Mx.Song.put_music_loop(
             part,
@@ -1773,11 +1799,32 @@ defmodule Mx.Music do
     raise ArgumentError, "a loop's music changes only its own part #{name}, not #{target}"
   end
 
-  defp held_opts(true, %Note{opts: opts, beats: beats}) when beats > 0 do
-    if Keyword.has_key?(opts, :sustain), do: opts, else: opts ++ [sustain: beats]
+  # The share of its length a note sounds for when it gives no sustain: or held:, from the part's
+  # defaults, or false where the synth takes no sustain or the defaults give one.
+  defp held_share(part) do
+    if Synths.option?(part.synth, :sustain) and not Keyword.has_key?(part.defaults, :sustain) do
+      Keyword.get(part.defaults, :held, 1)
+    else
+      false
+    end
   end
 
-  defp held_opts(_held, %Note{opts: opts}), do: opts
+  # The first of a note's sustain: and held: decides; a held: becomes its share of the length.
+  defp held_opts(share, %Note{opts: opts, beats: beats}) do
+    case Enum.split_while(opts, &(elem(&1, 0) not in [:sustain, :held])) do
+      {before, [{:held, held} | rest]} ->
+        before ++ [{:sustain, held * beats}] ++ Keyword.drop(rest, [:sustain, :held])
+
+      {_before, [{:sustain, _} | _]} ->
+        Keyword.delete(opts, :held)
+
+      {_opts, []} when share != false and beats > 0 ->
+        opts ++ [sustain: share * beats]
+
+      {_opts, []} ->
+        opts
+    end
+  end
 
   defp format_beats(:infinity), do: "endless"
   defp format_beats(beats) when beats == trunc(beats), do: Integer.to_string(trunc(beats))
@@ -2074,26 +2121,6 @@ defmodule Mx.Music do
         raise ArgumentError, "part #{name}: #{message}, in #{written}"
     end
   end
-
-  # A note lasts its length on a synth that takes sustain, unless the note or the part's defaults
-  # give one.
-  defp held(music, synth, defaults) do
-    if Synths.option?(synth, :sustain) and not Keyword.has_key?(defaults, :sustain) do
-      map_own_notes(music, fn
-        %Note{opts: opts, beats: beats} = note ->
-          if beats == 0 or Keyword.has_key?(opts, :sustain) do
-            note
-          else
-            %{note | opts: opts ++ [sustain: beats]}
-          end
-      end)
-    else
-      music
-    end
-  end
-
-  defp map_own_notes(%Part{} = part, _fun), do: part
-  defp map_own_notes(music, fun), do: map_notes(music, fun, &map_own_notes/2)
 
   defp map_notes(music, fun), do: map_notes(music, fun, &map_notes/2)
 

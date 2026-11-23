@@ -127,36 +127,21 @@ defmodule Odeon do
   # The melody is low on even passes, so the trombone sings and the flute answers; on odd ones the
   # cello sings and the tenor saxophone answers.
   defp trombone(pass) when rem(pass, 2) == 0 do
-    entries =
-      for {beat, note, vel, held} <- phrased(low()),
-          do: {beat, note(note, held, vel: vel + 0.2, sustain: held * 0.85, release: 0.15)}
-
-    at(entries, 32)
+    at(phrased(low(), 0.2), 32, held: 0.85, release: 0.15)
   end
 
   defp trombone(_pass), do: rest(32)
 
-  defp cello(pass) when rem(pass, 2) == 1 do
-    entries =
-      for {beat, note, vel, held} <- phrased(low()),
-          do: {beat, note(note, held, vel: vel, sustain: held * 0.9, release: 0.2)}
-
-    at(entries, 32)
-  end
+  defp cello(pass) when rem(pass, 2) == 1, do: at(phrased(low()), 32, held: 0.9, release: 0.2)
 
   defp cello(_pass), do: rest(32)
 
   defp flute(pass) when rem(pass, 2) == 0 do
     notes =
-      for {beat, note, vel, held} <- phrased(answer()),
+      for {beat, note, length, vel: vel} <- phrased(answer()),
           do:
-            {beat,
-             note(note, held,
-               vel: vel,
-               sustain: held * 0.85,
-               release: 0.15,
-               vibrato: if(held > 0.4, do: 0.15, else: 0)
-             )}
+            {beat, note, length,
+             vel: vel, held: 0.85, release: 0.15, vibrato: if(length > 0.4, do: 0.15, else: 0)}
 
     at(notes, 32)
   end
@@ -165,15 +150,13 @@ defmodule Odeon do
 
   defp tenor_sax(pass) when rem(pass, 2) == 1 do
     notes =
-      for {beat, note, vel, held} <- phrased(answer()),
+      for {beat, note, length, vel: vel} <- phrased(answer()),
           do:
-            {beat,
-             note(note, held,
-               vel: Float.round(vel * 0.9, 2),
-               sustain: held * 0.85,
-               release: 0.15,
-               vibrato: if(held > 0.4, do: 0.5, else: 0)
-             )}
+            {beat, note, length,
+             vel: Float.round(vel * 0.9, 2),
+             held: 0.85,
+             release: 0.15,
+             vibrato: if(length > 0.4, do: 0.5, else: 0)}
 
     at(notes, 32)
   end
@@ -217,14 +200,10 @@ defmodule Odeon do
       ])
 
     bass =
-      for {beat, note, _vel, held} <- phrased(bass),
+      for {beat, note, length, _vel} <- phrased(bass),
           do:
-            {beat,
-             note(note, held,
-               vel: if(held < 0.3, do: 0.5, else: 0.65),
-               sustain: held * 0.9,
-               release: 0.1
-             )}
+            {beat, note, length,
+             vel: if(length < 0.3, do: 0.5, else: 0.65), held: 0.9, release: 0.1}
 
     at(offbeats ++ bass, 32)
   end
@@ -366,12 +345,14 @@ defmodule Odeon do
     at(entries, 32)
   end
 
-  # Each note as its beat with the swing, note, vel and beats held: louder the higher it goes,
-  # softer on the sixteenths.
-  defp phrased(notes) do
+  # Each note as its beat with the swing, note, beats held and vel: louder the higher it goes,
+  # softer on the sixteenths, and louder by louder: for an instrument that sings over the others.
+  defp phrased(notes, louder \\ 0) do
     for {beat, note, held} <- notes do
       vel = 0.42 + (note - 40) * 0.006
-      {feel(beat), note, Float.round(if(held < 0.3, do: vel * 0.85, else: vel), 2), held}
+
+      {feel(beat), note, held,
+       vel: Float.round(if(held < 0.3, do: vel * 0.85, else: vel), 2) + louder}
     end
   end
 

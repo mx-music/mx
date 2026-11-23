@@ -1051,6 +1051,60 @@ defmodule Mx.MusicTest do
     end
   end
 
+  describe "a note held for a share of its length" do
+    defp sustains(ctx, music, defaults \\ []) do
+      defaults = inspect(defaults)
+
+      {:ok, song} =
+        load(ctx, "song(music: part(:a, #{music}, synth: :flute, defaults: #{defaults}))")
+
+      for {beat, pitch, opts} <- events(song, :a), do: {beat, pitch, opts[:sustain], opts[:held]}
+    end
+
+    @tag :tmp_dir
+    test "held: is the share of its length a note sounds for, above 1 past its length, and the note keeps its length",
+         ctx do
+      assert sustains(ctx, "note(:c4, 2, held: 0.9)") == [{0, 60, 1.8, nil}]
+      assert sustains(ctx, "note(:c4, 2, held: 1.5)") == [{0, 60, 3.0, nil}]
+      assert Mx.beats(Mx.note(:c4, 2, held: 0.9)) == 2
+    end
+
+    @tag :tmp_dir
+    test "a part's defaults, each and steps give held: to each note, a share of its own length",
+         ctx do
+      shares = [{0, 60, 0.5, nil}, {1, 62, 1.0, nil}]
+      assert sustains(ctx, "seq(c4: 1, d4: 2)", held: 0.5) == shares
+      assert sustains(ctx, "each(seq(c4: 1, d4: 2), held: 0.5)") == shares
+
+      assert sustains(ctx, "steps(~MX\"c4:2 d4\", 0.25, held: 0.5)") ==
+               [{0, 60, 0.25, nil}, {0.5, 62, 0.125, nil}]
+    end
+
+    @tag :tmp_dir
+    test "a note's own sustain: is kept over a held: from each, and a slur takes its share of the whole slur",
+         ctx do
+      own = "each(seq([note(:c4, 2, sustain: 0.3), note(:d4, 2)]), held: 0.5)"
+      assert sustains(ctx, own) == [{0, 60, 0.3, nil}, {2, 62, 1.0, nil}]
+
+      assert [{0, 69, 1.0, nil}, {1, {:control, _, _}, nil, nil}] =
+               sustains(ctx, "slur(seq(a4: 1, c5: 1), held: 0.5)")
+    end
+
+    test "a note given held: and sustain: is refused, naming both, and so are held: 0 and held: on a hit" do
+      assert_raise ArgumentError, ~r/held: or sustain:, not both/, fn ->
+        Mx.note(:c4, 2, held: 0.9, sustain: 1)
+      end
+
+      assert_raise ArgumentError,
+                   ~r/held: takes the share of a note's length it sounds for, above 0, not 0/,
+                   fn ->
+                     Mx.note(:c4, 2, held: 0)
+                   end
+
+      assert_raise ArgumentError, ~r/a hit takes no held:/, fn -> Mx.hit(held: 0.5) end
+    end
+  end
+
   describe "options per note" do
     @tag :tmp_dir
     test "a chord takes a list of values for an option, one per note, beside single values and the part's defaults",

@@ -92,6 +92,10 @@ note(:a4, 1.5, amp: 0.8, release: 2)
 Each synth has its own options, which [Instruments](instruments.md) lists.
 `attack`, `decay`, `sustain`, `release` and every option ending in `_slide` are measured in beats, so `release: 1` lasts one beat at any tempo.
 
+`held:` is the share of its length a note sounds for, so `note(:a4, 2, held: 0.9)` sounds for 1.8 beats and still takes 2, and a line played short or smooth needs no sustain worked out from each length.
+It goes wherever a note's options go, on a note, in a part's `defaults:`, in `each`, and in the options of `steps`, `kit` and `at`, and in a pattern each note takes its share of its own length.
+A note's own `sustain:` is kept over a `held:` given around it, a note given both is refused, and `mx print` shows the sustain it works out.
+
 ### Chords
 
 A list of pitches is a chord, and `chord` builds the list from its lowest note and its kind:

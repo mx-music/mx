@@ -48,6 +48,7 @@ song.exs:2: part lead: synth piano takes vel from 0.05 to 1, not 3, in note(60, 
 | `amp` | how loud, whatever the playing |
 | `pan` | where the sound is, from -1 for left to 1 for right |
 | `attack`, `decay`, `sustain`, `release` | the envelope, how the note's level moves over its life, in beats |
+| `held` | the share of its length a note sounds for, which mx turns into its `sustain`: `held: 0.9` plays it a little short, and above 1 it rings past its length |
 
 The envelope has four stretches:
 

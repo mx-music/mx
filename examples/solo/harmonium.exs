@@ -32,7 +32,7 @@ defmodule Harmonium do
     steps(line(section, time), 1,
       words: words,
       each: fn _step, beats ->
-        [vel: if(beats < 1, do: 0.5, else: 0.6), sustain: beats * 0.9, release: 0.15]
+        [vel: if(beats < 1, do: 0.5, else: 0.6), held: 0.9, release: 0.15]
       end
     )
   end
