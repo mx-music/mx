@@ -25,13 +25,17 @@ defmodule Mx.DistortionTest do
 
   # A note of four beats on a synth through the effects given, with the music beside it.
   defp held(synth, note, fx, more \\ "") do
-    note = "note(#{inspect(note)}, 4, attack: 0#{if synth == :fm, do: ", depth: 0", else: ""})"
+    note = inspect(note)
+    plain = if synth == :fm, do: ", depth: 0", else: ""
+    note = "note(#{note}, 4, attack: 0#{plain})"
     "part(:tamborzao, together([#{note}#{more}]), synth: #{inspect(synth)}, fx: #{fx})"
   end
 
   # A second of the sound from half a second in, under a Hann window, with the window.
   defp windowed(samples, from \\ 0.5) do
-    window = for n <- 0..(@rate - 1), do: 0.5 - 0.5 * :math.cos(2 * :math.pi() * n / @rate)
+    window =
+      for index <- 0..(@rate - 1), do: 0.5 - 0.5 * :math.cos(2 * :math.pi() * index / @rate)
+
     sound = samples |> Enum.slice(round(from * @rate), @rate) |> Enum.zip_with(window, &(&1 * &2))
     {sound, window}
   end

@@ -39,8 +39,9 @@ defmodule Mx.EchoTest do
     10 * :math.log10(max(re * re + im * im, 1.0e-30))
   end
 
-  defp tilt(samples, high, low, from),
-    do: part_at(samples, high, from) - part_at(samples, low, from)
+  defp tilt(samples, high, low, from) do
+    part_at(samples, high, from) - part_at(samples, low, from)
+  end
 
   # A burst of white noise a tenth of a second long through the effects given, on the part given.
   defp burst(fx, part \\ :x, more \\ "") do

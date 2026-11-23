@@ -122,7 +122,9 @@ defmodule Mx.InstrumentTest do
 
     error = assert_raise CompileError, fn -> Code.compile_string(source, "endless.exs") end
     assert error.line == 5
-    assert Exception.message(error) =~ "endless ends with none of note_envelope, rings and figures"
+
+    assert Exception.message(error) =~
+             "endless ends with none of note_envelope, rings and figures"
   end
 
   test "data written in the module takes any Elixir, such as Enum.zip, and plays" do
