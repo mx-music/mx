@@ -25,6 +25,8 @@ defmodule Mx.Examples.EffectsTest do
     "rlpf" => 5,
     "slicer" => 6,
     "tremolo" => 6,
+    "wah" => 5,
+    "width" => 5,
     "wobble" => 5
   }
 

@@ -4,6 +4,9 @@
 
 ### 1. Enhancements
 
+  * [effects] Add `wah`, from the next mxs: a resonant low-pass that opens on each note, further the harder it is played, and closes as the note fades, between the notes `cutoff_min` and `cutoff_max`, with `sensitivity` in dB, `clamp_ms`, `relax_ms` and `res`; its song is `examples/effects/wah.exs`
+  * [effects] Add `width`, from the next mxs: `side` narrows a part to mono at 0 and widens it up to 2, twice the difference between its sides, and `mono_below` puts everything below a MIDI note in the centre; its song is `examples/effects/width.exs`
+  * [effects] `tremolo` and `slicer` take `spread`, from the next mxs: the right side's cycle runs that share of half a cycle after the left's, so at `spread: 1` a tremolo moves the sound from side to side and a slicer sounds on one side at a time
   * [effects] `distortion` adds only harmonics of the note, from the next mxs: a saw at C7 driven hard had energy 20 dB under it at pitches that are not its harmonics, and has it 50 dB under; it takes `curve: :hard`, which cuts the sound off flat, and `tone`, a MIDI note for a low-pass after it
   * [effects] `echo` and `ping_pong` take `high_cut`, `low_cut` and `drive`, from the next mxs: each echo is cut above and below the two notes and rounded off once more than the one before, as a tape echo's repeats grow duller, and `examples/dubwise.exs` wears its tape so
   * [effects] `phaser` given no `mix` is half dry, where its notches are deepest
