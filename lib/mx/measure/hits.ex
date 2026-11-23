@@ -7,7 +7,7 @@ defmodule Mx.Measure.Hits do
   Rumble is filtered out below three quarters of the note given, or below 30 Hz without one, and the bands are measured from there up.
   For each hit it finds the level of each band as the hit starts, against the loudest band, and the seconds each band takes to fade 60 dB.
   It also lists the frequencies of the hit's strongest peaks, up to six within 30 dB of the loudest, as ratios to the lowest of them, so the partials of a bar or a drum show whatever their pitch.
-  It also gives the hit's brightness, the power above 1, 2, 4 and 8 kHz against the whole sound's in dB, from 0 to 20, 20 to 80 and 80 to 200 ms after the hit starts, where it first comes within 20 dB of its loudest millisecond, nil for a stretch the hit ends within and -60 for a share more than 60 dB down, and the milliseconds after the hit starts at which the sound above 4 kHz is loudest, nil when there is none.
+  It also gives the hit's brightness, the power above 1, 2, 4 and 8 kHz against the whole sound's in dB, from 0 to 20, 20 to 80 and 80 to 200 ms after the hit starts, where it first comes within 20 dB of its loudest millisecond, nil for a stretch the hit ends within and -60 for a share more than 60 dB down, and the milliseconds after the hit starts at which the sound above 4 kHz is loudest, nil when there is none, with that sound's level over the 10 ms around 5, 10, 20, 40, 80, 160 and 320 ms after the hit starts, in dB under its loudest 10 ms, as `highs`.
   It also gives each band's level at 0, 50, 100 and 200 ms after the hit's loudest moment, against the loudest band then, nil past the hit's end and -40 for a level more than 40 dB down, and the second the hit starts at in the sound.
   With `partials:` a count, it also lists up to that many of the strongest partials within 40 dB of the loudest, lowest first, each with its frequency in Hz, its ratio to the lowest, its level in dB against the loudest and the seconds it takes to fade 60 dB, or nil when it does not fade; two partials closer than 1% are one.
   """
@@ -17,6 +17,7 @@ defmodule Mx.Measure.Hits do
 
   @moments [0, 50, 100, 200]
   @stretches [{0, 20}, {20, 80}, {80, 200}]
+  @highs_times [5, 10, 20, 40, 80, 160, 320]
 
   @doc "Measures each hit of a recording, with the note it plays or nil, and returns `{:ok, hits}` or `{:error, message}` naming the file."
   def file(path, note, opts \\ [])
@@ -96,6 +97,25 @@ defmodule Mx.Measure.Hits do
     case for %{highs_peak: peak} <- hits, peak != nil, do: peak do
       [] -> nil
       peaks -> Signal.median(peaks)
+    end
+  end
+
+  @doc "The milliseconds after a hit starts that the level of its sound above 4 kHz is given at."
+  def highs_times, do: @highs_times
+
+  @doc "The median over the hits of the level of the sound above 4 kHz at each of `highs_times/0`, in dB under its loudest, nil at a time no hit reaches, or `[]` when no hit has any."
+  def highs(hits) when is_list(hits) do
+    case for %{highs: [_ | _] = highs} <- hits, do: highs do
+      [] ->
+        []
+
+      found ->
+        Enum.zip_with(found, fn levels ->
+          case Enum.reject(levels, &is_nil/1) do
+            [] -> nil
+            reached -> Signal.median(reached)
+          end
+        end)
     end
   end
 

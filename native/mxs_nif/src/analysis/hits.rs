@@ -13,6 +13,8 @@ const STRETCHES: [(f64, f64); 3] = [(0.0, 20.0), (20.0, 80.0), (80.0, 200.0)];
 /// The frequency above which the highs are followed to where they peak, and the seconds of each step they are followed in.
 const HIGHS: f64 = 4000.0;
 const HIGHS_STEP: f64 = 0.005;
+/// The ms after the hit starts the highs' level is given at, each over the 10 ms around it.
+const HIGHS_TIMES: [f64; 7] = [5.0, 10.0, 20.0, 40.0, 80.0, 160.0, 320.0];
 /// The semitones above its first note a run of hits may reach, short of the octave that would name a note by its octave's fundamental.
 const RUN: i64 = 11;
 
@@ -51,6 +53,7 @@ pub struct Hit {
     pub moments: Vec<Moments>,
     pub brightness: Vec<Brightness>,
     pub highs_peak: Option<f64>,
+    pub highs: Vec<Option<f64>>,
     pub peaks: Vec<f64>,
     pub partials: Vec<Partial>,
 }
@@ -111,6 +114,7 @@ fn measure(sound: &[f64], start: f64, note: Option<i64>, rate: f64, cutoff: f64,
         moments: track_moments(&tracks),
         brightness: brightness(sound, rate),
         highs_peak: highs_peak(sound, rate),
+        highs: highs(sound, rate),
         peaks: peaks(sound, rate, cutoff, spectra),
         partials: match count {
             Some(count) => partials(sound, &frames, &times, rate / size as f64, rate, cutoff, count, spectra),
@@ -228,6 +232,25 @@ fn highs_peak(sound: &[f64], rate: f64) -> Option<f64> {
     let steps: Vec<f64> = highs[from..].chunks(step).map(power).collect();
     let top = steps.iter().cloned().fold(0.0, f64::max);
     (top > loudest * 1.0e-4).then(|| (steps.iter().position(|p| *p == top).unwrap() as f64 + 0.5) * HIGHS_STEP * 1000.0)
+}
+
+// The level of the sound above `HIGHS` over the 10 ms around each of `HIGHS_TIMES`, in dB under its loudest 10 ms and no lower than -60; a time the hit ends before is None, and a hit whose highs have no peak has none.
+fn highs(sound: &[f64], rate: f64) -> Vec<Option<f64>> {
+    if highs_peak(sound, rate).is_none() {
+        return vec![];
+    }
+    let from = speaks(sound, rate);
+    let half = (HIGHS_STEP * rate).round() as usize;
+    let highs = high_pass(sound, rate, HIGHS);
+    let around = |centre: usize| power(&highs[centre.saturating_sub(half)..(centre + half).min(highs.len())]);
+    let loudest = (from..highs.len().saturating_sub(half)).step_by((rate / 1000.0).round() as usize).map(around).fold(1.0e-30, f64::max);
+    HIGHS_TIMES
+        .iter()
+        .map(|ms| {
+            let centre = from + (ms / 1000.0 * rate).round() as usize;
+            (centre + half <= highs.len()).then(|| (10.0 * ((around(centre) + 1.0e-30) / loudest).log10()).max(-60.0))
+        })
+        .collect()
 }
 
 // The strongest peaks of a spectrum of the hit's start, each at least 3% and four bins from a stronger one.

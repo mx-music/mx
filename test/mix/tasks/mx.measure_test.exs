@@ -244,6 +244,26 @@ defmodule Mix.Tasks.Mx.MeasureTest do
 
     assert output =~ ~r/^above 4000 Hz( +-[4-6]\d){3}$/m
     assert output =~ "nothing above 4 kHz to peak"
+    refute output =~ "the sound above 4 kHz in dB under its loudest"
+  end
+
+  test "with --hits, prints the sound above 4 kHz at seven times after the hit starts", ctx do
+    rate = 48_000
+
+    samples =
+      for index <- 0..(rate - 1) do
+        time = index / rate
+        rise = min(time / 0.05, 1) * 10 ** (-3 * max(time - 0.05, 0) / 0.3)
+        0.2 * (10 ** (-3 * time) * :math.sin(942.5 * time) + rise * :math.sin(37_699 * time))
+      end
+
+    path = write_wav(ctx, "swell.wav", samples)
+    output = capture_io(fn -> Mix.Tasks.Mx.Measure.run(["--hits", path]) end)
+
+    assert output =~
+             "the sound above 4 kHz in dB under its loudest, at 5, 10, 20, 40, 80, 160 and 320 ms after the hit starts"
+
+    assert output =~ ~r/^above 4000 Hz( +-\d+){7}$/m
   end
 
   test "with --hits, a moment after the recording ends prints as -", ctx do

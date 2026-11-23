@@ -128,6 +128,27 @@ defmodule Mx.Measure.HitsTest do
     assert_in_delta hit.highs_peak, 50, 8
   end
 
+  test "gives the level of the sound above 4 kHz at seven times after the hit starts, under its loudest" do
+    [hit] = Hits.hits(swelling(), @rate, nil)
+    assert Hits.highs_times() == [5, 10, 20, 40, 80, 160, 320]
+    [at_5, at_10, at_20, at_40, at_80, at_160, at_320] = hit.highs
+    # The high tone is at 0.1 of its level 5 ms in, 0.2 at 10 ms, 0.4 at 20 ms and 0.8 at 40 ms,
+    # then falls 0.2 dB each ms after 50 ms.
+    assert_in_delta at_5, -20, 3
+    assert_in_delta at_10, -14, 2
+    assert_in_delta at_20, -8, 1.5
+    assert_in_delta at_40, -2, 1.5
+    assert_in_delta at_80, -6, 1.5
+    assert_in_delta at_160, -22, 1.5
+    assert at_320 <= -50
+
+    [quiet] = Hits.hits(hit(300, [{1, 1}], 0.125), @rate, nil)
+    assert quiet.highs == []
+    silence = List.duplicate(0.0, @rate)
+    hits = Hits.hits(swelling() ++ silence ++ swelling(), @rate, nil)
+    assert_in_delta Enum.at(Hits.highs(hits), 3), -2, 1.5
+  end
+
   test "a stretch after the hit ends has no share, and a hit with nothing above 4 kHz has no peak there" do
     [hit] = Hits.hits(hit(300, [{1, 1}], 0.125), @rate, nil)
     assert [strike, _swell, nil] = Enum.find(hit.brightness, &(&1.above == 4000)).levels

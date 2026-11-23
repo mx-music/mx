@@ -31,7 +31,7 @@ defmodule Mix.Tasks.Mx.Measure do
       mx measure --hits Agogo_Low_v1_rr1_Mid.wav --partials 12 --synth low_agogo
 
   `--hits` then prints each band's level at 0, 50, 100 and 200 ms after the hit's loudest moment, against the loudest band then, as medians over the hits; a moment past a hit's end prints as -, and a level more than 40 dB down as -40.
-  Under them it prints how bright the hits are over time: the sound above 1, 2, 4 and 8 kHz in dB under the whole sound, from 0 to 20, 20 to 80 and 80 to 200 ms after the hit starts, and the milliseconds after the hit starts at which the sound above 4 kHz is loudest, beside the synth's with `--synth`.
+  Under them it prints how bright the hits are over time: the sound above 1, 2, 4 and 8 kHz in dB under the whole sound, from 0 to 20, 20 to 80 and 80 to 200 ms after the hit starts, and the milliseconds after the hit starts at which the sound above 4 kHz is loudest, then that sound's level at 5, 10, 20, 40, 80, 160 and 320 ms after the hit starts, in dB under its loudest, beside the synth's with `--synth`.
   `--compare` with a file name, with `--hits` and `--synth`, writes a WAV file of up to three recorded hits whose bands are nearest the median, then the synth's hit at each of their notes, each 0.6 seconds at the same peak, for listening or for `mx spectrogram`.
 
       mx measure --hits "pandeiro A.wav" --synth pandeiro_thumb --compare thumb.wav
@@ -64,6 +64,7 @@ defmodule Mix.Tasks.Mx.Measure do
   @example "Guitar.mf.sulA.A2B2.aif:A2"
   @moments "levels in dB at 0, 50, 100 and 200 ms after the loudest moment, against the loudest band then"
   @brightness "the sound above each frequency in dB under the whole sound, from 0 to 20, 20 to 80 and 80 to 200 ms after the hit starts"
+  @highs "the sound above 4 kHz in dB under its loudest, at 5, 10, 20, 40, 80, 160 and 320 ms after the hit starts"
   @compared 0.6
   @gap 0.25
   @attack_ms [0, 10, 20, 40, 70, 115, 180, 280, 440, 700]
@@ -480,6 +481,7 @@ defmodule Mix.Tasks.Mx.Measure do
     IO.puts(String.pad_trailing("", 14) <> stretches())
     for row <- Hits.brightness(hits), do: IO.puts(above(row) <> levels(row.levels))
     IO.puts(highs_peak(Hits.highs_peak(hits)))
+    print_highs([{"above 4000 Hz", Hits.highs(hits)}])
   end
 
   defp print_brightness_beside(recorded, rendered, synth, given) do
@@ -497,6 +499,22 @@ defmodule Mix.Tasks.Mx.Measure do
 
     IO.puts("recordings: " <> highs_peak(Hits.highs_peak(recorded)))
     IO.puts(heading(synth, given) <> ": " <> highs_peak(Hits.highs_peak(rendered)))
+
+    print_highs([
+      {"recordings", Hits.highs(recorded)},
+      {heading(synth, given), Hits.highs(rendered)}
+    ])
+  end
+
+  defp print_highs(rows) do
+    if Enum.any?(rows, fn {_name, highs} -> highs != [] end) do
+      IO.puts("")
+      IO.puts(@highs)
+      width = rows |> Enum.map(fn {name, _highs} -> String.length(name) end) |> Enum.max()
+
+      for {name, highs} <- rows,
+          do: IO.puts(String.pad_trailing(name, width + 1) <> levels(highs))
+    end
   end
 
   defp stretches do
