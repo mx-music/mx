@@ -3392,12 +3392,10 @@ defmodule Mx.DesignsTest do
   end
 
   # Measured from the CC0 recording "pandeiro A" by MeanRaccoon on Freesound.
-  # The figures are medians over its strokes, sorted by their bands.
-  # A thumb is loudest below 250 Hz, and at least 6 dB softer from 6.3 kHz.
-  # A slap is within 3 dB of its loudest from 400 to 2500 Hz, and at least 10 dB softer below 250
-  # Hz.
-  # A heel stroke is within 6 dB of its loudest below 250 Hz, and within 3 dB from 6.3 kHz.
-  # Fingertips are loudest from 6.3 kHz, and at least 8 dB softer below 250 Hz.
+  # The thumb's, the heel's and the slap's figures are medians over the strokes sorted by ear:
+  # 11 thumbs on the open head, 12 heel strokes on it and 10 slaps.
+  # The fingertips' are medians over strokes sorted by their bands: loudest from 6.3 kHz, and at
+  # least 8 dB softer below 250 Hz.
   # Each band's level is taken at 0, 50 and 100 ms after the stroke's loudest moment, against its
   # loudest band at 0 ms.
   # Fingertip strokes follow one another too closely to measure them at 100 ms.
@@ -3412,27 +3410,27 @@ defmodule Mx.DesignsTest do
 
   @pandeiro %{
     pandeiro_thumb: [
-      [0, -8, -7],
-      [-11, -15, -19],
-      [-18, -29, -36],
-      [-21, -24, -32],
-      [-25, -25, -34],
-      [-24, -20, -30]
+      [0, -7, -5],
+      [-12, -17, -20],
+      [-20, -32, -38],
+      [-20, -23, -30],
+      [-23, -24, -32],
+      [-24, -20, -26]
     ],
     pandeiro_heel: [
-      [-2, -12, -13],
-      [-8, -16, -22],
-      [-6, -24, -31],
-      [-5, -17, -23],
-      [-6, -16, -26],
-      [-3, -13, -24]
+      [-4, -11, -9],
+      [-12, -18, -22],
+      [-10, -26, -31],
+      [-5, -15, -23],
+      [-5, -15, -25],
+      [0, -11, -19]
     ],
     pandeiro_slap: [
       [-15, -18, -26],
-      [-1, -16, -21],
-      [-4, -19, -26],
-      [-3, -18, -23],
-      [-7, -19, -24],
+      [0, -16, -22],
+      [-5, -20, -26],
+      [-2, -18, -23],
+      [-5, -20, -24],
       [-3, -15, -20]
     ],
     pandeiro_jingles: [[-11, -17], [-14, -20], [-13, -28], [-6, -19], [-5, -19], [0, -14]]
@@ -3472,12 +3470,15 @@ defmodule Mx.DesignsTest do
     end
   end
 
-  test "each pandeiro stroke sounds lower with a lower note, and is silent once it ends", ctx do
+  # The head's tones are below 1 kHz; a slap's jingles are as loud as they are, so the loudest of
+  # the whole stroke can be either.
+  test "each pandeiro stroke's head sounds lower with a lower note, and it is silent once it ends",
+       ctx do
     for {synth, length} <- @pandeiro_length do
       own = render(ctx, synth, [], 1)
       lower = render(ctx, synth, [note: 40], 1)
 
-      assert loudest_hz(lower) < loudest_hz(own), "#{synth}"
+      assert loudest_hz(lower, 1000) < loudest_hz(own, 1000), "#{synth}"
 
       sound = render(ctx, synth, [vel: 1], length + 0.3)
       assert rms(sound, 0, 0.1) > 0.005, "#{synth}"
@@ -6136,9 +6137,10 @@ defmodule Mx.DesignsTest do
 
   # The frequency between 30 and 600 Hz with the most energy, measured one frequency at a time.
   # The frequency of the loudest peak of the sound's first 0.17 seconds.
-  defp loudest_hz(sound) do
+  defp loudest_hz(sound, below \\ 23_400) do
     spectrum = Signal.spectrum(List.to_tuple(sound), 0, 8192)
-    at = Enum.max_by(2..4000, &elem(spectrum, &1))
+    last = round(below * 8192 / @rate)
+    at = Enum.max_by(2..last, &elem(spectrum, &1))
     {position, _} = Signal.refine(spectrum, at)
     position * @rate / 8192
   end
