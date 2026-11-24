@@ -142,7 +142,7 @@ The folder `examples` in the repository holds more songs: pieces for a band, suc
 To use mx from Elixir code, add it to the dependencies in your Mix project's `mix.exs`:
 
 ```elixir
-{:mx, "~> 0.2.2"}
+{:mx, "~> 0.3.0"}
 ```
 
 Each `mx NAME` command is then also the Mix task `mix mx.NAME`, with a dot for each space, such as `mix mx.samples.download` for `mx samples download`, and takes the same arguments: `mix mx.export song.exs` writes what `mx export song.exs` writes.

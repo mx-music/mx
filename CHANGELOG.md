@@ -1,6 +1,6 @@
-# Changelog for mx v0.2
+# Changelog for mx v0.3
 
-## Unreleased
+## v0.3.0 (2026-11-24)
 
 ### 1. Enhancements
 
@@ -18,6 +18,8 @@
   * [examples] Add `examples/effects`, a short song for each effect that plays a phrase dry, then through the effect, then with one option moved at a time
   * [synths] Add `deep_bass`, and alpha versions of `electric_piano` and `electric_guitar` that will be refitted
   * [synths] `pandeiro` is refitted to recordings of its thumb, heel and slap, with jingles that answer the hand, `muted` strokes that sound as its pressed head does, lighter and drier fingertips, a quieter heel and no two strokes alike, and its solo plays the choro's pandeiro line; `ganza`, `clave`, `guiro`, `berimbau`, `cuica`, `triangle` and the tabla's tas stroke sound closer to their recordings
+  * [synths] `marimba` is refitted to the University of Iowa's yarn recordings by gradient descent, as mxs 0.7.2 plays it
+  * [examples] Add `examples/clair_de_lune_marimba.exs`, Debussy's Clair de lune on the marimba over a pad, a sub bass and a light kit
   * [synths] `Mx.Synths.family/1` and `range/1` give each synth's family and playable range
   * [mix mx.play] Play or render a score, a MIDI file or an ABC tune directly, without importing it first
   * [mix mx.play] A render reports its loudness in LUFS, and `--loudness` scales it to a target
