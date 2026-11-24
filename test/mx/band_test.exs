@@ -1324,14 +1324,14 @@ defmodule Mx.BandTest do
     defp press(band), do: send(band, {:input, {:midi_note, %{note: 64, velocity: 100}}})
 
     test "a grid of 1 starts the loop on the next beat", ctx do
-      {band, start_us} = start_at_beat(ctx, 3.4, 1)
+      {band, start_us} = start_at_beat(ctx, 3.1, 1)
       press(band)
       assert_receive {:played, at, [{:note, _, _, _, _, _}]}
       assert at == start_us + 4 * 500_000
     end
 
     test "a grid of 4 starts the loop on the next beat that is a multiple of 4", ctx do
-      {band, start_us} = start_at_beat(ctx, 3.4, 4)
+      {band, start_us} = start_at_beat(ctx, 2.4, 4)
       press(band)
       assert_receive {:played, at, _events}
       assert at == start_us + 4 * 500_000
@@ -1365,7 +1365,7 @@ defmodule Mx.BandTest do
     end
 
     test "a second input while the loop waits for its beat starts nothing more", ctx do
-      {band, start_us} = start_at_beat(ctx, 3.2, 1)
+      {band, start_us} = start_at_beat(ctx, 3.05, 1)
       press(band)
       Process.sleep(200)
       press(band)
