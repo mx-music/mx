@@ -3,6 +3,9 @@ defmodule Mx.BandTest do
 
   import ExUnit.CaptureIO
 
+  # Every test plays in real time, with notes due within a few milliseconds.
+  @moduletag :realtime
+
   alias Mx.{Band, OSC, Song}
 
   @beat_us 10_000

@@ -19,6 +19,10 @@ defmodule Mx.Examples.TimelineTest do
     @timeline timeline
     @song Path.join("examples", song)
 
+    if File.read!(@song) =~ "{:sonic_pi," do
+      @tag :sonic_pi
+    end
+
     test "#{song} plays as it did" do
       {expected, _} = @timeline |> File.read!() |> Code.eval_string()
       spans = Map.new(expected, fn {name, {_events, beats}} -> {name, beats} end)

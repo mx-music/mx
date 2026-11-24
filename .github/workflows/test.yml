@@ -16,7 +16,10 @@ jobs:
           version-file: .tool-versions
           version-type: strict
 
-      - run: sudo apt-get update && sudo apt-get install -y libasound2-dev
+      - run: sudo apt-get update && sudo apt-get install -y libasound2-dev linux-modules-extra-$(uname -r)
+
+      # The MIDI tests open ALSA's sequencer, which the runner leaves unloaded.
+      - run: sudo modprobe snd-seq
 
       - uses: actions/cache@v4
         with:
@@ -27,4 +30,5 @@ jobs:
 
       - run: mix deps.get
 
-      - run: mix test --warnings-as-errors
+      # A shared runner is too slow for the band's real-time deadlines, and has no Sonic Pi samples.
+      - run: mix test --warnings-as-errors --exclude realtime --exclude sonic_pi
