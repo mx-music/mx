@@ -545,11 +545,18 @@ fn span(data: &Binary, format: &(String, usize, usize), (from, to): (usize, usiz
     Ok(sound[from.min(sound.len())..to.min(sound.len())].to_vec())
 }
 
+/// The samples of a recording of a struck note from `from` to `to`, and the room its whole file was made in, as a note at `note` is measured.
+fn span_in_room(data: &Binary, format: &(String, usize, usize), (from, to): (usize, usize), rate: f64, note: f64) -> NifResult<(Vec<f64>, Option<analysis::room::Room>)> {
+    let sound = sound(data, format)?;
+    let room = analysis::room::Room::measure(&sound, rate, analysis::hz(note));
+    Ok((sound[from.min(sound.len())..to.min(sound.len())].to_vec(), room))
+}
+
 /// The figures of struck notes fitted partial by partial, as mxs reads them, each under its nearest MIDI note.
 #[rustler::nif(schedule = "DirtyCpu")]
 fn fit_struck<'a>(env: Env<'a>, recordings: Vec<Struck<'a>>) -> NifResult<Binary<'a>> {
-    let sounds = recordings.iter().map(|((data, format, rate), within, (note, velocity, seconds, exact, top))| Ok((span(data, format, *within)?, *rate, *note, *velocity, *seconds, *exact, *top))).collect::<NifResult<Vec<_>>>()?;
-    let fitted = analysis::parallel(&sounds, |(sound, rate, note, velocity, seconds, exact, top)| (note.round() as u8, *velocity, analysis::fit::fit(sound, *rate, *note, *seconds, *exact, *top).0));
+    let sounds = recordings.iter().map(|((data, format, rate), within, (note, velocity, seconds, exact, top))| Ok((span_in_room(data, format, *within, *rate, *note)?, *rate, *note, *velocity, *seconds, *exact, *top))).collect::<NifResult<Vec<_>>>()?;
+    let fitted = analysis::parallel(&sounds, |((sound, room), rate, note, velocity, seconds, exact, top)| (note.round() as u8, *velocity, analysis::fit::fit(sound, *rate, *note, *seconds, *exact, *top, room.as_ref()).0));
     let bytes = analysis::fit::figures_bytes(&fitted);
     let mut binary = OwnedBinary::new(bytes.len()).ok_or(rustler::Error::Atom("no_memory"))?;
     binary.as_mut_slice().copy_from_slice(&bytes);
@@ -560,28 +567,29 @@ fn fit_struck<'a>(env: Env<'a>, recordings: Vec<Struck<'a>>) -> NifResult<Binary
 #[rustler::nif(schedule = "DirtyCpu")]
 fn check_struck(recording: Struck, rendered: (Binary, (String, usize, usize), f64)) -> NifResult<analysis::fit::Check> {
     let ((data, format, rate), within, (note, _velocity, seconds, exact, top)) = recording;
-    let (theirs, ours) = (span(&data, &format, within)?, sound(&rendered.0, &rendered.1)?);
-    Ok(analysis::fit::check(&theirs, rate, &ours, rendered.2, note, seconds, exact, top))
+    let ((theirs, room), ours) = (span_in_room(&data, &format, within, rate, note)?, sound(&rendered.0, &rendered.1)?);
+    Ok(analysis::fit::check(&theirs, rate, &ours, rendered.2, note, seconds, exact, top, room.as_ref()))
 }
 
 /// How far the fit's own render of a struck note, its figures played with no synth, is from the recording, as `check_struck` compares them: the recording as a struck one is given to `fit_struck`.
 #[rustler::nif(schedule = "DirtyCpu")]
 fn check_fit_struck(recording: Struck) -> NifResult<analysis::fit::Check> {
     let ((data, format, rate), within, (note, _velocity, seconds, exact, top)) = recording;
-    Ok(analysis::fit::own(&span(&data, &format, within)?, rate, note, seconds, exact, top))
+    let (theirs, room) = span_in_room(&data, &format, within, rate, note)?;
+    Ok(analysis::fit::own(&theirs, rate, note, seconds, exact, top, room.as_ref()))
 }
 
 /// One recording of a struck note, given as to `fit_struck`, beside a render of the synth when given and the fit's own render, frame by frame at `times` seconds after the strike.
 #[rustler::nif(schedule = "DirtyCpu")]
 fn frames_struck(recording: Struck, rendered: Option<(Binary, (String, usize, usize), f64)>, times: Vec<f64>) -> NifResult<analysis::fit::Frames> {
     let ((data, format, rate), within, (note, _velocity, seconds, exact, top)) = recording;
-    let theirs = span(&data, &format, within)?;
+    let (theirs, room) = span_in_room(&data, &format, within, rate, note)?;
     let synth = match &rendered {
         Some((data, packing, rate)) => Some((sound(data, packing)?, *rate)),
         None => None,
     };
     let synth = synth.as_ref().map(|(sound, rate)| (sound.as_slice(), *rate));
-    Ok(analysis::fit::frames(&theirs, rate, note, seconds, exact, top, synth, &times))
+    Ok(analysis::fit::frames(&theirs, rate, note, seconds, exact, top, synth, &times, room.as_ref()))
 }
 
 /// A tour for listening of recordings of struck notes, each given as to `fit_struck`, beside renders given as their data, format and rate, as 32-bit floats at the renders' rate.

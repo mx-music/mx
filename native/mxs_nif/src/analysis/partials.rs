@@ -44,6 +44,11 @@ pub fn strike(sound: &[f64]) -> usize {
     sound.iter().position(|v| v.abs() > peak * 0.1).unwrap_or(0)
 }
 
+/// The samples of the window a note at `f0` is measured through: eight periods of its fundamental, from 80 to 250 ms.
+pub fn window(rate: f64, f0: f64) -> usize {
+    ((8.0 / f0).clamp(0.08, 0.25) * rate).round() as usize
+}
+
 /// Spectra every 2.5 ms for `seconds` from 5 ms before the strike, each through a Hann window eight periods of the fundamental long, from 80 to 250 ms.
 pub fn spectra(sound: &[f64], rate: f64, f0: f64, seconds: f64) -> Spectra {
     spectra_from(sound, rate, f0, seconds, strike(sound))
@@ -51,7 +56,7 @@ pub fn spectra(sound: &[f64], rate: f64, f0: f64, seconds: f64) -> Spectra {
 
 /// The spectra from a strike at a given sample, for a sound whose own loudest moment does not mark it.
 pub fn spectra_from(sound: &[f64], rate: f64, f0: f64, seconds: f64, struck: usize) -> Spectra {
-    let window = ((8.0 / f0).clamp(0.08, 0.25) * rate).round() as usize;
+    let window = window(rate, f0);
     let size = (2 * window).next_power_of_two();
     let fft = FftPlanner::<f64>::new().plan_fft_forward(size);
     let hann: Vec<f64> = (0..window).map(|i| 0.5 - 0.5 * (2.0 * std::f64::consts::PI * i as f64 / window as f64).cos()).collect();

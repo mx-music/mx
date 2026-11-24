@@ -301,7 +301,7 @@ pub fn strike(sound: &[f64], rate: f64, note: f64, seconds: f64, exact: bool, sp
         sum
     });
     let ours: Vec<f64> = played.iter().zip(&noise).map(|(a, b)| a + b).collect();
-    let (figures, _) = fit::fit(sound, rate, note, seconds, exact, super::partials::TOP);
+    let (figures, _) = fit::fit(sound, rate, note, seconds, exact, super::partials::TOP, None);
     let lead = 0.05;
     let today_whole = fit::render(&figures, rate, lead, seconds + 0.3);
     let today_start = super::partials::strike(&today_whole);
@@ -345,7 +345,7 @@ pub fn strike(sound: &[f64], rate: f64, note: f64, seconds: f64, exact: bool, sp
             None => 0.0,
         })
         .collect();
-    let checks = (fit::check(sound, rate, &today_whole, rate, note, seconds, exact, super::partials::TOP), fit::check(sound, rate, &handed_whole, rate, note, seconds, exact, super::partials::TOP));
+    let checks = (fit::check(sound, rate, &today_whole, rate, note, seconds, exact, super::partials::TOP, None), fit::check(sound, rate, &handed_whole, rate, note, seconds, exact, super::partials::TOP, None));
     let floats = |x: &[f64]| x.iter().map(|v| *v as f32).collect::<Vec<f32>>();
     Strike {
         pitch: measured.f0,

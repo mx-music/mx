@@ -310,6 +310,35 @@ defmodule Mix.Tasks.Mx.Fit do
     )
 
     print_notes(checks)
+    print_room(checks)
+  end
+
+  defp print_room(checks) do
+    rooms = checks |> Enum.filter(&(Map.get(&1, :room, []) != [])) |> Enum.uniq_by(& &1.path)
+
+    if rooms != [] do
+      names = Enum.map(rooms, &Path.basename(&1.path))
+      width = names |> Enum.map(&String.length/1) |> Enum.max()
+
+      IO.puts(
+        "\nthe room of each file, in dB of a sine at full scale, at each ERB band's centre in Hz"
+      )
+
+      centres =
+        Enum.map(hd(rooms).bands, fn {centre, _, _} -> Integer.to_string(round(centre)) end)
+
+      IO.puts(room_line("Hz", centres, width))
+
+      for {name, check} <- Enum.zip(names, rooms) do
+        IO.puts(
+          room_line(name, Enum.map(check.room, &:erlang.float_to_binary(&1, decimals: 1)), width)
+        )
+      end
+    end
+  end
+
+  defp room_line(name, figures, width) do
+    String.pad_trailing(name, width) <> Enum.map_join(figures, &String.pad_leading(&1, 7))
   end
 
   defp print_partials(checks, first_short) do
@@ -426,7 +455,7 @@ defmodule Mix.Tasks.Mx.Fit do
   end
 
   defp row_name("fit"), do: "  the fit"
-  defp row_name(row) when row in ["sines", "noise"], do: "    #{row}"
+  defp row_name(row) when row in ["sines", "noise", "room"], do: "    #{row}"
   defp row_name(row), do: "  #{row}"
 
   defp row_line(name, figures) do

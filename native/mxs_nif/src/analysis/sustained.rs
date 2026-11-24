@@ -696,7 +696,7 @@ pub fn check(recording: &[f64], rate: f64, rendered: &[f64], render_rate: f64, b
     let erb = if gaps.is_empty() { 0.0 } else { gaps.iter().sum::<f64>() / gaps.len() as f64 };
     let bands = bands.iter().zip(per_band).map(|((low, high), (sum, count))| ((low * high).sqrt(), sum / count.max(1) as f64, count)).collect();
     let cents = |freq: f64| 1200.0 * (freq / hz(note)).log2();
-    fit::Check { partials, erb, bands, stretch, levels: (total_theirs, total_ours), pitch: (cents(theirs.note.f0), cents(ours.note.f0)) }
+    fit::Check { partials, erb, bands, stretch, levels: (total_theirs, total_ours), pitch: (cents(theirs.note.f0), cents(ours.note.f0)), room: vec![] }
 }
 
 /// How far the fit's own render of a held note, its figures played as sines and noise with their vibrato and no synth, is from the recording.

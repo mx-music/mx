@@ -9,6 +9,7 @@ pub mod known;
 pub mod modes;
 pub mod partials;
 pub mod plucked;
+pub mod room;
 pub mod runs;
 pub mod strokes;
 pub mod sustained;

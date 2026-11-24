@@ -3,6 +3,7 @@
 //! They also hold the noise of the strike, as the level of white noise through each ERB band's filter at the same times.
 
 use super::partials::{self, CLEAR, HOP, LEAD, Note, Track};
+use super::room::{self, Room};
 use super::hz;
 use rustler::NifMap;
 
@@ -207,7 +208,8 @@ fn frame_at(t: f64) -> f64 {
 /// With `exact`, the note's own frequency is its pitch, for a drum whose partials are not harmonics.
 /// `top` is the highest frequency in Hz its partials and its bands of noise reach.
 /// After the last time the recording reaches, each partial falls on at its last slope.
-pub fn fit(sound: &[f64], rate: f64, note: f64, seconds: f64, exact: bool, top: f64) -> (Figures, Note) {
+/// The render is compared with the recording with the `room` the recording was made in added, so the fit does not take the room for the note.
+pub fn fit(sound: &[f64], rate: f64, note: f64, seconds: f64, exact: bool, top: f64, room: Option<&Room>) -> (Figures, Note) {
     let recorded = partials::measure(sound, rate, note, seconds, exact, top);
     let bands = erb_bands_under(top, rate);
     let noise = bands.iter().map(|(low, high)| Band { low: *low, high: *high, levels: vec![SILENT; TIMES.len()], tail: -60.0 }).collect();
@@ -215,18 +217,18 @@ pub fn fit(sound: &[f64], rate: f64, note: f64, seconds: f64, exact: bool, top: 
     fall_on(&mut figures, seconds, recorded.spectra.window);
     let freqs: Vec<f64> = recorded.partials.iter().chain(&recorded.left_out).map(|t| t.freq).collect();
     // The frames whose windows take in the strike read its click as much as the partials, so the partials are first fitted without them, and the noise to what they leave.
-    correct_partials(&mut figures, &recorded, &freqs, rate, note, seconds, ROUNDS, recorded.spectra.settled().start);
+    correct_partials(&mut figures, &recorded, &freqs, rate, note, seconds, ROUNDS, recorded.spectra.settled().start, room);
     let rendered = render(&figures, rate, 0.05, seconds + 0.1);
     let gaps: Vec<Vec<usize>> = bands.iter().map(|(low, high)| { let (a, b) = bins(&recorded.spectra, *low, *high); (a..b).collect() }).collect();
     let sines = band_powers(&partials::spectra(&rendered, rate, hz(note), seconds), &gaps);
-    let (targets, weights) = noise_targets(&band_powers(&recorded.spectra, &gaps), &sines, &bands, &gaps, &recorded);
+    let (targets, weights) = noise_targets(&band_powers(&recorded.spectra, &gaps), &sines, &bands, &gaps, &recorded, &room::over(room, &bands));
     let gains = noise_gains(&recorded.spectra, &bands, &gaps, rate);
     let shares: Vec<Vec<Vec<f64>>> = bands.iter().map(|(low, high)| shares(recorded.spectra.window, targets.len(), noise_rise(*low, *high))).collect();
     for (band, levels) in figures.noise.iter_mut().zip(solve_noise(&shares, &targets, &weights, &gains)) {
         band.levels = levels;
     }
     // The noise adds to the partials' own frequencies at the strike, so they are corrected again with it playing.
-    correct_partials(&mut figures, &recorded, &freqs, rate, note, seconds, AGAIN, 0);
+    correct_partials(&mut figures, &recorded, &freqs, rate, note, seconds, AGAIN, 0, room);
     (figures, recorded)
 }
 
@@ -246,12 +248,13 @@ fn fall_on(figures: &mut Figures, seconds: f64, window: f64) {
 }
 
 // Corrects each partial's levels against renders of the figures, measured as the recording was, round after round, from the frame `from`.
-fn correct_partials(figures: &mut Figures, recorded: &Note, freqs: &[f64], rate: f64, note: f64, seconds: f64, rounds: usize, from: usize) {
+#[allow(clippy::too_many_arguments)]
+fn correct_partials(figures: &mut Figures, recorded: &Note, freqs: &[f64], rate: f64, note: f64, seconds: f64, rounds: usize, from: usize, room: Option<&Room>) {
     for _ in 0..rounds {
         let rendered = render(figures, rate, 0.05, seconds + 0.1);
         let measured = partials::spectra(&rendered, rate, hz(note), seconds);
         let ours = partials::follow(&rendered, &measured, freqs);
-        let corrections: Vec<Vec<f64>> = recorded.partials.iter().zip(&ours).map(|(track, mine)| correction(track, mine, recorded.spectra.window, from)).collect();
+        let corrections: Vec<Vec<f64>> = recorded.partials.iter().zip(&ours).map(|(track, mine)| correction(track, mine, recorded.spectra.window, from, room::at(room, track.freq))).collect();
         for ((partial, change), track) in figures.partials.iter_mut().zip(corrections).zip(&recorded.partials) {
             // No level is fitted far above the loudest the recording reads, so a partial the measuring cannot pin down does not grow into a burst.
             let ceiling = track.strike(0.1) + 12.0;
@@ -292,15 +295,15 @@ fn first_guess(track: &Track, f0: f64, settled: usize, reached: usize) -> Partia
     Partial { ratio: track.freq / f0, harmonic: track.harmonic, levels, tail }
 }
 
-// How much to raise each time's level: the gaps between the recording and the render where either stands clear, each frame's shared among the times its window covers, weighted by the window.
-fn correction(track: &Track, ours: &[f64], window: f64, from: usize) -> Vec<f64> {
+// How much to raise each time's level: the gaps between the recording and the render with the room's power added where either stands clear, each frame's shared among the times its window covers, weighted by the window.
+fn correction(track: &Track, ours: &[f64], window: f64, from: usize, room: f64) -> Vec<f64> {
     let mut sums = vec![0.0; TIMES.len()];
     let mut weights = vec![0.0; TIMES.len()];
     for (k, (theirs, mine)) in track.levels.iter().zip(ours).enumerate().skip(from) {
         let centre = k as f64 * HOP - LEAD;
         let clear = *theirs > track.floor + CLEAR;
         let gap = if clear {
-            theirs - mine
+            theirs - room::with(*mine, room)
         } else if *mine > track.floor + CLEAR {
             track.floor + 5.0 - mine
         } else {
@@ -341,8 +344,8 @@ pub fn band_powers(spectra: &partials::Spectra, bins: &[Vec<usize>]) -> Vec<Vec<
     spectra.frames.iter().map(|f| bins.iter().map(|bins| 10.0 * bins.iter().filter_map(|&i| f.get(i)).map(|m| m * m).sum::<f64>().max(1e-24).log10()).collect()).collect()
 }
 
-// The power in each frame and band that the noise is fitted to, what the recording has beyond the sines where it has at least twice theirs, and how much each counts: the inverse square of the recording's power, or of its floor where the recording is under it.
-fn noise_targets(theirs: &[Vec<f64>], sines: &[Vec<f64>], bands: &[(f64, f64)], bins: &[Vec<usize>], recorded: &Note) -> (Vec<Vec<f64>>, Vec<Vec<f64>>) {
+// The power in each frame and band that the noise is fitted to, what the recording has beyond the sines and the room where it has at least twice the sines', and how much each counts: the inverse square of the recording's power, or of its floor where the recording is under it.
+fn noise_targets(theirs: &[Vec<f64>], sines: &[Vec<f64>], bands: &[(f64, f64)], bins: &[Vec<usize>], recorded: &Note, rooms: &[f64]) -> (Vec<Vec<f64>>, Vec<Vec<f64>>) {
     let floors: Vec<f64> = bands.iter().zip(bins).map(|((low, high), bins)| 10f64.powf((recorded.floor.at((low * high).sqrt()) + 10.0 * (bins.len() as f64).log10() + CLEAR) / 10.0)).collect();
     let pairs: Vec<(Vec<f64>, Vec<f64>)> = theirs
         .iter()
@@ -352,7 +355,7 @@ fn noise_targets(theirs: &[Vec<f64>], sines: &[Vec<f64>], bands: &[(f64, f64)], 
                 .map(|k| {
                     let (theirs, sines) = (10f64.powf(a[k] / 10.0), 10f64.powf(s[k] / 10.0));
                     // Where the sines hold most of the band, what the recording has beyond them is their own small misfit, not noise.
-                    let wanted = if theirs > floors[k] && theirs > 2.0 * sines { theirs - sines } else { 0.0 };
+                    let wanted = if theirs > floors[k] && theirs > 2.0 * sines { (theirs - sines - rooms[k]).max(0.0) } else { 0.0 };
                     (wanted, 1.0 / theirs.max(floors[k]).powi(2))
                 })
                 .unzip()
@@ -445,6 +448,8 @@ pub struct Check {
     pub levels: (f64, f64),
     /// The cents the recording's fundamental and the render's are from the note's name.
     pub pitch: (f64, f64),
+    /// The room's level over each of the ERB bands in dB, where a sine at full scale reads 0 dB, or none where the recording has no room.
+    pub room: Vec<f64>,
 }
 
 /// A recording's fundamental, and the ratio of a render's pitch to the recording's: of the render's peak within a quarter tone of the recording's loudest partial to that partial, over the frames where a partial's frequency is read.
@@ -457,8 +462,9 @@ pub fn tuning(theirs: &Note, ours: &partials::Spectra, note: f64) -> (f64, f64) 
     (fundamental, found / loudest.freq)
 }
 
-/// Compares a render with a recording of the same note over `seconds` from its strike, each brought to the same total over its first half second.
-pub fn check(recording: &[f64], rate: f64, rendered: &[f64], render_rate: f64, note: f64, seconds: f64, exact: bool, top: f64) -> Check {
+/// Compares a render with a recording of the same note over `seconds` from its strike, each brought to the same total over its first half second, the render with the `room` the recording was made in added.
+#[allow(clippy::too_many_arguments)]
+pub fn check(recording: &[f64], rate: f64, rendered: &[f64], render_rate: f64, note: f64, seconds: f64, exact: bool, top: f64, room: Option<&Room>) -> Check {
     let theirs = partials::measure(recording, rate, note, seconds, exact, top);
     let ours = partials::spectra(rendered, render_rate, hz(note), seconds);
     let half = (0.5 / HOP) as usize;
@@ -477,7 +483,8 @@ pub fn check(recording: &[f64], rate: f64, rendered: &[f64], render_rate: f64, n
         .zip(&ours_tracks)
         .map(|(track, mine)| {
             let floor = track.floor;
-            let mine: Vec<f64> = mine.iter().map(|l| (l + shift).max(floor)).collect();
+            let around = room::at(room, track.freq);
+            let mine: Vec<f64> = mine.iter().map(|l| room::with(l + shift, around).max(floor)).collect();
             let strike_frames = (0.02 / HOP) as usize + (LEAD / HOP) as usize;
             let top = |levels: &[f64]| levels.iter().take(strike_frames).map(|l| l.max(floor)).fold(f64::MIN, f64::max);
             let gaps: Vec<f64> = track
@@ -506,17 +513,19 @@ pub fn check(recording: &[f64], rate: f64, rendered: &[f64], render_rate: f64, n
             }
         })
         .collect();
-    let (erb, bands, stretch) = erb_gap(&theirs, &ours, ratio, &erb_bands_under(top, rate));
+    let erb_bands = erb_bands_under(top, rate);
+    let (erb, bands, stretch) = erb_gap(&theirs, &ours, ratio, &erb_bands, room);
     let cents = |freq: f64| 1200.0 * (freq / hz(note)).log2();
     let pitch = (cents(anchor), cents(anchor * ratio));
-    Check { partials, erb, bands, stretch, levels: (10.0 * total_theirs.log10(), 10.0 * total_ours.log10()), pitch }
+    let room = if room.is_some() { room::over(room, &erb_bands).iter().map(|p| 10.0 * p.max(1e-24).log10()).collect() } else { vec![] };
+    Check { partials, erb, bands, stretch, levels: (10.0 * total_theirs.log10(), 10.0 * total_ours.log10()), pitch, room }
 }
 
 /// How far the fit's own render of a recording, its figures played as sines and noise with no synth, is from the recording: the closest a synth playing the figures can come.
-pub fn own(sound: &[f64], rate: f64, note: f64, seconds: f64, exact: bool, top: f64) -> Check {
-    let (figures, _) = fit(sound, rate, note, seconds, exact, top);
+pub fn own(sound: &[f64], rate: f64, note: f64, seconds: f64, exact: bool, top: f64, room: Option<&Room>) -> Check {
+    let (figures, _) = fit(sound, rate, note, seconds, exact, top, room);
     let rendered = render(&figures, rate, 0.05, seconds + 0.3);
-    check(sound, rate, &rendered, rate, note, seconds, exact, top)
+    check(sound, rate, &rendered, rate, note, seconds, exact, top, room)
 }
 
 /// One partial's or one ERB band's levels at the times asked for, in dB against the recording's loudest partial: the recording, the synth when given, the fit's own render, and that render's sines and noise apart.
@@ -541,9 +550,10 @@ pub struct Frames {
 
 /// Fits a recording, renders the figures with their sines and noise together and apart, and gives each partial within 60 dB of the loudest, lowest first, and each ERB band at `times` seconds after the strike.
 /// Each sound is brought to the recording's total over its first half second as `check` brings it, the sines and noise by the fit's own render's shift.
+/// The synth and the fit's own render have the `room` the recording was made in added, as `check` adds it, and the room has a row of its own.
 #[allow(clippy::too_many_arguments)]
-pub fn frames(sound: &[f64], rate: f64, note: f64, seconds: f64, exact: bool, top: f64, synth: Option<(&[f64], f64)>, times: &[f64]) -> Frames {
-    let (figures, theirs) = fit(sound, rate, note, seconds, exact, top);
+pub fn frames(sound: &[f64], rate: f64, note: f64, seconds: f64, exact: bool, top: f64, synth: Option<(&[f64], f64)>, times: &[f64], room: Option<&Room>) -> Frames {
+    let (figures, theirs) = fit(sound, rate, note, seconds, exact, top, room);
     let own = render(&figures, rate, 0.05, seconds + 0.3);
     let mut sines = figures.clone();
     for band in &mut sines.noise {
@@ -574,23 +584,25 @@ pub fn frames(sound: &[f64], rate: f64, note: f64, seconds: f64, exact: bool, to
     let own_ratio = tuning(&theirs, &own_spectra, note).1;
     let (own_tracks, own_bands) = measured(&own, &own_spectra, own_ratio);
     let shifts = (track_target - tracks_total(&own_tracks), band_target - bands_total(&own_bands));
-    let mut sounds: Vec<(String, Vec<Vec<f64>>, Vec<Vec<f64>>, (f64, f64))> = vec![("recording".to_string(), recorded, recorded_bands, (0.0, 0.0))];
+    let mut sounds: Vec<(String, Vec<Vec<f64>>, Vec<Vec<f64>>, (f64, f64), bool)> = vec![("recording".to_string(), recorded, recorded_bands, (0.0, 0.0), false)];
     if let Some((synth, synth_rate)) = synth {
         let spectra = partials::spectra(synth, synth_rate, hz(note), seconds);
         let (tracks, levels) = measured(synth, &spectra, tuning(&theirs, &spectra, note).1);
         let shift = (track_target - tracks_total(&tracks), band_target - bands_total(&levels));
-        sounds.push(("synth".to_string(), tracks, levels, shift));
+        sounds.push(("synth".to_string(), tracks, levels, shift, true));
     }
-    sounds.push(("fit".to_string(), own_tracks, own_bands, shifts));
+    sounds.push(("fit".to_string(), own_tracks, own_bands, shifts, true));
     for (name, figures) in [("sines", &sines), ("noise", &noise)] {
         let rendered = render(figures, rate, 0.05, seconds + 0.3);
         let spectra = apart(figures);
         let (tracks, levels) = measured(&rendered, &spectra, own_ratio);
-        sounds.push((name.to_string(), tracks, levels, shifts));
+        sounds.push((name.to_string(), tracks, levels, shifts, false));
     }
     let loudest = loudest(&theirs);
     let frames: Vec<usize> = times.iter().map(|t| ((t + LEAD) / HOP).round().max(0.0) as usize).collect();
-    let at = |levels: &[f64], shift: f64| frames.iter().map(|k| levels.get(*k).map_or(SILENT, |l| l + shift - loudest)).collect::<Vec<f64>>();
+    let at = |levels: &[f64], shift: f64, added: f64| frames.iter().map(|k| levels.get(*k).map_or(SILENT, |l| room::with(l + shift, added) - loudest)).collect::<Vec<f64>>();
+    let room_row = |power: f64| room.map(|_| ("room".to_string(), vec![10.0 * power.max(1e-24).log10() - loudest; frames.len()]));
+    let rooms = room::over(room, &bands);
     let mut order: Vec<usize> = (0..theirs.partials.len()).filter(|i| loudest - theirs.partials[*i].strike(0.02) <= 60.0).collect();
     order.sort_by(|a, b| theirs.partials[*a].freq.total_cmp(&theirs.partials[*b].freq));
     let fundamental = theirs.partials.iter().find(|t| t.harmonic == 1).map_or(theirs.f0, |t| t.freq);
@@ -598,7 +610,9 @@ pub fn frames(sound: &[f64], rate: f64, note: f64, seconds: f64, exact: bool, to
         .iter()
         .map(|i| {
             let track = &theirs.partials[*i];
-            Rows { at: (track.freq / fundamental, track.harmonic as f64), floor: track.floor - loudest, rows: sounds.iter().map(|(name, tracks, _, (shift, _))| (name.clone(), at(&tracks[*i], *shift))).collect() }
+            let around = room::at(room, track.freq);
+            let rows = sounds.iter().map(|(name, tracks, _, (shift, _), roomed)| (name.clone(), at(&tracks[*i], *shift, if *roomed { around } else { 0.0 }))).chain(room_row(around)).collect();
+            Rows { at: (track.freq / fundamental, track.harmonic as f64), floor: track.floor - loudest, rows }
         })
         .collect();
     let band_rows = bands
@@ -606,7 +620,7 @@ pub fn frames(sound: &[f64], rate: f64, note: f64, seconds: f64, exact: bool, to
         .enumerate()
         .map(|(k, (low, high))| {
             let floor = theirs.floor.at((low * high).sqrt()) + 10.0 * ((high - low) / theirs.spectra.bin).max(1.0).log10();
-            let rows = sounds.iter().map(|(name, _, levels, (_, shift))| (name.clone(), at(&levels.iter().map(|frame| frame[k]).collect::<Vec<f64>>(), *shift))).collect();
+            let rows = sounds.iter().map(|(name, _, levels, (_, shift), roomed)| (name.clone(), at(&levels.iter().map(|frame| frame[k]).collect::<Vec<f64>>(), *shift, if *roomed { rooms[k] } else { 0.0 }))).chain(room_row(rooms[k])).collect();
             Rows { at: (*low, *high), floor: floor - loudest, rows }
         })
         .collect();
@@ -637,6 +651,15 @@ fn bins(spectra: &partials::Spectra, low: f64, high: f64) -> (usize, usize) {
     (a, ((high / spectra.bin).round() as usize).max(a + 1))
 }
 
+/// The power of a frame's magnitudes over a band from `low` to `high` Hz.
+/// Each bin covers half a bin either side of its centre and counts for the share of that inside the band, so a band moved with a pitch takes the same part of each partial.
+pub fn band_power(frame: &[f64], bin: f64, low: f64, high: f64) -> f64 {
+    let (from, to) = (low / bin, high / bin);
+    let first = (from - 0.5).floor().max(0.0) as usize;
+    let last = ((to + 0.5).ceil() as usize).min(frame.len());
+    (first..last).map(|i| (frame[i] * frame[i]) * ((i as f64 + 0.5).min(to) - (i as f64 - 0.5).max(from)).max(0.0)).sum()
+}
+
 pub fn erb_levels(spectra: &partials::Spectra, bands: &[(f64, f64)]) -> Vec<Vec<f64>> {
     spectra
         .frames
@@ -644,14 +667,7 @@ pub fn erb_levels(spectra: &partials::Spectra, bands: &[(f64, f64)]) -> Vec<Vec<
         .map(|f| {
             bands
                 .iter()
-                .map(|(low, high)| {
-                    // Each bin covers half a bin either side of its centre and counts for the share of that inside the band, so a band moved with a pitch takes the same part of each partial.
-                    let (from, to) = (low / spectra.bin, high / spectra.bin);
-                    let first = (from - 0.5).floor().max(0.0) as usize;
-                    let last = ((to + 0.5).ceil() as usize).min(f.len());
-                    let power: f64 = (first..last).map(|i| (f[i] * f[i]) * ((i as f64 + 0.5).min(to) - (i as f64 - 0.5).max(from)).max(0.0)).sum();
-                    10.0 * power.max(1e-24).log10()
-                })
+                .map(|(low, high)| 10.0 * band_power(f, spectra.bin, *low, *high).max(1e-24).log10())
                 .collect()
         })
         .collect()
@@ -660,13 +676,14 @@ pub fn erb_levels(spectra: &partials::Spectra, bands: &[(f64, f64)]) -> Vec<Vec<
 // The mean gap over every band and frame where either stands clear of the recording's floor, the render brought to the recording's total over its first half second.
 // Also each band's centre, its mean signed gap, and the frames it was compared in, and the stretch furthest off.
 #[allow(clippy::type_complexity)]
-fn erb_gap(theirs: &Note, ours: &partials::Spectra, ratio: f64, bands: &[(f64, f64)]) -> (f64, Vec<(f64, f64, usize)>, (f64, f64)) {
+fn erb_gap(theirs: &Note, ours: &partials::Spectra, ratio: f64, bands: &[(f64, f64)], room: Option<&Room>) -> (f64, Vec<(f64, f64, usize)>, (f64, f64)) {
     // The render's bands move with its pitch, so a partial a few cents off stays in the band it shares with the recording.
     let moved: Vec<(f64, f64)> = bands.iter().map(|(low, high)| (low * ratio, high * ratio)).collect();
     let (a, b) = (erb_levels(&theirs.spectra, &bands), erb_levels(ours, &moved));
     let half = (0.5 / HOP) as usize;
     let total = |e: &[Vec<f64>]| 10.0 * e.iter().take(half).flatten().map(|d| 10f64.powf(d / 10.0)).sum::<f64>().log10();
     let shift = total(&a) - total(&b);
+    let rooms = room::over(room, bands);
     let mut gaps = vec![];
     let mut per_band = vec![(0.0, 0); bands.len()];
     let mut per_frame = vec![];
@@ -675,7 +692,7 @@ fn erb_gap(theirs: &Note, ours: &partials::Spectra, ratio: f64, bands: &[(f64, f
         for (k, (x, y)) in fa.iter().zip(fb).enumerate() {
             let (low, high) = bands[k];
             let floor = theirs.floor.at((low * high).sqrt()) + 10.0 * ((high - low) / theirs.spectra.bin).max(1.0).log10();
-            let y = y + shift;
+            let y = room::with(y + shift, rooms[k]);
             if *x > floor + CLEAR || y > floor + CLEAR {
                 let gap = y.max(floor) - x.max(floor);
                 gaps.push(gap.abs());

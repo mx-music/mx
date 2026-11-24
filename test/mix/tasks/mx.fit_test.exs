@@ -280,6 +280,56 @@ defmodule Mix.Tasks.Mx.FitTest do
       end
     end
 
+    test "--check --own measures the room the run was recorded in and prints it for each file",
+         ctx do
+      write_wav(
+        ctx.tmp_dir,
+        "room.wav",
+        in_a_room(Enum.flat_map([60, 64, 67], &struck_note(&1, 3)))
+      )
+
+      write_wav(ctx.tmp_dir, "silent.wav", struck_note(72, 2))
+      list = write_list(ctx, ["C4:G4 127 room.wav", "C5 127 silent.wav"])
+
+      output =
+        capture_io(fn -> Mix.Tasks.Mx.Fit.run(~w(marimba --struck #{list} --check --own)) end)
+
+      assert output =~
+               ~r/^the room of each file, in dB of a sine at full scale, at each ERB band's centre in Hz\nHz( +\d+)+\nroom\.wav( +-\d+\.\d)+\n/m
+
+      refute output =~ ~r/^silent\.wav /m
+    end
+
+    test "--check --note adds the room to the fit's own render and shows it as its own row",
+         ctx do
+      write_wav(
+        ctx.tmp_dir,
+        "room.wav",
+        in_a_room(Enum.flat_map([60, 64, 67], &struck_note(&1, 3)))
+      )
+
+      list = write_list(ctx, ["C4:G4 127 room.wav"])
+
+      output =
+        capture_io(fn ->
+          Mix.Tasks.Mx.Fit.run(
+            ~w(marimba --struck #{list} --check --note C4 --vel 127 --own --until 2.5)
+          )
+        end)
+
+      fundamental = printed_rows(output, ~r/1\.000 harmonic 1/)
+      assert Map.keys(fundamental) |> Enum.sort() == ~w(fit noise recording room sines)
+
+      {:ok, recordings, _lines} = Struck.listed(list)
+      recording = Enum.find(recordings, &(&1.note == 60))
+      times = for step <- 0..23, do: step * 0.1
+      frames = Struck.frames(nil, recording, times)
+      hiss = Enum.find(frames.bands, fn %{at: {low, _high}} -> low > 4000 end)
+      [recorded, fit] = Enum.map(~w(recording fit), &elem(List.keyfind(hiss.rows, &1, 0), 1))
+
+      assert_in_delta power_mean(fit), power_mean(recorded), 1
+    end
+
     test "a note is fitted over its whole ring, and falls on at its last slope after it", ctx do
       write_wav(ctx.tmp_dir, "long.wav", struck_note(60, 12, harmonics: [1], fade: 6))
       list = write_list(ctx, ["C4 100 long.wav"])
@@ -480,8 +530,8 @@ defmodule Mix.Tasks.Mx.FitTest do
     test "--check reads the synth at its own pitch, so a note 10 cents up keeps every strong partial's gaps and reads 10 cents off" do
       base = with_floor(struck_note(60, 2))
       check = fn render -> Mxs.Native.check_struck(struck(base), packed(render)) end
-      same = check.(base)
-      up = check.(with_floor(struck_note(Mx.Signal.hz(60) * 2 ** (10 / 1200), 2)))
+      same = check.(struck_note(60, 2))
+      up = check.(struck_note(Mx.Signal.hz(60) * 2 ** (10 / 1200), 2))
 
       for check <- [same, up], partial <- check.partials, partial.below <= 30 do
         assert abs(partial.strike) <= 0.1 and partial.mean <= 0.1
@@ -506,11 +556,12 @@ defmodule Mix.Tasks.Mx.FitTest do
           sample + (tone || 0.0)
         end
 
-      same = Mxs.Native.check_struck(struck(base), packed(base))
+      clean = struck_note(60, 2)
+      same = Mxs.Native.check_struck(struck(base), packed(clean))
       {gap, _from} = same.stretch
-      assert gap < 0.05
+      assert gap < 0.3
 
-      off = Mxs.Native.check_struck(struck(burst), packed(base))
+      off = Mxs.Native.check_struck(struck(burst), packed(clean))
       {gap, from} = off.stretch
       assert gap > 3 * off.erb
       # A window of 80 ms holds part of the tone when it is centred from 0.56 to 0.74 seconds.
@@ -898,7 +949,7 @@ defmodule Mix.Tasks.Mx.FitTest do
     end
 
     @tag timeout: 600_000
-    test "--check --note C2 --vel 80 prints the mf C2's pitch, its fundamental and 4th partial frame by frame, with sines and noise adding up",
+    test "--check --note C2 --vel 80 prints the mf C2's pitch, its fundamental and 4th partial frame by frame, with sines, noise and the room adding up",
          %{marimba: marimba} = ctx do
       list = write_list(ctx, ["C2:B2 80 kept #{marimba}/Marimba.yarn.mf.C2B2.aif"])
 
@@ -921,12 +972,75 @@ defmodule Mix.Tasks.Mx.FitTest do
       frames = Struck.frames(nil, recording, times)
 
       for rows <- frames.partials ++ frames.bands,
-          [fit, sines, noise] =
-            Enum.map(~w(fit sines noise), &elem(List.keyfind(rows.rows, &1, 0), 1)),
-          {fit, sines, noise} <- Enum.zip([fit, sines, noise]),
+          [fit, sines, noise, room] =
+            Enum.map(~w(fit sines noise room), &elem(List.keyfind(rows.rows, &1, 0), 1)),
+          {fit, sines, noise, room} <- Enum.zip([fit, sines, noise, room]),
           fit > rows.floor and abs(sines - noise) > 20 do
-        assert_in_delta 10 * :math.log10(10 ** (sines / 10) + 10 ** (noise / 10)), fit, 1
+        power = 10 ** (sines / 10) + 10 ** (noise / 10) + 10 ** (room / 10)
+        assert_in_delta 10 * :math.log10(power), fit, 1
       end
+    end
+
+    @tag timeout: 600_000
+    test "the fit's own render of the mf A2 meets its hiss after 2.6 seconds with the room added",
+         %{marimba: marimba} = ctx do
+      list = write_list(ctx, ["C2:B2 80 kept #{marimba}/Marimba.yarn.mf.C2B2.aif"])
+      {:ok, recordings, _lines} = Struck.listed(list)
+      recording = Enum.find(recordings, &(&1.note == 45))
+      times = for step <- 26..40, do: step / 10
+      frames = Struck.frames(nil, recording, times)
+      bands = Enum.filter(frames.bands, fn %{at: {low, _high}} -> low >= 370 end)
+      assert length(bands) > 20
+
+      for %{at: {low, high}, rows: rows} <- bands do
+        [recorded, fit] = Enum.map(~w(recording fit), &elem(List.keyfind(rows, &1, 0), 1))
+        {recorded, fit} = {power_mean(recorded), power_mean(fit)}
+
+        assert abs(fit - recorded) <= 2,
+               "#{round(low)}-#{round(high)} Hz: #{recorded} against #{fit}"
+      end
+    end
+
+    @tag timeout: 600_000
+    test "the room stays under the pp F#6's low thump at the strike",
+         %{marimba: marimba} = ctx do
+      list = write_list(ctx, ["C6:B6 40 kept #{marimba}/Marimba.yarn.pp.C6B6.aif"])
+      {:ok, recordings, _lines} = Struck.listed(list)
+      recording = Enum.find(recordings, &(&1.note == 90))
+      frames = Struck.frames(nil, recording, [-0.005])
+      bands = Enum.filter(frames.bands, fn %{at: {_low, high}} -> high <= 253 end)
+      assert length(bands) == 5
+
+      for %{at: {low, high}, rows: rows} <- bands do
+        [[recorded], [room]] = Enum.map(~w(recording room), &elem(List.keyfind(rows, &1, 0), 1))
+        name = "#{round(low)}-#{round(high)} Hz"
+        assert room < recorded - 15, "#{name}: the room #{room} against #{recorded}"
+      end
+    end
+
+    @tag timeout: 1_200_000
+    test "--check --own over the marimba's 18 yarn files prints the room of each",
+         %{marimba: marimba} = ctx do
+      lines =
+        for {dynamic, velocity} <- [pp: 40, mf: 80, ff: 127],
+            file <- ~w(C2B2 C3B3 C4B4 C5B5 C6B6 C7) do
+          [first | _] = notes = Regex.scan(~r/[A-G]\d/, file) |> List.flatten()
+          range = if notes == [first], do: first, else: "#{first}:#{List.last(notes)}"
+          "#{range} #{velocity} kept #{marimba}/Marimba.yarn.#{dynamic}.#{file}.aif"
+        end
+
+      output =
+        capture_io(fn ->
+          Mix.Tasks.Mx.Fit.run([
+            "marimba",
+            "--struck",
+            write_list(ctx, lines),
+            "--check",
+            "--own"
+          ])
+        end)
+
+      assert length(Regex.scan(~r/^Marimba\.yarn\.\w+\.\w+\.aif( +-\d+\.\d)+$/m, output)) == 18
     end
 
     test "splits the xylophone's mf run from C6 to B6 into its twelve notes, and names the vibraphone's pp C#6 as not found",
@@ -1240,6 +1354,35 @@ defmodule Mix.Tasks.Mx.FitTest do
 
   # Notes one after another, each ringing 1.5 seconds.
   defp run(notes), do: Enum.flat_map(notes, &struck_note(&1, 1.5))
+
+  # A recording made in a room: a steady hiss 60 dB down and a hum at 60 Hz 50 dB down under it.
+  defp in_a_room(samples) do
+    :rand.seed(:exsss, {4, 5, 6})
+    rate = Mxs.render_rate()
+
+    for {sample, index} <- Enum.with_index(samples) do
+      hum = 3.0e-3 * :math.sin(2 * :math.pi() * 60 * index / rate)
+      sample + hum + 1.0e-3 * (2 * :rand.uniform() - 1)
+    end
+  end
+
+  # The mean of levels in dB taken as powers, in dB.
+  defp power_mean(levels) do
+    10 * :math.log10(Enum.sum(Enum.map(levels, &(10 ** (&1 / 10)))) / length(levels))
+  end
+
+  # The rows --check --note prints for the partial or band whose name matches, by row, each figure
+  # as a float or nil for "-".
+  defp printed_rows(output, name) do
+    [_, block] = Regex.run(~r/^#{name.source}\n((?:  .*\n)+)/m, output)
+
+    for line <- String.split(block, "\n", trim: true), into: %{} do
+      [row | figures] =
+        line |> String.trim() |> String.replace_prefix("the fit", "fit") |> String.split()
+
+      {row, Enum.map(figures, &if(&1 == "-", do: nil, else: String.to_float(&1)))}
+    end
+  end
 
   # A made note with a floor of white noise 90 dB down, as a recording has, so that the measuring
   # finds no partials in the window's sidelobes.

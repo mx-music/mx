@@ -117,7 +117,7 @@ defmodule Mx.Fit.Struck do
       fn recording ->
         rendered = render(synth, recording, options)
         check = Native.check_struck(struck(recording, raws([recording])), rendered)
-        Map.merge(check, Map.take(recording, [:note, :velocity, :kept]))
+        Map.merge(check, Map.take(recording, [:path, :note, :velocity, :kept]))
       end,
       timeout: :infinity
     )
@@ -459,7 +459,7 @@ defmodule Mx.Fit.Struck do
           recording
           |> struck(raws([recording]))
           |> Native.check_fit_struck()
-          |> Map.merge(Map.take(recording, [:note, :velocity, :kept]))
+          |> Map.merge(Map.take(recording, [:path, :note, :velocity, :kept]))
 
         File.mkdir_p!(Path.dirname(path))
         File.write!(path, :erlang.term_to_binary(check))
