@@ -51,6 +51,16 @@ defmodule ClairDeLune do
     |> Enum.sort()
   end
 
+  # The notes of a bar as Debussy wrote them, as {staff, beat, notes, length} in eighths, with no
+  # touch, pedal or rubato.
+  def written(bar) do
+    {^bar, upper, lower} = List.keyfind(score(), bar, 0)
+
+    for {staff, chords} <- [upper: upper, lower: lower],
+        {beat, notes, length} <- chords,
+        do: {staff, beat, notes, length}
+  end
+
   # The beat at which a point of a bar sounds, past its end at the pace of its last eighth.
   def warp(bar, eighth) do
     lengths = eighths(bar)
