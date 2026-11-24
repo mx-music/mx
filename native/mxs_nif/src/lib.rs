@@ -6,7 +6,7 @@ mod levels;
 mod spectrogram;
 
 use mxs::graph::{Clause, Graph};
-use mxs::{BANDS, Effect, Engine, Event, Kind, Levels, Pass, Report, Source, Spec, Synth, Target, Tempo, Topic, Value, effects, synths};
+use mxs::{BANDS, Engine, Event, Kind, Levels, Pass, Report, Source, Spec, Target, Tempo, Topic, Value, effects, synths};
 use rustler::types::tuple::get_tuple;
 use rustler::{Atom, Binary, Encoder, Env, LocalPid, NifResult, OwnedBinary, OwnedEnv, ResourceArc, Term};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -271,7 +271,7 @@ fn target(term: Term) -> NifResult<Target> {
 fn register_graph<'a>(env: Env<'a>, resource: ResourceArc<EngineResource>, name: String, specs: Vec<SpecTerm>, clauses: Vec<(Term<'a>, Term<'a>)>) -> NifResult<Term<'a>> {
     let specs = specs.into_iter().map(spec).collect();
     let clauses = clauses.into_iter().map(|(matches, graph)| Ok(Clause { matches: options(matches)?, graph: graph_of(graph)? })).collect::<NifResult<_>>()?;
-    match Synth::graph(&name, specs, clauses) {
+    match mxs::graph::synth(&name, specs, clauses) {
         Ok(synth) => {
             lock(&resource).register(synth);
             Ok(ok().encode(env))
@@ -293,7 +293,7 @@ fn load_table<'a>(env: Env<'a>, file: String, bytes: Binary) -> Term<'a> {
 #[rustler::nif]
 fn register_effect_graph<'a>(env: Env<'a>, resource: ResourceArc<EngineResource>, name: String, specs: Vec<SpecTerm>, graph: Term<'a>) -> NifResult<Term<'a>> {
     let specs = specs.into_iter().map(spec).collect();
-    match Effect::graph(&name, specs, graph_of(graph)?) {
+    match mxs::graph::effect(&name, specs, graph_of(graph)?) {
         Ok(effect) => {
             lock(&resource).register_effect(effect);
             Ok(ok().encode(env))
