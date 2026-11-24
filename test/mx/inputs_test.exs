@@ -3,6 +3,9 @@ defmodule Mx.InputsTest do
 
   alias Mx.{Inputs, OSC}
 
+  # It opens MIDI ports, so it needs ALSA's sequencer on Linux.
+  @moduletag :midi
+
   @osc_port 57_291
 
   setup do

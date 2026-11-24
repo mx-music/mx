@@ -5,6 +5,9 @@ defmodule Mx.OutTest do
 
   alias Mx.{OSC, Out}
 
+  # It opens MIDI ports, so it needs ALSA's sequencer on Linux.
+  @moduletag :midi
+
   setup do
     out = start_supervised!({Out, name: nil})
     %{out: out}

@@ -1224,6 +1224,7 @@ defmodule Mx.BandTest do
       assert notes == Enum.sort(notes)
     end
 
+    @tag :midi
     test "a value a part of a song written as music sets is read by another loop's next pass",
          ctx do
       inputs = start_supervised!({Mx.Inputs, name: nil})
@@ -1246,6 +1247,7 @@ defmodule Mx.BandTest do
       assert notes == Enum.sort(notes)
     end
 
+    @tag :midi
     test "a set step shares its value from its beat, not from when its pass is worked out",
          ctx do
       inputs = start_supervised!({Mx.Inputs, name: nil})
@@ -1265,6 +1267,7 @@ defmodule Mx.BandTest do
       assert Mx.Inputs.snapshot(inputs)[{:value, :root}] == 40
     end
 
+    @tag :midi
     test "a loop reads its own set steps from its next pass, and a name nobody set as nil",
          ctx do
       inputs = start_supervised!({Mx.Inputs, name: nil})
