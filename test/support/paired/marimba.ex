@@ -4,6 +4,7 @@ defmodule Mx.Paired.Marimba do
   """
 
   use Mx.Instrument
+  import Mx.Paired.Sounds, only: [pitch: 1, tilted: 2]
 
   # Each of the marimba's partials as a multiple of the note, and its shape at vel 40, 80 and 127
   # out of 127, at every sixth note from C2 to C7: the first resonator's level in dB against the
@@ -358,6 +359,12 @@ defmodule Mx.Paired.Marimba do
   attr :note, :note, default: 52, doc: "The pitch."
   attr :vel, :float, default: 0.6, range: 0.05..1, doc: "How hard the bar is struck."
   envelope_attrs sustain: 1000, release: 0.3
+  attr :bend, :float, default: 0, doc: "Semitones the pitch is bent by."
+
+  attr :brightness, :float,
+    default: 0.5,
+    range: 0..1,
+    doc: "Tilts the sound 3 dB an octave either way of 0.5."
 
   defsynth marimba(hit) do
     freq = hz(hit.note)
@@ -406,7 +413,7 @@ defmodule Mx.Paired.Marimba do
             {share, fade} <- [{1, fade}, {second, second_fade}] do
           heard = select(freq * ratio < 15_000, 1, 0)
           first = heard * (1.25 * (Enum.at(along, knot) * Enum.at(across, row))) * db(level)
-          strike |> mode(hz: freq * ratio, level: first * share, fade: @fall * exp(fade))
+          strike |> mode(hz: pitch(hit) * ratio, level: first * share, fade: @fall * exp(fade))
         end
       )
 
@@ -422,8 +429,10 @@ defmodule Mx.Paired.Marimba do
          |> perc(attack: 0.0005, release: 0.05)
          |> gain(0.3))
 
-    (struck + tap * (vel / 0.6) ** 0.5)
-    |> gain(0.1 * (vel / 0.6) ** 1.9)
+    sound = gain(struck + tap * (vel / 0.6) ** 0.5, 0.1 * (vel / 0.6) ** 1.9)
+
+    hit
+    |> tilted(sound)
     |> note_envelope(hit)
     |> rings(seconds: ring * 4 / 3)
   end

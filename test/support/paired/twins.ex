@@ -63,7 +63,9 @@ defmodule Mx.Paired.Twins do
          [note: 84, vel: 1, sustain: 2],
          [note: 76, vibrato: 0.2, sustain: 2]
        ], 3},
-      {Mx.Paired.Marimba, :marimba, [[note: 60, vel: 0.3], [note: 72, vel: 1]], 3},
+      {Mx.Paired.Marimba, :marimba,
+       [[note: 60, vel: 0.3], [note: 72, vel: 1], [note: 48, vel: 0.6, bend: 2, brightness: 0.8]],
+       3},
       {Mx.Paired.Xylophone, :xylophone, [[note: 72, vel: 0.3], [note: 84, vel: 1]], 3},
       {Mx.Paired.Glockenspiel, :glockenspiel, [[note: 84, vel: 0.3], [note: 91, vel: 1]], 3},
       {Mx.Paired.Timpani, :timpani, [[note: 43, vel: 0.3], [note: 50, vel: 1]], 3},
