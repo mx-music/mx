@@ -16,10 +16,13 @@ jobs:
           version-file: .tool-versions
           version-type: strict
 
-      - run: sudo apt-get update && sudo apt-get install -y libasound2-dev linux-modules-extra-$(uname -r)
+      - run: sudo apt-get update && sudo apt-get install -y libasound2-dev
 
       # The MIDI tests open ALSA's sequencer, which the runner leaves unloaded.
-      - run: sudo modprobe snd-seq
+      - run: |
+          find /lib/modules/$(uname -r) -name 'snd-seq*' | head
+          sudo modprobe snd-seq
+          ls -l /dev/snd/seq
 
       - uses: actions/cache@v4
         with:
