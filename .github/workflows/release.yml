@@ -80,3 +80,38 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: ${{ steps.build.outputs.file-path }}
+
+  # Hex trusts this job's identity, the release workflow in the hex environment, once a reviewer approves it; no key is stored.
+  hex:
+    name: Hex
+    needs: [notices, build]
+    runs-on: ubuntu-24.04
+    if: startsWith(github.ref, 'refs/tags/')
+    environment: hex
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: erlef/setup-beam@v1
+        with:
+          version-file: .tool-versions
+          version-type: strict
+
+      - run: sudo apt-get update && sudo apt-get install -y libasound2-dev
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - run: mix deps.get
+
+      - name: Check the version
+        run: |
+          test "v$(sed -n 's/^      version: "\(.*\)",$/\1/p' mix.exs)" = "$GITHUB_REF_NAME"
+
+      - name: Write the checksums of the NIFs the build jobs released
+        run: mix rustler_precompiled.download Mx.Engine.Mxs.Native --all --print
+
+      - run: mix hex.publish --yes
