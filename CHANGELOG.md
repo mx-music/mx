@@ -16,7 +16,7 @@
   * [effects] `defeffect` processes both stereo sides together and declares its tail with `tail/1`, and `defsynth` gains `saturate/2`, `clip/2`, `fold/2` and `ladder/2`
   * [examples] Add `examples/effects`, a short song for each effect that plays a phrase dry, then through the effect, then with one option moved at a time
   * [synths] Add `deep_bass`, and alpha versions of `electric_piano` and `electric_guitar` that will be refitted
-  * [synths] `pandeiro` is refitted to recordings of its thumb, heel and slap, with jingles that answer the hand, `muted` strokes that sound as its pressed head does and no two strokes alike, and its solo plays the choro's pandeiro line; `ganza`, `clave`, `guiro`, `berimbau`, `cuica`, `triangle` and the tabla's tas stroke sound closer to their recordings
+  * [synths] `pandeiro` is refitted to recordings of its thumb, heel and slap, with jingles that answer the hand, `muted` strokes that sound as its pressed head does, lighter and drier fingertips, a quieter heel and no two strokes alike, and its solo plays the choro's pandeiro line; `ganza`, `clave`, `guiro`, `berimbau`, `cuica`, `triangle` and the tabla's tas stroke sound closer to their recordings
   * [synths] `Mx.Synths.family/1` and `range/1` give each synth's family and playable range
   * [mix mx.play] Play or render a score, a MIDI file or an ABC tune directly, without importing it first
   * [mix mx.play] A render reports its loudness in LUFS, and `--loudness` scales it to a target
