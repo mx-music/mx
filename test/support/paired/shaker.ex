@@ -12,6 +12,7 @@ defmodule Mx.Paired.Shaker do
     upward: [0.15, 0.85, 1.6, 0.6, -11.0, 1.1, 0.85, 1.0, 0.9, -6.0, 5.0],
     stages: 3,
     dip: 0.6,
+    up_notch: [1.0, 1.0, 0.0],
     darken: 0.45
   }
 

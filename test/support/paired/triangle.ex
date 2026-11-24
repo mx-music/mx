@@ -8,7 +8,7 @@ defmodule Mx.Paired.Triangle do
   alias Mx.Instrument.Vocabulary, as: V
 
   @bands [1300, 2000, 3200, 5000, 8000, 12_500]
-  @levels [-40, -44.5, -21.5, -15, -2, -0.5]
+  @levels [-40, -40, -17.5, -15, -2, -0.5]
   @rings [10, 10, 9, 5, 3, 1.5]
   @plate Mx.Paired.Draws.plate(120, 1000, 18_000)
 
@@ -54,7 +54,8 @@ defmodule Mx.Paired.Triangle do
 
     sound =
       bar
-      |> V.peak(hz: 1300, q: 1 / 0.8, db: hard * 8)
+      |> V.peak(hz: 1300, q: 1 / 0.8, db: hard * 12)
+      |> V.peak(hz: 3200, q: 1 / 0.5, db: hard * 6)
       |> lowshelf(hz: 3500, q: 0.707, db: hard * 5)
 
     # mxs trims the triangle 3.5 dB quieter.

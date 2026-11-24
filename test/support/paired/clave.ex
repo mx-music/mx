@@ -7,7 +7,7 @@ defmodule Mx.Paired.Clave do
   import Mx.Paired.Drums, only: [hit: 3]
 
   @ratios [0.65, 1, 1.08, 1.5, 2.72, 3.6, 6.2]
-  @levels [-24, 0, -6, -6, -9.5, -20, -22]
+  @levels [-24, 0, -6, -6, -4.5, -20, -22]
   @bright [0, 0, 0, 0.6, 0.6, 1.3, 1]
   @rings [0.75, 0.75, 0.75, 0.72, 0.65, 0.5, 0.4]
 

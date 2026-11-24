@@ -10,6 +10,11 @@ defmodule Mx.Paired.Drums do
   @jingle_levels [-29, -24, -24.8, -17.5, -13.3, -17, -21.4, 0, -5, 0]
   @jingle_rings [0.55, 0.6, 0.7, 0.5, 0.45, 0.2, 0.15, 0.15, 0.15, 0.15]
 
+  @pandeiro_free [0.974, 1.652, 2.475, 3.25, 4.13]
+  @pandeiro_pressed [[0.9, 1.4, 0.6, 0.8, 1.5], [0.2, 0.77, 1.0, 0.6, 0.8]]
+  @pandeiro_strays [1.5, 0.2, 1.0]
+  @pandeiro_mix 0xD6E8_FEB8_6659_FD93
+
   @doc "A rise over `attack` seconds and a fall over `decay`, both bent by `curve`."
   defsound hit(attack, decay, curve) do
     envelope([{attack, 1, curve}, {decay, 0, curve}])
@@ -131,30 +136,45 @@ defmodule Mx.Paired.Drums do
 
   @doc "The pandeiro's stroke `s` at `f`, struck at `vel`, its head pressed `mute` of the way: a hand ringing the head's modes, a crack of band-passed noise, and the jingles' rattle ringing the discs."
   defsound pandeiro(f, vel, mute, s) do
-    pressed = f * 1.1225 ** mute
-    rings = Enum.map(s.rings, &(&1 * 0.2 ** mute))
+    # mxs draws each stroke's strays from the note's first seed, moved by the strokes before it.
+    normal = fn index ->
+      first = clamp(draw(2 * index, mix: @pandeiro_mix), 1.0e-12, 1)
 
-    stick =
-      lowpass(
-        impulse() + noise(:white) * hit(0.0005, 0.004, -4),
-        hz: clamp(800 + vel * 4000, 20, 20_000)
-      )
+      (-2 * log2(first) * :math.log(2)) ** 0.5 *
+        cos(2 * :math.pi() * draw(2 * index + 1, mix: @pandeiro_mix))
+    end
 
-    skin =
-      mode(stick,
-        hz: Enum.map([0.974, 1.652, 2.475, 3.25, 4.13], &(pressed * &1)),
-        level: s.head,
-        fade: rings
-      )
+    [jingles_stray, answer_stray, head_stray] = @pandeiro_strays
+    free = s.modes == @pandeiro_free
+    pressed = if free, do: f, else: f * 1.1225 ** mute
 
-    [crack, fall, centre] = s.crack
+    head =
+      for {level, index} <- Enum.with_index(s.head), do: level * db(head_stray * normal.(index))
+
+    {head, rings} =
+      if free do
+        [level_by, ring_by] = @pandeiro_pressed
+
+        {Enum.zip_with(head, level_by, &(&1 * &2 ** mute)),
+         Enum.zip_with(s.rings, ring_by, &(&1 * &2 ** mute))}
+      else
+        {head, Enum.map(s.rings, &(&1 * 0.2 ** mute))}
+      end
+
+    stick = lowpass(impulse(), hz: clamp(800 + vel * 4000, 20, 20_000))
+    skin = mode(stick, hz: Enum.map(s.modes, &(pressed * &1)), level: head, fade: rings)
+
+    [crack, fall, centre, width] = s.crack
 
     body =
-      bpf(noise(:white), f * centre, 2) * (hit(0.001, fall, -4) + hit(0.001, fall * 4, -4) * 0.06) *
-        crack
+      bpf(noise(:white), f * centre, width) *
+        (hit(0.001, fall, -4) + hit(0.001, fall * 4, -4) * 0.06) * crack
 
-    [shake, shaken] = s.jingle
-    rattle = noise(:white) * exp_hit(0.001, shaken)
+    answer = exp(answer_stray * normal.(5))
+    {levels, times} = s.shake
+    [first | rest] = levels
+    shaking = envelope([{0, first} | Enum.zip_with(times, rest, &{&1 * answer, &2, :exp})])
+    rattle = noise(:white) * shaking
 
     disc_ratios = [
       22.24,
@@ -164,17 +184,24 @@ defmodule Mx.Paired.Drums do
       32.13,
       35.68,
       40.93,
+      45.2,
       83.71,
       85.83,
       87.68,
+      88.4,
+      90.2,
       91.32,
       92.08,
+      98.8,
       102.31,
-      106.03
+      106.03,
+      109.5,
+      120
     ]
 
-    disc_levels = [0.25, 0.15, 0.15, 0.2, 0.25, 0.15, 0.15, 0.85, 1, 0.75, 0.55, 0.6, 0.6, 0.8]
-    disc_rings = List.duplicate(0.04, 7) ++ List.duplicate(0.08, 7)
+    disc_levels = [0.6, 0.36, 0.36, 0.45, 0.4, 0.21, 0.21, 0.28] ++ List.duplicate(0.85, 12)
+    disc_rings = List.duplicate(0.04, 8) ++ List.duplicate(0.08, 12)
+    [shake, _shaken, between] = s.jingle
 
     # The rattle rings the discs and sounds itself, so it is shared, its noise drawn once.
     jingles =
@@ -184,11 +211,11 @@ defmodule Mx.Paired.Drums do
           level: disc_levels,
           fade: disc_rings
         ) +
-          highpass(rattle, hz: clamp(f * 20, 20, 20_000)) * 0.3
-      end) * shake
+          highpass(rattle, hz: clamp(f * 20, 20, 20_000)) * between
+      end) * (shake * s.pressed ** mute * db(jingles_stray * normal.(6)))
 
     highshelf(skin + body + jingles, hz: 2000, q: 0.707, db: (vel - 0.6) * 5) *
-      (s.gain * (vel / 0.6) ** 0.75)
+      (0.93 * s.gain * (vel / 0.6) ** 0.75)
   end
 
   @doc "A tom at the MIDI `note`, tuned from `own`, struck at `vel`: a stick through a pole at 20 Hz ringing the head's modes briefly and long, and the skin's noise with a click, each tilted by vel."
@@ -294,6 +321,19 @@ defmodule Mx.Paired.Drums do
     bottom = clamp(envelope([{0, lowest}, {at.(1), lowest * at.(8), :exp}]), 20, 20_000)
     colour = Enum.reduce(1..s.stages, beads, fn _, sound -> highpass(sound, hz: bottom, q: 1) end)
     dipped = peak(colour, hz: clamp(pitch * s.dip, 20, 20_000), q: 2, db: at.(4))
+    [notch_at, notch_width, notch_depth] = s.up_notch
+
+    dipped =
+      if notch_depth == 0 do
+        dipped
+      else
+        peak(dipped,
+          hz: clamp(pitch * notch_at, 20, 20_000),
+          q: 1 / notch_width,
+          db: up * notch_depth
+        )
+      end
+
     highest = pitch * at.(2)
     top = clamp(envelope([{0, highest}, {at.(1), highest * s.darken, :exp}]), 20, 20_000)
 
