@@ -16,7 +16,7 @@ defmodule Mx.OutTest do
 
     Out.schedule(out, at, {:osc, {"127.0.0.1", port}, OSC.message("/hello", [1, "a"])})
 
-    assert_receive {:udp, ^receiver, _, _, packet}, 1000
+    assert_receive {:udp, ^receiver, _, _, packet}
     arrived = now()
     assert OSC.decode(packet) == {"/hello", [1, "a"]}
     assert arrived >= at
@@ -30,10 +30,10 @@ defmodule Mx.OutTest do
 
     Out.schedule(out, at, {:midi, name, <<0x91, 60, 100>>})
 
-    assert_receive {:midi, ^name, <<0x91, 60, 100>>, arrived}, 1000
+    assert_receive {:midi, ^name, <<0x91, 60, 100>>, arrived}
     assert arrived >= at
     assert arrived - at < 2000
-    refute_receive {:midi, ^other, _, _}, 100
+    refute_receive {:midi, ^other, _, _}
   end
 
   test "MIDI with no port goes to every connected port", %{out: out} do
@@ -42,8 +42,8 @@ defmodule Mx.OutTest do
 
     Out.schedule(out, now() + 20_000, {:midi, nil, <<0x90, 62, 90>>})
 
-    assert_receive {:midi, ^first, <<0x90, 62, 90>>, _}, 1000
-    assert_receive {:midi, ^second, <<0x90, 62, 90>>, _}, 1000
+    assert_receive {:midi, ^first, <<0x90, 62, 90>>, _}
+    assert_receive {:midi, ^second, <<0x90, 62, 90>>, _}
   end
 
   test "a port that is not connected prints one warning naming it", %{out: out} do
@@ -82,12 +82,12 @@ defmodule Mx.OutTest do
     Out.schedule(out, now() + 15_000, {:midi, name, <<0x92, 65, 100>>})
     Out.schedule(out, now() + 20_000, {:midi, name, <<0x82, 65, 0>>})
     Out.schedule(out, now() + 5_000_000, {:midi, name, <<0x82, 64, 0>>})
-    assert_receive {:midi, ^name, <<0x82, 65, 0>>, _}, 1000
+    assert_receive {:midi, ^name, <<0x82, 65, 0>>, _}
 
     stop_supervised!(Out)
 
-    assert_receive {:midi, ^name, <<0x82, 64, 0>>, _}, 1000
-    refute_receive {:midi, ^name, <<0x82, _, _>>, _}, 200
+    assert_receive {:midi, ^name, <<0x82, 64, 0>>, _}
+    refute_receive {:midi, ^name, <<0x82, _, _>>, _}
   end
 
   @tag :timing

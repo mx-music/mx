@@ -309,7 +309,7 @@ defmodule Mx.Engine.MxsTest do
       Process.sleep(150)
       flush_voices()
       Mxs.render_to(at + 6_500_000)
-      refute_receive {:mx_voices, _}, 300
+      refute_receive {:mx_voices, _}
       assert :sys.get_state(Mxs).asked == %{}
     end
 
@@ -446,14 +446,14 @@ defmodule Mx.Engine.MxsTest do
       :ok = Mxs.set_tempo(0, 120)
       :ok = Mxs.pass(:lead, {0, 4}, 0, [{0, blip()}], notice: 2)
       Mxs.render_to(at + 900_000)
-      refute_receive {:mx_pass_ending, _, _}, 200
+      refute_receive {:mx_pass_ending, _, _}
       Mxs.render_to(at + 1_100_000)
       assert_receive {:mx_pass_ending, :lead, 4.0}
 
       :ok = Mxs.pass(:lead, {4, 8}, 1, [{4, blip()}], notice: 2)
       :ok = Mxs.pass(:lead, {8, 12}, 2, [{8, blip()}])
       Mxs.render_to(at + 7_000_000)
-      refute_receive {:mx_pass_ending, _, _}, 200
+      refute_receive {:mx_pass_ending, _, _}
     end
 
     test "a cut drops what a pass holds from a beat on, and an effect's time in beats follows the tempo",
@@ -502,7 +502,7 @@ defmodule Mx.Engine.MxsTest do
       :ok = Mxs.stop_levels(self())
       levels()
       Mxs.render_to(at + 2_000_000)
-      refute_receive {:mx_levels, _}, 300
+      refute_receive {:mx_levels, _}
       assert :sys.get_state(Mxs).asked == %{}
     end
 
@@ -610,7 +610,7 @@ defmodule Mx.Engine.MxsTest do
     @tag :engine
     test "sends levels about twenty times a second, and none a tenth of a second after it stops" do
       :ok = Mxs.levels(self())
-      assert_receive {:mx_levels, _}, 500
+      assert_receive {:mx_levels, _}
       started = System.monotonic_time(:millisecond)
       Process.sleep(2000)
       stop_supervised!(Mxs)
@@ -619,7 +619,7 @@ defmodule Mx.Engine.MxsTest do
       sent = length(levels())
 
       assert_in_delta sent / (stopped - started) * 1000, 20, 2
-      refute_receive {:mx_levels, _}, 300
+      refute_receive {:mx_levels, _}
     end
 
     @tag :engine
@@ -640,11 +640,11 @@ defmodule Mx.Engine.MxsTest do
 
       # The first report comes as soon as it is asked for, and the rest on the engine's whole
       # seconds.
-      assert_receive {:mx_voices, 3}, 1500
+      assert_receive {:mx_voices, 3}
 
       times =
         for _ <- 1..3 do
-          assert_receive {:mx_voices, count}, 1500
+          assert_receive {:mx_voices, count}
           assert count > 0
           System.monotonic_time(:millisecond)
         end

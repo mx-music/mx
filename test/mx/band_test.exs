@@ -110,7 +110,7 @@ defmodule Mx.BandTest do
       )
 
     {band, _} = start(song, ctx)
-    params = collect_params(System.monotonic_time(:millisecond) + 300, [])
+    params = params_until(&(length(&1) >= 2))
     Process.unlink(band)
     GenServer.stop(band, :shutdown)
 
@@ -129,7 +129,7 @@ defmodule Mx.BandTest do
       )
 
     {band, _} = start(song, ctx)
-    assert_receive {:played, _, [{:note, _, _, _, _, _} = params]}, 1000
+    assert_receive {:played, _, [{:note, _, _, _, _, _} = params]}
     Process.unlink(band)
     GenServer.stop(band, :shutdown)
     assert params_map(params)[:release] == 1.0
@@ -150,9 +150,14 @@ defmodule Mx.BandTest do
       )
 
     {band, _} = start(first, ctx)
-    collect_params(System.monotonic_time(:millisecond) + 150, [])
+    params_until(&(length(&1) >= 2))
     Band.switch(band, second)
-    played = collect_params(System.monotonic_time(:millisecond) + 800, [])
+
+    played =
+      params_until(fn played ->
+        Enum.count(played, fn {_time, params} -> params_map(params)[:amp] == 0.2 end) >= 2
+      end)
+
     Process.unlink(band)
     GenServer.stop(band, :shutdown)
 
@@ -226,9 +231,9 @@ defmodule Mx.BandTest do
     second = load(ctx, song(3000, [part]))
 
     {band, _} = start(first, ctx)
-    before = collect_releases(50)
+    before = releases_until(&(&1 != []))
     Band.switch(band, second)
-    releases = before ++ collect_releases(200)
+    releases = before ++ releases_until(&(0.02 in &1))
 
     assert hd(releases) == 0.01
     assert List.last(releases) == 0.02
@@ -245,7 +250,7 @@ defmodule Mx.BandTest do
       )
 
     {_band, start_us} = start(song, ctx)
-    notes = collect(300)
+    notes = collect_until(counted(%{36 => 6, 60 => 8}))
 
     assert Enum.take(times(notes, 36), 6) == Enum.map(0..5, &(start_us + &1 * 4 * @beat_us))
     assert Enum.take(times(notes, 60), 8) == Enum.map(0..7, &(start_us + &1 * 3 * @beat_us))
@@ -263,7 +268,7 @@ defmodule Mx.BandTest do
       )
 
     {_band, start_us} = start(song, ctx, from: 7)
-    notes = collect(150)
+    notes = collect_until(counted(%{38 => 1, 72 => 1, 63 => 1, 73 => 1}))
 
     assert times(notes, 38) == [start_us + 1 * @beat_us]
     assert times(notes, 72) == [start_us]
@@ -285,7 +290,15 @@ defmodule Mx.BandTest do
     {band, start_us} = start(first, ctx)
     before = collect_through(41.0)
     Band.switch(band, second)
-    notes = Enum.sort(before ++ collect(1500))
+
+    notes =
+      collect_until(
+        fn notes ->
+          last_bass = List.last(times(notes, 43))
+          last_bass && List.last(times(notes, 36)) > last_bass + 400_000
+        end,
+        before
+      )
 
     bass_notes = for {time, note} <- notes, note in [40.0, 41.0, 42.0, 43.0], do: {time, note}
     assert {_, 43.0} = List.last(bass_notes)
@@ -313,7 +326,7 @@ defmodule Mx.BandTest do
     before = collect_through(41.0)
     Band.switch(band, removed)
     Band.switch(band, added)
-    notes = Enum.sort(before ++ collect(1500))
+    notes = collect_until(counted(%{53 => 1}), before)
 
     bass_notes = for {time, note} <- notes, note != 36.0, do: {time, round(note)}
     bass_times = Enum.map(bass_notes, &elem(&1, 0))
@@ -343,10 +356,15 @@ defmodule Mx.BandTest do
     {band, start_us} = start(first, ctx)
     collect_through(41.0)
     Band.switch(band, removed)
-    collect(800)
+
+    collect_until(fn notes ->
+      last_bass = List.last(times(notes, 43))
+      last_bass && List.last(times(notes, 36)) >= last_bass + 200_000
+    end)
+
     switch_us = System.os_time(:microsecond)
     Band.switch(band, load(ctx, song(600, [drums, bass])))
-    notes = collect(800)
+    notes = collect_until(counted(%{43 => 1}))
 
     [first_bass | _] = times(notes, 40)
     assert first_bass > switch_us
@@ -364,9 +382,17 @@ defmodule Mx.BandTest do
     second = load(ctx, song(3000, [drums, hats]))
 
     {band, start_us} = start(first, ctx)
-    before = collect(50)
+    before = collect_until(counted(%{36 => 3}))
     Band.switch(band, second)
-    notes = Enum.sort(before ++ collect(300))
+
+    notes =
+      collect_until(
+        fn notes ->
+          tempo_change(times(notes, 36), @beat_us, 2 * @beat_us) &&
+            tempo_change(times(notes, 42), div(@beat_us, 2), @beat_us)
+        end,
+        before
+      )
 
     drums_change = tempo_change(times(notes, 36), @beat_us, 2 * @beat_us)
     hats_change = tempo_change(times(notes, 42), div(@beat_us, 2), @beat_us)
@@ -395,7 +421,7 @@ defmodule Mx.BandTest do
     output =
       capture_io(:stderr, fn ->
         {_band, start_us} = start(song, ctx)
-        notes = collect(200)
+        notes = collect_until(counted(%{36 => 6, 60 => 4}))
         send(self(), {:result, start_us, notes})
       end)
 
@@ -422,9 +448,10 @@ defmodule Mx.BandTest do
     output =
       capture_io(:stderr, fn ->
         {band, start_us} = start(song, ctx)
-        before = collect(50)
+        before = collect_until(counted(%{60 => 1}))
         Process.exit(:sys.get_state(band).loops.melody, :kill)
-        send(self(), {:result, start_us, Enum.sort(before ++ collect(150))})
+        notes = collect_until(counted(%{60 => length(times(before, 60)) + 5}), before)
+        send(self(), {:result, start_us, notes})
       end)
 
     assert_received {:result, start_us, notes}
@@ -446,7 +473,7 @@ defmodule Mx.BandTest do
         """)
 
       {_band, start_us} = start(song, ctx)
-      times = times(collect(300), 60)
+      times = times(collect_until(counted(%{60 => 23})), 60)
       gaps = Enum.zip_with(times, tl(times), &(&2 - &1))
 
       assert hd(times) == start_us
@@ -476,7 +503,7 @@ defmodule Mx.BandTest do
         """)
 
       {_band, start_us} = start(song, ctx)
-      notes = collect(200)
+      notes = collect_until(counted(%{60 => 4, 62 => 4}))
 
       assert times(notes, 60) == Enum.map(0..3, &(start_us + &1 * @beat_us))
       assert [first | _] = second = times(notes, 62)
@@ -506,7 +533,7 @@ defmodule Mx.BandTest do
         """)
 
       start(song, ctx)
-      notes = collect(300)
+      notes = collect_until(counted(%{36 => 16, 60 => 6}))
       drums = times(notes, 36)
       melody = Enum.take(times(notes, 60), 6)
 
@@ -523,7 +550,7 @@ defmodule Mx.BandTest do
         """)
 
       start(song, ctx)
-      releases = collect_releases(200)
+      releases = releases_until(&(length(&1) >= 10))
 
       assert length(releases) == 10
 
@@ -543,7 +570,7 @@ defmodule Mx.BandTest do
       runs =
         for _ <- 1..2 do
           {band, start_us} = start(song, ctx)
-          notes = collect(250)
+          notes = collect_until(counted(%{60 => 24}))
           GenServer.stop(band)
           for {time, note} <- notes, do: {time - start_us, note}
         end
@@ -562,9 +589,9 @@ defmodule Mx.BandTest do
       end
 
       {band, start_us} = start(load(ctx, body.(60)), ctx)
-      before = collect(60)
+      before = collect_until(counted(%{60 => 1}))
       Band.switch(band, load(ctx, body.(62)))
-      notes = Enum.sort(before ++ collect(150))
+      notes = collect_until(counted(%{62 => 2}), before)
 
       assert hd(times(notes, 60)) == start_us
 
@@ -624,13 +651,13 @@ defmodule Mx.BandTest do
 
       {band, _start_us} = start(song, ctx, ctx.hand_opts)
       assert_receive {:handed, :a, _span, 0, _events, _opts}
-      refute_receive {:handed, _, _, _, _, _}, 100
+      refute_receive {:handed, _, _, _, _, _}
       [loop] = Band.loops(band)
 
       send(loop, {:mx_pass_ending, :a, 4.0})
-      refute_receive {:handed, _, _, _, _, _}, 100
+      refute_receive {:handed, _, _, _, _, _}
       send(loop, {:mx_pass_ending, :a, 8.0})
-      assert_receive {:handed, :a, {from, to}, 1, [{at, _note}], _opts}, 200
+      assert_receive {:handed, :a, {from, to}, 1, [{at, _note}], _opts}
       assert {from, to, at} == {8, 16, 8}
     end
 
@@ -652,12 +679,12 @@ defmodule Mx.BandTest do
 
       Agent.update(agent, &Map.put(&1, {:cc, 74}, 64))
       send(loop, {:mx_pass_ending, :a, 4.0})
-      assert_receive {:handed, :a, _span, 1, [{4, second}], _opts}, 200
+      assert_receive {:handed, :a, _span, 1, [{4, second}], _opts}
       Agent.update(agent, &Map.put(&1, {:cc, 74}, 100))
 
       assert %{note: 64.0} = params_map(second)
       send(loop, {:mx_pass_ending, :a, 8.0})
-      assert_receive {:handed, :a, _span, 2, [{8, third}], _opts}, 200
+      assert_receive {:handed, :a, _span, 2, [{8, third}], _opts}
       assert %{note: 100.0} = params_map(third)
     end
 
@@ -672,10 +699,10 @@ defmodule Mx.BandTest do
       assert_receive {:handed, :a, _span, 0, [{0, _note}], _opts}
       [loop] = Band.loops(band)
       Band.switch(band, second)
-      refute_receive {:handed, _, _, _, _, _}, 100
+      refute_receive {:handed, _, _, _, _, _}
 
       send(loop, {:mx_pass_ending, :a, 4.0})
-      assert_receive {:handed, :a, _span, 1, [{4, changed}], _opts}, 200
+      assert_receive {:handed, :a, _span, 1, [{4, changed}], _opts}
       assert %{note: 67.0} = params_map(changed)
     end
 
@@ -836,11 +863,11 @@ defmodule Mx.BandTest do
       buffers = %{bd_haus => %{buf: 7, channels: 2}, sn_dolf => %{buf: 8, channels: 1}}
       start(song, ctx, prepare: &prepared(&1, buffers))
 
-      assert_receive {:played, _, [{:sample, nil, %{buf: 7}, _, nil} = params]}, 1000
+      assert_receive {:played, _, [{:sample, nil, %{buf: 7}, _, nil} = params]}
       assert %{rate: 2.0, release: 0.5, sustain: +0.0} = params_map(params)
       refute Map.has_key?(params_map(params), :note)
 
-      assert_receive {:played, _, [{:sample, nil, %{buf: 8}, _, nil} = params]}, 1000
+      assert_receive {:played, _, [{:sample, nil, %{buf: 8}, _, nil} = params]}
       refute Map.has_key?(params_map(params), :sustain)
     end
 
@@ -861,7 +888,7 @@ defmodule Mx.BandTest do
       output =
         capture_io(:stderr, fn ->
           {:ok, _} = Band.start_link(song: song, play: ctx.play, ahead_ms: 20, prepare: slow)
-          assert_receive {:played, time, _}, 1000
+          assert_receive {:played, time, _}
           assert time > System.os_time(:microsecond)
         end)
 
@@ -881,10 +908,10 @@ defmodule Mx.BandTest do
       output =
         capture_io(:stderr, fn ->
           start(song, ctx, load_sample: load_sample)
-          assert_receive {:load_sample, path, loop}, 1000
-          refute_receive {:played, _, _}, 50
+          assert_receive {:load_sample, path, loop}
+          refute_receive {:played, _, _}
           send(loop, {:sample_loaded, path, %{buf: 4, channels: 2}})
-          assert_receive {:played, _, [{:sample, _, %{buf: 4}, _, _}]}, 1000
+          assert_receive {:played, _, [{:sample, _, %{buf: 4}, _, _}]}
         end)
 
       assert output =~ "loop drums loads sample bd_haus, which plays from its next pass"
@@ -916,7 +943,7 @@ defmodule Mx.BandTest do
 
       start(song, ctx, ctx.fx_opts)
       assert_receive {:fx_started, number, [{:reverb, _}]}
-      notes = collect_targets(200)
+      notes = targets_until(&(length(&1) > 20))
 
       assert length(notes) > 20
 
@@ -952,7 +979,12 @@ defmodule Mx.BandTest do
       start(song, ctx, ctx.fx_opts ++ [start_part: start_part])
       assert_receive {:part_started, :wet, [{:reverb, _}]}
       assert_receive {:part_started, :dry, []}
-      notes = collect_targets(200)
+
+      notes =
+        targets_until(
+          &(Enum.any?(&1, fn t -> t.note == 60.0 end) and
+              Enum.any?(&1, fn t -> t.note == 62.0 end))
+        )
 
       assert notes |> Enum.map(&{&1.note, &1.chain}) |> Enum.uniq() |> Enum.sort() ==
                [{60.0, %{part: :wet}}, {62.0, %{part: :dry}}]
@@ -1015,7 +1047,12 @@ defmodule Mx.BandTest do
 
       {_band, start_us} = start(song, ctx, ctx.fx_opts)
       assert_receive {:fx_started, number, []}
-      messages = collect_messages(250)
+
+      messages =
+        messages_until(fn messages ->
+          Enum.any?(messages, &match?({_, {:note, _, :saw, _, _, _}}, &1)) and
+            Enum.any?(messages, &match?({_, {:set, _, _}}, &1))
+        end)
 
       started = for {time, {:note, _, :saw, _, _, chain}} <- messages, do: {time, chain}
       assert [{^start_us, %{group: group} = chain} | _] = started
@@ -1077,13 +1114,13 @@ defmodule Mx.BandTest do
 
       {band, _} = start(first, ctx, ctx.fx_opts)
       assert_receive {:fx_started, old_n, [{:reverb, _}]}
-      before = collect_targets(250)
+      before = targets_until(&(&1 != []))
       Band.switch(band, second)
 
-      assert_receive {:fx_started, new_n, [{:echo, _}]}, 1000
-      assert_receive {:fx_stopped, %{group: old_group}, at_us}, 1000
+      assert_receive {:fx_started, new_n, [{:echo, _}]}
+      assert_receive {:fx_stopped, %{group: old_group}, at_us}
       assert old_group == 1000 + old_n
-      notes = before ++ collect_targets(300)
+      notes = targets_until(&Enum.any?(&1, fn target -> target.time >= at_us end), before)
 
       {old, new} = Enum.split_with(notes, &(&1.time < at_us))
       assert Enum.all?(old, &(&1.chain.group == 1000 + old_n))
@@ -1109,7 +1146,7 @@ defmodule Mx.BandTest do
       assert_receive {:fx_started, _, _}
       Band.switch(band, second)
 
-      assert Enum.any?(collect_targets(400), &(&1.note == 62.0))
+      targets_until(&Enum.any?(&1, fn target -> target.note == 62.0 end))
       refute_received {:fx_started, _, _}
       refute_received {:fx_stopped, _, _}
     end
@@ -1127,12 +1164,12 @@ defmodule Mx.BandTest do
 
       {band, _} = start(first, ctx, ctx.fx_opts)
       assert_receive {:fx_started, number, _}
-      before = collect_targets(150)
+      before = targets_until(&(&1 != []))
       Band.switch(band, second)
 
-      assert_receive {:fx_stopped, %{group: group}, at_us}, 1000
+      assert_receive {:fx_stopped, %{group: group}, at_us}
       assert group == 1000 + number
-      notes = before ++ collect_targets(300)
+      notes = targets_until(&Enum.any?(&1, fn target -> target.time >= at_us end), before)
       last_wet = notes |> Enum.filter(&(&1.chain[:group] == group)) |> List.last()
 
       assert last_wet.note == 61.0
@@ -1176,10 +1213,10 @@ defmodule Mx.BandTest do
         )
 
       start(song, ctx, inputs: fn _beat, _until_us -> Agent.get(agent, & &1) end)
-      assert_receive {:played, _, [{:note, _, _, note, _, _}]} when note == 1.0, 1000
+      assert_receive {:played, _, [{:note, _, _, note, _, _}]} when note == 1.0
       Agent.update(agent, &Map.put(&1, {:cc, 74}, 64))
 
-      notes = Enum.map(collect(300), &elem(&1, 1))
+      notes = Enum.map(collect_until(counted(%{64 => 1})), &elem(&1, 1))
       assert List.last(notes) == 64.0
       assert notes == Enum.sort(notes)
     end
@@ -1199,7 +1236,8 @@ defmodule Mx.BandTest do
 
       start(song, ctx, shared(inputs))
 
-      [first, second | _] = notes = Enum.map(collect(400), &elem(&1, 1))
+      notes = collect_until(&Enum.any?(&1, fn {_time, note} -> note >= 40.0 end))
+      [first, second | _] = notes = Enum.map(notes, &elem(&1, 1))
       assert first == 1.0
       assert second >= 40.0
       assert notes == Enum.sort(notes)
@@ -1251,18 +1289,18 @@ defmodule Mx.BandTest do
         )
 
       {band, _} = start(song, ctx)
-      refute_receive {:played, _, _}, 200
+      refute_receive {:played, _, _}
 
       sent = System.os_time(:microsecond)
       send(band, {:input, {:midi_note, %{note: 64, velocity: 100}}})
-      assert_receive {:played, at, [{:note, _, _, note, _, _}]} when note == 64.0, 100
+      assert_receive {:played, at, [{:note, _, _, note, _, _}]} when note == 64.0
       assert System.os_time(:microsecond) - sent < 20_000
       assert at - sent < 20_000
 
       send(band, {:input, {:osc, %{address: "/other", args: [1]}}})
       send(band, {:input, {:osc, %{address: "/hit", args: [50]}}})
-      assert_receive {:played, _, [{:note, _, _, note, _, _}]} when note == 50.0, 100
-      refute_receive {:played, _, _}, 200
+      assert_receive {:played, _, [{:note, _, _, note, _, _}]} when note == 50.0
+      refute_receive {:played, _, _}
     end
   end
 
@@ -1288,20 +1326,20 @@ defmodule Mx.BandTest do
     test "a grid of 1 starts the loop on the next beat", ctx do
       {band, start_us} = start_at_beat(ctx, 3.4, 1)
       press(band)
-      assert_receive {:played, at, [{:note, _, _, _, _, _}]}, 1000
+      assert_receive {:played, at, [{:note, _, _, _, _, _}]}
       assert at == start_us + 4 * 500_000
     end
 
     test "a grid of 4 starts the loop on the next beat that is a multiple of 4", ctx do
       {band, start_us} = start_at_beat(ctx, 3.4, 4)
       press(band)
-      assert_receive {:played, at, _events}, 1000
+      assert_receive {:played, at, _events}
       assert at == start_us + 4 * 500_000
 
       {band, start_us} = start_at_beat(ctx, 4.5, 4)
       press(band)
-      refute_receive {:played, _, _}, 1000
-      assert_receive {:played, at, _events}, 2000
+      refute_receive {:played, _, _}
+      assert_receive {:played, at, _events}
       assert at == start_us + 8 * 500_000
     end
 
@@ -1310,7 +1348,7 @@ defmodule Mx.BandTest do
         capture_io(:stderr, fn ->
           {band, start_us} = start_at_beat(ctx, 4.02, 4)
           press(band)
-          assert_receive {:played, at, _events}, 200
+          assert_receive {:played, at, _events}
           assert at == start_us + 4 * 500_000
           stop_quietly(band)
         end)
@@ -1322,7 +1360,7 @@ defmodule Mx.BandTest do
       {band, _start_us} = start_at_beat(ctx, 3.4, nil)
       sent = System.os_time(:microsecond)
       press(band)
-      assert_receive {:played, at, _events}, 200
+      assert_receive {:played, at, _events}
       assert at - sent < 15_000
     end
 
@@ -1331,9 +1369,9 @@ defmodule Mx.BandTest do
       press(band)
       Process.sleep(200)
       press(band)
-      assert_receive {:played, at, _events}, 1000
+      assert_receive {:played, at, _events}
       assert at == start_us + 4 * 500_000
-      refute_receive {:played, _, _}, 1500
+      refute_receive {:played, _, _}
     end
 
     test "a grid not above 0 is refused, naming the loop", ctx do
@@ -1381,7 +1419,7 @@ defmodule Mx.BandTest do
 
         waits =
           for _ <- song.loops do
-            assert_receive {:mx_waits, _name, wait}, 1000
+            assert_receive {:mx_waits, _name, wait}
             wait
           end
 
@@ -1404,10 +1442,10 @@ defmodule Mx.BandTest do
       assert_receive {:mx_waits, :b, 4}
       assert_receive {:mx_waits, :c, {:stops, 4}}
       assert_receive {:mx_waits, :d, {:joins, 4}}
-      assert_receive {:mx_took_over, :a, 4}, 1000
+      assert_receive {:mx_took_over, :a, 4}
       assert_receive {:mx_took_over, :b, 4}
       assert_receive {:mx_took_over, :d, 4}
-      assert_receive {:mx_took_over, :c, 4}, 1000
+      assert_receive {:mx_took_over, :c, 4}
       assert_receive :mx_version_plays
     end
 
@@ -1423,7 +1461,7 @@ defmodule Mx.BandTest do
       Process.sleep(100)
       Band.switch(band, third)
       assert_receive {:mx_waits, :a, 4}
-      refute_receive {:mx_took_over, _, _}, 100
+      refute_receive {:mx_took_over, _, _}
     end
 
     test "a version saved during the song's last pass waits for a pass that will not come", ctx do
@@ -1458,10 +1496,11 @@ defmodule Mx.BandTest do
           ])
         )
 
-      {band, _} = start(first, ctx, ctx.hand_opts)
+      {band, _} =
+        start(first, ctx, ctx.hand_opts ++ [start_us: System.os_time(:microsecond) - 1_200_000])
+
       :ok = Band.subscribe(band)
       assert_receive {:handed, :a, {0, 8}, 0, _events}
-      Process.sleep(1200)
       Band.switch(band, second)
       assert_receive {:mx_waits, :a, 8}
 
@@ -1509,9 +1548,10 @@ defmodule Mx.BandTest do
 
     test "plays a range of the recording into the part's effects from the first whole beat 150 ms away, beside the part's notes",
          ctx do
-      {band, _start_us} = start(ctx.song, ctx, ctx.opts)
+      {band, _start_us} =
+        start(ctx.song, ctx, ctx.opts ++ [start_us: System.os_time(:microsecond) - 1_200_000])
+
       assert_receive {:started_fx, [echo: _]}
-      Process.sleep(1200)
 
       asked_us = System.os_time(:microsecond)
 
@@ -1528,7 +1568,7 @@ defmodule Mx.BandTest do
       assert_in_delta opts[:finish], 3.4 / 7.155, 1.0e-9
       assert opts[:amp] == 0.8
 
-      assert_receive {:played, note_us, [{:note, _, _, _, _, _}]} when note_us > at_us, 2000
+      assert_receive {:played, note_us, [{:note, _, _, _, _, _}]} when note_us >= at_us
 
       assert {:ok, again} = Band.play_recording(band, :voice, ctx.sample, from: 0.0, to: 2.4)
       again_us = Band.time_at(Band.timeline(band), again)
@@ -1567,9 +1607,14 @@ defmodule Mx.BandTest do
       flute =
         "part(:flute, loop(8, fn _, _ -> seq(for _ <- 1..8, do: seq([note(72, 0.5, amp: 0.5, breath: 0.3, pan: -0.5), rest(0.5)])) end), synth: :flute)"
 
-      {band, _start_us} = start(load(ctx, song(60, [flute])), ctx, opts)
+      {band, _start_us} =
+        start(
+          load(ctx, song(60, [flute])),
+          ctx,
+          opts ++ [start_us: System.os_time(:microsecond) - 1_200_000]
+        )
+
       assert_receive {:handed, :flute, {0, 8}, 0, _events}
-      Process.sleep(1200)
       %{band: band, flute: flute, hand_opts: opts}
     end
 
@@ -1628,7 +1673,7 @@ defmodule Mx.BandTest do
                {:error, "there is no synth named kazoo"}
 
       assert Band.try_part(band, :flute, wobble: 1) == {:error, "flute takes no option wobble"}
-      refute_receive {:cut, _, _}, 100
+      refute_receive {:cut, _, _}
     end
 
     test "clarinet tried on examples/choro.exs's flute plays its next notes within a bar, and leaves the file as it is",
@@ -1638,10 +1683,10 @@ defmodule Mx.BandTest do
 
       capture_io(:stderr, fn ->
         {band, _} = start(song, ctx, ctx.hand_opts)
-        assert_receive {:handed, :flute, _span, _label, _events}, 2000
+        assert_receive {:handed, :flute, _span, _label, _events}
         assert Band.try_part(band, :flute, synth: :clarinet) == :ok
-        assert_receive {:cut, :flute, beat}, 1000
-        assert_receive {:handed, :flute, _span, _label, events}, 1000
+        assert_receive {:cut, :flute, beat}
+        assert_receive {:handed, :flute, _span, _label, events}
         notes = for {at, {:note, _, synth, _, _, _}} <- events, do: {at, synth}
         assert [{first, _} | _] = notes
         assert first - beat < 4
@@ -1656,7 +1701,9 @@ defmodule Mx.BandTest do
       :ok = Band.try_part(ctx.band, :flute, synth: :clarinet)
       tried_notes()
       Band.switch(ctx.band, load(ctx, song(90, [ctx.flute])))
-      assert_receive {:handed, :flute, {8, 16}, 1, events}, 8000
+      [loop] = Band.loops(ctx.band)
+      send(loop, {:mx_pass_ending, :flute, 8.0})
+      assert_receive {:handed, :flute, {8, 16}, 1, events}
       assert Enum.all?(events, &match?({_, {:note, _, :clarinet, _, _, _}}, &1))
     end
   end
@@ -1726,12 +1773,12 @@ defmodule Mx.BandTest do
 
       assert_receive {:out, at, {:midi, "mx test port", <<0x90, 60, 90>>}}
       assert at == beat.(0)
-      assert_receive {:out, at, {:midi, "mx test port", <<0xB0, 74, 64>>}}, 1000
+      assert_receive {:out, at, {:midi, "mx test port", <<0xB0, 74, 64>>}}
       assert at == beat.(2)
-      assert_receive {:out, at, {:osc, {"127.0.0.1", 9000}, packet}}, 1000
+      assert_receive {:out, at, {:osc, {"127.0.0.1", 9000}, packet}}
       assert at == beat.(2)
       assert OSC.decode(packet) == {"/hello", [1, "a"]}
-      assert_receive {:out, at, {:midi, "mx test port", <<0x80, 60, 0>>}}, 1000
+      assert_receive {:out, at, {:midi, "mx test port", <<0x80, 60, 0>>}}
       assert at == beat.(2)
     end
 
@@ -1747,7 +1794,7 @@ defmodule Mx.BandTest do
 
       {_band, start_us} = start(song, ctx, out: out)
 
-      times = for {time, 72.0} <- collect(350), do: time
+      times = for {time, 72.0} <- collect_until(counted(%{72 => 3})), do: time
       assert Enum.take(times, 3) == [start_us, start_us + 100_000, start_us + 200_000]
     end
   end
@@ -1768,7 +1815,11 @@ defmodule Mx.BandTest do
         """)
 
       {_band, start_us} = start(song, ctx)
-      messages = collect_messages(350)
+
+      messages =
+        messages_until(fn messages ->
+          length(for {_, {:set, _, _}} <- messages, do: true) >= 2
+        end)
 
       starts = for {time, {:note, id, :tri, note, _, nil}} <- messages, do: {time, id, note}
       controls = for {time, {:set, target, params}} <- messages, do: {time, target, params}
@@ -1796,7 +1847,9 @@ defmodule Mx.BandTest do
         """)
 
       start(song, ctx)
-      messages = collect_messages(700)
+
+      messages =
+        messages_until(&Enum.any?(&1, fn message -> match?({_, {:set, _, _}}, message) end))
 
       assert [{_, {:note, _, _, _, _, _} = params} | _] = messages
       assert params_map(params)[:note_slide] == 0.5
@@ -1824,7 +1877,9 @@ defmodule Mx.BandTest do
         """)
 
       {_band, start_us} = start(song, ctx, start_fx: start_fx, stop_fx: fn _, _ -> :ok end)
-      messages = collect_messages(300)
+
+      messages =
+        messages_until(&Enum.any?(&1, fn message -> match?({_, {:set, _, _}}, message) end))
 
       sets = for {time, {:set, target, params}} <- messages, do: {time, target, params}
       assert [{time, {:effect, %{nodes: [1002, 1003]}, 1}, [mix: 0]} | _] = sets
@@ -1852,7 +1907,9 @@ defmodule Mx.BandTest do
         """)
 
       {_band, start_us} = start(song, ctx, start_fx: start_fx, stop_fx: fn _, _ -> :ok end)
-      messages = collect_messages(300)
+
+      messages =
+        messages_until(&Enum.any?(&1, fn message -> match?({_, {:set, _, _}}, message) end))
 
       sets = for {time, {:set, target, params}} <- messages, do: {time, target, params}
       assert [{time, {:effect, %{nodes: [1002]}, 0}, [depth: 0, depth_slide: slide]} | _] = sets
@@ -1962,7 +2019,7 @@ defmodule Mx.BandTest do
       capture_io(:stderr, fn ->
         {_band, start_us} = start(song, ctx)
         send(self(), {:start_us, start_us})
-        send(self(), {:notes, collect(2000)})
+        send(self(), {:notes, collect_until(counted(%{65 => 3, 40 => 18}))})
       end)
 
     assert_received {:start_us, start_us}
@@ -1999,7 +2056,7 @@ defmodule Mx.BandTest do
       )
 
     {band, _} = start(song, ctx)
-    assert_receive {:played, _, [{:note, _, _, _, _, _} = params]}, 1000
+    assert_receive {:played, _, [{:note, _, _, _, _, _} = params]}
     Process.unlink(band)
     GenServer.stop(band, :shutdown)
     params_map(params) |> Map.new(fn {key, value} -> {key, Float.round(value, 6)} end)
@@ -2022,8 +2079,8 @@ defmodule Mx.BandTest do
     start(song, ctx, on_end: fn -> send(test, :ended) end)
 
     assert Enum.map(receive_notes(2), &elem(&1, 1)) == [60.0, 64.0]
-    assert_receive :ended, 1000
-    refute_receive {:played, _, [{:note, _, _, _, _, _}]}, 50
+    assert_receive :ended
+    refute_receive {:played, _, [{:note, _, _, _, _, _}]}
   end
 
   @tag :tmp_dir
@@ -2085,7 +2142,7 @@ defmodule Mx.BandTest do
     start(song, ctx, on_end: fn -> send(test, :ended) end)
 
     assert Enum.map(receive_notes(3), &elem(&1, 1)) == [60.0, 61.0, 62.0]
-    assert_receive :ended, 1000
+    assert_receive :ended
   end
 
   @tag :tmp_dir
@@ -2097,11 +2154,11 @@ defmodule Mx.BandTest do
       )
 
     {band, _} = start(song, ctx)
-    refute_receive {:played, _, _}, 200
+    refute_receive {:played, _, _}
 
     sent = System.os_time(:microsecond)
     send(band, {:input, {:midi_note, %{note: 64, velocity: 100}}})
-    assert_receive {:played, at, [{:note, _, _, note, _, _}]} when note == 64.0, 100
+    assert_receive {:played, at, [{:note, _, _, note, _, _}]} when note == 64.0
     assert at - sent < 20_000
   end
 
@@ -2128,19 +2185,22 @@ defmodule Mx.BandTest do
     assert output =~ "part lead: broken"
   end
 
-  defp collect_releases(ms) do
-    for {_time, params} <- collect_params(System.monotonic_time(:millisecond) + ms, []),
-        do: Float.round(params_map(params)[:release], 6)
+  defp releases_until(done?) do
+    releases = fn played ->
+      for {_time, params} <- played, do: Float.round(params_map(params)[:release], 6)
+    end
+
+    releases.(params_until(&done?.(releases.(&1))))
   end
 
-  defp collect_params(deadline, acc) do
-    remaining = max(0, deadline - System.monotonic_time(:millisecond))
+  defp params_until(done?, played \\ []) do
+    sorted = Enum.sort(played)
 
-    receive do
-      {:played, time, [{:note, _, _, _, _, _} = params]} ->
-        collect_params(deadline, [{time, params} | acc])
-    after
-      remaining -> Enum.sort(acc)
+    if done?.(sorted) do
+      sorted
+    else
+      assert_receive {:played, time, [{:note, _, _, _, _, _} = params]}
+      params_until(done?, [{time, params} | played])
     end
   end
 
@@ -2165,14 +2225,13 @@ defmodule Mx.BandTest do
 
   defp receive_notes(count) do
     for _ <- 1..count do
-      assert_receive {:played, time, [{:note, _, _, note, _, _}]}, 1000
+      assert_receive {:played, time, [{:note, _, _, note, _, _}]}
       {time, pitch(note)}
     end
   end
 
   defp collect_through(note, notes \\ []) do
-    assert_receive {:played, time, [{:note, _, _, received, _, _}]},
-                   1000
+    assert_receive {:played, time, [{:note, _, _, received, _, _}]}
 
     notes = [{time, pitch(received)} | notes]
     if received == note, do: notes, else: collect_through(note, notes)
@@ -2181,54 +2240,40 @@ defmodule Mx.BandTest do
   defp pitch(nil), do: nil
   defp pitch(note), do: note / 1
 
-  defp collect(ms), do: collect_until(System.monotonic_time(:millisecond) + ms, [])
+  # Receives notes until `done?` holds for every note received, in time order.
+  defp collect_until(done?, notes \\ []) do
+    sorted = Enum.sort(notes)
 
-  defp collect_until(deadline, notes) do
-    remaining = max(0, deadline - System.monotonic_time(:millisecond))
-
-    receive do
-      {:played, time, [{:note, _, _, note, _, _}]} ->
-        collect_until(deadline, [{time, pitch(note)} | notes])
-    after
-      remaining -> Enum.sort(notes)
+    if done?.(sorted) do
+      sorted
+    else
+      assert_receive {:played, time, [{:note, _, _, note, _, _}]}
+      collect_until(done?, [{time, pitch(note)} | notes])
     end
   end
 
-  defp collect_messages(ms) do
-    deadline = System.monotonic_time(:millisecond) + ms
-    collect_messages(deadline, []) |> Enum.sort_by(&elem(&1, 0))
+  defp counted(wanted) do
+    fn notes -> Enum.all?(wanted, fn {note, count} -> length(times(notes, note)) >= count end) end
   end
 
-  defp collect_messages(deadline, acc) do
-    remaining = max(0, deadline - System.monotonic_time(:millisecond))
+  defp targets_until(done?, targets \\ []) do
+    sorted = Enum.sort_by(targets, & &1.time)
 
-    receive do
-      {:played, time, messages} ->
-        timed = for message <- messages, do: {time, message}
-        collect_messages(deadline, Enum.reverse(timed) ++ acc)
-    after
-      remaining -> Enum.reverse(acc)
+    if done?.(sorted) do
+      sorted
+    else
+      assert_receive {:played, time, [{:note, _, _, note, _, chain}]}
+      targets_until(done?, [%{time: time, chain: chain, note: note} | targets])
     end
   end
 
-  defp collect_targets(ms) do
-    deadline = System.monotonic_time(:millisecond) + ms
-
-    collect_targets(deadline, [])
-    |> Enum.sort()
-    |> Enum.map(fn {time, {:note, _, _, note, _, chain}} ->
-      %{time: time, chain: chain, note: note}
-    end)
-  end
-
-  defp collect_targets(deadline, acc) do
-    remaining = max(0, deadline - System.monotonic_time(:millisecond))
-
-    receive do
-      {:played, time, [{:note, _, _, _, _, _} = note]} ->
-        collect_targets(deadline, [{time, note} | acc])
-    after
-      remaining -> acc
+  defp messages_until(done?, messages \\ []) do
+    if done?.(messages) do
+      Enum.sort_by(messages, &elem(&1, 0))
+    else
+      assert_receive {:played, time, played}
+      timed = for message <- played, do: {time, message}
+      messages_until(done?, messages ++ timed)
     end
   end
 

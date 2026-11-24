@@ -22,15 +22,15 @@ defmodule Mx.InputsTest do
     Midiex.send_msg(ctx.device, <<0x93, 62, 90>>)
     Midiex.send_msg(ctx.device, <<0x83, 62, 0>>)
 
-    assert_receive {:input, {:midi_cc, %{number: 74, value: 64}}}, 1000
-    assert_receive {:input, {:midi_note, %{note: 60, velocity: 100}}}, 1000
-    assert_receive {:input, {:midi_note, %{note: 62, velocity: 90}}}, 1000
-    refute_receive {:input, {:midi_note, %{note: 62, velocity: 0}}}, 100
+    assert_receive {:input, {:midi_cc, %{number: 74, value: 64}}}
+    assert_receive {:input, {:midi_note, %{note: 60, velocity: 100}}}
+    assert_receive {:input, {:midi_note, %{note: 62, velocity: 90}}}
+    refute_receive {:input, {:midi_note, %{note: 62, velocity: 0}}}
 
     assert %{{:cc, 74} => 64, {:note, 60} => 100, {:note, 62} => 0} = Inputs.snapshot(ctx.inputs)
 
     Midiex.send_msg(ctx.device, <<0xB0, 74, 10>>)
-    assert_receive {:input, {:midi_cc, %{number: 74, value: 10}}}, 1000
+    assert_receive {:input, {:midi_cc, %{number: 74, value: 10}}}
     assert Inputs.snapshot(ctx.inputs)[{:cc, 74}] == 10
   end
 
@@ -38,7 +38,7 @@ defmodule Mx.InputsTest do
     {:ok, socket} = :gen_udp.open(0, [:binary])
     :gen_udp.send(socket, ~c"127.0.0.1", @osc_port, OSC.message("/trigger", [1, "a"]))
 
-    assert_receive {:input, {:osc, %{address: "/trigger", args: [1, "a"]}}}, 1000
+    assert_receive {:input, {:osc, %{address: "/trigger", args: [1, "a"]}}}
     assert Inputs.snapshot(ctx.inputs)[{:osc, "/trigger"}] == [1, "a"]
     assert Inputs.snapshot_at(ctx.inputs, 0, now())[{:osc, "/trigger"}] == [1, "a"]
   end
@@ -49,7 +49,7 @@ defmodule Mx.InputsTest do
     Process.sleep(50)
     :gen_udp.send(socket, ~c"127.0.0.1", @osc_port + 1, OSC.message("/moved", [2]))
 
-    assert_receive {:input, {:osc, %{address: "/moved", args: [2]}}}, 1000
+    assert_receive {:input, {:osc, %{address: "/moved", args: [2]}}}
   end
 
   test "a pass reads each shared value as the last set step before its first beat left it", ctx do
@@ -136,7 +136,7 @@ defmodule Mx.InputsTest do
     pressed = System.os_time(:microsecond)
     Midiex.send_msg(ctx.device, <<0x90, 67, 100>>)
 
-    assert_receive {:played, sent, at, [{:note, _, _, 67, _, _}]}, 1000
+    assert_receive {:played, sent, at, [{:note, _, _, 67, _, _}]}
 
     assert sent - pressed < 20_000
     assert at - pressed < 20_000

@@ -112,7 +112,7 @@ defmodule Mix.Tasks.Mx.PlayTest do
     assert {0, {:ok, %{source: ^song}}} = Mx.Session.subscribe(session)
     saved = String.replace(song, "60", "62")
     File.write!(path, saved)
-    assert_receive {:mx_loaded, 1, {:ok, %{source: ^saved}}}, 2000
+    assert_receive {:mx_loaded, 1, {:ok, %{source: ^saved}}}
     assert {1, {:ok, %{source: ^saved}}} = Mx.Session.description(session)
     Supervisor.stop(session)
   end
@@ -162,7 +162,7 @@ defmodule Mix.Tasks.Mx.PlayTest do
     assert File.read!(path) == song
     saved = String.replace(song, "tempo: 120", "tempo: 90")
     File.write!(path, saved)
-    assert_receive {:mx_loaded, 1, {:ok, _}}, 2000
+    assert_receive {:mx_loaded, 1, {:ok, _}}
     Process.sleep(2500)
     Supervisor.stop(session)
 
@@ -180,7 +180,7 @@ defmodule Mix.Tasks.Mx.PlayTest do
     assert Mx.Session.solo(session, [:bass, :nope]) == {:error, "the song has no part named nope"}
     Process.sleep(2000)
     :ok = Mxs.levels(self())
-    assert_receive {:mx_levels, %{peak: {+0.0, +0.0}, parts: parts}}, 500
+    assert_receive {:mx_levels, %{peak: {+0.0, +0.0}, parts: parts}}
     assert %{"bass" => %{peak: {+0.0, +0.0}}, "lead" => %{peak: {+0.0, +0.0}}} = parts
     assert map_size(parts) == 2
     Process.sleep(500)

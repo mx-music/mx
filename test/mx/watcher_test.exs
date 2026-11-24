@@ -21,7 +21,7 @@ defmodule Mx.WatcherTest do
 
     File.write!(path, String.replace(@song, "60", "62"))
 
-    assert_receive {:song, %Song{loops: [loop]}}, 1000
+    assert_receive {:song, %Song{loops: [loop]}}
     assert {:ok, %{events: [{0, 62, []}]}} = Mx.Pass.events(loop, 0)
   end
 
@@ -29,18 +29,19 @@ defmodule Mx.WatcherTest do
   test "prints the error of a save that does not load, and loads the next good save", ctx do
     watcher = start_supervised!({Watcher, path: ctx.path, on_song: ctx.on_song, interval_ms: 10})
     silence_stdout(watcher)
+    Watcher.subscribe(watcher)
 
     output =
       capture_io(:stderr, fn ->
         File.write!(ctx.path, "import Mx\nsong(music: part(:melody, note(:h4, 1)))\n")
-        Process.sleep(100)
+        assert_receive {:mx_load_failed, _message}
       end)
 
     assert output =~ "song.exs:2: unknown note h4"
     refute_received {:song, _}
 
     File.write!(ctx.path, @song)
-    assert_receive {:song, %Song{}}, 1000
+    assert_receive {:song, %Song{}}
   end
 
   @tag :tmp_dir
@@ -48,11 +49,12 @@ defmodule Mx.WatcherTest do
     File.write!(ctx.path, "import Mx\nsong(music: part(:lead, seq(c4: 1)))\n")
     watcher = start_supervised!({Watcher, path: ctx.path, on_song: ctx.on_song, interval_ms: 10})
     silence_stdout(watcher)
+    Watcher.subscribe(watcher)
 
     output =
       capture_io(:stderr, fn ->
         File.write!(ctx.path, "import Mx\nsong(music: part(:lead, seq(c4: 1))\n")
-        Process.sleep(100)
+        assert_receive {:mx_load_failed, _message}
       end)
 
     assert output =~ "song.exs:2:36"
@@ -62,7 +64,8 @@ defmodule Mx.WatcherTest do
 
   @tag :tmp_dir
   test "refuses a save that names a part twice, and keeps the previous version", ctx do
-    start_supervised!({Watcher, path: ctx.path, on_song: ctx.on_song, interval_ms: 10})
+    watcher = start_supervised!({Watcher, path: ctx.path, on_song: ctx.on_song, interval_ms: 10})
+    Watcher.subscribe(watcher)
 
     output =
       capture_io(:stderr, fn ->
@@ -71,7 +74,7 @@ defmodule Mx.WatcherTest do
           "import Mx\nsong(music: together([part(:melody, seq(c4: 1)), part(:melody, seq(e4: 1))]))\n"
         )
 
-        Process.sleep(100)
+        assert_receive {:mx_load_failed, _message}
       end)
 
     assert output =~ "two parts named melody play together"
@@ -81,12 +84,13 @@ defmodule Mx.WatcherTest do
 
   @tag :tmp_dir
   test "refuses a save with an effect mx does not have, and keeps the previous version", ctx do
-    start_supervised!({Watcher, path: ctx.path, on_song: ctx.on_song, interval_ms: 10})
+    watcher = start_supervised!({Watcher, path: ctx.path, on_song: ctx.on_song, interval_ms: 10})
+    Watcher.subscribe(watcher)
 
     output =
       capture_io(:stderr, fn ->
         File.write!(ctx.path, String.replace(@song, "end)))", "end), fx: :reverbb))"))
-        Process.sleep(100)
+        assert_receive {:mx_load_failed, _message}
       end)
 
     assert output =~ "part melody: mx has no effect reverbb"
@@ -123,18 +127,18 @@ defmodule Mx.WatcherTest do
       File.write!(ctx.path, saved)
       at = System.monotonic_time(:millisecond)
 
-      assert_receive {:mx_loaded, 1, {:ok, %{source: ^saved} = described}}, 1000
+      assert_receive {:mx_loaded, 1, {:ok, %{source: ^saved} = described}}
       assert [%{name: :melody, notes: [[+0.0, _held, 62 | _]]}] = described.parts
       assert_received {:song, %Song{loops: [loop]}}
       assert {:ok, %{events: [{0, 62, []}]}} = Mx.Pass.events(loop, 0)
       assert_received {:evaluated, started}
       assert started - at <= 20
-      refute_receive {:evaluated, _}, 100
+      refute_receive {:evaluated, _}
       refute_received {:mx_loaded, _, _}
       assert Watcher.description(ctx.watcher) == {1, {:ok, described}}
 
       File.write!(ctx.path, String.replace(ctx.source, "60", "64"))
-      assert_receive {:mx_loaded, 2, {:ok, _described}}, 1000
+      assert_receive {:mx_loaded, 2, {:ok, _described}}
     end
 
     @tag :tmp_dir
@@ -147,9 +151,9 @@ defmodule Mx.WatcherTest do
           String.duplicate("\n", 11) <> "song(music: part(:melody, seq(c4: 1))\n"
         )
 
-        assert_receive {:mx_load_failed, message}, 1000
+        assert_receive {:mx_load_failed, message}
         assert message =~ "song.exs:12:"
-        refute_receive {:mx_load_failed, _}, 100
+        refute_receive {:mx_load_failed, _}
       end)
 
       refute_received {:song, _}
@@ -172,8 +176,8 @@ defmodule Mx.WatcherTest do
       Process.sleep(10)
       second = String.replace(ctx.source, "60", "64")
       File.write!(ctx.path, second)
-      Process.sleep(300)
-      assert {number, {:ok, %{source: ^second} = described}} = Watcher.description(ctx.watcher)
+      assert_receive {:mx_loaded, number, {:ok, %{source: ^second}}}
+      assert {^number, {:ok, %{source: ^second} = described}} = Watcher.description(ctx.watcher)
       assert number in [1, 2]
       assert [%{notes: [[+0.0, _held, 64 | _]]}] = described.parts
     end

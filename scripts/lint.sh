@@ -273,6 +273,9 @@ run_check "Don't call 'Logger.configure' in 'async: true' tests; the logger leve
 run_check "Do not leave empty describe/test blocks" -PU -g 'test/**/*' '(describe|test) ".*" do\s+end\b'
 
 run_check "Use 'assert is_nil(...)' instead of 'assert nil = ...'" 'assert nil ='
+run_check "Don't give assert_receive a timeout; it waits as long as test_helper.exs's assert_receive_timeout" \
+          -PU -g 'test/**/*' \
+          '^\s*assert_receive\b[^\n]*,\s*(?:\d[\d_]*|to_timeout\([^\n]*\)|@\w+)\s*$'
 run_check "Don't define modules inside 'test' blocks; define at the describe level to avoid 'redefining module' warnings on repeated runs" \
           -PU -g 'test/**/*' '(?m)^(\s+)test\b.+?\bdo\b\s*$\n(?:(?!\1end\b)(?![^\n]*\"\"\")[^\n]*\n){0,50}?\1\s+defmodule\b'
 

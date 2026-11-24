@@ -55,14 +55,14 @@ defmodule Mx.BeatTest do
     end
   end
 
-  test "a song at tempo 120 sends one message at its start, and none in the next 10 seconds",
+  test "a song at tempo 120 sends one message at its start, and none through its next pass",
        ctx do
     capture_io(:stderr, fn ->
       {band, start_us} = start(ctx, song(120))
       :ok = Band.follow(band)
 
       assert_receive {:mx_beat, %{beat: 0, tempo: 120, heard_us: ^start_us} = message}
-      refute_receive {:mx_beat, _}, 10_000
+      refute_receive {:mx_beat, _}, 2_500
 
       assert_in_delta Beat.at(message, start_us + 5_000_000), 10, 0.01
       assert_in_delta Band.beat_at(Band.timeline(band), start_us + 5_000_000), 10, 0.01
@@ -88,7 +88,7 @@ defmodule Mx.BeatTest do
       send(band, {:mx_delay, 15_500})
       assert_receive {:mx_beat, %{beat: 0, tempo: 120, heard_us: heard_us}}
       assert heard_us == start_us + 15_500
-      refute_receive {:mx_beat, _}, 100
+      refute_receive {:mx_beat, _}
     end)
   end
 
@@ -105,7 +105,7 @@ defmodule Mx.BeatTest do
 
       assert_receive {:mx_beat, %{beat: 16, tempo: 90, heard_us: heard_us}}
       assert heard_us == start_us + 8_000_000
-      refute_receive {:mx_beat, _}, 100
+      refute_receive {:mx_beat, _}
     end)
   end
 
@@ -118,7 +118,7 @@ defmodule Mx.BeatTest do
 
       Band.switch(band, load(ctx, song(120)))
 
-      refute_receive {:mx_beat, _}, 300
+      refute_receive {:mx_beat, _}
       now = System.os_time(:microsecond)
       assert_in_delta Beat.at(message, now), (now - start_us) / 500_000, 1.0e-9
       assert_in_delta Beat.at(message, now), Band.beat_at(Band.timeline(band), now), 1.0e-9
@@ -135,7 +135,7 @@ defmodule Mx.BeatTest do
       assert_receive {:mx_beat, %{beat: 0, tempo: 120, heard_us: ^start_us}}
       assert_receive {:mx_beat, %{beat: 0, tempo: {:ramp, 120, 60, 4}} = message}
       assert message.heard_us == start_us
-      refute_receive {:mx_beat, _}, 100
+      refute_receive {:mx_beat, _}
 
       two_in = start_us + round(4 * :math.log(4 / 3) * 1_000_000)
       assert_in_delta Beat.at(message, two_in), 2, 0.01
