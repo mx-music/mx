@@ -1,18 +1,31 @@
 defmodule Mx.BandTest do
-  use ExUnit.Case, async: true, group: :stderr
+  # The tests hold mx's clock as a render does, which every process in the VM reads.
+  use ExUnit.Case, async: false
 
   import ExUnit.CaptureIO
 
-  # Every test plays in real time, with notes due within a few milliseconds.
-  @moduletag :realtime
-
-  alias Mx.{Band, OSC, Song}
+  alias Mx.{Band, Clock, OSC, Song}
 
   @beat_us 10_000
 
-  setup do
+  setup ctx do
     test = self()
-    %{play: fn at, events -> send(test, {:played, at, events}) end}
+    played = %{play: fn at, events -> send(test, {:played, at, events}) end}
+
+    # A test tagged realtime plays against the system's time, as a song played live does.
+    if ctx[:realtime] do
+      played
+    else
+      Clock.start_render(System.os_time(:microsecond))
+      driver = spawn(fn -> drive([]) end)
+
+      on_exit(fn ->
+        Process.exit(driver, :kill)
+        Clock.stop_render()
+      end)
+
+      Map.put(played, :driver, driver)
+    end
   end
 
   @tag :tmp_dir
@@ -365,7 +378,7 @@ defmodule Mx.BandTest do
       last_bass && List.last(times(notes, 36)) >= last_bass + 200_000
     end)
 
-    switch_us = System.os_time(:microsecond)
+    switch_us = Clock.now()
     Band.switch(band, load(ctx, song(600, [drums, bass])))
     notes = collect_until(counted(%{43 => 1}))
 
@@ -621,6 +634,7 @@ defmodule Mx.BandTest do
       }
     end
 
+    @tag :realtime
     test "a loop hands each pass with its beats, its number and every sound at its beat, with times left in beats",
          ctx do
       song =
@@ -714,7 +728,7 @@ defmodule Mx.BandTest do
       part = "part(:a, loop(4, fn _, _ -> seq([rest(4)]) end))"
       first = load(ctx, song(120, [part]))
       second = load(ctx, song(90, [part]))
-      at_beat_10_2 = System.os_time(:microsecond) - 5_100_000
+      at_beat_10_2 = Clock.now() - 5_100_000
 
       capture_io(:stderr, fn ->
         {band, _} = start(first, ctx, ctx.hand_opts ++ [start_us: at_beat_10_2, ahead_ms: 500])
@@ -731,7 +745,7 @@ defmodule Mx.BandTest do
       part = "part(:a, loop(4, fn _, _ -> seq([rest(4)]) end))"
       first = load(ctx, song(120, [part]))
       second = load(ctx, song(90, [part]))
-      at_beat_10_2 = System.os_time(:microsecond) - 5_100_000
+      at_beat_10_2 = Clock.now() - 5_100_000
 
       capture_io(:stderr, fn ->
         {band, _} = start(first, ctx, start_us: at_beat_10_2, ahead_ms: 500)
@@ -787,7 +801,7 @@ defmodule Mx.BandTest do
       {band, _start_us} = start(load(ctx, song(120, [click()])), ctx, ctx.tempo_opts)
       assert_receive {:tempo_set, 0, 120}
 
-      asked_us = System.os_time(:microsecond)
+      asked_us = Clock.now()
       assert Band.scale_tempo(band, 0.5) == :ok
       assert [{beat, at_us, 60.0} | _] = Band.timeline(band)
       assert_received {:tempo_set, ^beat, 60.0}
@@ -874,6 +888,7 @@ defmodule Mx.BandTest do
       refute Map.has_key?(params_map(params), :sustain)
     end
 
+    @tag :realtime
     test "samples are ready before playing starts, so the first pass is on time", ctx do
       song =
         load(
@@ -890,9 +905,10 @@ defmodule Mx.BandTest do
 
       output =
         capture_io(:stderr, fn ->
-          {:ok, _} = Band.start_link(song: song, play: ctx.play, ahead_ms: 20, prepare: slow)
+          {:ok, band} = Band.start_link(song: song, play: ctx.play, ahead_ms: 20, prepare: slow)
+          driven(band, ctx)
           assert_receive {:played, time, _}
-          assert time > System.os_time(:microsecond)
+          assert time > Clock.now()
         end)
 
       refute output =~ "late"
@@ -1258,12 +1274,12 @@ defmodule Mx.BandTest do
         song(tempo: 60, music: part(:setter, loop(1, fn _, _ -> seq([set(:root, 40), rest(1)]) end)))
         """)
 
-      start_us = System.os_time(:microsecond) + 500_000
+      start_us = Clock.now() + 500_000
       start(song, ctx, [ahead_ms: 500, start_us: start_us] ++ shared(inputs))
 
       Process.sleep(50)
       assert Mx.Inputs.snapshot(inputs)[{:value, :root}] == nil
-      Process.sleep(div(start_us - System.os_time(:microsecond), 1000) + 50)
+      Process.sleep(div(start_us - Clock.now(), 1000) + 50)
       assert Mx.Inputs.snapshot(inputs)[{:value, :root}] == 40
     end
 
@@ -1297,10 +1313,10 @@ defmodule Mx.BandTest do
       {band, _} = start(song, ctx)
       refute_receive {:played, _, _}
 
-      sent = System.os_time(:microsecond)
+      sent = Clock.now()
       send(band, {:input, {:midi_note, %{note: 64, velocity: 100}}})
       assert_receive {:played, at, [{:note, _, _, note, _, _}]} when note == 64.0
-      assert System.os_time(:microsecond) - sent < 20_000
+      assert Clock.now() - sent < 20_000
       assert at - sent < 20_000
 
       send(band, {:input, {:osc, %{address: "/other", args: [1]}}})
@@ -1324,7 +1340,7 @@ defmodule Mx.BandTest do
           "import Mx\nsong(tempo: 120, music: part(:keys, loop(fn trigger, _ -> seq([note(trigger.note, 0), rest(1)]) end, #{on})))\n"
         )
 
-      start(song, ctx, start_us: System.os_time(:microsecond) - round(beat * 500_000))
+      start(song, ctx, start_us: Clock.now() - round(beat * 500_000))
     end
 
     defp press(band), do: send(band, {:input, {:midi_note, %{note: 64, velocity: 100}}})
@@ -1364,7 +1380,7 @@ defmodule Mx.BandTest do
 
     test "a loop with no grid starts within 15 ms of its input", ctx do
       {band, _start_us} = start_at_beat(ctx, 3.4, nil)
-      sent = System.os_time(:microsecond)
+      sent = Clock.now()
       press(band)
       assert_receive {:played, at, _events}
       assert at - sent < 15_000
@@ -1418,9 +1434,10 @@ defmodule Mx.BandTest do
       beat_us = round(60_000_000 / song.tempo)
 
       capture_io(:stderr, fn ->
-        start_us = System.os_time(:microsecond) - 4 * beat_us
+        start_us = Clock.now() - 4 * beat_us
         {band, _} = start(song, ctx, ctx.hand_opts ++ [start_us: start_us, ahead_ms: 500])
         :ok = Band.subscribe(band)
+        worked_out(band)
         Band.switch(band, song)
 
         waits =
@@ -1441,7 +1458,7 @@ defmodule Mx.BandTest do
 
       {band, _} = start(first, ctx)
       :ok = Band.subscribe(band)
-      assert_receive {:played, _, _}
+      worked_out(band)
       Band.switch(band, second)
 
       assert_receive {:mx_waits, :a, 4}
@@ -1462,6 +1479,7 @@ defmodule Mx.BandTest do
 
       {band, _} = start(first, ctx)
       :ok = Band.subscribe(band)
+      worked_out(band)
       Band.switch(band, second)
       assert_receive {:mx_waits, :a, 4}
       Process.sleep(100)
@@ -1503,7 +1521,7 @@ defmodule Mx.BandTest do
         )
 
       {band, _} =
-        start(first, ctx, ctx.hand_opts ++ [start_us: System.os_time(:microsecond) - 1_200_000])
+        start(first, ctx, ctx.hand_opts ++ [start_us: Clock.now() - 1_200_000])
 
       :ok = Band.subscribe(band)
       assert_receive {:handed, :a, {0, 8}, 0, _events}
@@ -1555,11 +1573,11 @@ defmodule Mx.BandTest do
     test "plays a range of the recording into the part's effects from the first whole beat 150 ms away, beside the part's notes",
          ctx do
       {band, _start_us} =
-        start(ctx.song, ctx, ctx.opts ++ [start_us: System.os_time(:microsecond) - 1_200_000])
+        start(ctx.song, ctx, ctx.opts ++ [start_us: Clock.now() - 1_200_000])
 
       assert_receive {:started_fx, [echo: _]}
 
-      asked_us = System.os_time(:microsecond)
+      asked_us = Clock.now()
 
       assert {:ok, beat} =
                Band.play_recording(band, :voice, ctx.sample, from: 2.447, to: 3.4, amp: 0.8)
@@ -1583,7 +1601,7 @@ defmodule Mx.BandTest do
 
       assert :ok = Band.stop_recording(band, :voice)
       assert_receive {:played, stop_us, [{:stop, [^other]}]}
-      assert stop_us - System.os_time(:microsecond) < 1_000_000
+      assert stop_us - Clock.now() < 1_000_000
     end
 
     test "a part the song does not have is refused, naming it", ctx do
@@ -1617,7 +1635,7 @@ defmodule Mx.BandTest do
         start(
           load(ctx, song(60, [flute])),
           ctx,
-          opts ++ [start_us: System.os_time(:microsecond) - 1_200_000]
+          opts ++ [start_us: Clock.now() - 1_200_000]
         )
 
       assert_receive {:handed, :flute, {0, 8}, 0, _events}
@@ -1984,6 +2002,7 @@ defmodule Mx.BandTest do
   end
 
   @tag :tmp_dir
+  @tag :realtime
   test "a pass that falls behind prints a warning naming the loop, and the loop keeps playing",
        ctx do
     song =
@@ -2002,6 +2021,7 @@ defmodule Mx.BandTest do
   end
 
   @tag :tmp_dir
+  @tag :realtime
   test "a late pass drops the notes more than a quarter beat late, sends the rest, and the next pass plays on time",
        ctx do
     song =
@@ -2162,7 +2182,7 @@ defmodule Mx.BandTest do
     {band, _} = start(song, ctx)
     refute_receive {:played, _, _}
 
-    sent = System.os_time(:microsecond)
+    sent = Clock.now()
     send(band, {:input, {:midi_note, %{note: 64, velocity: 100}}})
     assert_receive {:played, at, [{:note, _, _, note, _, _}]} when note == 64.0
     assert at - sent < 20_000
@@ -2211,10 +2231,53 @@ defmodule Mx.BandTest do
   end
 
   defp start(song, ctx, opts \\ []) do
-    start_us = System.os_time(:microsecond) + 20_000
+    start_us = Clock.now() + 20_000
     opts = Keyword.merge([song: song, play: ctx.play, ahead_ms: 20, start_us: start_us], opts)
     {:ok, band} = Band.start_link(opts)
+    driven(band, ctx)
     {band, opts[:start_us]}
+  end
+
+  # Has every loop of the band work out what is due now, as a band playing live has each do as it
+  # starts.
+  defp worked_out(band), do: Enum.each(loops(band), &tick/1)
+
+  defp driven(band, ctx) do
+    if driver = ctx[:driver], do: send(driver, {:band, band})
+    band
+  end
+
+  # Ticks every loop of the test's bands, as a render does, then moves the clock on to the first
+  # loop's wake, by at least a millisecond and never past the system's time.
+  # The clock never passes a time a loop has not worked out, so no loop is late on a slow machine.
+  defp drive(bands) do
+    bands =
+      receive do
+        {:band, band} -> [band | bands]
+      after
+        0 -> bands
+      end
+
+    bands = Enum.filter(bands, &Process.alive?/1)
+    wakes = for band <- bands, pid <- loops(band), do: tick(pid)
+    now = Clock.now()
+    next = max(Enum.min(wakes, fn -> :infinity end), now + 1000)
+    Clock.advance(max(now, min(next, System.os_time(:microsecond))))
+    Process.sleep(1)
+    drive(bands)
+  end
+
+  defp loops(band) do
+    Band.loops(band)
+  catch
+    :exit, _ -> []
+  end
+
+  defp tick(pid) do
+    send(pid, :tick)
+    :sys.get_state(pid).wake_us || :infinity
+  catch
+    :exit, _ -> :infinity
   end
 
   defp shared(inputs) do
