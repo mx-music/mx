@@ -1,0 +1,30 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: erlef/setup-beam@v1
+        with:
+          version-file: .tool-versions
+          version-type: strict
+
+      - run: sudo apt-get update && sudo apt-get install -y libasound2-dev
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            deps
+            _build
+          key: test-${{ runner.os }}-${{ hashFiles('.tool-versions', 'mix.lock', 'native/mxs_nif/Cargo.lock') }}
+
+      - run: mix deps.get
+
+      - run: mix test
