@@ -50,6 +50,8 @@ defmodule Mx.MixProject do
     ]
   end
 
+  def cli, do: [preferred_envs: ["mx.bench.paired": :test]]
+
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_env), do: ["lib"]
 
