@@ -14,6 +14,7 @@
   * [effects] `compressor` works in dB and follows another part with `key:`, so a pad can duck under the kick
   * [effects] `echo` and `ping_pong` dull each repeat as tape does, `distortion` adds only harmonics of the note, and `tremolo` and `slicer` move across the stereo field with `spread`
   * [effects] `defeffect` processes both stereo sides together and declares its tail with `tail/1`, and `defsynth` gains `saturate/2`, `clip/2`, `fold/2` and `ladder/2`
+  * [instruments] `envelope` in a `defsynth` takes `every:`, the seconds after which it starts over, so a tremolo picks a note again without building its fades from arithmetic
   * [examples] Add `examples/effects`, a short song for each effect that plays a phrase dry, then through the effect, then with one option moved at a time
   * [synths] Add `deep_bass`, and alpha versions of `electric_piano` and `electric_guitar` that will be refitted
   * [synths] `pandeiro` is refitted to recordings of its thumb, heel and slap, with jingles that answer the hand, `muted` strokes that sound as its pressed head does, lighter and drier fingertips, a quieter heel and no two strokes alike, and its solo plays the choro's pandeiro line; `ganza`, `clave`, `guiro`, `berimbau`, `cuica`, `triangle` and the tabla's tas stroke sound closer to their recordings

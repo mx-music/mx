@@ -228,11 +228,25 @@ defmodule Mx.Instrument.Vocabulary do
     def unquote(shaper)(sound, opts), do: Expr.call(unquote(shaper), [sound], opts)
   end
 
-  @doc "Segments from silence through each point, `{seconds, level}` straight, `{seconds, level, curve}` bent, or `{seconds, level, :exp}` exponential."
+  @doc """
+  Segments from silence through each point, `{seconds, level}` straight, `{seconds, level, curve}` bent, or `{seconds, level, :exp}` exponential.
+
+  Given `every:`, it starts over from silence every that many seconds, as `time/1` does, so `envelope(points, every: 1 / hit.tremolo)` plucks again on each stroke of a tremolo.
+  An `every:` of 0 or less, or an infinite one, plays it once.
+  """
   def envelope(points), do: Expr.call(:envelope, [points])
 
-  @doc "A sound scaled by the level `envelope/1` gives for `points`."
-  def envelope(sound, points), do: Expr.call(:envelope, [sound, points])
+  @doc "`envelope/1` given `every:`, or a sound scaled by the level `envelope/1` gives for `points`."
+  def envelope(points_or_sound, opts_or_points) do
+    if Keyword.keyword?(opts_or_points) and opts_or_points != [] do
+      Expr.call(:envelope, [points_or_sound], opts_or_points)
+    else
+      Expr.call(:envelope, [points_or_sound, opts_or_points])
+    end
+  end
+
+  @doc "A sound scaled by the level `envelope/2` gives for `points` and `every:`."
+  def envelope(sound, points, opts), do: Expr.call(:envelope, [sound, points], opts)
 
   @doc "A quick rise over `attack:` and a fall to silence over `release:`."
   def perc(opts), do: Expr.call(:perc, [], opts)

@@ -1,6 +1,7 @@
 defmodule Mx.InstrumentTest do
   use ExUnit.Case, async: true
 
+  alias Mx.Engine.Mxs
   alias Mx.Engine.Mxs.Native
   alias Mx.Instrument.{Expr, Vocabulary}
 
@@ -9,13 +10,35 @@ defmodule Mx.InstrumentTest do
     :ok = Mx.Instrument.register(engine, module)
 
     :ok =
-      Native.play(engine, [{0.0, Mx.Engine.Mxs.event({:note, nil, synth, nil, options, nil})}])
+      Native.play(engine, [{0.0, Mxs.event({:note, nil, synth, nil, options, nil})}])
 
     {:ok, {left, _right}} = Native.render(engine, seconds)
     for <<x::float-32-native <- left>>, do: x
   end
 
   defp peak(samples), do: samples |> Enum.map(&abs/1) |> Enum.max()
+
+  setup_all do
+    source = """
+    defmodule Mx.InstrumentTest.Picked do
+      use Mx.Instrument
+      @points [{0.01, 1}, {0.1, 0}]
+
+      defsynth restarting(_hit), do: envelope(@points, every: 0.25) |> rings(seconds: 1)
+      defsynth plain(_hit), do: envelope(@points) |> rings(seconds: 1)
+
+      defsynth scaled(_hit) do
+        envelope(sine(hz: 400), @points, every: 0.25) |> rings(seconds: 1)
+      end
+
+      attr :tremolo, :float, default: 0
+      defsynth unpicked(hit), do: envelope(@points, every: 1 / hit.tremolo) |> rings(seconds: 1)
+    end
+    """
+
+    [{module, _}] = Code.compile_string(source, "picked.exs")
+    %{picked: module}
+  end
 
   test "the marimba and the flute, as the guide sketches them, play through mxs" do
     marimba = render(Mx.Instruments.Marimba, :marimba, note: 60, vel: 0.8)
@@ -37,7 +60,7 @@ defmodule Mx.InstrumentTest do
     played = fn vel ->
       {:ok, engine} = Native.start(false, false)
       :ok = Mx.Instrument.register(engine, Mx.Instruments.Flute)
-      note = Mx.Engine.Mxs.event({:note, nil, :flute, nil, [vel: vel], nil})
+      note = Mxs.event({:note, nil, :flute, nil, [vel: vel], nil})
       :ok = Native.play(engine, [{0.0, note}, {0.5, note}])
       warnings = Native.warnings(engine)
       {:ok, {left, _right}} = Native.render(engine, 1.0)
@@ -172,6 +195,31 @@ defmodule Mx.InstrumentTest do
     for synth <- [:saturated, :clipped, :folded] do
       level = peak(render(module, synth, note: 45))
       assert level > 0.01 and level < 1, "#{synth} peaks at #{level}"
+    end
+  end
+
+  describe "an envelope given every:" do
+    test "starts over from its first point every that many seconds", %{picked: module} do
+      samples = render(module, :restarting, [])
+      rate = Mxs.render_rate()
+      at = fn seconds -> Enum.at(samples, round(seconds * rate)) end
+      assert at.(0.05) > 0
+      assert_in_delta at.(0.30), at.(0.05), 1.0e-4
+      assert at.(0.2) == 0
+    end
+
+    test "scales a sound that sounds the same each time it starts over", %{picked: module} do
+      quarter = round(Mxs.render_rate() / 4)
+      {first, rest} = Enum.split(render(module, :scaled, []), quarter)
+      second = Enum.take(rest, quarter)
+      assert peak(first) > 0.1
+      assert peak(Enum.zip_with(first, second, &(&1 - &2))) < 1.0e-3
+    end
+
+    test "worked out as 1 divided by a tremolo of 0 plays once, as without every:", %{
+      picked: module
+    } do
+      assert render(module, :unpicked, []) == render(module, :plain, [])
     end
   end
 end
