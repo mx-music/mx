@@ -237,7 +237,7 @@ defmodule Mx.Synths do
       :ok
     else
       takes = takes(limit)
-      value = inspect(value) |> String.trim_leading(":")
+      value = String.trim_leading(inspect(value), ":")
       owner = owner(synth)
       {:error, "#{owner} takes #{option} #{takes}, not #{value}"}
     end

@@ -186,12 +186,12 @@ defmodule Mx.Instruments.Tabla do
   # The bands sit where they do at the bol's own pitch, and move with the note.
   defsoundp stroke(hit, shape) do
     freq = hz(hit.note || shape[:own])
-    finger = impulse() |> lowpass(hz: 3000)
+    finger = lowpass(impulse(), hz: 3000)
 
     head =
       mix(
         for {ratio, level, ring} <- shape[:modes] do
-          finger |> mode(hz: freq * ratio, level: db(level), fade: ring)
+          mode(finger, hz: freq * ratio, level: db(level), fade: ring)
         end
       )
 

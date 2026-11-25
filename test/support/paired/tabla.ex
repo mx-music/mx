@@ -97,12 +97,12 @@ defmodule Mx.Paired.Tabla do
 
   defsoundp stroke(hit, bol) do
     freq = hz(hit.note || bol.note)
-    finger = impulse() |> lowpass(hz: 3000)
+    finger = lowpass(impulse(), hz: 3000)
 
     head =
       mix(
         for {ratio, level, ring} <- Enum.zip([bol.ratios, bol.levels, bol.rings]) do
-          finger |> mode(hz: ratio * freq, level: db(level), fade: ring)
+          mode(finger, hz: ratio * freq, level: db(level), fade: ring)
         end
       )
 

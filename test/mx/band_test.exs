@@ -613,7 +613,7 @@ defmodule Mx.BandTest do
 
       all = Enum.map(notes, &elem(&1, 0))
       assert Enum.any?(notes, &(round(elem(&1, 1)) == 62))
-      assert Enum.zip_with(all, tl(all), &(&2 - &1)) |> Enum.uniq() == [2 * @beat_us]
+      assert Enum.uniq(Enum.zip_with(all, tl(all), &(&2 - &1))) == [2 * @beat_us]
     end
   end
 
@@ -2085,7 +2085,7 @@ defmodule Mx.BandTest do
     assert_receive {:played, _, [{:note, _, _, _, _, _} = params]}
     Process.unlink(band)
     GenServer.stop(band, :shutdown)
-    params_map(params) |> Map.new(fn {key, value} -> {key, Float.round(value, 6)} end)
+    Map.new(params_map(params), fn {key, value} -> {key, Float.round(value, 6)} end)
   end
 
   # An event's options, with its pitch as note, all as floats.

@@ -277,7 +277,7 @@ defmodule ErbarmeDich.Paraphrase do
   defp figure(bass, tones) do
     pattern = tones ++ (tones |> Enum.reverse() |> tl() |> Enum.drop(-1))
 
-    for {pitch, step} <- Enum.with_index(Stream.cycle(pattern) |> Enum.take(6)),
+    for {pitch, step} <- Enum.with_index(Enum.take(Stream.cycle(pattern), 6)),
         do: %{
           bass
           | at: bass.at + step * 0.5,

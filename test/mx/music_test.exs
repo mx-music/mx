@@ -396,7 +396,7 @@ defmodule Mx.MusicTest do
       assert events(first, :a) == events(second, :a)
 
       felt = for {beat, _note, opts} <- events(first, :a), do: {beat, opts[:vel]}
-      assert Enum.uniq(felt) |> length() == 8
+      assert length(Enum.uniq(felt)) == 8
 
       for {{beat, vel}, step} <- Enum.with_index(felt) do
         assert abs(beat - step * 0.25) <= 0.01
@@ -996,8 +996,12 @@ defmodule Mx.MusicTest do
     {:ok, song} = Song.load(path)
 
     assert Enum.map(song.loops, &{&1.name, &1.synth, &1.passes}) ==
-             [soprano: :oboe, alto: :clarinet, tenor: :viola, bass: :bassoon]
-             |> Enum.map(fn {name, synth} -> {name, synth, 1} end)
+             [
+               {:soprano, :oboe, 1},
+               {:alto, :clarinet, 1},
+               {:tenor, :viola, 1},
+               {:bass, :bassoon, 1}
+             ]
 
     assert played(events(song, :soprano)) == [
              {0, 63},

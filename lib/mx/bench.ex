@@ -318,20 +318,25 @@ defmodule Mx.Bench do
         here = Enum.filter(plays, &(second.(&1) == index))
         seen = Enum.filter(sampled, &(second.(&1) == index))
 
-        %{
-          second: index,
-          notes: length(here),
-          late: Enum.count(here, &(elem(&1, 2) < 0)),
-          longest_gap_ms:
-            gaps
-            |> Enum.filter(fn {at, _} -> div(at, 1_000_000) == index end)
-            |> Enum.map(&elem(&1, 1))
-            |> Enum.max(fn -> 0 end)
-            |> ms(),
-          memory_mb: seen |> Enum.map(&elem(&1, 2)) |> Enum.max(fn -> 0.0 end) |> Float.round(1),
-          processes: seen |> Enum.map(&elem(&1, 3)) |> Enum.max(fn -> 0 end)
-        }
-        |> late_in(live, late_buffers, &(second.(&1) == index))
+        late_in(
+          %{
+            second: index,
+            notes: length(here),
+            late: Enum.count(here, &(elem(&1, 2) < 0)),
+            longest_gap_ms:
+              gaps
+              |> Enum.filter(fn {at, _} -> div(at, 1_000_000) == index end)
+              |> Enum.map(&elem(&1, 1))
+              |> Enum.max(fn -> 0 end)
+              |> ms(),
+            memory_mb:
+              seen |> Enum.map(&elem(&1, 2)) |> Enum.max(fn -> 0.0 end) |> Float.round(1),
+            processes: seen |> Enum.map(&elem(&1, 3)) |> Enum.max(fn -> 0 end)
+          },
+          live,
+          late_buffers,
+          &(second.(&1) == index)
+        )
       end
 
     figures = %{

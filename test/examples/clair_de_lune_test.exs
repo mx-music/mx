@@ -26,7 +26,7 @@ defmodule Mx.Examples.ClairDeLuneTest do
     opening = strokes(0) |> Enum.map(&elem(&1, 0)) |> Enum.uniq() |> Enum.sort()
     assert opening == [65, 68, 73, 77, 80]
 
-    assert Enum.map(strokes(71), &elem(&1, 0)) |> Enum.sort() ==
+    assert Enum.sort(Enum.map(strokes(71), &elem(&1, 0))) ==
              [61, 68, 73, 77, 80, 85, 89, 92]
   end
 
@@ -37,7 +37,7 @@ defmodule Mx.Examples.ClairDeLuneTest do
   end
 
   test "every note is struck with the pedal down, and its dampers fall fast" do
-    plays = Regex.scan(~r/play \d+ [^\n]*/, print()) |> List.flatten()
+    plays = List.flatten(Regex.scan(~r/play \d+ [^\n]*/, print()))
     assert length(plays) > 1000
     assert Enum.all?(plays, &String.ends_with?(&1, "pedal: 1, release: 0.3"))
   end

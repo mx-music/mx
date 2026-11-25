@@ -153,7 +153,7 @@ defmodule Mx.Fit.Struck do
         for {partial, ours} <- Enum.zip(check.partials, own.partials),
             do: Map.put(partial, :own, ours)
 
-      %{check | partials: partials} |> Map.put(:own, own)
+      Map.put(%{check | partials: partials}, :own, own)
     end
   end
 

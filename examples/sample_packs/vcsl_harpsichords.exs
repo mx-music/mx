@@ -147,8 +147,8 @@ defmodule Prelude do
     seq(range, fn number ->
       case number do
         34 -> note([:c2, :c3], 8)
-        number when number >= 32 -> note(Tuple.to_list(@runs[number]) |> Enum.take(2), 4)
-        number -> note(Enum.at(@bars, number - 1) |> Enum.take(2), 4)
+        number when number >= 32 -> note(Enum.take(Tuple.to_list(@runs[number]), 2), 4)
+        number -> note(Enum.take(Enum.at(@bars, number - 1), 2), 4)
       end
     end)
   end

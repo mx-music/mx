@@ -5,13 +5,13 @@ defmodule Mx.Test.EffectNodes do
 
   defeffect swap({left, right}, _o), do: {right, left}
 
-  defeffect late(sound, _o), do: sound |> delay(seconds: 2.5, max: 3)
+  defeffect late(sound, _o), do: delay(sound, seconds: 2.5, max: 3)
 
   defeffect echo(sound, _o),
     do: sound + fed_back(sound, seconds: 0.25, feedback: 0.5, lowpass: 3000)
 
   tail(3.0)
-  defeffect late_ringing(sound, _o), do: sound |> delay(seconds: 2.5, max: 3)
+  defeffect late_ringing(sound, _o), do: delay(sound, seconds: 2.5, max: 3)
 
   attr :decay, :beats, default: 4
   tail(:decay)
@@ -25,7 +25,7 @@ defmodule Mx.Test.EffectNodes do
   attr :fall, :float, default: 0.1
 
   defeffect level_of_tone(_sound, o) do
-    (sine(hz: 200) * (time() < 0.5)) |> follower(rise: o.rise, fall: o.fall)
+    follower(sine(hz: 200) * (time() < 0.5), rise: o.rise, fall: o.fall)
   end
 
   attr :hz, :float, default: 1000
@@ -40,8 +40,8 @@ defmodule Mx.Test.EffectNodes do
   envelope_attrs sustain: 0.5, release: 0.1
 
   defsynth swept(o) do
-    tone = sine(hz: hz(o.note)) |> allpass(hz: 1000)
+    tone = allpass(sine(hz: hz(o.note)), hz: 1000)
     level = sweep(length: 0.25, wave: 2)
-    (tone * level * (1 - follower(tone, rise: 0.01, fall: 0.1) * 0.5)) |> note_envelope(o)
+    note_envelope(tone * level * (1 - follower(tone, rise: 0.01, fall: 0.1) * 0.5), o)
   end
 end

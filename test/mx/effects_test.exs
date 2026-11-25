@@ -116,8 +116,8 @@ defmodule Mx.EffectsTest do
     {left, right} =
       Mxs.render_through(:closed_hihat, [vel: 1.0], 1.2, ctx.tmp_dir, chain)
 
-    [_, left1, left2, left3 | _] = left |> levels(0.25)
-    [_, right1, right2, right3 | _] = right |> levels(0.25)
+    [_, left1, left2, left3 | _] = levels(left, 0.25)
+    [_, right1, right2, right3 | _] = levels(right, 0.25)
 
     assert right1 > 4 * left1
     assert left2 > 4 * right2

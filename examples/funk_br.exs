@@ -15,7 +15,7 @@ defmodule Paredao.Synths do
 
     overtones =
       for {harmonic, level} <- [{2, 0.35}, {3, 0.22}, {5, 0.08}] do
-        sine(hz: pitch * harmonic) |> gain(level * played.drive)
+        gain(sine(hz: pitch * harmonic), level * played.drive)
       end
 
     click =
@@ -29,7 +29,7 @@ defmodule Paredao.Synths do
       |> envelope([{0.002, 1}, {played.fade, 0, -3}])
       |> gain(0.5 * played.vel)
 
-    (body + click) |> note_envelope(played)
+    note_envelope(body + click, played)
   end
 
   @doc "A funk snare: a low knock under a burst of noise about a tenth of a second long, its balance fitted to the genre's records."
@@ -45,7 +45,7 @@ defmodule Paredao.Synths do
     low = noise(:white) |> bandpass(hz: 360, q: 0.6) |> gain(1.5)
     mid = noise(:white) |> bandpass(hz: 1100, q: 0.6) |> gain(0.55)
     high = noise(:white) |> highpass(hz: 2500, q: 0.7) |> lowpass(hz: 7500, q: 0.7) |> gain(0.6)
-    burst = mix([low, mid, high]) |> envelope([{0.001, 1}, {0.06, 0.7, -1}, {0.17, 0, -2}])
+    burst = envelope(mix([low, mid, high]), [{0.001, 1}, {0.06, 0.7, -1}, {0.17, 0, -2}])
 
     (knock + burst) |> gain(0.5 * played.vel) |> note_envelope(played)
   end
@@ -64,7 +64,7 @@ defmodule Paredao.Synths do
     pitch = hz(follow(played.note))
     cutoff = 900 + 5000 * played.vel * envelope([{0, 1}, {0.25, 0.35, -3}])
 
-    mix([saw(hz: pitch * 1.001), saw(hz: pitch * 0.999), square(hz: pitch / 2) |> gain(0.4)])
+    mix([saw(hz: pitch * 1.001), saw(hz: pitch * 0.999), gain(square(hz: pitch / 2), 0.4)])
     |> lowpass(hz: cutoff, q: 1.2)
     |> gain(0.25 * played.vel)
     |> note_envelope(played)

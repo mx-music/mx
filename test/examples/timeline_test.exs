@@ -10,7 +10,7 @@ defmodule Mx.Examples.TimelineTest do
     on_exit(fn -> Application.put_env(:mx, :samples_dir, dir) end)
   end
 
-  for timeline <- Path.wildcard("test/examples/timelines/**/*.timeline") |> Enum.sort() do
+  for timeline <- Enum.sort(Path.wildcard("test/examples/timelines/**/*.timeline")) do
     song =
       timeline
       |> Path.relative_to("test/examples/timelines")
@@ -28,7 +28,7 @@ defmodule Mx.Examples.TimelineTest do
       spans = Map.new(expected, fn {name, {_events, beats}} -> {name, beats} end)
       played = Mx.Timeline.by_beats(@song, spans)
 
-      assert Map.keys(played) |> Enum.sort() == Map.keys(expected) |> Enum.sort()
+      assert Enum.sort(Map.keys(played)) == Enum.sort(Map.keys(expected))
 
       for {name, {events, _beats}} <- expected do
         {played_events, _} = played[name]

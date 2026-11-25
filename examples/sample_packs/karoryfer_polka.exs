@@ -307,7 +307,7 @@ defmodule SquidPolka do
       chanter: seq([rest(2), note([:a4, :e5, :a5], 6, sustain: 5, release: 1)]),
       drone: seq([rest(2), note([:a2, :a3], 6, sustain: 5, release: 1)]),
       held_tuba: seq([rest(2), note([:a1, :a2], 6, sustain: 5, release: 1)]),
-      tagelharpa: seq([rest(2), note([:a2, :e3, :a3], 6, strum: 0.05)]) |> Mx.swing(&(&1 - 0.23)),
+      tagelharpa: Mx.swing(seq([rest(2), note([:a2, :e3, :a3], 6, strum: 0.05)]), &(&1 - 0.23)),
       orks: seq([rest(2), shout("oi_rr2", 6)])
     )
   end
@@ -349,11 +349,13 @@ defmodule SquidPolka do
   # The tagelharpa off the beats.
   # Its plucks start about 95 ms into their files, so the part plays that much early.
   defp pah(chords) do
-    seq(chords, fn chord ->
-      {_, _, notes} = @chords[chord]
-      seq([rest(0.5), note(notes, 0.5), rest(0.5), note(notes, 0.5)])
-    end)
-    |> Mx.swing(&(&1 - 0.23))
+    Mx.swing(
+      seq(chords, fn chord ->
+        {_, _, notes} = @chords[chord]
+        seq([rest(0.5), note(notes, 0.5), rest(0.5), note(notes, 0.5)])
+      end),
+      &(&1 - 0.23)
+    )
   end
 
   defp shout(word, beats), do: sample(@shouts[word], beats)

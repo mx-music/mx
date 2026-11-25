@@ -35,8 +35,7 @@ defmodule Maracatu do
     fx: @room
 
   def song do
-    seq([:marcacao, :arrasto, :imale, :martelo], &baque/1)
-    |> repeat()
+    repeat(seq([:marcacao, :arrasto, :imale, :martelo], &baque/1))
   end
 
   # Eight bars of a baque: the alfaias play it seven times and then the virada, which leads to the

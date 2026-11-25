@@ -76,7 +76,7 @@ defmodule Mx.WindsTest do
 
     test "#{synth} swells and fades within 3 dB of the Philharmonia's long note, every half second, with vel following it",
          ctx do
-      levels = recording(ctx, @recorded) |> half_seconds()
+      levels = half_seconds(recording(ctx, @recorded))
       peak = Enum.max(levels)
       relative = Enum.map(levels, &(&1 - peak))
       curve = loudness(ctx, @synth, @note)

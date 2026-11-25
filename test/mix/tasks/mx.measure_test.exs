@@ -490,8 +490,7 @@ defmodule Mix.Tasks.Mx.MeasureTest do
   test "with --held and --drone, measures each file as one note, however often it is plucked again",
        ctx do
     plucked =
-      held(220, 6)
-      |> Enum.with_index(fn sample, index ->
+      Enum.with_index(held(220, 6), fn sample, index ->
         since = :math.fmod(index / 48_000, 1.5)
         sample * (0.05 + 0.95 * :math.exp(-since / 0.3))
       end)

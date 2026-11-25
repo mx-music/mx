@@ -93,7 +93,7 @@ defmodule Mx.Pattern do
           raise ArgumentError, "#{word} takes no length; a grace note takes no step"
         end
 
-        cells(words, [%{cell | steps: 0} |> Map.put(:grace, true) | cells])
+        cells(words, [Map.put(%{cell | steps: 0}, :grace, true) | cells])
 
       _ ->
         raise ArgumentError, "#{word} is no grace note; ^ marks a word that sounds"

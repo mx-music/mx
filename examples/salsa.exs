@@ -111,24 +111,26 @@ defmodule Salsa do
   # A section, with a timbale fill at its end when the stabs, the mambo or the horn solo first
   # come next.
   defp section(section, %{coming: coming, time: time}) do
-    together([
-      part(:clave, clave()),
-      part(:bass, bass()),
-      part(:baby_bass, baby_bass()),
-      part(:piano, loop(16, fn pass, _ -> piano_pass(section, pass) end)),
-      part(:horns, loop(16, fn pass, _ -> horns(section, pass, time) end)),
-      part(:high_conga, high_conga()),
-      part(:low_conga, low_conga()),
-      part(:cascara, cascara()),
-      part(:cowbell, cowbell()),
-      part(:high_bongo, high_bongo()),
-      part(:low_bongo, low_bongo()),
-      part(:maracas, maracas()),
-      part(:fill_high, fill_high(section, coming)),
-      part(:fill_low, fill_low(section, coming)),
-      part(:guiro, guiro())
-    ])
-    |> without(@silent[section])
+    without(
+      together([
+        part(:clave, clave()),
+        part(:bass, bass()),
+        part(:baby_bass, baby_bass()),
+        part(:piano, loop(16, fn pass, _ -> piano_pass(section, pass) end)),
+        part(:horns, loop(16, fn pass, _ -> horns(section, pass, time) end)),
+        part(:high_conga, high_conga()),
+        part(:low_conga, low_conga()),
+        part(:cascara, cascara()),
+        part(:cowbell, cowbell()),
+        part(:high_bongo, high_bongo()),
+        part(:low_bongo, low_bongo()),
+        part(:maracas, maracas()),
+        part(:fill_high, fill_high(section, coming)),
+        part(:fill_low, fill_low(section, coming)),
+        part(:guiro, guiro())
+      ]),
+      @silent[section]
+    )
   end
 
   # The son clave, 2-3, in eighths.

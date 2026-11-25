@@ -413,7 +413,7 @@ defmodule Mx.Paired.Marimba do
             {share, fade} <- [{1, fade}, {second, second_fade}] do
           heard = select(freq * ratio < 15_000, 1, 0)
           first = heard * (1.25 * (Enum.at(along, knot) * Enum.at(across, row))) * db(level)
-          strike |> mode(hz: pitch(hit) * ratio, level: first * share, fade: @fall * exp(fade))
+          mode(strike, hz: pitch(hit) * ratio, level: first * share, fade: @fall * exp(fade))
         end
       )
 

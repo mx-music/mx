@@ -361,15 +361,17 @@ defmodule Mx.Instrument do
 
   defp option_doc({name, type, opts}) do
     parts =
-      [
-        if(Keyword.has_key?(opts, :default), do: inspect(opts[:default]) <> " by default"),
-        with({low, high} <- opts[:range], do: "from #{low} to #{high}"),
-        with(
-          [_ | _] = values <- opts[:values],
-          do: "one of " <> Enum.map_join(values, ", ", &inspect/1)
-        )
-      ]
-      |> Enum.reject(&is_nil/1)
+      Enum.reject(
+        [
+          if(Keyword.has_key?(opts, :default), do: inspect(opts[:default]) <> " by default"),
+          with({low, high} <- opts[:range], do: "from #{low} to #{high}"),
+          with(
+            [_ | _] = values <- opts[:values],
+            do: "one of " <> Enum.map_join(values, ", ", &inspect/1)
+          )
+        ],
+        &is_nil/1
+      )
 
     described = Enum.join([type | parts], ", ")
     doc = if opts[:doc], do: ": " <> opts[:doc], else: ""

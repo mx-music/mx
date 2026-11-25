@@ -20,12 +20,14 @@ defmodule Sombras do
 
   # Each recorded key with the dB that bring its first half second level with the others, and the
   # cents it was measured sharp of its note.
-  @keys ~w(G1:-2:14 G#1:-3:3 A1:-6:3 A#1:-3:1 B1:-2:5 C2:0:3 C#2:-1:-5 D2:0:0 D#2:-2:7 E2:-2:2 F2:0:8 G2:0:9 A2:0:5 B2:1:5 C3:0:5 D3:0:9 E3:0:7 F3:-1:4 F#3:-4:7 G3:1:4 G#3:-3:8 A3:-1:6 A#3:-2:8 B3:-2:14 C4:2:8 C#4:0:18 D4:0:8 D#4:-2:7 E4:1:-1 F4:1:3 F#4:-1:3 G4:0:4 A4:-4:6 A#4:5:1 B4:0:14 C5:5:10 C#5:-1:9 D5:0:12 D#5:5:6 E5:5:5 F5:2:-1 F#5:2:1 G5:-1:-2 G#5:0:-3 A5:0:11 A#5:2:3 B5:5:5 C6:7:8)
-        |> Enum.map(fn word ->
-          [name, db, cents] = String.split(word, ":")
-          key = name |> String.downcase() |> String.replace("#", "s") |> pitch()
-          {name, pitch(key), String.to_integer(db), String.to_integer(cents)}
-        end)
+  @keys Enum.map(
+          ~w(G1:-2:14 G#1:-3:3 A1:-6:3 A#1:-3:1 B1:-2:5 C2:0:3 C#2:-1:-5 D2:0:0 D#2:-2:7 E2:-2:2 F2:0:8 G2:0:9 A2:0:5 B2:1:5 C3:0:5 D3:0:9 E3:0:7 F3:-1:4 F#3:-4:7 G3:1:4 G#3:-3:8 A3:-1:6 A#3:-2:8 B3:-2:14 C4:2:8 C#4:0:18 D4:0:8 D#4:-2:7 E4:1:-1 F4:1:3 F#4:-1:3 G4:0:4 A4:-4:6 A#4:5:1 B4:0:14 C5:5:10 C#5:-1:9 D5:0:12 D#5:5:6 E5:5:5 F5:2:-1 F#5:2:1 G5:-1:-2 G#5:0:-3 A5:0:11 A#5:2:3 B5:5:5 C6:7:8),
+          fn word ->
+            [name, db, cents] = String.split(word, ":")
+            key = name |> String.downcase() |> String.replace("#", "s") |> pitch()
+            {name, pitch(key), String.to_integer(db), String.to_integer(cents)}
+          end
+        )
 
   # A file declared as many cents above its key as it sounds plays every note in tune.
   @guitar for {name, key, _, cents} <- @keys,

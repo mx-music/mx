@@ -15,7 +15,7 @@ defmodule ColdFront.Synths do
 
     overtones =
       for {harmonic, level} <- [{2, 0.35}, {3, 0.22}, {5, 0.08}] do
-        sine(hz: pitch * harmonic) |> gain(level * played.drive)
+        gain(sine(hz: pitch * harmonic), level * played.drive)
       end
 
     click =
@@ -29,7 +29,7 @@ defmodule ColdFront.Synths do
       |> envelope([{0.002, 1}, {played.fade, 0, -3}])
       |> gain(0.5 * played.vel)
 
-    (body + click) |> note_envelope(played)
+    note_envelope(body + click, played)
   end
 end
 

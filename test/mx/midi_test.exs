@@ -285,8 +285,12 @@ defmodule Mx.MIDITest do
     out = Path.rootname(song) <> ".wav"
     capture_io(fn -> assert :ok = Mx.Render.render(song, out, follow: self(), force: true) end)
 
-    Stream.repeatedly(fn -> receive do: ({:mx_beat, %{} = beat} -> beat), after: (0 -> nil) end)
-    |> Enum.take_while(& &1)
+    Enum.take_while(
+      Stream.repeatedly(fn ->
+        receive do: ({:mx_beat, %{} = beat} -> beat), after: (0 -> nil)
+      end),
+      & &1
+    )
   end
 
   test "a file that slows from 48 to 46 at bar 4 imports to a song that plays bars 1 to 3 at 48 and bar 4 at 46, as long as the file plays",

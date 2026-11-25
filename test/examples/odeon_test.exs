@@ -26,7 +26,7 @@ defmodule Mx.Examples.OdeonTest do
       descent = [52, 51, 49, 47, 45, 44]
       assert notes(loop_part(output, sings)) |> Enum.take(12) |> Enum.uniq() == descent
 
-      assert notes(loop_part(output, answers)) |> List.last() == 61
+      assert List.last(notes(loop_part(output, answers))) == 61
       for loop <- rests, do: assert(output =~ ~r/^#{loop}, pass \d+[^\n]*\n\n/m)
     end
   end

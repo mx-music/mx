@@ -49,7 +49,7 @@ defmodule Mx.SampleCutTest do
   end
 
   test "beats fits a sample to that many beats at the tempo where it starts", %{tmp_dir: dir} do
-    assert played(dir, "sample({:sonic_pi, :loop_amen}, 4, beats: 4)")[:rate] |> Float.round(4) ==
+    assert Float.round(played(dir, "sample({:sonic_pi, :loop_amen}, 4, beats: 4)")[:rate], 4) ==
              0.8767
 
     assert_in_delta played(dir, "sample({:sonic_pi, :loop_amen}, 4, beats: 4)", 136.9)[:rate],

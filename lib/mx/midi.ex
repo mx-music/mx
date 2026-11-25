@@ -248,8 +248,7 @@ defmodule Mx.MIDI do
   # what is left out of the parts, counted as {part, kind, count}.
   defp parts(midi) do
     tracks =
-      midi.tracks
-      |> Enum.map(fn events -> {name(events), notes(events), controls(events)} end)
+      Enum.map(midi.tracks, fn events -> {name(events), notes(events), controls(events)} end)
 
     playing = Enum.filter(tracks, fn {_name, notes, _controls} -> notes != [] end)
 
@@ -317,8 +316,10 @@ defmodule Mx.MIDI do
 
     kind = if pedal == [], do: :controls, else: :other_controls
 
-    [{name, :pedal_presses, presses}, {name, kind, length(others)}]
-    |> Enum.filter(&(elem(&1, 2) > 0))
+    Enum.filter(
+      [{name, :pedal_presses, presses}, {name, kind, length(others)}],
+      &(elem(&1, 2) > 0)
+    )
   end
 
   @kinds [
@@ -510,24 +511,25 @@ defmodule Mx.MIDI do
   # Each bar as {start, length} in units, to the end of the last note; a time signature that
   # changes within a bar ends that bar there.
   defp bars(meters, last, units) do
-    Stream.unfold({0, meters}, fn
-      {from, _meters} when from >= last and from > 0 ->
-        nil
+    Enum.to_list(
+      Stream.unfold({0, meters}, fn
+        {from, _meters} when from >= last and from > 0 ->
+          nil
 
-      {from, meters} ->
-        meters = drop_passed(meters, from)
-        [{_at, length} | later] = meters
-        length = if length > 0, do: length, else: 4 * units
+        {from, meters} ->
+          meters = drop_passed(meters, from)
+          [{_at, length} | later] = meters
+          length = if length > 0, do: length, else: 4 * units
 
-        length =
-          case later do
-            [{next, _} | _] when next < from + length -> next - from
-            _ -> length
-          end
+          length =
+            case later do
+              [{next, _} | _] when next < from + length -> next - from
+              _ -> length
+            end
 
-        {{from, length}, {from + length, meters}}
-    end)
-    |> Enum.to_list()
+          {{from, length}, {from + length, meters}}
+      end)
+    )
   end
 
   defp drop_passed([_current, {at, _} = next | rest], from) when at <= from do

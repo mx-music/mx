@@ -282,6 +282,6 @@ defmodule Meditation do
       end
 
     steps = %{"S" => 1, "R" => 9 / 8, "G" => 5 / 4, "P" => 3 / 2, "D" => 5 / 3}
-    Float.round(base + octave + ratio(steps[String.trim(token, ".") |> String.trim("'")]), 2)
+    Float.round(base + octave + ratio(steps[String.trim(String.trim(token, "."), "'")]), 2)
   end
 end

@@ -218,7 +218,7 @@ defmodule Mx.ABC do
   # Q:1/4=90 is 90 quarter notes a minute, Q:3/8=60 60 dotted quarters, and a bare Q:90 counts
   # unit notes; text in quotes is left out.
   defp tempo(value, unit) do
-    value = String.replace(value, ~r/"[^"]*"/, "") |> String.trim()
+    value = String.trim(String.replace(value, ~r/"[^"]*"/, ""))
 
     case String.split(value, "=") do
       [beat, count] ->
@@ -297,8 +297,8 @@ defmodule Mx.ABC do
 
   # A line ending in a backslash goes on in the next.
   defp join_continued(lines) do
-    lines
-    |> Enum.chunk_while(
+    Enum.chunk_while(
+      lines,
       nil,
       fn {index, line}, open ->
         line = String.replace(line, ~r/%.*$/, "")
@@ -378,7 +378,7 @@ defmodule Mx.ABC do
             acc.voices,
             id,
             0,
-            {id, fun.(List.keyfind!(acc.voices, id, 0) |> elem(1))}
+            {id, fun.(elem(List.keyfind!(acc.voices, id, 0), 1))}
           )
     }
   end
@@ -400,11 +400,13 @@ defmodule Mx.ABC do
 
       captures ->
         {kind, {start, length}} =
-          Enum.zip(
-            ~w(bar bars broken chord deco ending field grace note rest skip text tuplet)a,
-            captures
+          Enum.find(
+            Enum.zip(
+              ~w(bar bars broken chord deco ending field grace note rest skip text tuplet)a,
+              captures
+            ),
+            fn {_kind, {start, _length}} -> start >= 0 end
           )
-          |> Enum.find(fn {_kind, {start, _length}} -> start >= 0 end)
 
         text = binary_part(line, start, length)
         tokens(line, start + length, index, token(acc, kind, text))
@@ -440,7 +442,7 @@ defmodule Mx.ABC do
   end
 
   defp voice_token(voice, :tuplet, "(" <> text) do
-    [notes | rest] = String.split(text, ":") |> Enum.map(&Integer.parse/1)
+    [notes | rest] = Enum.map(String.split(text, ":"), &Integer.parse/1)
     {notes, ""} = notes
     into = Enum.at(rest, 0, :error)
     count = Enum.at(rest, 1, :error)
@@ -704,8 +706,7 @@ defmodule Mx.ABC do
       voice.items
       |> Enum.reverse()
       |> Enum.flat_map(fn item ->
-        item.heads
-        |> Enum.with_index(fn head, index ->
+        Enum.with_index(item.heads, fn head, index ->
           %{
             onset: item.onset / @whole * 4,
             length: item.ticks / @whole * 4,

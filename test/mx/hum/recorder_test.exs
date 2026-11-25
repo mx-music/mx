@@ -59,8 +59,7 @@ defmodule Mx.Hum.RecorderTest do
 
       bleed =
         Enum.flat_map(0..11, fn _ ->
-          Mxs.render_note(:closed_hihat, [vel: 1.0], beat, ctx.tmp_dir, [])
-          |> Enum.map(&(&1 * 0.5))
+          Enum.map(Mxs.render_note(:closed_hihat, [vel: 1.0], beat, ctx.tmp_dir, []), &(&1 * 0.5))
         end)
 
       source = Path.join(ctx.tmp_dir, "bleed.wav")

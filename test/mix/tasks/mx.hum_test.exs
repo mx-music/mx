@@ -211,8 +211,7 @@ defmodule Mix.Tasks.Mx.HumTest do
   defp flute(ctx, opts) do
     beat = 60 / 90
 
-    [{64, 1}, {67, 1}, {69, 1}, {71, 2}]
-    |> Enum.flat_map(fn {note, beats} ->
+    Enum.flat_map([{64, 1}, {67, 1}, {69, 1}, {71, 2}], fn {note, beats} ->
       note_opts = [note: note, sustain: beats * beat - 0.2, release: 0.1, vel: 0.6] ++ opts
       Mxs.render_note(:flute, note_opts, beats * beat, ctx.tmp_dir, [])
     end)

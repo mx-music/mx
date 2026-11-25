@@ -31,8 +31,7 @@ defmodule Caboclinho do
   def song do
     toques = [:guerra, :guerra, :perre, :perre, :baiao, :baiao, :macumba, :macumba]
 
-    seq(toques, &toque/1)
-    |> repeat()
+    repeat(seq(toques, &toque/1))
   end
 
   defp toque(toque) do

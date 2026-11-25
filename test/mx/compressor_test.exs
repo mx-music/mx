@@ -62,8 +62,10 @@ defmodule Mx.CompressorTest do
   @tag :engine
   test "a loud tone on the left lowers a quiet tone on the right by as much as the left", ctx do
     parts = fn fx ->
-      "together([part(:loud, note(:a4, 4, amp: 1, pan: -1), synth: :tri), part(:quiet, note(:e5, 4, amp: 0.02, pan: 1), synth: :tri)])"
-      |> then(&"song(tempo: 120, #{fx}music: #{&1})")
+      music =
+        "together([part(:loud, note(:a4, 4, amp: 1, pan: -1), synth: :tri), part(:quiet, note(:e5, 4, amp: 0.02, pan: 1), synth: :tri)])"
+
+      "song(tempo: 120, #{fx}music: #{music})"
     end
 
     {dry_left, dry_right} = render(ctx, parts.(""))

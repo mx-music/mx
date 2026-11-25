@@ -239,7 +239,7 @@ defmodule Mix.Tasks.Mx.ExportTest do
     out = Path.join(dir, "staves_aria.musicxml")
     capture_io(fn -> Export.run([Path.join(dir, "staves_aria.exs"), "--out", out]) end)
 
-    [violin, alto, organ] = String.split(File.read!(out), ~r/<part id=/) |> tl()
+    [violin, alto, organ] = tl(String.split(File.read!(out), ~r/<part id=/))
     refute violin =~ "<staves>"
     refute alto =~ "<staves>"
     assert organ =~ "<staves>2</staves>"

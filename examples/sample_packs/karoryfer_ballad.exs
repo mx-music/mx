@@ -285,32 +285,34 @@ defmodule SmallHours do
   # The first bar of the tune, its sixth and its ending, soft again, then two chords and the last
   # one, slowing.
   defp last_time do
-    together(
-      sax:
-        line(
-          Enum.take(@tune, 3) ++
-            Enum.slice(@tune, 17..21) ++
-            [e4: 1, g4: 2 / 3, bb4: 1 / 3, a4: 2, d5: 4, r: 1, ab4: 1, g4: 1, e4: 1, d4: 8],
-          0.4
-        ),
-      guitar:
-        seq([
-          comp(@last_chords),
-          comp([[:bb9, :a7]]),
-          note([:d3, :a3, :b3, :e4, :a4], 8, dyn(0.45) ++ [strum: 0.12, release: 4])
-        ]),
-      bass:
-        seq([
-          in_two([{:d2, :a1}, {:bb1, :f1}, {:e2, :a1}, {:d2, :a1}, {:bb1, :a1}]),
-          note(:d2, 8, dyn(0.8))
-        ]),
-      cello: seq([rest(20), note([:d2, :a2], 8, dyn(0.3) ++ [release: 2])]),
-      stir: stir(6),
-      tap: seq([drum(~MX"...4.....5.."s, 5), rest(8)]),
-      foot: seq([drum(~MX"...3.....3.."s, 5), rest(8)]),
-      sizzle: seq([rest(20), drum(~MX"3..........."s), rest(4)])
-    )
-    |> then(&together([&1, part(:slowing, seq([rest(16), tempo(54, over: 6)]))]))
+    together([
+      together(
+        sax:
+          line(
+            Enum.take(@tune, 3) ++
+              Enum.slice(@tune, 17..21) ++
+              [e4: 1, g4: 2 / 3, bb4: 1 / 3, a4: 2, d5: 4, r: 1, ab4: 1, g4: 1, e4: 1, d4: 8],
+            0.4
+          ),
+        guitar:
+          seq([
+            comp(@last_chords),
+            comp([[:bb9, :a7]]),
+            note([:d3, :a3, :b3, :e4, :a4], 8, dyn(0.45) ++ [strum: 0.12, release: 4])
+          ]),
+        bass:
+          seq([
+            in_two([{:d2, :a1}, {:bb1, :f1}, {:e2, :a1}, {:d2, :a1}, {:bb1, :a1}]),
+            note(:d2, 8, dyn(0.8))
+          ]),
+        cello: seq([rest(20), note([:d2, :a2], 8, dyn(0.3) ++ [release: 2])]),
+        stir: stir(6),
+        tap: seq([drum(~MX"...4.....5.."s, 5), rest(8)]),
+        foot: seq([drum(~MX"...3.....3.."s, 5), rest(8)]),
+        sizzle: seq([rest(20), drum(~MX"3..........."s), rest(4)])
+      ),
+      part(:slowing, seq([rest(16), tempo(54, over: 6)]))
+    ])
   end
 
   # The stir, started again every two bars, each fading in under the end of the one before.

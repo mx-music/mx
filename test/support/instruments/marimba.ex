@@ -47,13 +47,13 @@ defmodule Mx.Instruments.Marimba do
     struck =
       mix(
         [
-          strike |> mode(hz: freq, level: 1.25, fade: ring),
-          strike |> mode(hz: freq, level: -1, fade: swell)
+          mode(strike, hz: freq, level: 1.25, fade: ring),
+          mode(strike, hz: freq, level: -1, fade: swell)
         ] ++
           for {n, level, fade} <- bar ++ tube do
             # Overtones above 1.5 kHz die sooner the higher they are.
-            strike
-            |> mode(
+            mode(
+              strike,
               hz: freq * n,
               level: select(freq * n < 15_000, db(level), 0),
               fade: ring * fade * min(1500 / (freq * n), 1) ** 0.8

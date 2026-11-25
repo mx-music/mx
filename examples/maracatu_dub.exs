@@ -84,8 +84,7 @@ defmodule MaracatuDub do
     fx: @tape ++ [reverb: [decay_seconds: 3.2, mix: 0.3]]
 
   def song do
-    seq([:call, :riddim, :dub, :martelo], &section/1)
-    |> repeat()
+    repeat(seq([:call, :riddim, :dub, :martelo], &section/1))
   end
 
   # The gonguê in its echo, the mineiro opening through the filter and the trombone's first two

@@ -134,7 +134,7 @@ defmodule Mx.PhaserTest do
     {dry, _} = render(ctx, saw.("[]"))
     {off, _} = render(ctx, saw.("[phaser: [mix: 0]]"))
     peak = dry |> Enum.map(&abs/1) |> Enum.max()
-    furthest = Enum.zip_with(dry, off, &abs(&1 - &2)) |> Enum.max()
+    furthest = Enum.max(Enum.zip_with(dry, off, &abs(&1 - &2)))
     assert db(furthest) <= db(peak) - 100
   end
 

@@ -82,21 +82,23 @@ defmodule Viola do
 
   # The melody as strokes, each a slur of {note, beats}, and whether its long note swells.
   defp melody(octave) do
-    [
-      {[{60, 1.5}, {62, 0.5}], false},
-      {[{63, 1}, {67, 1}], false},
-      {[{65, 2}], true},
-      {[{63, 1}, {62, 1}], false},
-      {[{63, 1.5}, {65, 0.5}], false},
-      {[{67, 1}, {70, 1}], false},
-      {[{67, 4}], true}
-    ]
-    |> Enum.map(fn {notes, swell} ->
-      bow(Enum.map(notes, fn {note, beats} -> {note + octave, beats} end), 0.6,
-        swell: swell,
-        vibrato: 0.08
-      )
-    end)
+    Enum.map(
+      [
+        {[{60, 1.5}, {62, 0.5}], false},
+        {[{63, 1}, {67, 1}], false},
+        {[{65, 2}], true},
+        {[{63, 1}, {62, 1}], false},
+        {[{63, 1.5}, {65, 0.5}], false},
+        {[{67, 1}, {70, 1}], false},
+        {[{67, 4}], true}
+      ],
+      fn {notes, swell} ->
+        bow(Enum.map(notes, fn {note, beats} -> {note + octave, beats} end), 0.6,
+          swell: swell,
+          vibrato: 0.08
+        )
+      end
+    )
   end
 
   # A stroke is notes as {note, beats} in one bow, the fingers changing its pitch; a shift of more

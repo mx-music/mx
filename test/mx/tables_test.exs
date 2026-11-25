@@ -68,7 +68,7 @@ defmodule Mx.TablesTest do
       format = <<3::little-16, 1::little-16, rate::little-32, rate * 4::little-32, 4::little-16>>
       wav = "WAVE" <> "fmt " <> <<16::little-32>> <> format <> <<32::little-16>>
       body = wav <> "data" <> <<byte_size(data)::little-32>> <> data
-      name = :io_lib.format("table-060-~3..0B.wav", [velocity]) |> to_string()
+      name = to_string(:io_lib.format("table-060-~3..0B.wav", [velocity]))
       File.write!(Path.join(dir, name), "RIFF" <> <<byte_size(body)::little-32>> <> body)
     end
 

@@ -394,7 +394,7 @@ defmodule Mx.Score do
 
   defp read_attributes(attributes, state) do
     divisions = number(attributes, "divisions")
-    fifths = path(attributes, ["key", "fifths"]) |> List.first()
+    fifths = List.first(path(attributes, ["key", "fifths"]))
     transpose = attributes |> children("transpose") |> List.first()
 
     state = if divisions, do: %{state | divisions: divisions}, else: state

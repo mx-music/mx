@@ -75,7 +75,7 @@ defmodule Mix.Tasks.Mx.VideoTest do
     assert Enum.max(white) in 749..752
 
     first = frames |> hd() |> Enum.at(10)
-    for second <- 1..19, do: assert(pixel(first, second * 75) |> Tuple.sum() < 30)
+    for second <- 1..19, do: assert(Tuple.sum(pixel(first, second * 75)) < 30)
   end
 
   @tag :ffmpeg
@@ -89,7 +89,7 @@ defmodule Mix.Tasks.Mx.VideoTest do
 
     {_peak, recorded} =
       Native.levels(
-        File.read!(path) |> binary_part(44, 4 * 4 * 48_000),
+        binary_part(File.read!(path), 44, 4 * 4 * 48_000),
         {"float_little", 32, 1},
         40
       )

@@ -13,7 +13,7 @@ defmodule Sgubhu.Synths do
     pitch = hz(follow(played.note)) * 2 ** envelope([{0, 0.9}, {0.035, 0, -4}])
     index = envelope([{0, 2.6 * played.vel + 0.6}, {0.12, 0.5, -3}, {played.fade, 0.05}])
     wood = sine(hz: pitch + sine(hz: pitch * 2) * pitch * index)
-    low = sine(hz: pitch) |> gain(0.7)
+    low = gain(sine(hz: pitch), 0.7)
 
     knock =
       noise(:white)
@@ -26,7 +26,7 @@ defmodule Sgubhu.Synths do
       |> envelope([{0.003, 1}, {0.06, 0.75, -2}, {played.fade, 0, -2}])
       |> gain(0.35 * played.vel)
 
-    (body + knock) |> note_envelope(played)
+    note_envelope(body + knock, played)
   end
 end
 

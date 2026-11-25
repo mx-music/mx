@@ -1536,7 +1536,7 @@ defmodule Mx.Music do
       end)
 
     counts = Enum.map(sections, &if(&1.endless, do: 0, else: passes_before(&1.slots, &1.beats)))
-    prefix = Enum.scan([0 | counts], &(&1 + &2)) |> Enum.drop(-1)
+    prefix = Enum.drop(Enum.scan([0 | counts], &(&1 + &2)), -1)
 
     steps = Enum.flat_map(sections, & &1.notes)
     samples = for {_, %Sample{ref: ref}} <- steps, uniq: true, do: ref
@@ -1705,8 +1705,10 @@ defmodule Mx.Music do
       first = if from > slot.start, do: ceil((from - slot.start) / slot.beats), else: 0
 
       for turn <-
-            Stream.iterate(first, &(&1 + 1))
-            |> Enum.take_while(&(slot.start + &1 * slot.beats < earlier(slot.cut, until))),
+            Enum.take_while(
+              Stream.iterate(first, &(&1 + 1)),
+              &(slot.start + &1 * slot.beats < earlier(slot.cut, until))
+            ),
           do: {slot.start + turn * slot.beats, slot}
     end)
     |> Enum.sort_by(&elem(&1, 0))

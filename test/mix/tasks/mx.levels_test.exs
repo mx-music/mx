@@ -16,7 +16,7 @@ defmodule Mix.Tasks.Mx.LevelsTest do
   end
 
   test "prints a line naming the columns, then one line for each row", %{path: path} do
-    lines = capture_io(fn -> Levels.run([path]) end) |> String.split("\n", trim: true)
+    lines = String.split(capture_io(fn -> Levels.run([path]) end), "\n", trim: true)
     {:ok, rows} = Mx.Levels.rows(path)
 
     assert hd(lines) ==
@@ -33,7 +33,7 @@ defmodule Mix.Tasks.Mx.LevelsTest do
 
   test "--strokes prints the strokes in place of the rows", %{path: path} do
     [header, stroke] =
-      capture_io(fn -> Levels.run([path, "--strokes"]) end) |> String.split("\n", trim: true)
+      String.split(capture_io(fn -> Levels.run([path, "--strokes"]) end), "\n", trim: true)
 
     assert header == "seconds,level"
     assert [at, "0.0"] = String.split(stroke, ",")

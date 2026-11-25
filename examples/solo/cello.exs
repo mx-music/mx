@@ -40,17 +40,19 @@ defmodule Cello do
 
   # Each stroke a slur of {note, beats}, and whether its long note swells.
   defp section(:cantabile, _pass) do
-    [
-      {[{50, 1.5}, {55, 0.5}], false},
-      {[{59, 2}], true},
-      {[{57, 1}, {55, 0.5}, {57, 0.5}], false},
-      {[{62, 2}], true},
-      {[{64, 1}, {62, 0.5}, {60, 0.5}], false},
-      {[{59, 1}, {67, 1}], false},
-      {[{66, 1}, {64, 0.5}, {62, 0.5}], false},
-      {[{62, 2}], true}
-    ]
-    |> seq(fn {notes, swell} -> bow(notes, 0.6, swell: swell, vibrato: 0.08) end)
+    seq(
+      [
+        {[{50, 1.5}, {55, 0.5}], false},
+        {[{59, 2}], true},
+        {[{57, 1}, {55, 0.5}, {57, 0.5}], false},
+        {[{62, 2}], true},
+        {[{64, 1}, {62, 0.5}, {60, 0.5}], false},
+        {[{59, 1}, {67, 1}], false},
+        {[{66, 1}, {64, 0.5}, {62, 0.5}], false},
+        {[{62, 2}], true}
+      ],
+      fn {notes, swell} -> bow(notes, 0.6, swell: swell, vibrato: 0.08) end
+    )
   end
 
   # G, E minor, C and D seven, walking in quarters, each bar's root louder, every note left to

@@ -40,8 +40,10 @@ defmodule Mx.Instruments.Flute do
           octave = log2(harmonic)
           level = fundamental + overtone + 0.05 * register * octave - soft ** 3.5 * 11 * octave
 
-          sine(hz: pitch * harmonic, phase: :math.pi() * harmonic * (harmonic - 1) / 24)
-          |> gain(select(hz(played.note) * harmonic < 16_000, db(level), 0))
+          gain(
+            sine(hz: pitch * harmonic, phase: :math.pi() * harmonic * (harmonic - 1) / 24),
+            select(hz(played.note) * harmonic < 16_000, db(level), 0)
+          )
         end
       )
 

@@ -62,7 +62,7 @@ defmodule Mix.Tasks.Mx.Fit do
     parsed = parse!(rest, %{dynamics: [], controls: [], from: 0, check: false, drone: false})
 
     dynamics =
-      Enum.reverse(parsed.dynamics) |> Enum.map(fn {vel, files} -> {vel, Enum.reverse(files)} end)
+      Enum.map(Enum.reverse(parsed.dynamics), fn {vel, files} -> {vel, Enum.reverse(files)} end)
 
     controls = parsed.controls |> Enum.reverse() |> Enum.map(&control!(synth, &1))
 

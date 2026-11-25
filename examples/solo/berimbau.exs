@@ -68,7 +68,7 @@ defmodule Berimbau do
     |> Enum.flat_map_reduce(0, fn word, beat ->
       {cell, length} =
         if String.starts_with?(word, "[") do
-          {String.trim(word, "[") |> String.trim("]"), 2}
+          {String.trim(String.trim(word, "["), "]"), 2}
         else
           {word, 1}
         end

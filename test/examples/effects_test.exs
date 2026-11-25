@@ -84,7 +84,7 @@ defmodule Mx.Examples.EffectsTest do
   end
 
   test "order.exs plays one phrase through a distortion and a reverb, then through the two reversed" do
-    assert [driven, room] = print("order") |> String.split("\n\n", trim: true)
+    assert [driven, room] = String.split(print("order"), "\n\n", trim: true)
     assert driven =~ ~r/^driven_first, .* through distortion \(.*\) then reverb \(/
     assert room =~ ~r/^room_first, .* through reverb \(.*\) then distortion \(/
   end

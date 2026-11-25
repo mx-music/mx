@@ -81,7 +81,7 @@ defmodule Mx.ScoreTest do
   test "saying what the aria holds leaves the song an import writes of it as it was" do
     {:ok, imported} = Mx.Import.song("examples/erbarme_dich/bwv244.39.mxl")
 
-    assert :crypto.hash(:sha256, imported.source) |> Base.encode16(case: :lower) ==
+    assert Base.encode16(:crypto.hash(:sha256, imported.source), case: :lower) ==
              "f3d418223a9130350e0b128c09159196066fd3371d7fd594bf1364e391295aa2"
   end
 

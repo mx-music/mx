@@ -54,7 +54,7 @@ defmodule Mx.Examples.ChoroTest do
     assert loop_part(print(0), "clarinet") == ""
 
     opening = notes(loop_part(print(0), "flute"))
-    assert notes(loop_part(print(1), "clarinet")) |> Enum.take(100) == Enum.take(opening, 100)
+    assert Enum.take(notes(loop_part(print(1), "clarinet")), 100) == Enum.take(opening, 100)
 
     flute = for note <- notes(before(loop_part(print(7), "flute"), 30)), do: note - 12
     assert notes(before(loop_part(print(7), "clarinet"), 30)) == flute

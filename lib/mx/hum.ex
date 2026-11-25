@@ -204,7 +204,7 @@ defmodule Mx.Hum do
       _ ->
         {_, _, ends, _} = List.last(placed)
         bar = ceil(ends / 4) * 4
-        notes = join(placed ++ [{bar, nil, bar, 0}]) |> Enum.drop(-1)
+        notes = Enum.drop(join(placed ++ [{bar, nil, bar, 0}]), -1)
         %{notes: notes, beats: bar, left_out: length(early)}
     end
   end

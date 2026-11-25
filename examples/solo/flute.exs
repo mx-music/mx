@@ -202,7 +202,7 @@ defmodule Syrinx do
 
   defp read("@" <> vel, _stretch, last) do
     [vel | over] = String.split(vel, "/")
-    over = Enum.map(over, &String.to_integer/1) |> List.first(0)
+    over = List.first(Enum.map(over, &String.to_integer/1), 0)
     {[{:vel, {String.to_float(vel), over}, 0, false}], last}
   end
 

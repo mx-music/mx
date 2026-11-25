@@ -6120,8 +6120,10 @@ defmodule Mx.DesignsTest do
   defp sharpest(sound, guess, from, to) do
     samples = window(sound, from, to)
 
-    Enum.max_by(-100..100, fn quarter -> goertzel(samples, guess * 2 ** (quarter / 4800)) end)
-    |> then(&(guess * 2 ** (&1 / 4800)))
+    quarter =
+      Enum.max_by(-100..100, fn quarter -> goertzel(samples, guess * 2 ** (quarter / 4800)) end)
+
+    guess * 2 ** (quarter / 4800)
   end
 
   defp goertzel(samples, hz) do

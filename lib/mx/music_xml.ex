@@ -151,7 +151,7 @@ defmodule Mx.MusicXML do
 
     list = Enum.with_index(parts, 1)
 
-    [
+    IO.iodata_to_binary([
       ~s(<?xml version="1.0" encoding="UTF-8"?>\n),
       ~s(<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 4.0 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">\n),
       ~s(<score-partwise version="4.0">\n),
@@ -186,8 +186,7 @@ defmodule Mx.MusicXML do
         ]
       end,
       "</score-partwise>\n"
-    ]
-    |> IO.iodata_to_binary()
+    ])
   end
 
   @doc false

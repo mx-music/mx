@@ -79,7 +79,7 @@ defmodule Mx.EqTest do
     peak = dry |> Enum.map(&abs/1) |> Enum.max()
 
     for bands <- [[], [mid: []]] do
-      apart = Enum.zip_with(dry, through(bands, :saw), &abs(&1 - &2)) |> Enum.max()
+      apart = Enum.max(Enum.zip_with(dry, through(bands, :saw), &abs(&1 - &2)))
       assert apart <= peak * 1.0e-5
     end
   end

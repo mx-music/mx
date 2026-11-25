@@ -130,20 +130,22 @@ defmodule Vassourinhas do
     running = ventania(melody, chords)
 
     winds =
-      %{
-        flute: slurred(running, key + 12, vel - 0.1, 1) ++ slurred(close, key + 12, vel, 2),
-        clarinet: slurred(running, key, vel - 0.1, 1) ++ slurred(close, key, vel, 2),
-        oboe: sung(melody, key, vel),
-        tenor_sax: sung(melody, key - 12, vel),
-        horn: sung(melody, key - 12, vel - 0.1),
-        trumpet:
-          tongued(stabs(chords, key, 1, 74, [1.5, 2.5, 3.5]), 0, vel) ++
-            slurred(close, key, vel, 2),
-        trombone:
-          tongued(stabs(chords, key, 3, 60, [1.5, 2.5, 3.5]), 0, vel) ++
-            slurred(close, key - 12, vel, 2)
-      }
-      |> Map.merge(low(chords, key, vel - 0.05))
+      Map.merge(
+        %{
+          flute: slurred(running, key + 12, vel - 0.1, 1) ++ slurred(close, key + 12, vel, 2),
+          clarinet: slurred(running, key, vel - 0.1, 1) ++ slurred(close, key, vel, 2),
+          oboe: sung(melody, key, vel),
+          tenor_sax: sung(melody, key - 12, vel),
+          horn: sung(melody, key - 12, vel - 0.1),
+          trumpet:
+            tongued(stabs(chords, key, 1, 74, [1.5, 2.5, 3.5]), 0, vel) ++
+              slurred(close, key, vel, 2),
+          trombone:
+            tongued(stabs(chords, key, 3, 60, [1.5, 2.5, 3.5]), 0, vel) ++
+              slurred(close, key - 12, vel, 2)
+        },
+        low(chords, key, vel - 0.05)
+      )
 
     section(32, winds, percussion(16))
   end
@@ -197,18 +199,20 @@ defmodule Vassourinhas do
     running = ventania(melody, chords)
 
     winds =
-      %{
-        trumpet: slurred(pushed, key, vel, 2),
-        oboe: slurred(pushed, key, vel - 0.1, 2),
-        horn: slurred(pushed, key - 12, vel - 0.1, 2),
-        trombone: slurred(pushed, key - 12, vel, 2),
-        flute:
-          slurred(folded(running, key + 12, 96), 0, vel - 0.1, 1) ++
-            slurred(close, key + 12, vel, 2),
-        clarinet: slurred(running, key, vel - 0.1, 1) ++ slurred(close, key, vel, 2),
-        tenor_sax: slurred(running, key - 12, vel - 0.1, 1) ++ slurred(close, key - 12, vel, 2)
-      }
-      |> Map.merge(low(chords, key, vel - 0.05))
+      Map.merge(
+        %{
+          trumpet: slurred(pushed, key, vel, 2),
+          oboe: slurred(pushed, key, vel - 0.1, 2),
+          horn: slurred(pushed, key - 12, vel - 0.1, 2),
+          trombone: slurred(pushed, key - 12, vel, 2),
+          flute:
+            slurred(folded(running, key + 12, 96), 0, vel - 0.1, 1) ++
+              slurred(close, key + 12, vel, 2),
+          clarinet: slurred(running, key, vel - 0.1, 1) ++ slurred(close, key, vel, 2),
+          tenor_sax: slurred(running, key - 12, vel - 0.1, 1) ++ slurred(close, key - 12, vel, 2)
+        },
+        low(chords, key, vel - 0.05)
+      )
 
     section(32, winds, percussion(16))
   end

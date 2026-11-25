@@ -87,13 +87,13 @@ defmodule Mx.SampleLevelTest do
 
   test "a cut is scaled by the loudest moment of the whole file", %{tmp_dir: dir} do
     frames =
-      for frame <- 0..47_999,
-          do:
-            [
-              if(frame < 24_000, do: 0.1, else: 0.5) *
-                :math.sin(2 * :math.pi() * 440 * frame / 48_000)
-            ]
-            |> then(&(&1 ++ &1))
+      for frame <- 0..47_999 do
+        sample =
+          if(frame < 24_000, do: 0.1, else: 0.5) *
+            :math.sin(2 * :math.pi() * 440 * frame / 48_000)
+
+        [sample, sample]
+      end
 
     path = wav(Path.join(dir, "steps.wav"), frames)
 

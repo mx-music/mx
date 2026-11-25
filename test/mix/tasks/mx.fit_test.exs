@@ -318,7 +318,7 @@ defmodule Mix.Tasks.Mx.FitTest do
         end)
 
       fundamental = printed_rows(output, ~r/1\.000 harmonic 1/)
-      assert Map.keys(fundamental) |> Enum.sort() == ~w(fit noise recording room sines)
+      assert Enum.sort(Map.keys(fundamental)) == ~w(fit noise recording room sines)
 
       {:ok, recordings, _lines} = Struck.listed(list)
       recording = Enum.find(recordings, &(&1.note == 60))
@@ -933,7 +933,7 @@ defmodule Mix.Tasks.Mx.FitTest do
       lines =
         for {dynamic, velocity} <- [pp: 40, mf: 80, ff: 127],
             file <- ~w(C2B2 C3B3 C4B4 C5B5 C6B6 C7) do
-          [first | _] = notes = Regex.scan(~r/[A-G]\d/, file) |> List.flatten()
+          [first | _] = notes = List.flatten(Regex.scan(~r/[A-G]\d/, file))
           range = if notes == [first], do: first, else: "#{first}:#{List.last(notes)}"
           "#{range} #{velocity} kept #{marimba}/Marimba.yarn.#{dynamic}.#{file}.aif"
         end
@@ -1025,7 +1025,7 @@ defmodule Mix.Tasks.Mx.FitTest do
       lines =
         for {dynamic, velocity} <- [pp: 40, mf: 80, ff: 127],
             file <- ~w(C2B2 C3B3 C4B4 C5B5 C6B6 C7) do
-          [first | _] = notes = Regex.scan(~r/[A-G]\d/, file) |> List.flatten()
+          [first | _] = notes = List.flatten(Regex.scan(~r/[A-G]\d/, file))
           range = if notes == [first], do: first, else: "#{first}:#{List.last(notes)}"
           "#{range} #{velocity} kept #{marimba}/Marimba.yarn.#{dynamic}.#{file}.aif"
         end
@@ -1249,7 +1249,7 @@ defmodule Mix.Tasks.Mx.FitTest do
           0.2 * wave * 10 ** (-1.5 * time)
         end
 
-      name = :io_lib.format("piano-~3..0B-~3..0B.wav", [note, velocity]) |> to_string()
+      name = to_string(:io_lib.format("piano-~3..0B-~3..0B.wav", [note, velocity]))
       write_wav(dir, name, sound)
     end
 
