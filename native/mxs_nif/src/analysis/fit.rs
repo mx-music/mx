@@ -164,6 +164,28 @@ impl Noise {
     }
 }
 
+/// The `k`th band's white noise through its filter, sample by sample from the strike, the same every render.
+pub fn band_noise(k: usize, low: f64, high: f64, rate: f64) -> impl FnMut() -> f64 {
+    let filter = band_filter(low, high, rate);
+    let mut noise =
+        Noise(0x9e37_79b9_7f4a_7c15 ^ (k as u64 + 1).wrapping_mul(0xbf58_476d_1ce4_e5b9));
+    let mut state = [[0.0f64; 4]; 4];
+    let mut filtered = move || {
+        let mut x = noise.next();
+        for (s, [b0, b1, b2, a1, a2]) in state.iter_mut().zip(&filter) {
+            let y = b0 * x + b1 * s[0] + b2 * s[1] - a1 * s[2] - a2 * s[3];
+            *s = [x, s[0], y, s[2]];
+            x = y;
+        }
+        x
+    };
+    // The filters run on the noise before the strike, so the band starts with the strike instead of ringing up after it.
+    for _ in 0..(WARM * rate) as usize {
+        filtered();
+    }
+    filtered
+}
+
 /// The figures played as sines at `rate`, after `lead` seconds of silence, for `seconds`.
 pub fn render(figures: &Figures, rate: f64, lead: f64, seconds: f64) -> Vec<f64> {
     let start = (lead * rate).round() as usize;
@@ -189,24 +211,8 @@ pub fn render(figures: &Figures, rate: f64, lead: f64, seconds: f64) -> Vec<f64>
         if band.high >= rate / 2.0 || band.levels.iter().all(|l| *l <= SILENT) {
             continue;
         }
-        let filter = band_filter(band.low, band.high, rate);
         let rise = noise_rise(band.low, band.high);
-        let mut noise =
-            Noise(0x9e37_79b9_7f4a_7c15 ^ (k as u64 + 1).wrapping_mul(0xbf58_476d_1ce4_e5b9));
-        let mut state = [[0.0f64; 4]; 4];
-        let mut filtered = || {
-            let mut x = noise.next();
-            for (s, [b0, b1, b2, a1, a2]) in state.iter_mut().zip(&filter) {
-                let y = b0 * x + b1 * s[0] + b2 * s[1] - a1 * s[2] - a2 * s[3];
-                *s = [x, s[0], y, s[2]];
-                x = y;
-            }
-            x
-        };
-        // The filters run on the noise before the strike, so the band starts with the strike instead of ringing up after it.
-        for _ in 0..(WARM * rate) as usize {
-            filtered();
-        }
+        let mut filtered = band_noise(k, band.low, band.high, rate);
         for i in 0..count {
             let t = i as f64 / rate;
             let level = noise_level_at(&band.levels, band.tail, t);
@@ -225,20 +231,32 @@ fn frame_at(t: f64) -> f64 {
     (t + LEAD) / HOP
 }
 
+/// A recording of a struck note as the fit takes it: its samples and their rate, its note, the `seconds` from its strike it is fitted over, whether its own frequency is its pitch (`exact`), the highest frequency fitted (`top`), and the `room` it was made in.
+pub struct Recording<'a> {
+    pub sound: &'a [f64],
+    pub rate: f64,
+    pub note: f64,
+    pub seconds: f64,
+    pub exact: bool,
+    pub top: f64,
+    pub room: Option<&'a Room>,
+}
+
 /// Fits a recorded note's figures over `seconds` from its strike: each partial's levels from its measured track, then corrected against renders of them measured the same way.
 /// With `exact`, the note's own frequency is its pitch, for a drum whose partials are not harmonics.
 /// `top` is the highest frequency in Hz its partials and its bands of noise reach.
 /// After the last time the recording reaches, each partial falls on at its last slope.
 /// The render is compared with the recording with the `room` the recording was made in added, so the fit does not take the room for the note.
-pub fn fit(
-    sound: &[f64],
-    rate: f64,
-    note: f64,
-    seconds: f64,
-    exact: bool,
-    top: f64,
-    room: Option<&Room>,
-) -> (Figures, Note) {
+pub fn fit(recording: &Recording) -> (Figures, Note) {
+    let Recording {
+        sound,
+        rate,
+        note,
+        seconds,
+        exact,
+        top,
+        room,
+    } = *recording;
     let recorded = partials::measure(sound, rate, note, seconds, exact, top);
     let bands = erb_bands_under(top, rate);
     let noise = bands
@@ -350,7 +368,7 @@ fn reached(seconds: f64, window: f64) -> usize {
 }
 
 // Each partial's levels after the last time the recording reaches, on its last slope from there, as a render past the recording plays them.
-fn fall_on(figures: &mut Figures, seconds: f64, window: f64) {
+pub fn fall_on(figures: &mut Figures, seconds: f64, window: f64) {
     let reached = reached(seconds, window);
     for partial in &mut figures.partials {
         let (from, at) = (partial.levels[reached], TIMES[reached]);
@@ -742,6 +760,34 @@ pub fn check(
     top: f64,
     room: Option<&Room>,
 ) -> Check {
+    compare(
+        recording,
+        rate,
+        rendered,
+        render_rate,
+        note,
+        seconds,
+        exact,
+        top,
+        room,
+        false,
+    )
+}
+
+/// The check, with the render read at the recording's own pitch when it is `in_tune`, as the fit's own render is by its making, rather than at the pitch found in it, which noise beside the loudest partial can pull off.
+#[allow(clippy::too_many_arguments)]
+fn compare(
+    recording: &[f64],
+    rate: f64,
+    rendered: &[f64],
+    render_rate: f64,
+    note: f64,
+    seconds: f64,
+    exact: bool,
+    top: f64,
+    room: Option<&Room>,
+    in_tune: bool,
+) -> Check {
     let theirs = partials::measure(recording, rate, note, seconds, exact, top);
     let ours = partials::spectra(rendered, render_rate, hz(note), seconds);
     let half = (0.5 / HOP) as usize;
@@ -753,7 +799,8 @@ pub fn check(
             .sum::<f64>()
     };
     // The render is read at its own pitch, so a synth in tune is not counted off against a recording that is not.
-    let (anchor, ratio) = tuning(&theirs, &ours, note);
+    let (anchor, found) = tuning(&theirs, &ours, note);
+    let ratio = if in_tune { 1.0 } else { found };
     let freqs: Vec<f64> = theirs
         .partials
         .iter()
@@ -846,19 +893,19 @@ pub fn check(
 }
 
 /// How far the fit's own render of a recording, its figures played as sines and noise with no synth, is from the recording: the closest a synth playing the figures can come.
-pub fn own(
-    sound: &[f64],
-    rate: f64,
-    note: f64,
-    seconds: f64,
-    exact: bool,
-    top: f64,
-    room: Option<&Room>,
-) -> Check {
-    let (figures, _) = fit(sound, rate, note, seconds, exact, top, room);
-    let rendered = render(&figures, rate, 0.05, seconds + 0.3);
-    check(
-        sound, rate, &rendered, rate, note, seconds, exact, top, room,
+pub fn own(figures: &Figures, recording: &Recording) -> Check {
+    let Recording {
+        sound,
+        rate,
+        note,
+        seconds,
+        exact,
+        top,
+        room,
+    } = *recording;
+    let rendered = render(figures, rate, 0.05, seconds + 0.3);
+    compare(
+        sound, rate, &rendered, rate, note, seconds, exact, top, room, true,
     )
 }
 
@@ -897,7 +944,15 @@ pub fn frames(
     times: &[f64],
     room: Option<&Room>,
 ) -> Frames {
-    let (figures, theirs) = fit(sound, rate, note, seconds, exact, top, room);
+    let (figures, theirs) = fit(&Recording {
+        sound,
+        rate,
+        note,
+        seconds,
+        exact,
+        top,
+        room,
+    });
     let own = render(&figures, rate, 0.05, seconds + 0.3);
     let mut sines = figures.clone();
     for band in &mut sines.noise {
@@ -965,8 +1020,7 @@ pub fn frames(
             erb_levels(spectra, &moved),
         )
     };
-    let own_ratio = tuning(&theirs, &own_spectra, note).1;
-    let (own_tracks, own_bands) = measured(&own, &own_spectra, own_ratio);
+    let (own_tracks, own_bands) = measured(&own, &own_spectra, 1.0);
     let shifts = (
         track_target - tracks_total(&own_tracks),
         band_target - bands_total(&own_bands),
@@ -992,7 +1046,7 @@ pub fn frames(
     for (name, figures) in [("sines", &sines), ("noise", &noise)] {
         let rendered = render(figures, rate, 0.05, seconds + 0.3);
         let spectra = apart(figures);
-        let (tracks, levels) = measured(&rendered, &spectra, own_ratio);
+        let (tracks, levels) = measured(&rendered, &spectra, 1.0);
         sounds.push((name.to_string(), tracks, levels, shifts, false));
     }
     let loudest = loudest(&theirs);
@@ -1099,7 +1153,7 @@ pub fn erb_bands_under(top: f64, rate: f64) -> Vec<(f64, f64)> {
     erb_bands_to(top.min(0.45 * rate))
 }
 
-fn bins(spectra: &partials::Spectra, low: f64, high: f64) -> (usize, usize) {
+pub fn bins(spectra: &partials::Spectra, low: f64, high: f64) -> (usize, usize) {
     let a = (low / spectra.bin).round() as usize;
     (a, ((high / spectra.bin).round() as usize).max(a + 1))
 }

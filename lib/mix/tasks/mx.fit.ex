@@ -112,11 +112,19 @@ defmodule Mix.Tasks.Mx.Fit do
           count: :integer,
           option: :keep,
           steady: :boolean,
-          top: :float
+          top: :float,
+          descent: :boolean,
+          processor: :boolean
         ]
       )
 
     check_flags!(kind, opts, extra)
+
+    if opts[:descent] do
+      on = if opts[:processor], do: "the processor", else: "the GPU"
+      IO.puts("fitting by gradient descent on #{on}")
+    end
+
     notes = opts[:notes] && notes!(opts[:notes])
     options = opts |> Keyword.get_values(:option) |> Enum.map(&given_option!(synth, &1))
 
@@ -161,10 +169,18 @@ defmodule Mix.Tasks.Mx.Fit do
   end
 
   defp figures(:held, recordings, opts), do: Held.figures(recordings, steady: !!opts[:steady])
-  defp figures(:struck, recordings, _opts), do: Struck.figures(recordings)
+  defp figures(:struck, recordings, opts), do: Struck.figures(recordings, how(opts))
 
   defp own(:held, recordings, opts), do: Held.own(recordings, steady: !!opts[:steady])
-  defp own(:struck, recordings, _opts), do: Struck.own(recordings)
+  defp own(:struck, recordings, opts), do: Struck.own(recordings, how(opts))
+
+  defp how(opts) do
+    cond do
+      opts[:processor] -> "processor"
+      opts[:descent] -> "gpu"
+      true -> "partials"
+    end
+  end
 
   defp check_flags!(kind, opts, extra) do
     files = Enum.join(extra, " ")
@@ -185,6 +201,27 @@ defmodule Mix.Tasks.Mx.Fit do
 
       kind == :struck and opts[:steady] ->
         Mx.Command.fail("--steady goes with --held, not --struck")
+
+      true ->
+        check_descent!(kind, opts)
+    end
+  end
+
+  defp check_descent!(kind, opts) do
+    cond do
+      (opts[:descent] || opts[:processor]) && kind == :held ->
+        Mx.Command.fail("--descent goes with --struck, not --held")
+
+      opts[:processor] && !opts[:descent] ->
+        Mx.Command.fail("--processor goes with --descent")
+
+      opts[:descent] && opts[:note] ->
+        Mx.Command.fail("--note and --vel show the fit partial by partial, not --descent")
+
+      opts[:descent] && !Mx.Engine.Mxs.Native.descent_built() ->
+        Mx.Command.fail(
+          "--descent needs mxs built with MLX: MX_GPU=1 mix compile --force, on macOS"
+        )
 
       true ->
         check_outputs!(opts)

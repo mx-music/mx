@@ -19,7 +19,8 @@ defmodule Mx.Engine.Mxs.Native do
       x86_64-pc-windows-msvc
     ),
     nif_versions: ["2.15"],
-    force_build: checkout or configured
+    force_build: checkout or configured,
+    features: if(Application.compile_env(:mx, :gpu, false), do: ["gpu"], else: [])
 
   @doc "Starts an engine with every synth and effect registered: playing live, with the sound card's input or without, or offline."
   def start(_live, _input), do: :erlang.nif_error(:nif_not_loaded)
@@ -131,13 +132,16 @@ defmodule Mx.Engine.Mxs.Native do
   def spike_strike_modes(_recording, _seconds, _rising), do: :erlang.nif_error(:nif_not_loaded)
 
   @doc "The figures of struck notes fitted partial by partial, as mxs reads them, from recordings each as `{{data, format, rate}, {from, to}, {note, velocity, seconds, exact}}`, the samples it spans and its note, a MIDI number or between them for a pitch given exactly."
-  def fit_struck(_recordings), do: :erlang.nif_error(:nif_not_loaded)
+  def fit_struck(_recordings, _how), do: :erlang.nif_error(:nif_not_loaded)
+
+  @doc ~s(Whether this build of mxs fits struck notes by gradient descent, as `fit_struck/2` does with `how` "gpu" or "processor" instead of "partials".)
+  def descent_built, do: :erlang.nif_error(:nif_not_loaded)
 
   @doc "How far a render of a struck note is from a recording of it, partial by partial and in ERB bands, the recording as `fit_struck/1` takes it and the render as `{data, format, rate}`."
   def check_struck(_recording, _rendered), do: :erlang.nif_error(:nif_not_loaded)
 
   @doc "How far the fit's own render of a struck note is from the recording, the recording as `fit_struck/1` takes it."
-  def check_fit_struck(_recording), do: :erlang.nif_error(:nif_not_loaded)
+  def check_fit_struck(_recording, _how), do: :erlang.nif_error(:nif_not_loaded)
 
   @doc "A recording of a struck note beside a render of it, or the fit's own render alone when `rendered` is nil, frame by frame at `times` seconds after the strike, as `Mx.Fit.Struck.frames/4` gives them."
   def frames_struck(_recording, _rendered, _times), do: :erlang.nif_error(:nif_not_loaded)

@@ -732,6 +732,62 @@ defmodule Mix.Tasks.Mx.FitTest do
       end
     end
 
+    test "--processor goes with --descent, and --descent with --struck and without --note", ctx do
+      list = write_list(ctx, ["C4 80 c4.wav"])
+
+      assert_raise Mix.Error, "--processor goes with --descent", fn ->
+        Mix.Tasks.Mx.Fit.run(["marimba", "--struck", list, "--check", "--processor"])
+      end
+
+      assert_raise Mix.Error, "--descent goes with --struck, not --held", fn ->
+        Mix.Tasks.Mx.Fit.run(["cello", "--held", list, "--check", "--descent"])
+      end
+
+      assert_raise Mix.Error,
+                   "--note and --vel show the fit partial by partial, not --descent",
+                   fn ->
+                     Mix.Tasks.Mx.Fit.run([
+                       "marimba",
+                       "--struck",
+                       list,
+                       "--check",
+                       "--descent",
+                       "--note",
+                       "C4",
+                       "--vel",
+                       "80"
+                     ])
+                   end
+    end
+
+    @tag :without_gpu
+    test "--descent on a build of mxs without MLX says how to build it", ctx do
+      list = write_list(ctx, ["C4 80 c4.wav"])
+
+      assert_raise Mix.Error,
+                   "--descent needs mxs built with MLX: MX_GPU=1 mix compile --force, on macOS",
+                   fn ->
+                     Mix.Tasks.Mx.Fit.run(["marimba", "--struck", list, "--check", "--descent"])
+                   end
+    end
+
+    @tag :gpu
+    test "--descent says it fits on the GPU, and two fits write the same file", ctx do
+      write_wav(ctx.tmp_dir, "c4.wav", struck_note(60, 2))
+      list = write_list(ctx, ["C4 127 c4.wav"])
+      [first, second] = for run <- 1..2, do: Path.join(ctx.tmp_dir, "fit-#{run}.mxf")
+
+      output =
+        capture_io(fn ->
+          for out <- [first, second] do
+            Mix.Tasks.Mx.Fit.run(["marimba", "--struck", list, "--descent", "--out", out])
+          end
+        end)
+
+      assert output =~ "fitting by gradient descent on the GPU"
+      assert File.read!(first) == File.read!(second)
+    end
+
     test "--steady goes with --held, not --struck", ctx do
       list = write_list(ctx, ["C4 80 c4.wav"])
 
@@ -888,6 +944,41 @@ defmodule Mix.Tasks.Mx.FitTest do
       {times, fitted} = figures(File.read!(out))
       at = fn velocity -> Enum.find(fitted, &(&1.note == 60 and &1.velocity == velocity)) end
       assert_in_delta loudness(times, at.(40)) - loudness(times, at.(127)), recordings, 1.5
+    end
+
+    @tag :gpu
+    test "the descent leaves no strong partial of the pp C#3 and A5 more than 0.6 dB further off on average than the fit partial by partial",
+         %{marimba: marimba} = ctx do
+      list =
+        write_list(ctx, [
+          "C3:B3 40 kept #{marimba}/Marimba.yarn.pp.C3B3.aif",
+          "C5:B5 40 kept #{marimba}/Marimba.yarn.pp.C5B5.aif"
+        ])
+
+      {:ok, recordings, _lines} = Struck.listed(list)
+      recordings = Enum.filter(recordings, &(&1.note in [49, 81]))
+      [today, descent] = for how <- ["partials", "gpu"], do: Struck.own(recordings, how)
+
+      further =
+        for {fitted_note, descended_note} <- Enum.zip(today, descent),
+            {fitted, descended} <- Enum.zip(fitted_note.partials, descended_note.partials),
+            fitted.below <= 30 do
+          {fitted_note.note, fitted.ratio, descended.mean - fitted.mean}
+        end
+
+      assert Enum.filter(further, fn {_note, _ratio, worse} -> worse > 0.6 end) == []
+    end
+
+    @tag :gpu
+    test "the check reads the descent's own render of the pp A5 at the recording's pitch, though noise rings beside its loudest partial",
+         %{marimba: marimba} = ctx do
+      list = write_list(ctx, ["C5:B5 40 kept #{marimba}/Marimba.yarn.pp.C5B5.aif"])
+      {:ok, recordings, _lines} = Struck.listed(list)
+
+      [%{pitch: {recorded, rendered}}] =
+        recordings |> Enum.filter(&(&1.note == 81)) |> Struck.own("gpu")
+
+      assert rendered == recorded
     end
 
     @tag timeout: 600_000

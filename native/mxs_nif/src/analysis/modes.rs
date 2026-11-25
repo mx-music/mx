@@ -416,15 +416,15 @@ pub fn strike(
         sum
     });
     let ours: Vec<f64> = played.iter().zip(&noise).map(|(a, b)| a + b).collect();
-    let (figures, _) = fit::fit(
+    let (figures, _) = fit::fit(&fit::Recording {
         sound,
         rate,
         note,
         seconds,
         exact,
-        super::partials::TOP,
-        None,
-    );
+        top: super::partials::TOP,
+        room: None,
+    });
     let lead = 0.05;
     let today_whole = fit::render(&figures, rate, lead, seconds + 0.3);
     let today_start = super::partials::strike(&today_whole);

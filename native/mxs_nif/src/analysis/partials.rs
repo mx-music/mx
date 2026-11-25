@@ -275,6 +275,32 @@ pub fn follow(sound: &[f64], spectra: &Spectra, freqs: &[f64]) -> Vec<Vec<f64>> 
         .collect()
 }
 
+/// The weights `follow` reads each partial's amplitude with, one row a partial over the window's samples: the partial's level in a frame is the magnitude of its row's weighted sum of the frame's samples, in dB.
+#[cfg(any(test, all(feature = "gpu", target_os = "macos")))]
+pub fn reading(rate: f64, window: f64, freqs: &[f64]) -> Vec<Vec<Complex<f64>>> {
+    let size = (window * rate).round() as usize;
+    let hann: Vec<f64> = (0..size)
+        .map(|i| 0.5 - 0.5 * (2.0 * PI * i as f64 / size as f64).cos())
+        .collect();
+    let centre = size as f64 / 2.0;
+    let omegas: Vec<f64> = freqs.iter().map(|f| 2.0 * PI * f / rate).collect();
+    let reach = 20.0 * 2.0 * PI / size as f64;
+    let system = Banded::new(&omegas, reach, &hann);
+    let columns = super::parallel(&(0..size).collect::<Vec<_>>(), |&n| {
+        let read: Vec<Complex<f64>> = omegas
+            .iter()
+            .flat_map(|omega| {
+                let value = Complex::from_polar(hann[n], -omega * n as f64);
+                [value, value * (n as f64 - centre)]
+            })
+            .collect();
+        system.solve(read)
+    });
+    (0..freqs.len())
+        .map(|j| columns.iter().map(|column| column[2 * j]).collect())
+        .collect()
+}
+
 // The window's weighted sums of a sine and of a sine times the offset from the window's centre, once and twice, at an angle `theta` per sample.
 fn responses(theta: f64, hann: &[f64]) -> [Complex<f64>; 3] {
     let centre = hann.len() as f64 / 2.0;
@@ -621,4 +647,54 @@ fn line(points: &[(f64, f64)]) -> (f64, f64) {
         .map(|(x, y)| (y - mean_y - slope * (x - mean_x)).powi(2))
         .sum();
     (slope, error)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn reading_a_frame_with_its_weights_gives_what_follow_reads() {
+        let rate = 16000.0;
+        let freqs = [220.0, 440.0, 455.0, 1310.0];
+        let sound: Vec<f64> = (0..16000)
+            .map(|i| {
+                freqs
+                    .iter()
+                    .enumerate()
+                    .map(|(j, f)| {
+                        (2.0 * PI * f * i as f64 / rate + j as f64).sin() / (j as f64 + 1.0)
+                    })
+                    .sum::<f64>()
+                    * (-(i as f64) / 8000.0).exp()
+            })
+            .collect();
+        let spectra = spectra(&sound, rate, 220.0, 0.8);
+        let followed = follow(&sound, &spectra, &freqs);
+        let weights = reading(rate, spectra.window, &freqs);
+        let size = weights[0].len();
+        for k in [3, 40, 200] {
+            let from = (spectra.start + k as f64 * HOP * rate).round() as i64 - (size / 2) as i64;
+            for (j, row) in weights.iter().enumerate() {
+                let sum: Complex<f64> = row
+                    .iter()
+                    .enumerate()
+                    .map(|(n, w)| {
+                        let at = from + n as i64;
+                        w * if at >= 0 && (at as usize) < sound.len() {
+                            sound[at as usize]
+                        } else {
+                            0.0
+                        }
+                    })
+                    .sum();
+                assert!(
+                    (db(sum.norm()) - followed[j][k]).abs() < 1e-6,
+                    "partial {j} frame {k}: {} against {}",
+                    db(sum.norm()),
+                    followed[j][k]
+                );
+            }
+        }
+    }
 }

@@ -871,9 +871,57 @@ fn span_in_room(
     ))
 }
 
-/// The figures of struck notes fitted partial by partial, as mxs reads them, each under its nearest MIDI note.
+/// How a struck note is fitted: "partials", partial by partial, or "gpu" or "processor", by gradient descent from there on MLX's device of that name, which only a build with the gpu feature has.
+fn fitting(how: &str) -> NifResult<&str> {
+    match how {
+        "partials" => Ok(how),
+        "gpu" | "processor" if cfg!(all(feature = "gpu", target_os = "macos")) => Ok(how),
+        _ => Err(rustler::Error::Term(Box::new(format!(
+            "this build of mxs cannot fit by {how}"
+        )))),
+    }
+}
+
+#[cfg_attr(
+    not(all(feature = "gpu", target_os = "macos")),
+    allow(unused_variables)
+)]
+fn struck_fit(recording: &analysis::fit::Recording, how: &str) -> analysis::fit::Figures {
+    #[cfg_attr(
+        not(all(feature = "gpu", target_os = "macos")),
+        allow(unused_mut, unused_variables)
+    )]
+    let (mut figures, recorded) = analysis::fit::fit(recording);
+    #[cfg(all(feature = "gpu", target_os = "macos"))]
+    if how != "partials" {
+        static ONE_AT_A_TIME: std::sync::Mutex<()> = std::sync::Mutex::new(());
+        let on = if how == "gpu" {
+            analysis::descent::On::Gpu
+        } else {
+            analysis::descent::On::Processor
+        };
+        let _turn = ONE_AT_A_TIME.lock().unwrap_or_else(|e| e.into_inner());
+        analysis::descent::descend(
+            &mut figures,
+            &recorded,
+            recording.rate,
+            recording.seconds,
+            recording.room,
+            on,
+        );
+    }
+    figures
+}
+
+/// Whether this build of mxs can fit struck notes by gradient descent with MLX.
+#[rustler::nif]
+fn descent_built() -> bool {
+    cfg!(all(feature = "gpu", target_os = "macos"))
+}
+
+/// The figures of struck notes, fitted as `how` says, as mxs reads them, each under its nearest MIDI note.
 #[rustler::nif(schedule = "DirtyCpu")]
-fn fit_struck<'a>(env: Env<'a>, recordings: Vec<Struck<'a>>) -> NifResult<Binary<'a>> {
+fn fit_struck<'a>(env: Env<'a>, recordings: Vec<Struck<'a>>, how: String) -> NifResult<Binary<'a>> {
     let sounds = recordings
         .iter()
         .map(
@@ -890,13 +938,25 @@ fn fit_struck<'a>(env: Env<'a>, recordings: Vec<Struck<'a>>) -> NifResult<Binary
             },
         )
         .collect::<NifResult<Vec<_>>>()?;
+    let how = fitting(&how)?;
     let fitted = analysis::parallel(
         &sounds,
         |((sound, room), rate, note, velocity, seconds, exact, top)| {
             (
                 note.round() as u8,
                 *velocity,
-                analysis::fit::fit(sound, *rate, *note, *seconds, *exact, *top, room.as_ref()).0,
+                struck_fit(
+                    &analysis::fit::Recording {
+                        sound,
+                        rate: *rate,
+                        note: *note,
+                        seconds: *seconds,
+                        exact: *exact,
+                        top: *top,
+                        room: room.as_ref(),
+                    },
+                    how,
+                ),
             )
         },
     );
@@ -929,18 +989,20 @@ fn check_struck(recording: Struck, rendered: Sound) -> NifResult<analysis::fit::
 
 /// How far the fit's own render of a struck note, its figures played with no synth, is from the recording, as `check_struck` compares them: the recording as a struck one is given to `fit_struck`.
 #[rustler::nif(schedule = "DirtyCpu")]
-fn check_fit_struck(recording: Struck) -> NifResult<analysis::fit::Check> {
+fn check_fit_struck(recording: Struck, how: String) -> NifResult<analysis::fit::Check> {
     let ((data, format, rate), within, (note, _velocity, seconds, exact, top)) = recording;
     let (theirs, room) = span_in_room(&data, &format, within, rate, note)?;
-    Ok(analysis::fit::own(
-        &theirs,
+    let recording = analysis::fit::Recording {
+        sound: &theirs,
         rate,
         note,
         seconds,
         exact,
         top,
-        room.as_ref(),
-    ))
+        room: room.as_ref(),
+    };
+    let figures = struck_fit(&recording, fitting(&how)?);
+    Ok(analysis::fit::own(&figures, &recording))
 }
 
 /// One recording of a struck note, given as to `fit_struck`, beside a render of the synth when given and the fit's own render, frame by frame at `times` seconds after the strike.

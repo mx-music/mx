@@ -101,10 +101,10 @@ defmodule Mx.Fit.Struck do
     end
   end
 
-  @doc "The figures fitted to the recordings, as mxs reads them."
-  def figures(recordings) when is_list(recordings) do
+  @doc ~s(The figures fitted to the recordings, as mxs reads them: `how` is "partials", partial by partial, or "gpu" or "processor", by gradient descent from there.)
+  def figures(recordings, how \\ "partials") when is_list(recordings) do
     raws = raws(recordings)
-    recordings |> Enum.map(&struck(&1, raws)) |> Native.fit_struck()
+    recordings |> Enum.map(&struck(&1, raws)) |> Native.fit_struck(how)
   end
 
   @doc """
@@ -128,9 +128,9 @@ defmodule Mx.Fit.Struck do
   Checks the fit's own render of each recording against it, as `check/2` checks a synth: the figures fitted to the recording played as sines and noise, with no synth.
   Each check is kept in the system's temporary folder and reused until the recording or mxs changes.
   """
-  def own(recordings) when is_list(recordings) do
+  def own(recordings, how \\ "partials") when is_list(recordings) do
     recordings
-    |> Task.async_stream(&own_check/1, timeout: :infinity)
+    |> Task.async_stream(&own_check(&1, how), timeout: :infinity)
     |> Enum.map(fn {:ok, check} -> check end)
   end
 
@@ -447,8 +447,8 @@ defmodule Mx.Fit.Struck do
     {rendered, packing, Mxs.render_rate() / 1}
   end
 
-  defp own_check(recording) do
-    path = own_path(recording)
+  defp own_check(recording, how) do
+    path = own_path(recording, how)
 
     case File.read(path) do
       {:ok, binary} ->
@@ -458,7 +458,7 @@ defmodule Mx.Fit.Struck do
         check =
           recording
           |> struck(raws([recording]))
-          |> Native.check_fit_struck()
+          |> Native.check_fit_struck(how)
           |> Map.merge(Map.take(recording, [:path, :note, :velocity, :kept]))
 
         File.mkdir_p!(Path.dirname(path))
@@ -468,12 +468,12 @@ defmodule Mx.Fit.Struck do
   end
 
   # A check is named after the recording, the part of it fitted, its file's size and time of
-  # change, and the build of mxs that fitted it.
-  defp own_path(recording) do
+  # change, how it was fitted, and the build of mxs that fitted it.
+  defp own_path(recording, how) do
     built = :mx |> :code.priv_dir() |> Path.join("native/*mxs_nif*") |> Path.wildcard()
     files = Enum.map([recording.path | built], &{Path.expand(&1), Mx.Fit.stamp(&1)})
     fitted = Map.take(recording, [:span, :pitch, :velocity, :seconds, :exact, :top])
-    key = :erlang.phash2({files, fitted}, 4_294_967_296)
+    key = :erlang.phash2({files, fitted, how}, 4_294_967_296)
     Path.join([System.tmp_dir!(), "mx-fit-struck", "#{key}.term"])
   end
 

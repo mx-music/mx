@@ -12,6 +12,7 @@ ExUnit.start(
     :nasa,
     :nsynth,
     :anderson,
-    :cargo_about
+    :cargo_about,
+    if(Mx.Engine.Mxs.Native.descent_built(), do: :without_gpu, else: :gpu)
   ]
 )

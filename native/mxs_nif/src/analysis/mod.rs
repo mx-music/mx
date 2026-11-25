@@ -2,6 +2,8 @@
 //! Levels are in dB, and a spectrum holds the magnitude of each frequency bin below half the sample rate.
 
 pub mod bands;
+#[cfg(all(feature = "gpu", target_os = "macos"))]
+pub mod descent;
 pub mod fit;
 pub mod held;
 pub mod hits;
