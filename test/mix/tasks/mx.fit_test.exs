@@ -1188,10 +1188,13 @@ defmodule Mix.Tasks.Mx.FitTest do
   end
 
   defp iowa(dir, dynamic, prefix \\ "BbClar") do
-    for path <- Path.wildcard(Path.join(dir, "#{prefix}.#{dynamic}.*.aiff")) do
+    dir
+    |> Path.join("#{prefix}.#{dynamic}.*.aiff")
+    |> Path.wildcard()
+    |> Enum.map(fn path ->
       [first] = Regex.run(~r/\.([A-G]b?\d)[A-G]?b?\d?\.aiff$/, path, capture: :all_but_first)
       "#{path}:#{first}"
-    end
+    end)
   end
 
   # The clarinet's own notes C4, C#4 and D4 at vel 0.6 unless given, each held two seconds unless
