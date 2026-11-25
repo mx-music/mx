@@ -168,11 +168,8 @@ defmodule Mx.Performance do
       bad != nil ->
         {number, start, _length} = bad
         before = Enum.take_while(timeline, &(&1 != bad))
-
-        parted_after(
-          if(before == [], do: number, else: before |> List.last() |> elem(0)),
-          at.(start)
-        )
+        parted = if before == [], do: number, else: before |> List.last() |> elem(0)
+        parted_after(parted, at.(start))
 
       levels != [] and sound_after?(levels, at.(0), at.(beats)) ->
         {number, _start, _length} = List.last(timeline)

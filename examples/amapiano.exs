@@ -351,7 +351,7 @@ defmodule Sgubhu do
   # The claves on every third sixteenth, which takes three bars to come round.
   defp claves(bars) do
     three = [~MX"9..6 ..6. .6.. 6..6"s, ~MX"..6. .6.. 6..6 ..6."s, ~MX".6.. 6..6 ..6. .6.."s]
-    strokes(three |> Stream.cycle() |> Enum.take(bars))
+    three |> Stream.cycle() |> Enum.take(bars) |> strokes()
   end
 
   # The congas' two bars.

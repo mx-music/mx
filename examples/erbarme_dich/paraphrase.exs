@@ -275,7 +275,8 @@ defmodule ErbarmeDich.Paraphrase do
   defp figure(_bass, tones) when length(tones) < 3, do: []
 
   defp figure(bass, tones) do
-    pattern = tones ++ (tones |> Enum.reverse() |> tl() |> Enum.drop(-1))
+    back = tones |> Enum.reverse() |> tl() |> Enum.drop(-1)
+    pattern = tones ++ back
 
     pattern
     |> Stream.cycle()

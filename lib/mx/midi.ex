@@ -545,7 +545,8 @@ defmodule Mx.MIDI do
       notes
       |> Enum.group_by(fn {start, stop, _key, _vel} -> {start, stop} end)
       |> Enum.sort_by(fn {{start, _stop}, chord} ->
-        {start, -(chord |> Enum.map(&elem(&1, 2)) |> Enum.max())}
+        top_key = chord |> Enum.map(&elem(&1, 2)) |> Enum.max()
+        {start, -top_key}
       end)
       |> Enum.flat_map_reduce([], fn {{start, stop}, chord}, ends ->
         voice = Enum.find_index(ends, &(&1 <= start)) || length(ends)

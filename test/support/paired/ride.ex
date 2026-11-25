@@ -55,9 +55,8 @@ defmodule Mx.Paired.Ride do
     wash_db = -13 + bell * @bell_wash
     ping_db = @ping_db + bell * (@bell_ping - @ping_db)
 
-    stick =
-      (noise(:white) |> highpass(hz: 1000) |> highshelf(hz: 3000, q: 0.707, db: tilt)) *
-        hit(0.0005, 0.01, -4)
+    stick_noise = noise(:white) |> highpass(hz: 1000) |> highshelf(hz: 3000, q: 0.707, db: tilt)
+    stick = stick_noise * hit(0.0005, 0.01, -4)
 
     groups =
       for some <- @plate do

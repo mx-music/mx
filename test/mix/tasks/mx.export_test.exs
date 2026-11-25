@@ -218,7 +218,7 @@ defmodule Mix.Tasks.Mx.ExportTest do
               not note.continues,
               do: {note.midi, note.staff, from + at, piece.length}
 
-        {notes, from + (bar.voices |> hd() |> Enum.map(& &1.length) |> Enum.sum())}
+        {notes, from + Enum.sum_by(hd(bar.voices), & &1.length)}
       end)
 
     Enum.sort(notes)

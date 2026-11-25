@@ -26,9 +26,8 @@ defmodule Mx.Paired.Tamborim do
         fade: @rings
       )
 
-    crack =
-      (noise(:white) |> highpass(hz: 3000) |> lowpass(hz: 12_000)) * hit(0.0005, 0.03, -4) *
-        db(-12)
+    crack_noise = noise(:white) |> highpass(hz: 3000) |> lowpass(hz: 12_000)
+    crack = crack_noise * hit(0.0005, 0.03, -4) * db(-12)
 
     rings(
       highshelf(head + crack, hz: 2000, q: 0.707, db: (vel - 0.6) * 6) *

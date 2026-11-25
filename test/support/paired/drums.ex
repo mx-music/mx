@@ -55,8 +55,8 @@ defmodule Mx.Paired.Drums do
     stick = lowpass(click, hz: clamp(4000 + vel * 12_000, 20, 20_000))
     bell = mode(stick, hz: Enum.map(ratios, &(f * &1)), level: levels, fade: rings)
 
-    hissing =
-      (noise(:white) |> highpass(hz: 1200) |> highpass(hz: 1200)) * exp_hit(0.0005, 0.2) * hiss
+    hiss_noise = noise(:white) |> highpass(hz: 1200) |> highpass(hz: 1200)
+    hissing = hiss_noise * exp_hit(0.0005, 0.2) * hiss
 
     thumping = bpf(noise(:white), f * 0.47, 0.8) * exp_hit(0.001, 0.15) * thump
     top = clamp(top * (0.4 + vel), 1000, 20_000)

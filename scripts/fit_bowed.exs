@@ -47,7 +47,8 @@ defmodule FitBowed do
 
   def measure(synth, vel, gains, dir, extra \\ []) do
     {notes, _} = @recorded[synth]
-    eq_opts = (gains |> Enum.with_index() |> Enum.reject(&is_nil(elem(&1, 0))) |> Enum.map(fn {gain, band} -> {"eq#{band}", gain} end)) ++ extra
+    eqs = gains |> Enum.with_index() |> Enum.reject(&is_nil(elem(&1, 0))) |> Enum.map(fn {gain, band} -> {"eq#{band}", gain} end)
+    eq_opts = eqs ++ extra
 
     notes
     |> Task.async_stream(fn note -> Held.note(render(synth, [note: note, vel: vel, vibrato: 0, sustain: 2.5] ++ eq_opts, 3, dir), 48_000, note) end, timeout: :infinity)

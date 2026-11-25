@@ -30,7 +30,10 @@ defmodule Mx.CompressorTest do
     Enum.slice(samples, round(from * @rate)..(round(to * @rate) - 1))
   end
 
-  defp peak_db(samples), do: 20 * (samples |> Enum.map(&abs/1) |> Enum.max() |> :math.log10())
+  defp peak_db(samples) do
+    peak = samples |> Enum.map(&abs/1) |> Enum.max()
+    20 * :math.log10(peak)
+  end
 
   # A sine for 2 seconds whose amp is set so that it peaks at `db`, through the effects given.
   defp tone(ctx, db, fx, pan \\ 0) do

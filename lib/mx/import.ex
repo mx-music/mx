@@ -445,7 +445,7 @@ defmodule Mx.Import do
           |> Enum.sort_by(fn {beat, voice, _, _, _} -> {beat, voice} end)
           |> Enum.reduce({open, sustains, continued}, &tie/2)
 
-        ends = for groups <- voices, do: start + (groups |> Enum.map(& &1.length) |> Enum.sum())
+        ends = for groups <- voices, do: start + Enum.sum_by(groups, & &1.length)
         {Enum.max([start | ends]), open, sustains, continued}
       end)
 

@@ -30,9 +30,8 @@ defmodule Mx.Paired.Crash do
     scale = 2 ** ((o.note - 60) / 12)
     tilt = (vel - 0.6) * 4
 
-    stick =
-      (noise(:white) |> highpass(hz: 1000) |> highshelf(hz: 3000, q: 0.707, db: tilt)) *
-        hit(0.0005, 0.01, -4)
+    stick_noise = noise(:white) |> highpass(hz: 1000) |> highshelf(hz: 3000, q: 0.707, db: tilt)
+    stick = stick_noise * hit(0.0005, 0.01, -4)
 
     groups =
       for some <- @plate do

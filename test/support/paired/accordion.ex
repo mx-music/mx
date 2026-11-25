@@ -70,9 +70,10 @@ defmodule Mx.Paired.Accordion do
       |> tl()
       |> Enum.zip(@noise)
       |> Enum.reduce(0, fn {centre, level}, sum ->
-        sum +
-          (noise(:white) |> bandpass(hz: centre, q: 1 / 0.3) |> bandpass(hz: centre, q: 1 / 0.3)) *
-            db(level)
+        band =
+          noise(:white) |> bandpass(hz: centre, q: 1 / 0.3) |> bandpass(hz: centre, q: 1 / 0.3)
+
+        sum + band * db(level)
       end)
 
     note_envelope(tilted(o, (tone + noise) * swell(o, 0.065) * (0.036 * (vel / 0.6) ** 1.2)), o)
