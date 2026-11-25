@@ -40,7 +40,7 @@ defmodule Mx.SampleFormatsTest do
     test "every one of its WAV files loads, those with a 20-byte format header among them", %{
       dir: dir
     } do
-      files = Path.wildcard(Path.join(dir, "**/*.wav"))
+      files = dir |> Path.join("**/*.wav") |> Path.wildcard()
       assert length(files) == 4231
       {:ok, engine} = Native.start(false, false)
 
@@ -73,7 +73,7 @@ defmodule Mx.SampleFormatsTest do
       path = Path.join(dir, "a11landing.aiff")
       assert {:ok, _} = Samples.path(path)
       sound = played(path, 4)
-      last = Enum.find_index(Enum.reverse(sound), &(&1 != 0.0))
+      last = sound |> Enum.reverse() |> Enum.find_index(&(&1 != 0.0))
       assert_in_delta (length(sound) - last) / 48_000, 3.59, 0.01
     end
   end

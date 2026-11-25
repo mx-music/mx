@@ -126,7 +126,9 @@ defmodule Mx.Paired.Drums do
     value = value |> Kernel.max(hd(bands)) |> Kernel.min(List.last(bands))
 
     index =
-      Enum.find_index(Enum.chunk_every(bands, 2, 1, :discard), fn [_, high] -> value <= high end) ||
+      bands
+      |> Enum.chunk_every(2, 1, :discard)
+      |> Enum.find_index(fn [_, high] -> value <= high end) ||
         length(bands) - 2
 
     [low, high] = Enum.slice(bands, index, 2)
@@ -368,7 +370,7 @@ defmodule Mx.Paired.Drums do
         clicked + (impulse() + highpass(noise(:white), hz: 2000) * hit(0.0005, 0.004, -4)) * 0.3
       end
 
-    jingles = List.flatten(Mx.Paired.Draws.plate(120, 170, 16_000))
+    jingles = 120 |> Mx.Paired.Draws.plate(170, 16_000) |> List.flatten()
     levels = Enum.map(jingles, &db(between(&1, @hat_bands, @jingle_levels)))
     rings = Enum.map(jingles, &between(&1, @hat_bands, @jingle_rings))
     ringing = mode(exciter, hz: Enum.map(jingles, &(&1 * scale)), level: levels, fade: rings)

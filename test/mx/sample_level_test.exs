@@ -44,7 +44,7 @@ defmodule Mx.SampleLevelTest do
 
   # The peak of a song's render in dB below full scale, or :silent.
   defp rendered_peak(path) do
-    out = Path.join(Path.dirname(path), "out.wav")
+    out = path |> Path.dirname() |> Path.join("out.wav")
     File.rm(out)
 
     capture_io(:stderr, fn ->

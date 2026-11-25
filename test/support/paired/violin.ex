@@ -123,7 +123,9 @@ defmodule Mx.Paired.Violin do
     shaped = string |> highpass(hz: body, q: 0.541) |> highpass(hz: body, q: 1.307)
 
     shaped =
-      Enum.reduce(Enum.with_index(@bands), shaped, fn {centre, band}, sound ->
+      @bands
+      |> Enum.with_index()
+      |> Enum.reduce(shaped, fn {centre, band}, sound ->
         [pp, mf, ff] = Enum.map(@gains, &Enum.at(&1, band))
         gain = Map.fetch!(bowed, :"eq#{band}") || by_vel.(pp, mf, ff)
 

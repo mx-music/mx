@@ -49,7 +49,7 @@ defmodule Mx.Render do
         end
 
         loudness = settle(out, opts[:loudness])
-        Enum.each(Recording.report(out, loudness), &IO.puts/1)
+        out |> Recording.report(loudness) |> Enum.each(&IO.puts/1)
       end
     end
   end
@@ -382,7 +382,7 @@ defmodule Mx.Render do
   # The engine holds each pass whole, so what a loop would not have sent by the last step is
   # dropped.
   defp cut(band, until_us) do
-    beat = Band.beat_at(Band.timeline(band), until_us)
+    beat = band |> Band.timeline() |> Band.beat_at(until_us)
     for pid <- Band.loops(band), name = name(pid), do: Mxs.cut(name, beat)
   end
 

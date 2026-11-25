@@ -264,7 +264,7 @@ defmodule Mx.Band do
          {synth, opts} = Keyword.pop(tried, :synth, trial[:synth]),
          :ok <- check_synth(synth),
          :ok <- check_options(synth || loop.synth, opts) do
-      opts = Keyword.merge(Map.get(trial, :opts, []), opts)
+      opts = trial |> Map.get(:opts, []) |> Keyword.merge(opts)
       trial = if synth, do: %{synth: synth, opts: opts}, else: %{opts: opts}
       {:reply, :ok, put_trial(state, part, trial)}
     else
@@ -656,7 +656,9 @@ defmodule Mx.Band do
 
   defp put_changes(state, start, pass) do
     state =
-      Enum.reduce(Mx.Tempo.changes(state.song.tempos, pass), state, fn
+      state.song.tempos
+      |> Mx.Tempo.changes(pass)
+      |> Enum.reduce(state, fn
         {beat, bpm, over}, state -> put_tempo(state, start + beat, bpm, over)
       end)
 

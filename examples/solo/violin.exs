@@ -102,7 +102,7 @@ defmodule Violin do
   # than a third slides audibly, as a player's finger does.
   # A swelled stroke grows louder to its middle and eases off to its end.
   defp bow(notes, vel, opts \\ []) do
-    beats = Enum.sum(Enum.map(notes, &elem(&1, 1)))
+    beats = notes |> Enum.map(&elem(&1, 1)) |> Enum.sum()
     slide = fn previous, note -> if abs(note - previous) > 4, do: 0.08, else: 0.01 end
 
     {start, swell} =

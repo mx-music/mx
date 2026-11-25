@@ -141,7 +141,7 @@ defmodule Mix.Tasks.Mx.PlayTest do
     File.write!(path, String.replace(song, "60", "62"))
     refute_receive {:mx_beat, _}, 3000
     now = System.os_time(:microsecond)
-    asked = Mx.Band.beat_at(Mx.Band.timeline(Mx.Band), now - delay_us)
+    asked = Mx.Band |> Mx.Band.timeline() |> Mx.Band.beat_at(now - delay_us)
     assert_in_delta Mx.Beat.at(message, now), asked, 1.0e-6
 
     Supervisor.stop(session)
@@ -247,7 +247,7 @@ defmodule Mix.Tasks.Mx.PlayTest do
     asked_us = System.os_time(:microsecond)
     assert Mx.Session.scale_tempo(session, 0.5) == :ok
     [{_beat, changed_us, 60.0} | _] = Mx.Band.timeline(Mx.Band)
-    [{0, start_us, 120} | _] = Enum.reverse(Mx.Band.timeline(Mx.Band))
+    [{0, start_us, 120} | _] = Mx.Band |> Mx.Band.timeline() |> Enum.reverse()
     Process.sleep(4500)
     Supervisor.stop(session)
 

@@ -34,7 +34,7 @@ defmodule Mx.Player do
 
   @doc "Plays a song file with `record:` and `force:`, or renders it offline with `render:`, `seconds:`, `ring_out:`, `loudness:` and `force:`, either at `share:` of its tempo, and returns `:ok` once it stops, or `{:error, message}`."
   def play(path, opts) when is_binary(path) and is_list(opts) do
-    with :ok <- Mx.Band.check_share(Keyword.get(opts, :share, 1)),
+    with :ok <- opts |> Keyword.get(:share, 1) |> Mx.Band.check_share(),
          :ok <- check_import(path, opts) do
       play_or_render(path, opts)
     end
@@ -127,7 +127,7 @@ defmodule Mx.Player do
 
           wait_for_end()
           Supervisor.stop(session)
-          if record, do: Enum.each(Mx.Recording.report(record), &IO.puts/1)
+          if record, do: record |> Mx.Recording.report() |> Enum.each(&IO.puts/1)
           :ok
 
         {:error, {:shutdown, {:failed_to_start_child, _, message}}} when is_binary(message) ->

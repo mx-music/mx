@@ -1,6 +1,6 @@
 defmodule Mx.MixProject do
   # A git checkout builds mxs itself, so it needs Rustler; a Hex install downloads mxs built.
-  @checkout File.dir?(Path.join(__DIR__, ".git"))
+  @checkout __DIR__ |> Path.join(".git") |> File.dir?()
 
   use Mix.Project
 

@@ -165,7 +165,10 @@ defmodule Mx.EffectsInElixirTest do
     # The graph is handed over as defeffect would, without a module that every engine would then
     # load.
     input = %Mx.Instrument.Expr{op: :input, args: []}
-    graph = Mx.Instrument.encode(Mx.Instrument.Vocabulary.allpass(input, hz: 1000, seconds: 1))
+
+    graph =
+      input |> Mx.Instrument.Vocabulary.allpass(hz: 1000, seconds: 1) |> Mx.Instrument.encode()
+
     {:ok, engine} = Native.start(false, false)
 
     assert Native.register_effect_graph(engine, "bad_allpass", [], graph) ==

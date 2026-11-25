@@ -10,7 +10,7 @@ defmodule Mx.Examples.PandeiroTest do
     for pass <- 0..7 do
       loops = Regex.scan(~r/^(\w+), pass \d, 32 beats/m, print(pass), capture: :all_but_first)
 
-      assert Enum.sort(List.flatten(loops)) ==
+      assert loops |> List.flatten() |> Enum.sort() ==
                ["pandeiro_heel", "pandeiro_jingles", "pandeiro_slap", "pandeiro_thumb"]
     end
 

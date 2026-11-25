@@ -8,7 +8,7 @@ defmodule Mx.Examples.HarmoniumTest do
   test "the solo plays the harmonium alone, a melody over a held Sa" do
     for pass <- 0..4 do
       loops = Regex.scan(~r/^(\w+), pass /m, print(pass), capture: :all_but_first)
-      assert Enum.sort(List.flatten(loops)) == ["melody", "sa"]
+      assert loops |> List.flatten() |> Enum.sort() == ["melody", "sa"]
       assert print(pass) =~ ~r/sa, pass .*\nbeat 0 +play 43 vel: 0.5, sustain: 15.5/s
     end
 

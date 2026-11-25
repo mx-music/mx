@@ -683,7 +683,7 @@ defmodule Mix.Tasks.Mx.MeasureTest do
     end
 
     test "finds one hit in each file, and prints each band's level and fade", %{dir: dir} do
-      paths = Path.wildcard(Path.join(dir, "Cowbell1_Hit_*.wav"))
+      paths = dir |> Path.join("Cowbell1_Hit_*.wav") |> Path.wildcard()
       assert length(paths) == 8
       output = capture_io(fn -> Mix.Tasks.Mx.Measure.run(["--hits" | paths]) end)
 
@@ -722,7 +722,7 @@ defmodule Mix.Tasks.Mx.MeasureTest do
     test "prints each bell beside its recordings, within 6 dB and 30 percent from 630 Hz to 10 kHz",
          %{dir: dir} do
       for {bell, synth} <- [{"Low", "low_agogo"}, {"High", "high_agogo"}] do
-        paths = Path.wildcard(Path.join(dir, "Agogo_#{bell}_v*_rr1_Mid.wav"))
+        paths = dir |> Path.join("Agogo_#{bell}_v*_rr1_Mid.wav") |> Path.wildcard()
 
         output =
           capture_io(fn ->
@@ -819,7 +819,7 @@ defmodule Mix.Tasks.Mx.MeasureTest do
     test "prints the cabasa beside its hits, within 6 dB and 30 percent from 1 kHz up", %{
       dir: dir
     } do
-      paths = Path.wildcard(Path.join(dir, "Cabasa1_Hit_*.wav"))
+      paths = dir |> Path.join("Cabasa1_Hit_*.wav") |> Path.wildcard()
       assert length(paths) == 2
 
       output =
@@ -857,7 +857,7 @@ defmodule Mix.Tasks.Mx.MeasureTest do
     test "prints the cajón beside its bass tone and slap, within 6 dB and 30 percent up to 10 kHz",
          %{dir: dir} do
       for {stroke, slap} <- [{"hit2", "0"}, {"hit1", "1"}] do
-        paths = Path.wildcard(Path.join(dir, "Cajon_#{stroke}_f_rr*.wav"))
+        paths = dir |> Path.join("Cajon_#{stroke}_f_rr*.wav") |> Path.wildcard()
         assert length(paths) == 2
         args = ["--hits" | paths] ++ ["--synth", "cajon", "--option", "slap=#{slap}"]
         output = capture_io(fn -> Mix.Tasks.Mx.Measure.run(args) end)
@@ -900,7 +900,7 @@ defmodule Mix.Tasks.Mx.MeasureTest do
       ]
 
       for {stroke, synth, muted} <- strokes do
-        paths = Path.wildcard(Path.join(dir, "#{stroke}_v2_rr*.wav"))
+        paths = dir |> Path.join("#{stroke}_v2_rr*.wav") |> Path.wildcard()
         assert length(paths) == 2
         args = ["--hits" | paths] ++ ["--synth", synth, "--option", "muted=#{muted}"]
         output = capture_io(fn -> Mix.Tasks.Mx.Measure.run(args) end)

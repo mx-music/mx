@@ -218,7 +218,7 @@ defmodule Mx.ABC do
   # Q:1/4=90 is 90 quarter notes a minute, Q:3/8=60 60 dotted quarters, and a bare Q:90 counts
   # unit notes; text in quotes is left out.
   defp tempo(value, unit) do
-    value = String.trim(String.replace(value, ~r/"[^"]*"/, ""))
+    value = value |> String.replace(~r/"[^"]*"/, "") |> String.trim()
 
     case String.split(value, "=") do
       [beat, count] ->
@@ -243,7 +243,7 @@ defmodule Mx.ABC do
   end
 
   defp voice_field(value) do
-    [id | rest] = String.split(String.trim(value), ~r/\s+/, parts: 2)
+    [id | rest] = value |> String.trim() |> String.split(~r/\s+/, parts: 2)
 
     name =
       case Regex.run(~r/(?:name|nm)="([^"]*)"/, Enum.join(rest)) do
@@ -442,7 +442,7 @@ defmodule Mx.ABC do
   end
 
   defp voice_token(voice, :tuplet, "(" <> text) do
-    [notes | rest] = Enum.map(String.split(text, ":"), &Integer.parse/1)
+    [notes | rest] = text |> String.split(":") |> Enum.map(&Integer.parse/1)
     {notes, ""} = notes
     into = Enum.at(rest, 0, :error)
     count = Enum.at(rest, 1, :error)
@@ -792,14 +792,15 @@ defmodule Mx.ABC do
          key_text = MusicXML.song_key(song, opts),
          {:ok, {fifths, _mode} = key} <- MusicXML.key(key_text),
          {:ok, {beats, type} = time} <- MusicXML.song_time(song, opts),
-         {:ok, pickup} <- MusicXML.pickup(Keyword.get(opts, :pickup), time),
+         {:ok, pickup} <- opts |> Keyword.get(:pickup) |> MusicXML.pickup(time),
          {:ok, parts, left_out} <- MusicXML.parts(song, path) do
       length = parts |> Enum.map(&elem(&1, 2)) |> Enum.max(fn -> 0 end)
       title = Keyword.get_lazy(opts, :title, fn -> MusicXML.title(path) end)
 
       {_bar, _bars, laid} =
-        MusicXML.layout(
-          Enum.map(parts, fn {name, notes, _, _} -> {name, notes} end),
+        parts
+        |> Enum.map(fn {name, notes, _, _} -> {name, notes} end)
+        |> MusicXML.layout(
           time,
           length,
           pickup

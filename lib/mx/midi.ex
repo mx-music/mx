@@ -511,25 +511,25 @@ defmodule Mx.MIDI do
   # Each bar as {start, length} in units, to the end of the last note; a time signature that
   # changes within a bar ends that bar there.
   defp bars(meters, last, units) do
-    Enum.to_list(
-      Stream.unfold({0, meters}, fn
-        {from, _meters} when from >= last and from > 0 ->
-          nil
+    {0, meters}
+    |> Stream.unfold(fn
+      {from, _meters} when from >= last and from > 0 ->
+        nil
 
-        {from, meters} ->
-          meters = drop_passed(meters, from)
-          [{_at, length} | later] = meters
-          length = if length > 0, do: length, else: 4 * units
+      {from, meters} ->
+        meters = drop_passed(meters, from)
+        [{_at, length} | later] = meters
+        length = if length > 0, do: length, else: 4 * units
 
-          length =
-            case later do
-              [{next, _} | _] when next < from + length -> next - from
-              _ -> length
-            end
+        length =
+          case later do
+            [{next, _} | _] when next < from + length -> next - from
+            _ -> length
+          end
 
-          {{from, length}, {from + length, meters}}
-      end)
-    )
+        {{from, length}, {from + length, meters}}
+    end)
+    |> Enum.to_list()
   end
 
   defp drop_passed([_current, {at, _} = next | rest], from) when at <= from do
@@ -594,7 +594,7 @@ defmodule Mx.MIDI do
   def write(path, out, opts \\ []) when is_binary(path) and is_binary(out) and is_list(opts) do
     with :ok <- Page.check(out, Keyword.get(opts, :force, false)),
          {:ok, song} <- Song.load(path),
-         {:ok, {fifths, mode} = key} <- MusicXML.key(MusicXML.song_key(song, opts)),
+         {:ok, {fifths, mode} = key} <- song |> MusicXML.song_key(opts) |> MusicXML.key(),
          {:ok, {beats, type}} <- MusicXML.song_time(song, opts),
          {:ok, parts, left_out} <- MusicXML.parts(song, path) do
       length = parts |> Enum.map(&elem(&1, 2)) |> Enum.max(fn -> 0 end)

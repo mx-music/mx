@@ -2,7 +2,8 @@ defmodule Mx.Engine.Mxs.Native do
   @moduledoc "The functions mxs, the Rust engine, provides as NIFs."
 
   version = Mix.Project.config()[:version]
-  checkout = File.dir?(Path.expand("../../../../.git", __DIR__))
+  git = Path.expand("../../../../.git", __DIR__)
+  checkout = File.dir?(git)
   configured = Application.compile_env(:rustler_precompiled, [:force_build, :mx], false)
 
   # A checkout builds mxs, as does `config :rustler_precompiled, :force_build, mx: true`.

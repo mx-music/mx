@@ -8,7 +8,7 @@ defmodule Mx.Examples.AgogoTest do
   test "the solo plays the agogô's two bells alone" do
     for pass <- 0..21 do
       loops = Regex.scan(~r/^(\w+), pass /m, print(pass), capture: :all_but_first)
-      assert Enum.sort(List.flatten(loops)) == ["high_agogo", "low_agogo"]
+      assert loops |> List.flatten() |> Enum.sort() == ["high_agogo", "low_agogo"]
     end
 
     refute print(0) =~ "sample "

@@ -105,7 +105,9 @@ defmodule Mx.Paired.Bowed do
     shaped = string |> highpass(hz: body, q: 0.541) |> highpass(hz: body, q: 1.307)
 
     shaped =
-      Enum.reduce(Enum.with_index(@bands), shaped, fn {centre, band}, sound ->
+      @bands
+      |> Enum.with_index()
+      |> Enum.reduce(shaped, fn {centre, band}, sound ->
         gain =
           Map.fetch!(bowed, :"eq#{band}") || by_vel.(Enum.map(fit.gains, &Enum.at(&1, band)))
 

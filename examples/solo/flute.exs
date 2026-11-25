@@ -115,7 +115,7 @@ defmodule Syrinx do
   defp tokens do
     {tokens, _} =
       score()
-      |> Enum.flat_map(fn {stretch, bar} -> Enum.map(String.split(bar), &{&1, stretch}) end)
+      |> Enum.flat_map(fn {stretch, bar} -> bar |> String.split() |> Enum.map(&{&1, stretch}) end)
       |> Enum.map_reduce(1.0, fn {token, stretch}, last -> read(token, stretch, last) end)
 
     tokens
@@ -202,7 +202,7 @@ defmodule Syrinx do
 
   defp read("@" <> vel, _stretch, last) do
     [vel | over] = String.split(vel, "/")
-    over = List.first(Enum.map(over, &String.to_integer/1), 0)
+    over = over |> Enum.map(&String.to_integer/1) |> List.first(0)
     {[{:vel, {String.to_float(vel), over}, 0, false}], last}
   end
 

@@ -9,7 +9,7 @@ defmodule Mx.Examples.TablaTest do
   test "the solo plays the tabla alone" do
     for pass <- 0..6 do
       loops = Regex.scan(~r/^(\w+), pass /m, print(pass), capture: :all_but_first)
-      assert Enum.sort(List.flatten(loops)) == @synths
+      assert loops |> List.flatten() |> Enum.sort() == @synths
     end
 
     refute print(0) =~ "sample "
@@ -19,7 +19,7 @@ defmodule Mx.Examples.TablaTest do
     for pass <- [0, 1, 4, 5, 6] do
       [ghe] = Regex.run(~r/tabla_ghe, pass .*?\n\n/s, print(pass) <> "\n\n")
       beats = Regex.scan(~r/^beat (\d+)\s+play/m, ghe, capture: :all_but_first)
-      beats = Enum.map(List.flatten(beats), &String.to_integer/1)
+      beats = beats |> List.flatten() |> Enum.map(&String.to_integer/1)
       assert beats != []
       refute Enum.any?(beats, &(&1 in 8..11)), "pass #{pass} plays ghe on #{inspect(beats)}"
     end

@@ -155,7 +155,7 @@ defmodule Mx.WindsTest do
     end
   end
 
-  defp median(values), do: Enum.at(Enum.sort(values), div(length(values), 2))
+  defp median(values), do: values |> Enum.sort() |> Enum.at(div(length(values), 2))
 
   defp steps(words) do
     words

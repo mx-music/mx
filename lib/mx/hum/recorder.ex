@@ -89,7 +89,7 @@ defmodule Mx.Hum.Recorder do
 
       %{notes: notes, beats: beats, left_out: left_out} ->
         if left_out > 0, do: IO.puts("Left out #{notes(left_out)} hummed during the count-in.")
-        IO.puts(Hum.write(out, notes, beats, tempo))
+        out |> Hum.write(notes, beats, tempo) |> IO.puts()
     end
   end
 

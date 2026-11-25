@@ -8,7 +8,7 @@ defmodule Mx.Examples.CongasTest do
   test "the solo plays only the three congas" do
     for pass <- 0..18 do
       loops = Regex.scan(~r/^(\w+), pass /m, print(pass), capture: :all_but_first)
-      assert Enum.sort(List.flatten(loops)) == ~w(high_conga low_conga mid_conga)
+      assert loops |> List.flatten() |> Enum.sort() == ~w(high_conga low_conga mid_conga)
     end
 
     refute print(0) =~ "sample "

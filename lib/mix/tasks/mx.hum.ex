@@ -57,8 +57,11 @@ defmodule Mix.Tasks.Mx.Hum do
     with :ok <- Hum.check(out, opts[:force] || false),
          {:ok, %{samples: samples, rate: rate}} <- Audio.read(path) do
       case Hum.transcribe(samples, rate, tempo) do
-        %{notes: []} -> Mx.Command.fail("found no notes in #{path}")
-        %{notes: notes, beats: beats} -> Mx.Command.info(Hum.write(out, notes, beats, tempo))
+        %{notes: []} ->
+          Mx.Command.fail("found no notes in #{path}")
+
+        %{notes: notes, beats: beats} ->
+          out |> Hum.write(notes, beats, tempo) |> Mx.Command.info()
       end
     else
       {:error, message} -> Mx.Command.fail(message)

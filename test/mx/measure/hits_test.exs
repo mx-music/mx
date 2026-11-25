@@ -41,7 +41,7 @@ defmodule Mx.Measure.HitsTest do
 
   test "summary gives the median level and fade of each band over the hits" do
     hits = Hits.hits(hit(300, [{1, 1}, {3.9, 0.5}], 1.0), @rate, nil)
-    %{level: level, fade: fade} = Enum.find(Hits.summary(hits), &(&1.band == {250, 400}))
+    %{level: level, fade: fade} = hits |> Hits.summary() |> Enum.find(&(&1.band == {250, 400}))
     assert_in_delta level, 0, 0.5
     assert_in_delta fade, 1.0, 0.1
   end
@@ -102,7 +102,7 @@ defmodule Mx.Measure.HitsTest do
     assert_in_delta first, 0, 0.01
     assert_in_delta second, 2.2, 0.01
 
-    %{levels: [start, fifty | _]} = Enum.find(Hits.moments(hits), &(&1.band == {250, 400}))
+    %{levels: [start, fifty | _]} = hits |> Hits.moments() |> Enum.find(&(&1.band == {250, 400}))
     assert_in_delta start, 0, 1
     assert_in_delta fifty, -3, 1.5
   end
@@ -160,7 +160,10 @@ defmodule Mx.Measure.HitsTest do
     silence = List.duplicate(0.0, @rate)
     hits = Hits.hits(swelling() ++ silence ++ swelling(), @rate, nil)
     assert length(hits) == 2
-    %{levels: [_strike, swell, _after]} = Enum.find(Hits.brightness(hits), &(&1.above == 4000))
+
+    %{levels: [_strike, swell, _after]} =
+      hits |> Hits.brightness() |> Enum.find(&(&1.above == 4000))
+
     assert_in_delta swell, -3, 2
     assert_in_delta Hits.highs_peak(hits), 50, 8
   end

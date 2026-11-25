@@ -139,7 +139,9 @@ defmodule Mx.Out do
   end
 
   defp connections(state, nil) do
-    Enum.reduce(Midiex.ports(:output), {state, []}, fn port, {state, conns} ->
+    ports = Midiex.ports(:output)
+
+    Enum.reduce(ports, {state, []}, fn port, {state, conns} ->
       {state, named} = connections(state, port.name)
       {state, conns ++ named}
     end)

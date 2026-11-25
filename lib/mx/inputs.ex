@@ -124,7 +124,9 @@ defmodule Mx.Inputs do
 
   @impl true
   def handle_cast({:put, name, value, beat, at_us}, %{} = state) do
-    {later, earlier} = Enum.split_while(Map.get(state.shared, name, []), &(elem(&1, 0) > beat))
+    {later, earlier} =
+      state.shared |> Map.get(name, []) |> Enum.split_while(&(elem(&1, 0) > beat))
+
     {:noreply, put_in(state.shared[name], later ++ [{beat, value, at_us} | earlier])}
   end
 

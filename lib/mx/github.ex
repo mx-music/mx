@@ -22,7 +22,7 @@ defmodule Mx.GitHub do
   @doc "Downloads a file of a repository at a ref into the cache, and returns `:ok` or `{:error, reason}`."
   def fetch(repo, ref, path) do
     local = local(repo, ref, path)
-    File.mkdir_p!(Path.dirname(local))
+    local |> Path.dirname() |> File.mkdir_p!()
     url = Enum.join([raw_url(), repo, encode(ref), encode(path)], "/")
 
     result =

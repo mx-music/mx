@@ -118,7 +118,7 @@ defmodule Mx.InstrumentSongTest do
     assert_in_delta render.("half", ", fx: [quieter: []]"), dry - 6.02, 0.1
     assert_in_delta render.("quarter", ", fx: [quieter: [level: 0.25]]"), dry - 12.04, 0.1
 
-    {:ok, song} = Mx.Song.load(Path.join(ctx.tmp_dir, "half.exs"))
+    {:ok, song} = ctx.tmp_dir |> Path.join("half.exs") |> Mx.Song.load()
     assert Mx.Render.ring_out(song) == {:ok, %{seconds: 1.0, part: :x, effect: :quieter}}
   end
 
@@ -221,7 +221,8 @@ defmodule Mx.InstrumentSongTest do
   end
 
   test "every name Mx and the nodes share is the node inside a defeffect below import Mx" do
-    nodes = MapSet.new(Mx.Instrument.Vocabulary.__info__(:functions))
+    node_functions = Mx.Instrument.Vocabulary.__info__(:functions)
+    nodes = MapSet.new(node_functions)
     functions = Mx.__info__(:functions)
     shared = functions |> Enum.filter(&(&1 in nodes)) |> Enum.sort()
     assert shared == [clamp: 3, delay: 2]

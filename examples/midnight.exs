@@ -291,7 +291,7 @@ defmodule Midnight do
   # One breath of the oboe through its stretches, each {swara, beats}, starting on the first one's
   # kan if it has one.
   defp breath([{first, _} | _] = stretches, base, vel) do
-    held = Enum.sum(Enum.map(stretches, &elem(&1, 1)))
+    held = stretches |> Enum.map(&elem(&1, 1)) |> Enum.sum()
 
     {changes, _} =
       Enum.flat_map_reduce(stretches, 0, fn {swara, beats}, at ->
@@ -318,7 +318,7 @@ defmodule Midnight do
             {:cont, [note]}
 
           [{_, last, held} | _] ->
-            lasted = Enum.sum(Enum.map(breath, &elem(&1, 2)))
+            lasted = breath |> Enum.map(&elem(&1, 2)) |> Enum.sum()
 
             if not swara.glide and (swara.name == last.name or held >= longest or lasted >= 8) do
               {:cont, Enum.reverse(breath), [note]}

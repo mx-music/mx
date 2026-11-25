@@ -205,7 +205,7 @@ defmodule Mx.Notes do
   end
 
   defp offsets!([0 | _] = steps) do
-    rising? = Enum.all?(steps, &is_number/1) and steps == Enum.sort(Enum.uniq(steps))
+    rising? = Enum.all?(steps, &is_number/1) and steps == steps |> Enum.uniq() |> Enum.sort()
 
     if not rising? or List.last(steps) >= 12 do
       steps = inspect(steps)

@@ -56,7 +56,7 @@ defmodule Mix.Tasks.Mx.Export do
           Mx.Command.info("#{name} is left out: #{why}")
         end
 
-        Enum.each(Map.get(report, :notes, []), &Mx.Command.info/1)
+        report |> Map.get(:notes, []) |> Enum.each(&Mx.Command.info/1)
 
       {:error, message} ->
         Mx.Command.fail(message)

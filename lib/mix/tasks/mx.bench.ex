@@ -98,7 +98,7 @@ defmodule Mix.Tasks.Mx.Bench do
     header = "load,notes,late,least_lead_ms,least_later_lead_ms,longest_call_ms,held_ms"
     {keys, header} = with_late_buffers(rows, keys, header)
     IO.puts(header)
-    for row <- rows, do: IO.puts(Enum.map_join(keys, ",", &row[&1]))
+    for row <- rows, do: keys |> Enum.map_join(",", &row[&1]) |> IO.puts()
   end
 
   defp with_late_buffers([%{late_buffers: _} | _], keys, header) do
@@ -112,7 +112,7 @@ defmodule Mix.Tasks.Mx.Bench do
     header = "second,notes,late,longest_gap_ms,memory_mb,processes"
     {keys, header} = with_late_buffers(rows, keys, header)
     IO.puts(header)
-    for row <- rows, do: IO.puts(Enum.map_join(keys, ",", &row[&1]))
+    for row <- rows, do: keys |> Enum.map_join(",", &row[&1]) |> IO.puts()
 
     waits = Enum.join(loads.described_after_ms, ", ")
     IO.puts("loads by mx: #{loads.by_mx}; described to the window after, ms: #{waits}")

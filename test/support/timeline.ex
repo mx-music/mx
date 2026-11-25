@@ -55,7 +55,7 @@ defmodule Mx.Timeline do
 
     # A control names sounds by their place in the pass, which differs between notations, so it
     # names them by beat and note.
-    indexed = Map.new(Enum.with_index(events, fn event, index -> {index, event} end))
+    indexed = events |> Enum.with_index(fn event, index -> {index, event} end) |> Map.new()
 
     events =
       Enum.map(events, fn

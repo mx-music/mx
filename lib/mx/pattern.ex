@@ -66,7 +66,7 @@ defmodule Mx.Pattern do
   defp cells(["[" | words], cells) do
     case cells(words, []) do
       {inner, ["]" | words]} when inner != [] ->
-        total = Enum.sum(Enum.map(inner, & &1.steps))
+        total = inner |> Enum.map(& &1.steps) |> Enum.sum()
         shared = for cell <- inner, do: %{cell | steps: cell.steps / total}
         cells(words, Enum.reverse(shared) ++ cells)
 

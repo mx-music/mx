@@ -36,8 +36,8 @@ defmodule Mix.Tasks.Mx.WaveformTest do
 
     heights = heights(rows)
     {left, right} = Enum.split(heights, div(length(heights), 2))
-    assert Enum.uniq(Enum.drop(left, -1)) == [2]
-    assert Enum.min(Enum.drop(right, 1)) > 100
+    assert left |> Enum.drop(-1) |> Enum.uniq() == [2]
+    assert right |> Enum.drop(1) |> Enum.min() > 100
   end
 
   test "a recording with a crescendo has bars that grow from left to right", ctx do

@@ -62,7 +62,9 @@ defmodule Mix.Tasks.Mx.Fit do
     parsed = parse!(rest, %{dynamics: [], controls: [], from: 0, check: false, drone: false})
 
     dynamics =
-      Enum.map(Enum.reverse(parsed.dynamics), fn {vel, files} -> {vel, Enum.reverse(files)} end)
+      parsed.dynamics
+      |> Enum.reverse()
+      |> Enum.map(fn {vel, files} -> {vel, Enum.reverse(files)} end)
 
     controls = parsed.controls |> Enum.reverse() |> Enum.map(&control!(synth, &1))
 
@@ -309,7 +311,7 @@ defmodule Mix.Tasks.Mx.Fit do
     first_short = if kind == :held, do: "attack", else: "first 20 ms"
     average = if kind == :held, do: "on average where it holds", else: "on average"
     %{strong: strong, weaker: weaker, erb: erb} = Struck.summary(checks)
-    fit = Map.has_key?(hd(checks), :own) && Struck.summary(Enum.map(checks, & &1.own))
+    fit = Map.has_key?(hd(checks), :own) && checks |> Enum.map(& &1.own) |> Struck.summary()
     count = length(checks)
     IO.puts("#{heading} against #{count} recordings")
 
@@ -337,11 +339,8 @@ defmodule Mix.Tasks.Mx.Fit do
     print_pitch(Struck.pitch(checks), render)
     print_partials(checks, first_short)
 
-    print_loudness(
-      Struck.loudness(checks),
-      fit && Struck.loudness(Enum.map(checks, & &1.own)),
-      render
-    )
+    own_loudness = fit && checks |> Enum.map(& &1.own) |> Struck.loudness()
+    print_loudness(Struck.loudness(checks), own_loudness, render)
 
     print_notes(checks)
     print_room(checks)

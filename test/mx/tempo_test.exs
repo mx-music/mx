@@ -4,7 +4,7 @@ defmodule Mx.TempoTest do
   alias Mx.Tempo
 
   test "a rise from 100 to 130 bpm over 16 beats starts at 100, reaches 130 on beat 17, and shortens every beat between" do
-    timeline = Tempo.put(Tempo.new(100), 0, 130, 16)
+    timeline = 100 |> Tempo.new() |> Tempo.put(0, 130, 16)
 
     lengths =
       for beat <- 0..20, do: Tempo.time_at(timeline, beat + 1) - Tempo.time_at(timeline, beat)
@@ -21,7 +21,7 @@ defmodule Mx.TempoTest do
   end
 
   test "a fall from 120 to 90 bpm over 8 beats ends at 90 and stays there" do
-    timeline = Tempo.put(Tempo.new(120), 4, 90, 8)
+    timeline = 120 |> Tempo.new() |> Tempo.put(4, 90, 8)
 
     assert Tempo.tempo_at(timeline, 4) == 120
     assert Tempo.tempo_at(timeline, 8) == 105
@@ -31,7 +31,7 @@ defmodule Mx.TempoTest do
   end
 
   test "a ramp's time comes from the tempo rising evenly over its beats" do
-    timeline = Tempo.put(Tempo.new(60), 0, 120, 4)
+    timeline = 60 |> Tempo.new() |> Tempo.put(0, 120, 4)
 
     seconds = 4 * :math.log(2) / 60 * 60
     assert_in_delta Tempo.time_at(timeline, 4), seconds * 1_000_000, 1

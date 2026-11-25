@@ -9,7 +9,7 @@ defmodule Mx.Examples.DrumsTest do
   test "the solo plays only the drum kit" do
     for pass <- 0..20 do
       loops = Regex.scan(~r/^(\w+), pass /m, print(pass), capture: :all_but_first)
-      assert Enum.sort(List.flatten(loops)) == @kit
+      assert loops |> List.flatten() |> Enum.sort() == @kit
     end
 
     refute print(0) =~ "sample "

@@ -74,7 +74,7 @@ defmodule Mx.PhaserTest do
   # How far apart two runs of levels are, as a share of how far the first moves.
   defp apart(first, second) do
     mean = Enum.sum(first) / length(first)
-    moves = Enum.sum(Enum.map(first, &abs(&1 - mean)))
+    moves = first |> Enum.map(&abs(&1 - mean)) |> Enum.sum()
     Enum.sum(Enum.zip_with(first, second, &abs(&1 - &2))) / moves
   end
 
@@ -134,7 +134,7 @@ defmodule Mx.PhaserTest do
     {dry, _} = render(ctx, saw.("[]"))
     {off, _} = render(ctx, saw.("[phaser: [mix: 0]]"))
     peak = dry |> Enum.map(&abs/1) |> Enum.max()
-    furthest = Enum.max(Enum.zip_with(dry, off, &abs(&1 - &2)))
+    furthest = dry |> Enum.zip_with(off, &abs(&1 - &2)) |> Enum.max()
     assert db(furthest) <= db(peak) - 100
   end
 

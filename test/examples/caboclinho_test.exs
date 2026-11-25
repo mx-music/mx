@@ -62,7 +62,7 @@ defmodule Mx.Examples.CaboclinhoTest do
     bars = bars(0, "low_bongo", 1)
 
     for bar <- [0, 1, 2, 4, 5, 6] do
-      assert Enum.map(Enum.at(bars, bar), &elem(&1, 0)) == [0.0, 0.75]
+      assert bars |> Enum.at(bar) |> Enum.map(&elem(&1, 0)) == [0.0, 0.75]
     end
 
     assert Enum.at(bars, 3) != Enum.at(bars, 0)

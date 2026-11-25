@@ -315,7 +315,7 @@ defmodule Mx.MIDITest do
     {:ok, song, imported} = Mx.Import.load(path)
     assert song.tempo == 48
     assert imported.left_out == []
-    assert Path.wildcard(Path.join(dir, "*")) == [path]
+    assert dir |> Path.join("*") |> Path.wildcard() == [path]
 
     {:ok, song, imported} = Mx.Import.load(path, tempo: "48")
     assert song.tempo == 48
@@ -335,7 +335,7 @@ defmodule Mx.MIDITest do
 
     assert starts.("1/16") == [0, 0.5]
     assert starts.("1/32") == [0, 0.375, 0.5]
-    assert Path.wildcard(Path.join(dir, "*")) == [path]
+    assert dir |> Path.join("*") |> Path.wildcard() == [path]
   end
 
   test "a tempo change inside a bar is written at its beat on the grid", %{tmp_dir: dir} do
@@ -405,7 +405,7 @@ defmodule Mx.MIDITest do
   end
 
   defp tracks(path) do
-    {:ok, midi} = Mx.MIDI.parse(File.read!(path), path)
+    {:ok, midi} = path |> File.read!() |> Mx.MIDI.parse(path)
     midi.tracks
   end
 

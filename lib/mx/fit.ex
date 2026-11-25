@@ -132,8 +132,9 @@ defmodule Mx.Fit do
           given = [note: note, vel: vel, vibrato: 0, sustain: held]
           opts = for {key, value} <- given, Synths.option?(synth, key), do: {key, value}
 
-          Held.note(
-            Mxs.render_note(synth, opts ++ controls, held + 0.5, dir, []),
+          synth
+          |> Mxs.render_note(opts ++ controls, held + 0.5, dir, [])
+          |> Held.note(
             Mxs.render_rate(),
             note
           )

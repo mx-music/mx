@@ -51,7 +51,7 @@ defmodule Mx.Hum.RecorderTest do
 
       assert result == :ok
       assert printed =~ "Left out 1 note hummed during the count-in.\n"
-      assert File.read!(Path.join(ctx.tmp_dir, "hum.exs")) =~ "seq(e4: 1, r: 3)"
+      assert ctx.tmp_dir |> Path.join("hum.exs") |> File.read!() =~ "seq(e4: 1, r: 3)"
     end
 
     test "a click the microphone picks up is not a note", ctx do
@@ -59,7 +59,8 @@ defmodule Mx.Hum.RecorderTest do
 
       bleed =
         Enum.flat_map(0..11, fn _ ->
-          Enum.map(Mxs.render_note(:closed_hihat, [vel: 1.0], beat, ctx.tmp_dir, []), &(&1 * 0.5))
+          hit = Mxs.render_note(:closed_hihat, [vel: 1.0], beat, ctx.tmp_dir, [])
+          Enum.map(hit, &(&1 * 0.5))
         end)
 
       source = Path.join(ctx.tmp_dir, "bleed.wav")

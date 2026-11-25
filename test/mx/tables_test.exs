@@ -69,10 +69,10 @@ defmodule Mx.TablesTest do
       wav = "WAVE" <> "fmt " <> <<16::little-32>> <> format <> <<32::little-16>>
       body = wav <> "data" <> <<byte_size(data)::little-32>> <> data
       name = to_string(:io_lib.format("table-060-~3..0B.wav", [velocity]))
-      File.write!(Path.join(dir, name), "RIFF" <> <<byte_size(body)::little-32>> <> body)
+      dir |> Path.join(name) |> File.write!("RIFF" <> <<byte_size(body)::little-32>> <> body)
     end
 
-    File.mkdir_p!(Path.dirname(out))
+    out |> Path.dirname() |> File.mkdir_p!()
     args = ["electric_piano", "--struck", dir, "--notes", "C4:C4", "--out", out]
     capture_io(fn -> Mix.Tasks.Mx.Fit.run(args) end)
   end

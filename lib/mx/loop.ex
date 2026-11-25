@@ -614,7 +614,7 @@ defmodule Mx.Loop do
     delay_ms |> max(0) |> min(max_ms)
   end
 
-  defp pass_end_us(state), do: Band.time_at(Band.timeline(state.band), state.pass_end)
+  defp pass_end_us(state), do: state.band |> Band.timeline() |> Band.time_at(state.pass_end)
 
   defp warn(message), do: IO.puts(:stderr, message)
 

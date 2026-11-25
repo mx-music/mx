@@ -109,10 +109,10 @@ defmodule Mx.MusicTest do
 
       assert played(events(song, :pairs)) == [{0, 60}, {1, 64}]
 
-      assert Mx.beats(Mx.seq(1..3, fn n -> Mx.note(60 + n, 1) end)) == 3
-      assert Mx.beats(Mx.together([:c4, :e4], fn name -> Mx.note(name, 2) end)) == 2
-      assert Mx.beats(Mx.at([{0, 0.4}, {1.5, 0.8}], 4, fn vel -> Mx.hit(vel: vel) end)) == 4
-      assert Mx.beats(Mx.seq([:c4, :e4], fn name -> {name, 1} end)) == 2
+      assert 1..3 |> Mx.seq(fn n -> Mx.note(60 + n, 1) end) |> Mx.beats() == 3
+      assert [:c4, :e4] |> Mx.together(fn name -> Mx.note(name, 2) end) |> Mx.beats() == 2
+      assert [{0, 0.4}, {1.5, 0.8}] |> Mx.at(4, fn vel -> Mx.hit(vel: vel) end) |> Mx.beats() == 4
+      assert [:c4, :e4] |> Mx.seq(fn name -> {name, 1} end) |> Mx.beats() == 2
     end
 
     @tag :tmp_dir
@@ -440,10 +440,10 @@ defmodule Mx.MusicTest do
                beats: 4,
                opts: [changes: [{1, [note: 64]}, {2, [note: 67]}]]
              } =
-               Mx.slur(Mx.seq(c4: 1, e4: 1, g4: 2))
+               [c4: 1, e4: 1, g4: 2] |> Mx.seq() |> Mx.slur()
 
       assert %Mx.Music.Note{opts: [changes: [{2, [note: 64]}]]} =
-               Mx.slur(Mx.seq(c4: 1, c4: 1, e4: 1))
+               [c4: 1, c4: 1, e4: 1] |> Mx.seq() |> Mx.slur()
 
       slide = fn from, to -> if(abs(to - from) > 4, do: 0.1, else: 0.01) end
 
@@ -452,20 +452,22 @@ defmodule Mx.MusicTest do
                  changes: [{1, [note: 67, note_slide: 0.1]}, {2, [note: 69, note_slide: 0.01]}]
                ]
              } =
-               Mx.slur(Mx.seq(c4: 1, g4: 1, a4: 1), slide: slide)
+               [c4: 1, g4: 1, a4: 1] |> Mx.seq() |> Mx.slur(slide: slide)
 
       assert %Mx.Music.Note{opts: [changes: [{1, [note: 64]}, {1, [amp: 0.5]}]]} =
-               Mx.slur(Mx.seq(c4: 1, e4: 1), changes: [{1, amp: 0.5}])
+               [c4: 1, e4: 1] |> Mx.seq() |> Mx.slur(changes: [{1, amp: 0.5}])
 
       assert %Mx.Music.Note{opts: [changes: [{1, [note: 64]}, {2.0, [note: 67]}]]} =
-               Mx.slur(Mx.seq([Mx.seq(c4: 1), Mx.repeat(Mx.seq(e4: 0.5), 2), Mx.note(:g4, 1)]))
+               [Mx.seq(c4: 1), Mx.repeat(Mx.seq(e4: 0.5), 2), Mx.note(:g4, 1)]
+               |> Mx.seq()
+               |> Mx.slur()
 
-      assert Mx.slur(Mx.seq(c4: 2)) == Mx.note(:c4, 2)
+      assert [c4: 2] |> Mx.seq() |> Mx.slur() == Mx.note(:c4, 2)
 
       assert %Mx.Music.Note{opts: [amp: 0.5, vel: 0.3, changes: [{1, [note: 64]}]]} =
-               Mx.slur(Mx.seq([Mx.note(:c4, 1, vel: 0.5, amp: 0.5), Mx.note(:e4, 1, amp: 0.1)]),
-                 vel: 0.3
-               )
+               [Mx.note(:c4, 1, vel: 0.5, amp: 0.5), Mx.note(:e4, 1, amp: 0.1)]
+               |> Mx.seq()
+               |> Mx.slur(vel: 0.3)
     end
 
     @tag :tmp_dir
@@ -851,7 +853,7 @@ defmodule Mx.MusicTest do
     end
 
     test "a rest in a slur ends the note sounding and the note after it starts a new one, and rests at either end stay silence" do
-      music = Mx.slur(Mx.seq(a4: 1, c5: 1, r: 1, e5: 1))
+      music = [a4: 1, c5: 1, r: 1, e5: 1] |> Mx.seq() |> Mx.slur()
       assert Mx.beats(music) == 4
 
       assert music.items == [
@@ -860,7 +862,7 @@ defmodule Mx.MusicTest do
                Mx.note(76, 1)
              ]
 
-      edges = Mx.slur(Mx.seq(r: 1, a4: 1, c5: 1, r: 2))
+      edges = [r: 1, a4: 1, c5: 1, r: 2] |> Mx.seq() |> Mx.slur()
       assert Mx.beats(edges) == 5
       assert edges.items == [Mx.rest(1), Mx.note(69, 2, changes: [{1, [note: 72]}]), Mx.rest(2)]
     end
@@ -880,11 +882,12 @@ defmodule Mx.MusicTest do
                Mx.note(69, 2, changes: [{1, [note: 72]}])
              ]
 
-      assert Mx.slur(Mx.seq(a4: 1, a4: 1, c5: 1)) == Mx.note(69, 3, changes: [{2, [note: 72]}])
+      assert [a4: 1, a4: 1, c5: 1] |> Mx.seq() |> Mx.slur() ==
+               Mx.note(69, 3, changes: [{2, [note: 72]}])
     end
 
     test "the slur's options go to each note it makes" do
-      music = Mx.slur(Mx.seq(a4: 1, r: 1, c5: 1), slide: 0.1, vel: 0.6)
+      music = [a4: 1, r: 1, c5: 1] |> Mx.seq() |> Mx.slur(slide: 0.1, vel: 0.6)
       assert [%{opts: [vel: 0.6]}, %Mx.Music.Rest{}, %{opts: [vel: 0.6]}] = music.items
     end
 
@@ -1109,7 +1112,8 @@ defmodule Mx.MusicTest do
          ctx do
       assert sustains(ctx, "note(:c4, 2, held: 0.9)") == [{0, 60, 1.8, nil}]
       assert sustains(ctx, "note(:c4, 2, held: 1.5)") == [{0, 60, 3.0, nil}]
-      assert Mx.beats(Mx.note(:c4, 2, held: 0.9)) == 2
+      note = Mx.note(:c4, 2, held: 0.9)
+      assert Mx.beats(note) == 2
     end
 
     @tag :tmp_dir

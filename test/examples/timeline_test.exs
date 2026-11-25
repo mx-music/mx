@@ -28,7 +28,7 @@ defmodule Mx.Examples.TimelineTest do
       spans = Map.new(expected, fn {name, {_events, beats}} -> {name, beats} end)
       played = Mx.Timeline.by_beats(@song, spans)
 
-      assert Enum.sort(Map.keys(played)) == Enum.sort(Map.keys(expected))
+      assert played |> Map.keys() |> Enum.sort() == expected |> Map.keys() |> Enum.sort()
 
       for {name, {events, _beats}} <- expected do
         {played_events, _} = played[name]

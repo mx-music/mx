@@ -8,7 +8,7 @@ defmodule Mx.Examples.TambourineTest do
   test "the solo plays only the tambourine, struck and shaken" do
     for pass <- 0..7 do
       loops = Regex.scan(~r/^(\w+), pass /m, print(pass), capture: :all_but_first)
-      assert Enum.sort(List.flatten(loops)) == ~w(tambourine tambourine_shake)
+      assert loops |> List.flatten() |> Enum.sort() == ~w(tambourine tambourine_shake)
     end
 
     refute print(0) =~ "sample "

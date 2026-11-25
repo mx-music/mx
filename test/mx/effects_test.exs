@@ -105,7 +105,7 @@ defmodule Mx.EffectsTest do
     for {shape, index} <- Enum.with_index(shapes),
         {other, other_index} <- Enum.with_index(shapes),
         index < other_index do
-      assert Enum.sum(Enum.zip_with(shape, other, &abs(&1 - &2))) > 0.5
+      assert shape |> Enum.zip_with(other, &abs(&1 - &2)) |> Enum.sum() > 0.5
     end
   end
 

@@ -444,7 +444,7 @@ defmodule Mx.DesignsTest do
         levels |> Enum.chunk_every(2, 1, :discard) |> Enum.map(fn [from, to] -> to - from end)
       end
 
-    [first, later] = for at <- 0..1, do: Signal.median(Enum.map(drops, &Enum.at(&1, at)))
+    [first, later] = for at <- 0..1, do: drops |> Enum.map(&Enum.at(&1, at)) |> Signal.median()
     assert_in_delta first, -13.8, 6
     assert_in_delta later, -14.3, 6
   end
@@ -481,7 +481,7 @@ defmodule Mx.DesignsTest do
       levels =
         for note <- [84, 88, 92, 96] do
           sound = render(ctx, :piano, [note: note, vel: 0.6, sustain: 60] ++ opts, 0.5)
-          spectrum = Signal.spectrum(List.to_tuple(sound), 0, 4096)
+          spectrum = sound |> List.to_tuple() |> Signal.spectrum(0, 4096)
 
           power = fn low, high ->
             bins = ceil(low * 4096 / @rate)..floor(high * 4096 / @rate)
@@ -737,7 +737,7 @@ defmodule Mx.DesignsTest do
         )
         |> Enum.map(fn {:ok, hit} -> hit end)
 
-      measured = Map.new(Hits.summary(hits), &{&1.band, &1})
+      measured = hits |> Hits.summary() |> Map.new(&{&1.band, &1})
 
       for {band, {level, fade}} <- bands do
         %{level: synth_level, fade: synth_fade} = measured[band]
@@ -875,7 +875,7 @@ defmodule Mx.DesignsTest do
         )
         |> Enum.map(fn {:ok, hit} -> hit end)
 
-      measured = Map.new(Hits.summary(hits), &{&1.band, &1})
+      measured = hits |> Hits.summary() |> Map.new(&{&1.band, &1})
 
       for {band, {level, fade}} <- bands do
         %{level: synth_level, fade: synth_fade} = measured[band]
@@ -1008,7 +1008,7 @@ defmodule Mx.DesignsTest do
         )
         |> Enum.map(fn {:ok, hit} -> hit end)
 
-      measured = Map.new(Hits.summary(hits), &{&1.band, &1})
+      measured = hits |> Hits.summary() |> Map.new(&{&1.band, &1})
 
       for {band, {level, fade}} <- bands do
         %{level: synth_level, fade: synth_fade} = measured[band]
@@ -2675,7 +2675,7 @@ defmodule Mx.DesignsTest do
         )
         |> Enum.map(fn {:ok, hit} -> hit end)
 
-      measured = Map.new(Hits.summary(hits), &{&1.band, &1})
+      measured = hits |> Hits.summary() |> Map.new(&{&1.band, &1})
 
       for {band, {level, fade}} <- bands do
         %{level: synth_level, fade: synth_fade} = measured[band]
@@ -3216,7 +3216,7 @@ defmodule Mx.DesignsTest do
   test "each agogô bell's bands and fades follow VCSL's agogô", ctx do
     for {synth, %{bands: bands}} <- @agogo do
       hit = Hits.hit(render(ctx, synth, [], 3), @rate, nil)
-      measured = Map.new(Hits.summary([hit]), &{&1.band, &1})
+      measured = [hit] |> Hits.summary() |> Map.new(&{&1.band, &1})
 
       for {band, {level, fade}} <- bands do
         %{level: synth_level, fade: synth_fade} = measured[band]
@@ -3337,7 +3337,7 @@ defmodule Mx.DesignsTest do
   test "the ganzá's and the shaker's down and up strokes follow VCSL's shakers", ctx do
     for {synth, opts, bands} <- @shakes do
       hit = Hits.hit(render(ctx, synth, opts, 3), @rate, nil)
-      measured = Map.new(Hits.summary([hit]), &{&1.band, &1})
+      measured = [hit] |> Hits.summary() |> Map.new(&{&1.band, &1})
 
       for {band, {level, fade}} <- bands do
         name = "#{synth} #{inspect(opts)} #{inspect(band)}"
@@ -4563,7 +4563,7 @@ defmodule Mx.DesignsTest do
         )
         |> Enum.map(fn {:ok, hit} -> hit end)
 
-      measured = Map.new(Hits.summary(hits), &{&1.band, &1})
+      measured = hits |> Hits.summary() |> Map.new(&{&1.band, &1})
 
       for {band, {level, fade}} <- bands do
         %{level: synth_level, fade: synth_fade} = measured[band]
@@ -4790,7 +4790,7 @@ defmodule Mx.DesignsTest do
     for {drum, strokes} <- @congas, {stroke, bands} <- strokes do
       opts = if stroke == :tap, do: [vel: 0.3, mute: 1], else: [vel: stroke]
       hit = Hits.hit(render(ctx, drum, opts, 1.5), @rate, nil)
-      measured = Map.new(Hits.summary([hit]), &{&1.band, &1})
+      measured = [hit] |> Hits.summary() |> Map.new(&{&1.band, &1})
 
       for {band, {level, fade}} <- bands do
         %{level: synth_level, fade: synth_fade} = measured[band]
@@ -4889,7 +4889,7 @@ defmodule Mx.DesignsTest do
        ctx do
     for {vel, bands} <- @tambourine do
       hit = Hits.hit(render(ctx, :tambourine, [vel: vel], 2.5), @rate, nil)
-      measured = Map.new(Hits.summary([hit]), &{&1.band, &1})
+      measured = [hit] |> Hits.summary() |> Map.new(&{&1.band, &1})
 
       for {band, {level, fade}} <- bands do
         %{level: synth_level, fade: synth_fade} = measured[band]
@@ -4970,7 +4970,7 @@ defmodule Mx.DesignsTest do
        ctx do
     for {opts, bands} <- @triangle do
       hit = Hits.hit(render(ctx, :triangle, opts, 12), @rate, nil)
-      measured = Map.new(Hits.summary([hit]), &{&1.band, &1})
+      measured = [hit] |> Hits.summary() |> Map.new(&{&1.band, &1})
 
       for {band, {level, fade}} <- bands do
         %{level: synth_level, fade: synth_fade} = measured[band]
@@ -5046,7 +5046,7 @@ defmodule Mx.DesignsTest do
        ctx do
     for {vel, bands} <- @clave do
       hit = Hits.hit(render(ctx, :clave, [vel: vel], 1.5), @rate, nil)
-      measured = Map.new(Hits.summary([hit]), &{&1.band, &1})
+      measured = [hit] |> Hits.summary() |> Map.new(&{&1.band, &1})
 
       for {band, {level, fade}} <- bands do
         %{level: synth_level, fade: synth_fade} = measured[band]
@@ -5121,7 +5121,7 @@ defmodule Mx.DesignsTest do
        ctx do
     for {opts, bands} <- @cowbell do
       hit = Hits.hit(render(ctx, :cowbell, opts, 1.5), @rate, nil)
-      measured = Map.new(Hits.summary([hit]), &{&1.band, &1})
+      measured = [hit] |> Hits.summary() |> Map.new(&{&1.band, &1})
 
       for {band, {level, fade}} <- bands do
         %{level: synth_level, fade: synth_fade} = measured[band]
@@ -5189,7 +5189,7 @@ defmodule Mx.DesignsTest do
   test "guiro starts and fades in each band as Iowa's and VSCO 2's güiros do", ctx do
     for {opts, bands} <- @guiro do
       hit = Hits.hit(render(ctx, :guiro, opts, 1.5), @rate, nil)
-      measured = Map.new(Hits.summary([hit]), &{&1.band, &1})
+      measured = [hit] |> Hits.summary() |> Map.new(&{&1.band, &1})
 
       for {band, {level, fade}} <- bands do
         %{level: synth_level, fade: synth_fade} = measured[band]
@@ -5385,7 +5385,7 @@ defmodule Mx.DesignsTest do
   test "each tabla stroke's bands and fades follow mmiron's tabla bols", ctx do
     for {synth, %{length: length, bands: bands}} <- @tabla do
       hit = Hits.hit(render(ctx, synth, [], length), @rate, nil)
-      measured = Map.new(Hits.summary([hit]), &{&1.band, &1})
+      measured = [hit] |> Hits.summary() |> Map.new(&{&1.band, &1})
 
       for {band, {level, fade}} <- bands do
         %{level: synth_level, fade: synth_fade} = measured[band]
@@ -5471,8 +5471,8 @@ defmodule Mx.DesignsTest do
   test "a berimbau stroke's bands follow EliasArtista's jam as it is struck and 50, 100 and 200 ms after",
        ctx do
     hit = Hits.hit(render(ctx, :berimbau, [gourd: 0], 3), @rate, nil)
-    levels = Map.new(Hits.summary([hit]), &{&1.band, &1.level})
-    moments = Map.new(Hits.moments([hit]), &{&1.band, tl(&1.levels)})
+    levels = [hit] |> Hits.summary() |> Map.new(&{&1.band, &1.level})
+    moments = [hit] |> Hits.moments() |> Map.new(&{&1.band, tl(&1.levels)})
 
     for {band, {level, later}} <- @berimbau do
       assert_in_delta levels[band], level, 6, "#{inspect(band)} at #{levels[band]} dB"
@@ -5535,11 +5535,11 @@ defmodule Mx.DesignsTest do
 
     peaks =
       for {[before, here, next], index} <-
-            Enum.with_index(Enum.chunk_every(moving, 3, 1, :discard)),
+            moving |> Enum.chunk_every(3, 1, :discard) |> Enum.with_index(),
           here > before and here >= next and here > Enum.max(moving) - 10,
           do: (index + 3) * 0.02
 
-    gaps = Enum.zip_with(Enum.drop(peaks, 1), peaks, &(&1 - &2))
+    gaps = peaks |> Enum.drop(1) |> Enum.zip_with(peaks, &(&1 - &2))
     assert length(gaps) >= 3, "peaks at #{inspect(peaks)}"
     assert_in_delta median(gaps), 0.43, 0.065
 
@@ -5592,7 +5592,7 @@ defmodule Mx.DesignsTest do
         Measure.note(render(ctx, :sitar, [note: note], 4.4), @rate, note)
       end
 
-    measured = Map.new(Measure.bands(notes), &{&1.band, &1})
+    measured = notes |> Measure.bands() |> Map.new(&{&1.band, &1})
 
     for {band, {fade, level}} <- @sitar.bands do
       %{level: synth_level, fade: synth_fade} = measured[band]
@@ -5907,7 +5907,7 @@ defmodule Mx.DesignsTest do
       Enum.sum(for band <- @pandeiro_bands, do: 10 ** (level.(spectrum, band) / 10))
     end
 
-    loudest = Enum.max_by(Enum.take_every(0..20, 2), &power.(spectrum.(&1)))
+    loudest = 0..20 |> Enum.take_every(2) |> Enum.max_by(&power.(spectrum.(&1)))
     top = @pandeiro_bands |> Enum.map(&level.(spectrum.(loudest), &1)) |> Enum.max()
 
     for band <- @pandeiro_bands do
@@ -6024,13 +6024,13 @@ defmodule Mx.DesignsTest do
   # 65536 samples from 0.3 seconds in.
   defp loudest_bins(sound, low, high) do
     size = 65_536
-    spectrum = Signal.spectrum(List.to_tuple(sound), round(0.3 * @rate), size)
+    spectrum = sound |> List.to_tuple() |> Signal.spectrum(round(0.3 * @rate), size)
 
     bins =
       for bin <- round(low * size / @rate)..round(high * size / @rate), do: elem(spectrum, bin)
 
     loudest = bins |> Enum.sort(:desc) |> Enum.take(div(length(bins), 100))
-    Signal.db(Signal.median(loudest))
+    loudest |> Signal.median() |> Signal.db()
   end
 
   defp piano_notes(ctx, vel, notes, opts) do
@@ -6154,7 +6154,7 @@ defmodule Mx.DesignsTest do
   # The frequency between 30 and 600 Hz with the most energy, measured one frequency at a time.
   # The frequency of the loudest peak of the sound's first 0.17 seconds.
   defp loudest_hz(sound, below \\ 23_400) do
-    spectrum = Signal.spectrum(List.to_tuple(sound), 0, 8192)
+    spectrum = sound |> List.to_tuple() |> Signal.spectrum(0, 8192)
     last = round(below * 8192 / @rate)
     at = Enum.max_by(2..last, &elem(spectrum, &1))
     {position, _} = Signal.refine(spectrum, at)

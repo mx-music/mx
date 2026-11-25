@@ -160,7 +160,8 @@ defmodule Mx.Bench do
   end
 
   defp render do
-    Mxs.render_to(System.os_time(:microsecond))
+    now = System.os_time(:microsecond)
+    Mxs.render_to(now)
     Process.sleep(10)
     render()
   end
@@ -271,7 +272,9 @@ defmodule Mx.Bench do
   defp window(table, at, session, due) do
     receive do
       :subscribe ->
-        {Watcher, watcher, _, _} = List.keyfind(Supervisor.which_children(session), Watcher, 0)
+        {Watcher, watcher, _, _} =
+          session |> Supervisor.which_children() |> List.keyfind(Watcher, 0)
+
         Watcher.subscribe(watcher)
         window(table, at, session, due)
 

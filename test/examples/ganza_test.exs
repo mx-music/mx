@@ -8,7 +8,7 @@ defmodule Mx.Examples.GanzaTest do
   test "the solo plays the ganzá, joined by the shaker after its first section" do
     for pass <- 0..11 do
       loops = Regex.scan(~r/^(\w+), pass \d+, /m, print(pass), capture: :all_but_first)
-      assert Enum.sort(List.flatten(loops)) == ["ganza", "shaker"]
+      assert loops |> List.flatten() |> Enum.sort() == ["ganza", "shaker"]
     end
 
     refute print(0) =~ "shaker, pass 0, 4 beats at 100 bpm\nbeat"

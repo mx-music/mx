@@ -8,7 +8,7 @@ defmodule Mx.Examples.BongosTest do
   test "the solo plays only the bongos" do
     for pass <- 0..20 do
       loops = Regex.scan(~r/^(\w+), pass /m, print(pass), capture: :all_but_first)
-      assert Enum.sort(List.flatten(loops)) == ["high_bongo", "low_bongo"]
+      assert loops |> List.flatten() |> Enum.sort() == ["high_bongo", "low_bongo"]
     end
 
     refute print(0) =~ "sample "

@@ -102,7 +102,7 @@ defmodule Mx.Watcher do
 
   defp describe(state), do: state
 
-  defp tell(state, message), do: Enum.each(Map.keys(state.subscribers), &send(&1, message))
+  defp tell(state, message), do: state.subscribers |> Map.keys() |> Enum.each(&send(&1, message))
 
   defp read(path) do
     case File.read(path) do

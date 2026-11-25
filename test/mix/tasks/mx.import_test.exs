@@ -214,7 +214,7 @@ defmodule Mix.Tasks.Mx.ImportTest do
     path = score!(dir, "marked.musicxml", [{"Flute", [attributes(4) <> mark <> note("C", 5, 4)]}])
     import!([path])
 
-    assert File.read!(Path.join(dir, "marked.exs")) =~ "use Mx.Song, tempo: 72\n"
+    assert dir |> Path.join("marked.exs") |> File.read!() =~ "use Mx.Song, tempo: 72\n"
   end
 
   test "a dotted quarter in 6/8 lasts 1.5 beats", %{tmp_dir: dir} do
@@ -365,7 +365,7 @@ defmodule Mix.Tasks.Mx.ImportTest do
     {:ok, files} = :zip.unzip(String.to_charlist(@chorale), [:memory])
     {_, xml} = Enum.find(files, fn {name, _} -> to_string(name) == "bwv140.7.xml" end)
     plain = Path.join([dir, "plain", "bwv140.7.musicxml"])
-    File.mkdir_p!(Path.dirname(plain))
+    plain |> Path.dirname() |> File.mkdir_p!()
     File.write!(plain, xml)
 
     import!([ctx.score, "--tempo", "100"])

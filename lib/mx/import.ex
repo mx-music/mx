@@ -243,7 +243,9 @@ defmodule Mx.Import do
       end)
 
     bars =
-      Enum.map_join(Enum.zip(rendered, names), "\n\n", fn {bars, name} ->
+      rendered
+      |> Enum.zip(names)
+      |> Enum.map_join("\n\n", fn {bars, name} ->
         bars
         |> Enum.uniq_by(&if(same?, do: elem(&1, 0), else: {elem(&1, 0), elem(&1, 1)}))
         |> Enum.sort_by(&{elem(&1, 0), elem(&1, 1)})
@@ -262,7 +264,9 @@ defmodule Mx.Import do
     order = if same?, do: order(score.runs), else: inspect(times(score.order), limit: :infinity)
 
     declarations =
-      Enum.map_join(Enum.zip(parts, names), "\n", fn {{_part, synth}, name} ->
+      parts
+      |> Enum.zip(names)
+      |> Enum.map_join("\n", fn {{_part, synth}, name} ->
         "  part :#{name}, synth: :#{synth}"
       end)
 

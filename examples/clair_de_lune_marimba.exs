@@ -95,7 +95,9 @@ defmodule ClairDeLune.Marimba do
           do: {beat, notes |> Enum.filter(&(&1 >= 48)) |> Enum.map(&in_range/1), length}
 
     tops =
-      Map.new(Enum.group_by(own, &elem(&1, 0), &elem(&1, 1)), fn {beat, sets} ->
+      own
+      |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
+      |> Map.new(fn {beat, sets} ->
         {beat, sets |> List.flatten() |> Enum.max()}
       end)
 

@@ -34,7 +34,7 @@ defmodule Mx.OSCTest do
   end
 
   test "decodes a reply message" do
-    assert OSC.decode(OSC.message("/done", ["/d_loadDir"])) == {"/done", ["/d_loadDir"]}
+    assert "/done" |> OSC.message(["/d_loadDir"]) |> OSC.decode() == {"/done", ["/d_loadDir"]}
   end
 
   test "decodes doubles, such as other programs send" do

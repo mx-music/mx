@@ -188,18 +188,18 @@ defmodule Mix.Tasks.Bench.Paired do
   ]
 
   defp print(rows) do
-    values = for row <- rows, do: Enum.map(Keyword.keys(@columns), &cell(row[&1]))
+    values = for row <- rows, do: @columns |> Keyword.keys() |> Enum.map(&cell(row[&1]))
     cells = [Keyword.values(@columns) | values]
 
     widths =
       cells
       |> Enum.zip_with(& &1)
-      |> Enum.map(fn column -> Enum.max(Enum.map(column, &String.length/1)) end)
+      |> Enum.map(fn column -> column |> Enum.map(&String.length/1) |> Enum.max() end)
 
     for [name | figures] <- cells do
       [width | rest] = widths
       padded = Enum.zip_with(figures, rest, &String.pad_leading/2)
-      IO.puts(Enum.join([String.pad_trailing(name, width) | padded], "  "))
+      [String.pad_trailing(name, width) | padded] |> Enum.join("  ") |> IO.puts()
     end
 
     mean = :math.exp(Enum.sum(for row <- rows, do: :math.log(max(row.times, 0.1))) / length(rows))

@@ -149,7 +149,7 @@ defmodule Mx.GitHubSamplesTest do
     assert {:ok, %{events: events}} = Pass.events(hd(song.loops), 0)
     played = for {_, {:sample, _, path}, _} <- events, do: Path.basename(path)
     assert played == ["Agogo_High_v1_rr1_Mid.wav", "Agogo_Low_v1_rr1_Mid.wav"]
-    assert File.exists?(Mx.GitHub.local(@repo, @commit, @low))
+    assert @repo |> Mx.GitHub.local(@commit, @low) |> File.exists?()
 
     cut_network()
     Application.put_env(:mx, :github_api_url, "http://127.0.0.1:1")
@@ -198,20 +198,17 @@ defmodule Mx.GitHubSamplesTest do
       tmp_dir: dir
     } do
       source = "#{@repo}@#{@commit}:#{@folder}"
-      folder = Path.dirname(Mx.GitHub.local(@repo, @commit, "file"))
+      folder = @repo |> Mx.GitHub.local(@commit, "file") |> Path.dirname()
 
       assert Samples.download_source(source) ==
                {:ok, "Downloaded 2 files to #{folder}, and #{source} is complete."}
 
-      assert File.exists?(Mx.GitHub.local(@repo, @commit, @low))
+      assert @repo |> Mx.GitHub.local(@commit, @low) |> File.exists?()
 
-      refute File.exists?(
-               Mx.GitHub.local(
-                 @repo,
-                 @commit,
-                 "Membranophones/Bass Drum 1/BDrumNew_hit_v2_rr1_Sum.wav"
-               )
-             )
+      kick =
+        Mx.GitHub.local(@repo, @commit, "Membranophones/Bass Drum 1/BDrumNew_hit_v2_rr1_Sum.wav")
+
+      refute File.exists?(kick)
 
       assert Samples.download_source(source) == {:ok, "#{source} is complete in #{folder}."}
 
@@ -232,7 +229,7 @@ defmodule Mx.GitHubSamplesTest do
       assert message =~ "Could not download #{@low}: GitHub answered 500.\n"
       assert message =~ "The 1 files downloaded before it stay in"
       assert message =~ "run mix mx.samples.download #{source} again to finish."
-      assert File.exists?(Mx.GitHub.local(@repo, @commit, @agogo))
+      assert @repo |> Mx.GitHub.local(@commit, @agogo) |> File.exists?()
 
       FakeGitHub.start(%{@repo => %{@commit => %{files | @low => wav}}},
         dir: Path.join(dir, "again")
@@ -280,7 +277,9 @@ defmodule Mx.GitHubSamplesTest do
     setup %{tmp_dir: dir} do
       served = Path.join(dir, "served")
       File.mkdir_p!(served)
-      for name <- Samples.names() ++ ["README.md"], do: File.write!(Path.join(served, name), name)
+
+      for name <- Samples.names() ++ ["README.md"],
+          do: served |> Path.join(name) |> File.write!(name)
 
       {:ok, server} =
         :inets.start(:httpd,
@@ -324,7 +323,10 @@ defmodule Mx.GitHubSamplesTest do
 
     test "a pack downloaded before stays where it is and downloads nothing", %{pack: pack} do
       File.mkdir_p!(pack)
-      for name <- Samples.names() ++ ["README.md"], do: File.write!(Path.join(pack, name), name)
+
+      for name <- Samples.names() ++ ["README.md"],
+          do: pack |> Path.join(name) |> File.write!(name)
+
       Application.put_env(:mx, :samples_url, "http://127.0.0.1:1")
 
       assert Samples.download_source("sonic_pi") ==

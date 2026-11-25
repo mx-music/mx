@@ -86,10 +86,9 @@ defmodule Mix.Tasks.Mx.SpectrogramTest do
       "WAVE" <>
         "fmt " <> <<16::little-32>> <> fmt <> "data" <> <<byte_size(stereo)::little-32>> <> stereo
 
-    File.write!(
-      Path.join(ctx.tmp_dir, "stereo.wav"),
-      "RIFF" <> <<byte_size(wav)::little-32>> <> wav
-    )
+    ctx.tmp_dir
+    |> Path.join("stereo.wav")
+    |> File.write!("RIFF" <> <<byte_size(wav)::little-32>> <> wav)
 
     floats = for sample <- samples, into: <<>>, do: <<sample::float-big-32>>
     # 48,000 as the 80-bit float AIFF writes its rate in.
@@ -100,10 +99,10 @@ defmodule Mix.Tasks.Mx.SpectrogramTest do
       "AIFC" <>
         "COMM" <> <<byte_size(comm)::32>> <> comm <> "SSND" <> <<byte_size(ssnd)::32>> <> ssnd
 
-    File.write!(Path.join(ctx.tmp_dir, "big.aifc"), "FORM" <> <<byte_size(aiff)::32>> <> aiff)
+    ctx.tmp_dir |> Path.join("big.aifc") |> File.write!("FORM" <> <<byte_size(aiff)::32>> <> aiff)
 
     for name <- ["stereo", "big"] do
-      [path] = Path.wildcard(Path.join(ctx.tmp_dir, name <> ".*"))
+      [path] = ctx.tmp_dir |> Path.join(name <> ".*") |> Path.wildcard()
       capture_io(fn -> Spectrogram.run([path]) end)
       assert read_png(Path.join(ctx.tmp_dir, name <> ".png")) == expected
     end

@@ -43,6 +43,6 @@ defmodule Mx.SynthsFamilyTest do
     wav = Path.join(dir, "low.wav")
     :ok = Mx.Render.render(song, wav, seconds: 1.5, force: true)
     {:ok, audio} = Mx.Audio.read(wav)
-    assert Enum.max(Enum.map(audio.samples, &abs/1)) > 0.01
+    assert audio.samples |> Enum.map(&abs/1) |> Enum.max() > 0.01
   end
 end

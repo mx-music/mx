@@ -122,9 +122,9 @@ defmodule Mx.Pass do
     chord? = is_list(notes)
     opts = opts ++ Keyword.drop(defaults, [:held | Keyword.keys(opts)])
     {strum, opts} = Keyword.pop(opts, :strum, 0)
-    notes = Enum.map(List.wrap(notes), &if(&1 == :own_note, do: &1, else: Notes.note(&1)))
+    notes = notes |> List.wrap() |> Enum.map(&if(&1 == :own_note, do: &1, else: Notes.note(&1)))
 
-    case notes != [] && Enum.find(Keyword.keys(opts), &(not Synths.option?(synth, &1))) do
+    case notes != [] && opts |> Keyword.keys() |> Enum.find(&(not Synths.option?(synth, &1))) do
       option when is_atom(option) and option not in [nil, false] ->
         owner = Synths.owner(synth)
         raise ArgumentError, "#{owner} has no option #{option}"

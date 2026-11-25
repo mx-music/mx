@@ -149,7 +149,9 @@ defmodule Choro do
 
   defp bar_notes(bar) do
     {notes, _} =
-      Enum.flat_map_reduce(String.split(bar), 0, fn token, slot ->
+      bar
+      |> String.split()
+      |> Enum.flat_map_reduce(0, fn token, slot ->
         {name, held} =
           case String.split(token, ":") do
             [name] -> {name, 1}
@@ -327,7 +329,9 @@ defmodule Choro do
 
         # The first string the pick meets sounds loudest: the lowest going down, the highest
         # coming up.
-        down = Enum.map(Enum.take([1, 0.9, 0.85, 0.8], length(notes)), &Float.round(&1 * vel, 2))
+        down =
+          [1, 0.9, 0.85, 0.8] |> Enum.take(length(notes)) |> Enum.map(&Float.round(&1 * vel, 2))
+
         vels = if strum > 0, do: down, else: Enum.reverse(down)
 
         {swing(beat) + abs(strum),

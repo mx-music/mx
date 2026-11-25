@@ -117,7 +117,7 @@ defmodule Mx.CollectionsTest do
     test "a collection's name downloads its repository at its commit, and a folder after a colon only that folder" do
       source = "vcsl:#{@folder}"
       assert {:ok, "Downloaded 2 files to " <> _} = Samples.download_source(source)
-      assert File.exists?(Mx.GitHub.local(@repo, @commit, @low))
+      assert @repo |> Mx.GitHub.local(@commit, @low) |> File.exists?()
       assert {:ok, message} = Samples.download_source("vcsl")
       assert message =~ "vcsl is complete in"
     end

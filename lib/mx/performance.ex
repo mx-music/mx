@@ -60,7 +60,7 @@ defmodule Mx.Performance do
   end
 
   defp wav(path) do
-    if String.downcase(Path.extname(path)) == ".wav" do
+    if path |> Path.extname() |> String.downcase() == ".wav" do
       :ok
     else
       {:error, "give the recording as a WAV file, not #{path}"}

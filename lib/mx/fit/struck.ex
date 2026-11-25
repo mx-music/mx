@@ -310,7 +310,7 @@ defmodule Mx.Fit.Struck do
     end)
   end
 
-  defp comment?(line), do: String.starts_with?(String.trim_leading(line), "#")
+  defp comment?(line), do: line |> String.trim_leading() |> String.starts_with?("#")
 
   defp line(line, folder) do
     with [notes, velocity, rest] <- String.split(line, ~r/\s+/, parts: 3),
@@ -463,7 +463,7 @@ defmodule Mx.Fit.Struck do
           |> Native.check_fit_struck(how)
           |> Map.merge(Map.take(recording, [:path, :note, :velocity, :kept]))
 
-        File.mkdir_p!(Path.dirname(path))
+        path |> Path.dirname() |> File.mkdir_p!()
         File.write!(path, :erlang.term_to_binary(check))
         check
     end

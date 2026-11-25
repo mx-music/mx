@@ -56,13 +56,13 @@ defmodule Mix.Tasks.Mx.ExportTest do
       capture_io(fn -> Export.run([song, "--out", Path.join(dir, file) | args]) end)
     end
 
-    assert File.read!(Path.join(dir, "waltz.musicxml")) =~
+    assert dir |> Path.join("waltz.musicxml") |> File.read!() =~
              "<time><beats>3</beats><beat-type>4</beat-type></time>"
 
-    assert File.read!(Path.join(dir, "common.musicxml")) =~
+    assert dir |> Path.join("common.musicxml") |> File.read!() =~
              "<time><beats>4</beats><beat-type>4</beat-type></time>"
 
-    assert File.read!(Path.join(dir, "waltz.abc")) =~ "\nM:3/4\n"
+    assert dir |> Path.join("waltz.abc") |> File.read!() =~ "\nM:3/4\n"
     {:ok, midi} = dir |> Path.join("waltz.mid") |> File.read!() |> Mx.MIDI.parse("waltz.mid")
     signatures = for {_, {:meta, 0x58, time}} <- hd(midi.tracks), do: time
     assert [<<3, 2, 24, 8>>] = signatures
@@ -86,13 +86,13 @@ defmodule Mix.Tasks.Mx.ExportTest do
       capture_io(fn -> Export.run([song, "--out", Path.join(dir, file) | args]) end)
     end
 
-    assert File.read!(Path.join(dir, "minor.musicxml")) =~
+    assert dir |> Path.join("minor.musicxml") |> File.read!() =~
              "<key><fifths>1</fifths><mode>minor</mode></key>"
 
-    assert File.read!(Path.join(dir, "major.musicxml")) =~
+    assert dir |> Path.join("major.musicxml") |> File.read!() =~
              "<key><fifths>2</fifths><mode>major</mode></key>"
 
-    assert File.read!(Path.join(dir, "minor.abc")) =~ "\nK:Em"
+    assert dir |> Path.join("minor.abc") |> File.read!() =~ "\nK:Em"
     {:ok, midi} = dir |> Path.join("minor.mid") |> File.read!() |> Mx.MIDI.parse("minor.mid")
     keys = for {_, {:meta, 0x59, key}} <- hd(midi.tracks), do: key
     assert [<<1, 1>>] = keys

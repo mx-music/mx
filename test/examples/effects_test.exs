@@ -35,7 +35,7 @@ defmodule Mx.Examples.EffectsTest do
     {_synths, _note, _sample, native, _effect, _input} = Mx.Engine.Mxs.Native.catalog()
     effects = Enum.map(native, fn {name, _specs} -> name end)
 
-    assert Enum.sort(effects) == Enum.sort(Map.keys(@sections))
+    assert Enum.sort(effects) == @sections |> Map.keys() |> Enum.sort()
 
     assert "examples/effects/*.exs" |> Path.wildcard() |> Enum.map(&Path.basename(&1, ".exs")) ==
              Enum.sort(["order" | effects])

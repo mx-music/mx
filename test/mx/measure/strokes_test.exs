@@ -21,7 +21,7 @@ defmodule Mx.Measure.StrokesTest do
   end
 
   test "finds no strokes in silence" do
-    assert %{strokes: []} = Strokes.strokes(List.duplicate(0.0, @rate), @rate)
+    assert %{strokes: []} = 0.0 |> List.duplicate(@rate) |> Strokes.strokes(@rate)
   end
 
   test "tracks give a stroke's pitch in cents against its note and the level of each harmonic at every step" do

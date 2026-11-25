@@ -429,8 +429,8 @@ defmodule Mx do
   """
   defmacro sigil_MX({:<<>>, _meta, [text]}, modifiers) when is_binary(text) do
     case modifiers do
-      [] -> Macro.escape(Mx.Pattern.parse(text))
-      ~c"s" -> Macro.escape(Mx.Pattern.parse_steps(text))
+      [] -> text |> Mx.Pattern.parse() |> Macro.escape()
+      ~c"s" -> text |> Mx.Pattern.parse_steps() |> Macro.escape()
       _ -> raise ArgumentError, "it takes no modifier but s, a character to a step"
     end
   rescue

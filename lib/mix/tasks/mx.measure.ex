@@ -268,7 +268,7 @@ defmodule Mix.Tasks.Mx.Measure do
 
       name = Path.basename(path)
       IO.puts("#{name}: #{length(recordings)} notes")
-      Enum.each(Mx.Fit.Held.measure(recordings), &print_held_partials(&1, count))
+      recordings |> Mx.Fit.Held.measure() |> Enum.each(&print_held_partials(&1, count))
     end
   end
 
@@ -422,7 +422,9 @@ defmodule Mix.Tasks.Mx.Measure do
         {signed(stroke.level, 1), 8}
       ]
 
-      IO.puts(Enum.map_join(columns, fn {text, width} -> String.pad_leading(text, width) end))
+      columns
+      |> Enum.map_join(fn {text, width} -> String.pad_leading(text, width) end)
+      |> IO.puts()
     end
   end
 
@@ -488,7 +490,7 @@ defmodule Mix.Tasks.Mx.Measure do
   end
 
   defp print_brightness_beside(recorded, rendered, synth, given) do
-    theirs = Map.new(Hits.brightness(rendered), &{&1.above, &1.levels})
+    theirs = rendered |> Hits.brightness() |> Map.new(&{&1.above, &1.levels})
     heading = String.pad_trailing(heading(synth, given), 16) <> " "
     IO.puts(@brightness)
     IO.puts(String.pad_trailing("", 14) <> "recordings       " <> heading <> "difference")

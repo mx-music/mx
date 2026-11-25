@@ -318,7 +318,7 @@ defmodule Mix.Tasks.Mx.FitTest do
         end)
 
       fundamental = printed_rows(output, ~r/1\.000 harmonic 1/)
-      assert Enum.sort(Map.keys(fundamental)) == ~w(fit noise recording room sines)
+      assert fundamental |> Map.keys() |> Enum.sort() == ~w(fit noise recording room sines)
 
       {:ok, recordings, _lines} = Struck.listed(list)
       recording = Enum.find(recordings, &(&1.note == 60))
@@ -339,7 +339,7 @@ defmodule Mix.Tasks.Mx.FitTest do
 
       {times, [%{partials: partials}]} = figures(File.read!(out))
       %{levels: levels, tail: tail} = Enum.find(partials, &(&1.harmonic == 1))
-      at = Map.new(Enum.zip(times, levels))
+      at = times |> Enum.zip(levels) |> Map.new()
       assert_in_delta at[8.8] - at[1.1], -6 * 7.7, 1.5
       assert_in_delta tail, -6, 0.5
       assert_in_delta at[28.0] - at[11.0], tail * 17, 0.5
@@ -688,7 +688,7 @@ defmodule Mix.Tasks.Mx.FitTest do
       assert_in_delta release, 2.0, 0.1
       assert held < 0.5
       %{levels: levels, tail: tail} = Enum.find(partials, &(&1.harmonic == 1))
-      at = Map.new(Enum.zip(times, levels))
+      at = times |> Enum.zip(levels) |> Map.new()
       assert_in_delta at[1.1], at[0.7], 0.5
       assert at[28.0] == List.last(levels)
       assert_in_delta tail, -60, 12
@@ -858,9 +858,12 @@ defmodule Mix.Tasks.Mx.FitTest do
 
       assert Enum.filter(further, fn {_note, _ratio, worse} -> worse > 0.6 end) == []
 
-      assert Enum.filter(Enum.zip(today, descent), fn {fitted, descended} ->
-               descended.erb > fitted.erb + 0.6
-             end) == []
+      worsened =
+        today
+        |> Enum.zip(descent)
+        |> Enum.filter(fn {fitted, descended} -> descended.erb > fitted.erb + 0.6 end)
+
+      assert worsened == []
     end
 
     @tag timeout: 600_000

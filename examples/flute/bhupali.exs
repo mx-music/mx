@@ -85,7 +85,7 @@ defmodule Bhupali do
   # A tongued swara dips the breath to a quarter over about 30 ms and brings it back, at 240 beats
   # a minute.
   defp breath(text, vel, last \\ nil) do
-    tokens = Enum.map(String.split(text), &token/1)
+    tokens = text |> String.split() |> Enum.map(&token/1)
 
     tokens =
       if last do
@@ -155,7 +155,7 @@ defmodule Bhupali do
     [body | swell] = String.split(text, "@")
     [name, beats] = String.split(body, ":")
     {beats, ""} = Float.parse(beats)
-    swell = List.first(Enum.map(swell, &elem(Float.parse(&1), 0)))
+    swell = swell |> Enum.map(&elem(Float.parse(&1), 0)) |> List.first()
 
     case name do
       "~" <> swara -> {:glide, swara, beats, swell}

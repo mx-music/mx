@@ -8,7 +8,7 @@ defmodule Mx.Examples.ErbarmeDichDubTest do
   test "the dub plays the kit, the hand drums, the band, the horns and the dub's echoes on mx's synths, and no samples" do
     assert {:ok, song} = Mx.Song.load(@song)
 
-    assert Enum.sort(Enum.map(song.loops, &{&1.name, &1.synth})) ==
+    assert song.loops |> Enum.map(&{&1.name, &1.synth}) |> Enum.sort() ==
              Enum.sort(
                tanpura: :tanpura,
                lead: :trombone,

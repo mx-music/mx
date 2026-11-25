@@ -52,8 +52,8 @@ defmodule Mx.Engine.MxsTest do
 
       :ok = Mxs.Native.play(engine, [{5.0, Mxs.event({:release, [1]})}])
       after_release = render(engine, 3)
-      assert Enum.any?(Enum.take(after_release, 960), &(abs(&1) > 1.0e-4))
-      assert Enum.all?(Enum.take(after_release, -24_000), &(&1 == 0.0))
+      assert after_release |> Enum.take(960) |> Enum.any?(&(abs(&1) > 1.0e-4))
+      assert after_release |> Enum.take(-24_000) |> Enum.all?(&(&1 == 0.0))
     end
 
     test "given bend 2 a second in, sounds two semitones higher 10 ms later" do
@@ -75,7 +75,7 @@ defmodule Mx.Engine.MxsTest do
       sound = render(engine, 1.5)
       rate = Mxs.render_rate()
       assert rms(Enum.slice(sound, round(0.9 * rate), round(0.05 * rate))) > 0.01
-      assert Enum.all?(Enum.drop(sound, round(1.01 * rate)), &(&1 == 0.0))
+      assert sound |> Enum.drop(round(1.01 * rate)) |> Enum.all?(&(&1 == 0.0))
     end
   end
 
@@ -133,7 +133,7 @@ defmodule Mx.Engine.MxsTest do
 
     test "applies changes to the note while it renders" do
       quiet = Mxs.render_note(:berimbau, [amp: 1], 1, nil, [{0.1, [amp: 0]}])
-      assert Enum.all?(Enum.slice(quiet, 9600, 1000), &(&1 == 0.0))
+      assert quiet |> Enum.slice(9600, 1000) |> Enum.all?(&(&1 == 0.0))
     end
 
     test "renders through an empty effect chain as the note alone" do

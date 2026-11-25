@@ -84,7 +84,7 @@ defmodule Cello do
   # A swelled stroke grows louder to its middle and eases off to its end, and a stroke across the
   # strings changes note without sliding.
   defp bow(notes, vel, opts \\ []) do
-    beats = Enum.sum(Enum.map(notes, &elem(&1, 1)))
+    beats = notes |> Enum.map(&elem(&1, 1)) |> Enum.sum()
 
     slide = fn previous, note ->
       if abs(note - previous) > 4 and !opts[:across], do: 0.1, else: 0.01

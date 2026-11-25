@@ -650,7 +650,7 @@ defmodule Mx.Music do
   defp closed(run, runs), do: [Enum.reverse(run) | runs]
 
   defp slurred_note([first | rest] = notes, slide, opts) do
-    beats = Enum.sum(Enum.map(notes, & &1.beats))
+    beats = notes |> Enum.map(& &1.beats) |> Enum.sum()
 
     {own, _} =
       Enum.map_reduce(rest, {first.beats, first.pitch}, fn note, {beat, previous} ->
@@ -1327,13 +1327,13 @@ defmodule Mx.Music do
         :ok
 
       key when is_atom(key) ->
-        with {:error, _} <- Mx.MusicXML.key(Atom.to_string(key)), do: refuse_key(key)
+        with {:error, _} <- key |> Atom.to_string() |> Mx.MusicXML.key(), do: refuse_key(key)
 
       key ->
         refuse_key(key)
     end
 
-    with {:error, message} <- Mx.Song.song_effects(Keyword.get(opts, :fx, [])) do
+    with {:error, message} <- opts |> Keyword.get(:fx, []) |> Mx.Song.song_effects() do
       raise ArgumentError, message
     end
 
@@ -1498,7 +1498,7 @@ defmodule Mx.Music do
 
   defp check_osc_to(played, osc_to) do
     if osc_to == nil and
-         Enum.any?(List.flatten(played), &match?({_, _, %Message{kind: :osc}}, &1)) do
+         played |> List.flatten() |> Enum.any?(&match?({_, _, %Message{kind: :osc}}, &1)) do
       raise ArgumentError, "osc needs osc_to: {host, port} in the song"
     end
   end
@@ -1536,7 +1536,7 @@ defmodule Mx.Music do
       end)
 
     counts = Enum.map(sections, &if(&1.endless, do: 0, else: passes_before(&1.slots, &1.beats)))
-    prefix = Enum.drop(Enum.scan([0 | counts], &(&1 + &2)), -1)
+    prefix = [0 | counts] |> Enum.scan(&(&1 + &2)) |> Enum.drop(-1)
 
     steps = Enum.flat_map(sections, & &1.notes)
     samples = for {_, %Sample{ref: ref}} <- steps, uniq: true, do: ref
@@ -1650,7 +1650,7 @@ defmodule Mx.Music do
           )
 
         music ->
-          endless = Enum.any?(Tuple.to_list(music.sections), & &1.endless)
+          endless = music.sections |> Tuple.to_list() |> Enum.any?(& &1.endless)
           passes = if song.forever or endless, do: nil, else: song.sections
           Mx.Song.put_music_loop(part, Map.put(music, :forever, song.forever), passes, nil)
       end
@@ -1705,10 +1705,9 @@ defmodule Mx.Music do
       first = if from > slot.start, do: ceil((from - slot.start) / slot.beats), else: 0
 
       for turn <-
-            Enum.take_while(
-              Stream.iterate(first, &(&1 + 1)),
-              &(slot.start + &1 * slot.beats < earlier(slot.cut, until))
-            ),
+            first
+            |> Stream.iterate(&(&1 + 1))
+            |> Enum.take_while(&(slot.start + &1 * slot.beats < earlier(slot.cut, until))),
           do: {slot.start + turn * slot.beats, slot}
     end)
     |> Enum.sort_by(&elem(&1, 0))
@@ -1824,11 +1823,11 @@ defmodule Mx.Music do
   end
 
   defp record_step(_part, %Change{target: {:song, effect}, opts: opts}) do
-    Pass.record_control(Pass.song_effect(effect), opts)
+    effect |> Pass.song_effect() |> Pass.record_control(opts)
   end
 
   defp record_step(%{name: name}, %Change{target: {name, effect}, opts: opts}) do
-    Pass.record_control(Pass.effect(effect), opts)
+    effect |> Pass.effect() |> Pass.record_control(opts)
   end
 
   defp record_step(%{name: name}, %Change{target: {bus, effect}, opts: opts} = change) do

@@ -16,7 +16,8 @@ defmodule Mx.BandTest do
     if ctx[:realtime] do
       played
     else
-      Clock.start_render(System.os_time(:microsecond))
+      now = System.os_time(:microsecond)
+      Clock.start_render(now)
       driver = spawn(fn -> drive([]) end)
 
       on_exit(fn ->
@@ -40,7 +41,9 @@ defmodule Mx.BandTest do
 
     notes = receive_notes(30)
 
-    assert Enum.map(notes, &elem(&1, 1)) == List.flatten(List.duplicate([60.0, 64.0, 67.0], 10))
+    assert Enum.map(notes, &elem(&1, 1)) ==
+             [60.0, 64.0, 67.0] |> List.duplicate(10) |> List.flatten()
+
     assert Enum.map(notes, &elem(&1, 0)) == Enum.map(0..29, &(start_us + &1 * @beat_us))
   end
 
@@ -614,7 +617,7 @@ defmodule Mx.BandTest do
 
       all = Enum.map(notes, &elem(&1, 0))
       assert Enum.any?(notes, &(round(elem(&1, 1)) == 62))
-      assert Enum.uniq(Enum.zip_with(all, tl(all), &(&2 - &1))) == [2 * @beat_us]
+      assert all |> Enum.zip_with(tl(all), &(&2 - &1)) |> Enum.uniq() == [2 * @beat_us]
     end
   end
 
@@ -1583,7 +1586,7 @@ defmodule Mx.BandTest do
       assert {:ok, beat} =
                Band.play_recording(band, :voice, ctx.sample, from: 2.447, to: 3.4, amp: 0.8)
 
-      at_us = Band.time_at(Band.timeline(band), beat)
+      at_us = band |> Band.timeline() |> Band.time_at(beat)
       assert at_us - asked_us > 150_000 and at_us - asked_us <= 1_150_000
 
       assert_receive {:played, ^at_us,
@@ -1596,7 +1599,7 @@ defmodule Mx.BandTest do
       assert_receive {:played, note_us, [{:note, _, _, _, _, _}]} when note_us >= at_us
 
       assert {:ok, again} = Band.play_recording(band, :voice, ctx.sample, from: 0.0, to: 2.4)
-      again_us = Band.time_at(Band.timeline(band), again)
+      again_us = band |> Band.timeline() |> Band.time_at(again)
       assert_receive {:played, ^again_us, [{:stop, [^id]}, {:sample, other, _, _, _}]}
       assert other != id
 

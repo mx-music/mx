@@ -77,11 +77,8 @@ defmodule Mx.Song do
     # delay, outside its synths and effects.
     nodes =
       if List.keymember?(__CALLER__.functions, Mx.Instrument.Vocabulary, 0) do
-        shared =
-          Enum.filter(
-            Mx.__info__(:functions),
-            &(&1 in Mx.Instrument.Vocabulary.__info__(:functions))
-          )
+        functions = Mx.__info__(:functions)
+        shared = Enum.filter(functions, &(&1 in Mx.Instrument.Vocabulary.__info__(:functions)))
 
         quote(do: import(Mx.Instrument.Vocabulary, except: unquote(shared)))
       end
@@ -351,10 +348,9 @@ defmodule Mx.Song do
         with {:error, message} <- song_effects(song.fx), do: raise(ArgumentError, message)
 
       loops =
-        Enum.map(
-          Enum.reverse(song.loops),
-          &%{&1 | file: path, osc_to: song.osc_to, song_fx: fx, buses: song.buses}
-        )
+        song.loops
+        |> Enum.reverse()
+        |> Enum.map(&%{&1 | file: path, osc_to: song.osc_to, song_fx: fx, buses: song.buses})
 
       live = Enum.reverse(song.live)
 
@@ -513,7 +509,7 @@ defmodule Mx.Song do
     |> Enum.sort_by(fn {_path, [{ref, _, _} | _]} -> Samples.name(ref) end)
     |> Enum.flat_map(fn {path, [{ref, _, _} | _] = uses} ->
       normalized? = Enum.all?(uses, fn {_, _, normalized?} -> normalized? end)
-      List.wrap(Samples.level_warning(ref, Samples.peak(path), normalized?))
+      ref |> Samples.level_warning(Samples.peak(path), normalized?) |> List.wrap()
     end)
   end
 
@@ -607,7 +603,7 @@ defmodule Mx.Song do
 
         "#{owner}: send: takes a level of 0 or more for each bus, such as send: [room: 0.3], not #{sends}"
 
-      bus = Enum.find(Keyword.keys(sends), &(&1 not in buses)) ->
+      bus = sends |> Keyword.keys() |> Enum.find(&(&1 not in buses)) ->
         "#{owner} sends to #{bus}, which the song does not declare; declare it with bus :#{bus}, fx: ..."
 
       true ->
@@ -748,7 +744,9 @@ defmodule Mx.Song do
     synth = if stereo, do: :live_audio_stereo, else: :live_audio_mono
 
     unknown =
-      Enum.find(Keyword.keys(synth_opts), &(&1 == :out_bus or not Synths.option?(synth, &1)))
+      synth_opts
+      |> Keyword.keys()
+      |> Enum.find(&(&1 == :out_bus or not Synths.option?(synth, &1)))
 
     cond do
       unknown ->
@@ -849,7 +847,9 @@ defmodule Mx.Song do
 
   @doc "What is wrong with the key: of a compressor among the effects of `owner`, such as `\"part pad\"`, given the names of the song's parts and buses, or nil."
   def keys_error(owner, fx, names) do
-    Enum.find_value(List.wrap(fx), fn
+    fx
+    |> List.wrap()
+    |> Enum.find_value(fn
       {:compressor, opts} when is_list(opts) ->
         key = opts[:key]
 

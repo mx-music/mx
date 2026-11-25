@@ -311,7 +311,7 @@ defmodule Mx.Samples do
   end
 
   defp download_github(source, repo, ref, folder) do
-    dir = Path.dirname(Mx.GitHub.local(repo, ref, "file"))
+    dir = repo |> Mx.GitHub.local(ref, "file") |> Path.dirname()
 
     with {:ok, files} <- Mx.GitHub.list(repo, ref, folder) do
       result =

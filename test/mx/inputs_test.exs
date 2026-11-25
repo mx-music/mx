@@ -169,7 +169,7 @@ defmodule Mx.InputsTest do
   defp wait_for_input(_name, 0), do: flunk("the virtual MIDI port did not appear")
 
   defp wait_for_input(name, tries) do
-    if Enum.find(Midiex.ports(:input), &(&1.name == name)) == nil do
+    if :input |> Midiex.ports() |> Enum.find(&(&1.name == name)) == nil do
       Process.sleep(20)
       wait_for_input(name, tries - 1)
     end

@@ -185,7 +185,8 @@ defmodule Mx.PageTest do
   end
 
   test "the page links mx to its repository, and no file mx ships names the old address" do
-    template = File.read!(Application.app_dir(:mx, "priv/page.html"))
+    page = Application.app_dir(:mx, "priv/page.html")
+    template = File.read!(page)
     assert template =~ ~s(rendered by <a href="https://github.com/mx-music/mx">mx</a>)
 
     shipped =

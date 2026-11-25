@@ -55,7 +55,7 @@ defmodule Mx.Measure.HeldTest do
   test "splits a file of held notes a semitone apart, each starting from silence" do
     silence = List.duplicate(0.0, round(@rate * 0.5))
     notes = Enum.flat_map(0..2, &(tone(220 * 2 ** (&1 / 12), 2) ++ silence))
-    assert Enum.map(Held.notes(notes, @rate, 57), & &1.note) == [57, 58, 59]
+    assert notes |> Held.notes(@rate, 57) |> Enum.map(& &1.note) == [57, 58, 59]
   end
 
   test "leaves out a note that holds nothing within 12 dB of a short burst at its start" do

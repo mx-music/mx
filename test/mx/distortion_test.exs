@@ -52,7 +52,7 @@ defmodule Mx.DistortionTest do
       end)
 
     both = if hz == 0, do: 1, else: 2
-    squares = Enum.sum(Enum.map(window, &(&1 * &1)))
+    squares = window |> Enum.map(&(&1 * &1)) |> Enum.sum()
     both * (re * re + im * im) * squares / :math.pow(Enum.sum(window), 2)
   end
 
@@ -65,7 +65,7 @@ defmodule Mx.DistortionTest do
   # whole sound.
   defp away_from_harmonics(samples, hz) do
     {sound, _window} = windowed = windowed(samples)
-    whole = Enum.sum(Enum.map(sound, &(&1 * &1)))
+    whole = sound |> Enum.map(&(&1 * &1)) |> Enum.sum()
     on = Enum.sum(for harmonic <- 0..trunc(@rate / 2 / hz), do: energy(windowed, harmonic * hz))
     db(max(whole - on, 0.0) / whole)
   end

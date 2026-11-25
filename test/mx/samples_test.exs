@@ -41,7 +41,7 @@ defmodule Mx.SamplesTest do
       File.mkdir_p!(served)
 
       for name <- ~w(a.flac b.flac c.flac README.md),
-          do: File.write!(Path.join(served, name), name)
+          do: served |> Path.join(name) |> File.write!(name)
 
       :inets.start()
 
@@ -68,19 +68,19 @@ defmodule Mx.SamplesTest do
 
     test "downloads every sample and the licence, then nothing the second time", %{opts: opts} do
       assert Samples.download(opts) == {:ok, 4}
-      assert File.read!(Path.join(opts[:dir], "b.flac")) == "b.flac"
-      assert File.read!(Path.join(opts[:dir], "README.md")) == "README.md"
+      assert opts |> Access.get(:dir) |> Path.join("b.flac") |> File.read!() == "b.flac"
+      assert opts |> Access.get(:dir) |> Path.join("README.md") |> File.read!() == "README.md"
       assert Samples.download(opts) == {:ok, 0}
     end
 
     test "names the sample that failed, keeps the others, and a second run finishes", ctx do
-      File.rm!(Path.join(ctx.served, "b.flac"))
+      ctx.served |> Path.join("b.flac") |> File.rm!()
 
       assert {:error, "b.flac", _reason, 1} = Samples.download(ctx.opts)
-      assert File.exists?(Path.join(ctx.opts[:dir], "a.flac"))
-      refute File.exists?(Path.join(ctx.opts[:dir], "b.flac"))
+      assert ctx.opts |> Access.get(:dir) |> Path.join("a.flac") |> File.exists?()
+      refute ctx.opts |> Access.get(:dir) |> Path.join("b.flac") |> File.exists?()
 
-      File.write!(Path.join(ctx.served, "b.flac"), "b.flac")
+      ctx.served |> Path.join("b.flac") |> File.write!("b.flac")
       assert Samples.download(ctx.opts) == {:ok, 3}
     end
   end

@@ -37,7 +37,7 @@ defmodule Mx.MeasureTest do
   test "bands give levels against the fundamental of the lowest note", ctx do
     path = write_wav(ctx, "note.wav", 48_000, tone(110, 48_000, 4))
     {:ok, notes} = Measure.file(path, 45)
-    bands = Map.new(Measure.bands(notes), &{&1.band, &1})
+    bands = notes |> Measure.bands() |> Map.new(&{&1.band, &1})
 
     assert_in_delta bands[{80, 160}].level, 0, 0.5
     assert_in_delta bands[{160, 250}].level, -6.02, 0.5

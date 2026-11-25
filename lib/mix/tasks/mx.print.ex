@@ -188,7 +188,9 @@ defmodule Mix.Tasks.Mx.Print do
     beats = Enum.map(events, fn {beat, _, _} -> format_beat(beat) end)
     width = beats |> Enum.map(&String.length/1) |> Enum.max(fn -> 0 end)
 
-    Enum.map_join(Enum.zip(beats, events), fn {beat, {_, note, opts}} ->
+    beats
+    |> Enum.zip(events)
+    |> Enum.map_join(fn {beat, {_, note, opts}} ->
       beat = String.pad_trailing(beat, width)
       opts = format_opts(opts)
       step = format_step(note)

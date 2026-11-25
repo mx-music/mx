@@ -108,12 +108,14 @@ defmodule Mx.Session do
   def stop_trying(session, name) when is_pid(session), do: Band.stop_trying(band(session), name)
 
   defp band(session) do
-    {Band, pid, _type, _modules} = List.keyfind(Supervisor.which_children(session), Band, 0)
+    {Band, pid, _type, _modules} = session |> Supervisor.which_children() |> List.keyfind(Band, 0)
     pid
   end
 
   defp watcher(session) do
-    {Watcher, pid, _type, _modules} = List.keyfind(Supervisor.which_children(session), Watcher, 0)
+    {Watcher, pid, _type, _modules} =
+      session |> Supervisor.which_children() |> List.keyfind(Watcher, 0)
+
     pid
   end
 
