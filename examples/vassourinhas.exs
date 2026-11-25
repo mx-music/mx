@@ -182,7 +182,8 @@ defmodule Vassourinhas do
     bassoon_bass = Enum.reject(line, fn {beat, _, _} -> beat >= 24 end)
 
     winds =
-      Map.merge(solos, tutti, fn _wind, solo, all -> solo ++ all end)
+      solos
+      |> Map.merge(tutti, fn _wind, solo, all -> solo ++ all end)
       |> Map.put(:tuba, tongued(line, 0, 0.65))
       |> Map.update!(:bassoon, &(&1 ++ tongued(bassoon_bass, 12, 0.5)))
 
@@ -493,7 +494,8 @@ defmodule Vassourinhas do
   defp run(from, count, direction, key, beat) do
     scale = for step <- [0, 2, 4, 5, 7, 9, 11], do: Integer.mod(step + key, 12)
 
-    Stream.iterate(from, &(&1 + direction))
+    from
+    |> Stream.iterate(&(&1 + direction))
     |> Stream.filter(&(Integer.mod(&1, 12) in scale))
     |> Enum.take(count)
     |> Enum.with_index(fn note, i -> {beat + i * 0.25, note, 0.25} end)

@@ -23,7 +23,7 @@ defmodule Mix.Tasks.Mx.LevelsTest do
              "seconds,level,20-40 Hz,40-80 Hz,80-160 Hz,160-320 Hz,320-640 Hz,640-1280 Hz,1280-2560 Hz,2560-5120 Hz,5120-10240 Hz,10240-20480 Hz,brightness"
 
     assert length(tl(lines)) == length(rows)
-    assert Enum.at(lines, 1) |> String.split(",") |> length() == 13
+    assert lines |> Enum.at(1) |> String.split(",") |> length() == 13
   end
 
   test "--per-second sets the rows a second", %{path: path} do

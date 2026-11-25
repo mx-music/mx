@@ -15,7 +15,7 @@ defmodule Mx.Examples.ClairDeLuneTest do
   test "the piano plays the 72 bars once, and the song ends", %{song: song} do
     assert [%{name: :piano, passes: 1}] = song.loops
 
-    total = Enum.map(0..71, &pass_beats/1) |> Enum.sum() |> Float.round(3)
+    total = 0..71 |> Enum.map(&pass_beats/1) |> Enum.sum() |> Float.round(3)
     assert print() =~ ~r/\Apiano, #{total} beats at 120 bpm/
 
     for pass <- [0, 40, 71], do: assert(strokes(pass) != [])
@@ -23,7 +23,7 @@ defmodule Mx.Examples.ClairDeLuneTest do
   end
 
   test "the piece opens on thirds high in D flat and ends on its chord" do
-    opening = strokes(0) |> Enum.map(&elem(&1, 0)) |> Enum.uniq() |> Enum.sort()
+    opening = 0 |> strokes() |> Enum.map(&elem(&1, 0)) |> Enum.uniq() |> Enum.sort()
     assert opening == [65, 68, 73, 77, 80]
 
     assert Enum.sort(Enum.map(strokes(71), &elem(&1, 0))) ==
@@ -54,7 +54,7 @@ defmodule Mx.Examples.ClairDeLuneTest do
   end
 
   test "the forte of bar 41 is struck far harder than the opening" do
-    loudest = fn pass -> strokes(pass) |> Enum.map(&elem(&1, 1)) |> Enum.max() end
+    loudest = fn pass -> pass |> strokes() |> Enum.map(&elem(&1, 1)) |> Enum.max() end
     assert loudest.(40) > 2 * loudest.(0)
   end
 

@@ -131,7 +131,10 @@ mx help COMMAND prints a command's documentation.")
       archive = Keyword.fetch!(sections, :archive)
 
       hash =
-        :crypto.hash(:sha256, archive) |> Base.url_encode64(padding: false) |> binary_part(0, 16)
+        :sha256
+        |> :crypto.hash(archive)
+        |> Base.url_encode64(padding: false)
+        |> binary_part(0, 16)
 
       dir = Path.join(:filename.basedir(:user_cache, "mx"), "escript-" <> hash)
 

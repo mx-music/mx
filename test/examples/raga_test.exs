@@ -91,7 +91,8 @@ defmodule Mx.Examples.RagaTest do
       [ghe | _] = Regex.run(~r/tabla_ghe, pass .*?(\n\n|$)/s, printed)
 
       beats =
-        Regex.scan(~r/^beat (\d+) +play/m, ghe, capture: :all_but_first)
+        ~r/^beat (\d+) +play/m
+        |> Regex.scan(ghe, capture: :all_but_first)
         |> List.flatten()
         |> Enum.map(&String.to_integer/1)
 

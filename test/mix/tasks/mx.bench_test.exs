@@ -103,7 +103,7 @@ defmodule Mix.Tasks.Mx.BenchTest do
       end)
     end
 
-    assert run.(easy) |> String.split("\n", trim: true) |> length() == 2
+    assert easy |> run.() |> String.split("\n", trim: true) |> length() == 2
     assert [_header, _row, worse] = String.split(run.(hard), "\n", trim: true)
     assert worse =~ ~r/^worse: buffers\/choro\.exs\/worst_percent was 0\.001 and is \d+\.\d$/
   end

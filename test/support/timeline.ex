@@ -31,7 +31,8 @@ defmodule Mx.Timeline do
   end
 
   defp events_until(loop, span) do
-    Stream.iterate(0, &(&1 + 1))
+    0
+    |> Stream.iterate(&(&1 + 1))
     |> Enum.reduce_while({[], 0}, fn pass, {events, start} ->
       if start >= span or (loop.passes != nil and pass >= loop.passes) do
         {:halt, {events, start}}

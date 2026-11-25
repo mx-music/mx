@@ -297,7 +297,8 @@ defmodule Mx.Page do
     title = data.title |> String.replace("&", "&amp;") |> String.replace("<", "&lt;")
     song = data |> JSON.encode!() |> String.replace("</", "<\\/")
 
-    Application.app_dir(:mx, "priv/page.html")
+    :mx
+    |> Application.app_dir("priv/page.html")
     |> File.read!()
     |> String.replace("{{title}}", title)
     |> String.replace("{{song}}", song)

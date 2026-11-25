@@ -222,7 +222,8 @@ defmodule Mx.InstrumentSongTest do
 
   test "every name Mx and the nodes share is the node inside a defeffect below import Mx" do
     nodes = MapSet.new(Mx.Instrument.Vocabulary.__info__(:functions))
-    shared = Mx.__info__(:functions) |> Enum.filter(&(&1 in nodes)) |> Enum.sort()
+    functions = Mx.__info__(:functions)
+    shared = functions |> Enum.filter(&(&1 in nodes)) |> Enum.sort()
     assert shared == [clamp: 3, delay: 2]
 
     source = """

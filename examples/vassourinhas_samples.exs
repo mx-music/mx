@@ -205,7 +205,8 @@ defmodule VassourinhasSamples do
     pickup = for {beat, note, held} <- notes(lead_in()), do: {beat + 12, note, held}
     # The snare alone through the first two bars, with no crash to start.
     drums =
-      drums(8)
+      8
+      |> drums()
       |> List.flatten()
       |> Enum.reject(fn {voice, {beat, _}} ->
         voice == :crash or (voice not in [:snare, :buzz, :rimshot] and beat < 4)
@@ -593,7 +594,8 @@ defmodule VassourinhasSamples do
   defp run(from, count, direction, key, beat) do
     scale = for step <- [0, 2, 4, 5, 7, 9, 11], do: Integer.mod(step + key, 12)
 
-    Stream.iterate(from, &(&1 + direction))
+    from
+    |> Stream.iterate(&(&1 + direction))
     |> Stream.filter(&(Integer.mod(&1, 12) in scale))
     |> Enum.take(count)
     |> Enum.with_index(fn note, i -> {beat + i * 0.25, note, 0.25} end)

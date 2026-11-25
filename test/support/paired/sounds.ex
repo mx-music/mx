@@ -29,7 +29,8 @@ defmodule Mx.Paired.Sounds do
   defsound along(centres, values, f) do
     octave = log2(f)
 
-    Enum.zip([centres, tl(centres), values, tl(values)])
+    [centres, tl(centres), values, tl(values)]
+    |> Enum.zip()
     |> Enum.with_index()
     |> Enum.reduce(hd(values), fn {{low, high, from, to}, index}, sum ->
       {low, high} = {:math.log2(low), :math.log2(high)}

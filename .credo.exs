@@ -4,6 +4,9 @@
 # If you find anything wrong or unclear in this file, please report an
 # issue on GitHub: https://github.com/rrrene/credo/issues
 #
+# Synth chains start at a source, as in noise(:white) |> bandpass(...).
+synth_sources = ~w(impulse follow time sine vibrato partials bowed_string air_jet saw square triangle pulse noise clicks mix)
+
 %{
   #
   # You can have as many configs as you like in the `configs:` field.
@@ -127,6 +130,8 @@
           {Credo.Check.Refactor.NegatedConditionsInUnless, []},
           {Credo.Check.Refactor.NegatedConditionsWithElse, []},
           {Credo.Check.Refactor.Nesting, [max_nesting: 4]},
+          {Credo.Check.Refactor.PipeChainStart,
+           [excluded_functions: synth_sources ++ Enum.map(synth_sources, &("V." <> &1))]},
           {Credo.Check.Refactor.RedundantWithClauseResult, []},
           {Credo.Check.Refactor.RejectReject, []},
           {Credo.Check.Refactor.UnlessWithElse, []},
@@ -194,7 +199,6 @@
           {Credo.Check.Refactor.ModuleDependencies, []},
           {Credo.Check.Refactor.NegatedIsNil, []},
           {Credo.Check.Refactor.PassAsyncInTestCases, []},
-          {Credo.Check.Refactor.PipeChainStart, []},
           {Credo.Check.Refactor.RejectFilter, []},
           {Credo.Check.Refactor.VariableRebinding, []},
           {Credo.Check.Warning.LazyLogging, []},

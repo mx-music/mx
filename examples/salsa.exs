@@ -196,7 +196,8 @@ defmodule Salsa do
     # over short chords in the left.
     notes = scale(:a4, :minor, octaves: 2)
 
-    Enum.map_reduce(0..31, 7, fn step, index ->
+    0..31
+    |> Enum.map_reduce(7, fn step, index ->
       bar = div(step, 8)
       chord = beat_chord(bar * 4)
       classes = Enum.map(chord, &rem(&1, 12))
@@ -384,7 +385,8 @@ defmodule Salsa do
 
     step = fn index -> clamp(index + pick([-2, -1, 1, 1, 2]), 2, 11) end
 
-    Enum.map_reduce(0..3, 6, fn bar, index ->
+    0..3
+    |> Enum.map_reduce(6, fn bar, index ->
       [first | rest] = pick(cells)
       index = step.(index)
       glides = Enum.scan(rest, index, fn _, index -> step.(index) end)

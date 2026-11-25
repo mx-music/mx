@@ -22,7 +22,8 @@ defmodule Mx.Paired.Draws do
 
   @doc "The frequencies of a cymbal's plate as mxs draws them: `count` from `low` to `high` Hz, as likely in each octave, sorted and in groups of 20."
   def plate(count, low, high) do
-    draws(1956, count)
+    1956
+    |> draws(count)
     |> Enum.map(&(low * :math.pow(high / low, &1)))
     |> Enum.sort()
     |> Enum.chunk_every(20)

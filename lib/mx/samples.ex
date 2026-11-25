@@ -17,7 +17,10 @@ defmodule Mx.Samples do
 
   @doc "The names of the files in Sonic Pi's sample pack, without their extension."
   def names do
-    Application.app_dir(:mx, "priv/samples.txt") |> File.read!() |> String.split("\n", trim: true)
+    :mx
+    |> Application.app_dir("priv/samples.txt")
+    |> File.read!()
+    |> String.split("\n", trim: true)
   end
 
   @doc "The folder the sample pack is in: the `:samples_dir` setting, or `default_dir/0`."

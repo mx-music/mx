@@ -168,8 +168,8 @@ defmodule Mx.MusicTest do
         {:ok, song} =
           load(ctx, "song(music: seq([#{call}, part(:bass, note(:e2, 1), synth: :saw)]))")
 
-        assert {Code.eval_string("import Mx\n" <> call) |> elem(0) |> Mx.beats(), call} ==
-                 {4, call}
+        code = "import Mx\n" <> call
+        assert {code |> Code.eval_string() |> elem(0) |> Mx.beats(), call} == {4, call}
 
         for {name, notes} <- expected, do: assert(played(events(song, name)) == notes)
         assert Enum.map(song.loops, & &1.name) -- [:bass] == Keyword.keys(expected) -- [:bass]
@@ -481,7 +481,8 @@ defmodule Mx.MusicTest do
 
       assert events(first, :lead) == events(second, :lead)
 
-      assert events(first, :lead)
+      assert first
+             |> events(:lead)
              |> Enum.map(fn {_, _, opts} -> opts[:amp] end)
              |> Enum.uniq()
              |> length() > 1
@@ -1409,7 +1410,7 @@ defmodule Mx.MusicTest do
 
       notes = fn song -> for pass <- 0..9, do: Pass.events(hd(song.loops), pass) end
       assert notes.(first) == notes.(second)
-      assert notes.(first) |> Enum.uniq() |> length() > 1
+      assert first |> notes.() |> Enum.uniq() |> length() > 1
     end
 
     @tag :tmp_dir

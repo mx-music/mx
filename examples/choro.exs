@@ -352,7 +352,8 @@ defmodule Choro do
         if rem(bar, 4) == 3 do
           # A baixaria: the root, then sixteenths down the key towards the next chord's root.
           steps =
-            key(section)
+            section
+            |> key()
             |> Enum.filter(&(&1 > target and &1 < root + 12))
             |> Enum.reverse()
             |> Enum.take(-6)

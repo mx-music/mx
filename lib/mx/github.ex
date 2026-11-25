@@ -25,20 +25,23 @@ defmodule Mx.GitHub do
     File.mkdir_p!(Path.dirname(local))
     url = Enum.join([raw_url(), repo, encode(ref), encode(path)], "/")
 
-    case request(url, stream: String.to_charlist(local <> ".part")) do
-      {:ok, :saved_to_file} ->
-        File.rename!(local <> ".part", local)
+    result =
+      case request(url, stream: String.to_charlist(local <> ".part")) do
+        {:ok, :saved_to_file} ->
+          File.rename!(local <> ".part", local)
 
-      {:ok, {{_, 404, _}, _, _}} ->
-        {:error, "the file is not in #{repo} at #{ref}"}
+        {:ok, {{_, 404, _}, _, _}} ->
+          {:error, "the file is not in #{repo} at #{ref}"}
 
-      {:ok, {{_, status, _}, _, _}} ->
-        {:error, "GitHub answered #{status}"}
+        {:ok, {{_, status, _}, _, _}} ->
+          {:error, "GitHub answered #{status}"}
 
-      {:error, reason} ->
-        {:error, reason(reason)}
-    end
-    |> tap(fn result -> if result != :ok, do: File.rm(local <> ".part") end)
+        {:error, reason} ->
+          {:error, reason(reason)}
+      end
+
+    if result != :ok, do: File.rm(local <> ".part")
+    result
   end
 
   @doc "The paths of the files in a folder of a repository at a ref, or in the whole repository for nil, as `{:ok, paths}` or `{:error, message}`."

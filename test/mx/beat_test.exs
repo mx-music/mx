@@ -36,7 +36,7 @@ defmodule Mx.BeatTest do
 
   describe "the messages of a timeline" do
     test "give one for a ramp and none for the tempo it ends at" do
-      timeline = Mx.Tempo.new(120) |> Mx.Tempo.put(8, 60, 4) |> Mx.Tempo.put(20, 90, 0)
+      timeline = 120 |> Mx.Tempo.new() |> Mx.Tempo.put(8, 60, 4) |> Mx.Tempo.put(20, 90, 0)
 
       assert [
                %{beat: 0, tempo: 120, heard_us: 7},
@@ -48,7 +48,7 @@ defmodule Mx.BeatTest do
     end
 
     test "start from the one that holds now" do
-      timeline = Mx.Tempo.new(120) |> Mx.Tempo.put(8, 60, 0) |> Mx.Tempo.put(20, 90, 0)
+      timeline = 120 |> Mx.Tempo.new() |> Mx.Tempo.put(8, 60, 0) |> Mx.Tempo.put(20, 90, 0)
 
       assert [%{beat: 8}, %{beat: 20}] = Beat.messages(timeline, 0, 4_000_000)
       assert [%{beat: 20}] = Beat.messages(timeline, 0, 60_000_000)

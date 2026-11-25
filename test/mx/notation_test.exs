@@ -4,7 +4,8 @@ defmodule Mx.NotationTest do
   test "the notation guide describes every word a song can use" do
     notation = File.read!("documentation/notation.md")
 
-    words = Mx.__info__(:functions) |> Enum.map(&elem(&1, 0)) |> Enum.uniq()
+    functions = Mx.__info__(:functions)
+    words = functions |> Enum.map(&elem(&1, 0)) |> Enum.uniq()
 
     missing =
       Enum.reject(words, fn word ->

@@ -267,7 +267,7 @@ defmodule PlanxtyIrwin do
 
     seq([
       line(@lead_in),
-      Enum.map(strains, &strain/1) |> Enum.intersperse(line(@lead_in)) |> seq(),
+      strains |> Enum.map(&strain/1) |> Enum.intersperse(line(@lead_in)) |> seq(),
       rest(@eighth)
     ])
   end
