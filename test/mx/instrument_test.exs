@@ -172,6 +172,23 @@ defmodule Mx.InstrumentTest do
     assert peak(render(module, :chime, note: 72)) > 0.01
   end
 
+  test "a sum built in a loop twenty thousand terms deep registers and plays" do
+    source = """
+    defmodule Mx.InstrumentTest.Deep do
+      use Mx.Instrument
+      attr :note, :note, default: 60
+
+      defsynth deep(hit) do
+        level = Enum.reduce(1..20_000, 0, fn _, sum -> sum + hit.note / 1_200_000 end)
+        sine(hz: hz(hit.note)) |> gain(level) |> rings(seconds: 0.5)
+      end
+    end
+    """
+
+    [{module, _}] = Code.compile_string(source, "deep.exs")
+    assert peak(render(module, :deep, [note: 60], 0.2)) > 0.5
+  end
+
   test "a synth saturates, clips and folds its sound, filters it through a ladder, and takes its offset away below hz" do
     source = """
     defmodule Mx.InstrumentTest.Grit do

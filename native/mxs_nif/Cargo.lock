@@ -706,9 +706,9 @@ checksum = "743fb55ba31b18fb1ecef6bdc9aa2743314978ac084044301a7eee33fb99a20d"
 
 [[package]]
 name = "mxs"
-version = "0.7.2"
+version = "0.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8fd3df050204552f7fbcc918dd200768a6f79132b250c1d22411bcc9a214d661"
+checksum = "95684a030955f077a3cb3d43e143f3f7c41746c012e94cd8ca3afa10611791fb"
 dependencies = [
  "claxon",
  "cpal",
@@ -729,6 +729,7 @@ dependencies = [
  "pyin",
  "rustfft",
  "rustler",
+ "stacker",
 ]
 
 [[package]]

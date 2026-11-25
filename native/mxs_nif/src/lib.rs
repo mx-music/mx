@@ -330,6 +330,11 @@ fn spec(term: SpecTerm) -> Spec {
 
 /// A graph as defsynth encodes it: a float, `{:option, name}`, `{:name, name}`, `{:list, items}` or `{:call, name, args, named}`.
 fn graph_of(term: Term) -> NifResult<Graph> {
+    // A deep graph, such as a long sum built in a loop, would overflow the scheduler's small stack.
+    stacker::maybe_grow(256 * 1024, 4 * 1024 * 1024, || graph_of_level(term))
+}
+
+fn graph_of_level(term: Term) -> NifResult<Graph> {
     if let Ok(x) = term.decode::<f64>() {
         return Ok(Graph::Number(x));
     }
