@@ -27,7 +27,7 @@ defmodule Paganini do
   defp phrases(score) do
     tokens =
       for bar <- String.split(score, ["|", "\n"], trim: true),
-          {token, i} <- Enum.with_index(String.split(bar)),
+          {token, i} <- bar |> String.split() |> Enum.with_index(),
           do: {token, i == 0}
 
     {notes, _} = Enum.map_reduce(tokens, {0, 0}, &read/2)

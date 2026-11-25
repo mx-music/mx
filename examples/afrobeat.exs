@@ -255,7 +255,7 @@ defmodule Afrobeat do
     entries =
       for bar <- 0..3,
           count = first + bar,
-          {name, index} <- Enum.with_index(Enum.take(run, count)) do
+          {name, index} <- run |> Enum.take(count) |> Enum.with_index() do
         vel = Float.round(0.45 + 0.4 * (index + 1) / count, 2)
         {bar * 4 + 0.5 + index / 4, note(name, 0, vel: vel, amp: 1.6, sustain: 0.6, release: 0.4)}
       end

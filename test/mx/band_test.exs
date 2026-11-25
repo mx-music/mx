@@ -497,9 +497,10 @@ defmodule Mx.BandTest do
       rising = Enum.take(gaps, 16)
       assert rising == Enum.sort(rising, :desc) and rising == Enum.uniq(rising)
 
-      for gap <- gaps |> Enum.drop(16) |> Enum.take(6) do
-        assert_in_delta gap, 60_000_000 / 7800, 2
-      end
+      gaps
+      |> Enum.drop(16)
+      |> Enum.take(6)
+      |> Enum.each(fn gap -> assert_in_delta gap, 60_000_000 / 7800, 2 end)
     end
 
     test "a section after a sudden change plays at the new tempo from its first beat", ctx do

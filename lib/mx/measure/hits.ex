@@ -76,7 +76,11 @@ defmodule Mx.Measure.Hits do
   def brightness(hits) when is_list(hits) do
     found = Enum.flat_map(hits, & &1.brightness)
 
-    for above <- found |> Enum.map(& &1.above) |> Enum.uniq() |> Enum.sort() do
+    found
+    |> Enum.map(& &1.above)
+    |> Enum.uniq()
+    |> Enum.sort()
+    |> Enum.map(fn above ->
       levels =
         found
         |> Enum.filter(&(&1.above == above))
@@ -89,7 +93,7 @@ defmodule Mx.Measure.Hits do
         end)
 
       %{above: above, levels: levels}
-    end
+    end)
   end
 
   @doc "The median over the hits of the milliseconds after a hit starts at which its sound above 4 kHz is loudest, or nil when no hit has any."

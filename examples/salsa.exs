@@ -395,8 +395,10 @@ defmodule Salsa do
 
       # The glides count from the note they bend.
       bends =
-        for {at, index} <- Enum.zip(Enum.map(rest, &(&1 - first)), glides),
-            do: {at, note: lead_note.(index), note_slide: 0.12}
+        rest
+        |> Enum.map(&(&1 - first))
+        |> Enum.zip(glides)
+        |> Enum.map(fn {at, index} -> {at, note: lead_note.(index), note_slide: 0.12} end)
 
       lead =
         note(lead_note.(index), 4 - first,

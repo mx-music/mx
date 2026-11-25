@@ -55,9 +55,12 @@ defmodule Violin do
     down = [86, 84, 82, 81, 79, 77, 76, 74, 72, 70, 69, 67, 65, 64, 62, 62]
 
     slurs =
-      for {group, index} <- Enum.with_index(Enum.chunk_every(up ++ down, 8)) do
+      (up ++ down)
+      |> Enum.chunk_every(8)
+      |> Enum.with_index()
+      |> Enum.map(fn {group, index} ->
         bow(Enum.map(group, &{&1, 0.25}), Enum.at([0.5, 0.65, 0.7, 0.55], index))
-      end
+      end)
 
     arpeggios = [62, 65, 69, 74, 67, 70, 74, 79, 69, 73, 76, 79, 74, 77, 81, 86]
 

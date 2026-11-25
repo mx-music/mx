@@ -277,15 +277,20 @@ defmodule ErbarmeDich.Paraphrase do
   defp figure(bass, tones) do
     pattern = tones ++ (tones |> Enum.reverse() |> tl() |> Enum.drop(-1))
 
-    for {pitch, step} <- Enum.with_index(Enum.take(Stream.cycle(pattern), 6)),
-        do: %{
-          bass
-          | at: bass.at + step * 0.5,
-            note: pitch,
-            length: 1.5,
-            kind: :figure,
-            eighth: bass.eighth + step * 0.5
-        }
+    pattern
+    |> Stream.cycle()
+    |> Enum.take(6)
+    |> Enum.with_index()
+    |> Enum.map(fn {pitch, step} ->
+      %{
+        bass
+        | at: bass.at + step * 0.5,
+          note: pitch,
+          length: 1.5,
+          kind: :figure,
+          eighth: bass.eighth + step * 0.5
+      }
+    end)
   end
 
   # The pitch classes sounding at a moment in the organ and the bass.

@@ -32,9 +32,10 @@ defmodule Mix.Tasks.Mx.ExportTest do
     assert exported.tempo == original.tempo
     assert length(exported.parts) == length(original.parts)
 
-    for {played, again} <- Enum.zip(ScoreNotes.played(song), ScoreNotes.written(exported)) do
-      assert again == played
-    end
+    song
+    |> ScoreNotes.played()
+    |> Enum.zip(ScoreNotes.written(exported))
+    |> Enum.each(fn {played, again} -> assert again == played end)
   end
 
   test "a song in 3 writes a score, a MIDI file and an ABC tune in 3/4 unless --time is given",

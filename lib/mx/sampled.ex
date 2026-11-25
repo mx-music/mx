@@ -129,11 +129,13 @@ defmodule Mx.Sampled do
 
   defp load_folder(sampled, dir, folder) do
     files =
-      for path <- dir |> Path.join("*") |> Path.wildcard() |> Enum.sort(),
-          File.regular?(path),
-          described = describe(Path.basename(path)),
-          described != %{},
-          do: {path, described}
+      dir
+      |> Path.join("*")
+      |> Path.wildcard()
+      |> Enum.sort()
+      |> Enum.filter(&File.regular?/1)
+      |> Enum.map(&{&1, describe(Path.basename(&1))})
+      |> Enum.reject(fn {_, described} -> described == %{} end)
 
     case files do
       [] ->

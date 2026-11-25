@@ -10,7 +10,7 @@ defmodule Mx.Examples.TimelineTest do
     on_exit(fn -> Application.put_env(:mx, :samples_dir, dir) end)
   end
 
-  for timeline <- Enum.sort(Path.wildcard("test/examples/timelines/**/*.timeline")) do
+  for timeline <- "test/examples/timelines/**/*.timeline" |> Path.wildcard() |> Enum.sort() do
     song =
       timeline
       |> Path.relative_to("test/examples/timelines")

@@ -374,9 +374,10 @@ defmodule Mix.Tasks.Mx.PlayTest do
     gaps = Enum.map(starts, &((&1 - first) / rate))
     assert length(gaps) >= 3
 
-    for {gap, repeat} <- Enum.with_index(Enum.take(gaps, 3)) do
-      assert_in_delta gap, repeat * 0.5, 0.005
-    end
+    gaps
+    |> Enum.take(3)
+    |> Enum.with_index()
+    |> Enum.each(fn {gap, repeat} -> assert_in_delta gap, repeat * 0.5, 0.005 end)
   end
 
   @tag :engine

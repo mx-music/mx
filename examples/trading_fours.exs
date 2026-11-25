@@ -310,7 +310,7 @@ defmodule TradingFours do
 
     seq(
       for bar <- bars,
-          {pitch, beat} <- Enum.with_index(Enum.at(walk, bar)) do
+          {pitch, beat} <- walk |> Enum.at(bar) |> Enum.with_index() do
         vel = if beat in [1, 3], do: 0.85, else: 0.7
         note(pitch, 1, vel: vel, sustain: 0.9, release: 0.1)
       end

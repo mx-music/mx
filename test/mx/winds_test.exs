@@ -102,7 +102,11 @@ defmodule Mx.WindsTest do
       ours = sound |> windows(div(@rate, 2), div(@rate, 20)) |> Enum.map(&db/1)
       ours_peak = Enum.max(ours)
 
-      for {{theirs, mine}, index} <- Enum.with_index(Enum.zip(relative, ours)), index > 0 do
+      relative
+      |> Enum.zip(ours)
+      |> Enum.with_index()
+      |> Enum.drop(1)
+      |> Enum.each(fn {{theirs, mine}, index} ->
         seconds = index * 0.5
         relative_db = mine - ours_peak
 
@@ -110,7 +114,7 @@ defmodule Mx.WindsTest do
                         theirs,
                         3,
                         "at #{seconds} s #{relative_db} dB against the recording's #{theirs} dB"
-      end
+      end)
     end
   end
 

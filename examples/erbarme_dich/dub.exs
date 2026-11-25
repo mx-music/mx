@@ -520,10 +520,13 @@ defmodule Dub do
   # The bubble's left hand: each beat's root and fifth on its last triplet.
   defp bubble(bar) do
     entries =
-      for {{root, _, _}, index} <- Enum.with_index(Enum.at(@harmony, bar - 1)) do
+      @harmony
+      |> Enum.at(bar - 1)
+      |> Enum.with_index()
+      |> Enum.map(fn {{root, _, _}, index} ->
         root = pitch(root)
         {beat(index) + 1, note([root, root + 7], 0.3)}
-      end
+      end)
 
     together([at(entries, 6), skank(bar, 0.3)])
   end

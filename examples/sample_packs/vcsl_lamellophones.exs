@@ -232,11 +232,15 @@ defmodule ThreeTunings do
   # The slit drum at the pulses given of so many, l the low drum and h the high one.
   defp drum(pattern, times) do
     hits =
-      for {cell, index} <- Enum.with_index(String.graphemes(pattern)), cell != "." do
+      pattern
+      |> String.graphemes()
+      |> Enum.with_index()
+      |> Enum.reject(fn {cell, _} -> cell == "." end)
+      |> Enum.map(fn {cell, index} ->
         file = if cell in ["l", "L"], do: @low_drum, else: @high_drum
         amp = if cell in ["L", "H"], do: 1.0, else: 0.6
         {index * @pulse, sample(file, 0, amp: amp)}
-      end
+      end)
 
     repeat(at(hits, String.length(pattern) * @pulse), times)
   end

@@ -265,9 +265,11 @@ defmodule NightService do
     pattern = patterns |> List.wrap() |> Enum.join() |> String.replace(" ", "")
 
     hits =
-      for {cell, index} <- Enum.with_index(String.graphemes(pattern)),
-          cell != ".",
-          do: {index / 4, hit(vel: String.to_integer(cell) / 9)}
+      pattern
+      |> String.graphemes()
+      |> Enum.with_index()
+      |> Enum.reject(fn {cell, _} -> cell == "." end)
+      |> Enum.map(fn {cell, index} -> {index / 4, hit(vel: String.to_integer(cell) / 9)} end)
 
     repeat(at(hits, String.length(pattern) / 4), bars)
   end

@@ -144,7 +144,7 @@ defmodule Choro do
 
     for {bar, index} <- Enum.with_index(bars),
         note <- bar_notes(bar),
-        do: Map.put(%{note | beat: index * 2 + note.beat}, :bar, index)
+        do: Map.merge(note, %{beat: index * 2 + note.beat, bar: index})
   end
 
   defp bar_notes(bar) do

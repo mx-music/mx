@@ -147,10 +147,13 @@ defmodule Mix.Tasks.Mx.Measure do
 
     IO.puts("")
 
-    for {kind, notes} <- Enum.sort_by(Enum.group_by(measured, & &1.kind), &kind_order/1) do
+    measured
+    |> Enum.group_by(& &1.kind)
+    |> Enum.sort_by(&kind_order/1)
+    |> Enum.each(fn {kind, notes} ->
       {followed, missed} = Enum.split_with(notes, & &1.followed)
       IO.puts("#{kind}: #{followed_line(followed, missed)}")
-    end
+    end)
   end
 
   defp kind_order({kind, _}) do

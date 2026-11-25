@@ -90,7 +90,10 @@ defmodule Mx.Import do
   defp synths(opts, score, path) do
     names = Enum.map(score.parts, & &1.name)
 
-    for given <- opts |> Keyword.get_values(:part) |> List.flatten(), into: %{} do
+    opts
+    |> Keyword.get_values(:part)
+    |> List.flatten()
+    |> Map.new(fn given ->
       {name, synth} =
         case String.split(given, "=", parts: 2) do
           [name, synth] ->
@@ -110,7 +113,7 @@ defmodule Mx.Import do
       end
 
       {part, synth}
-    end
+    end)
   end
 
   defp synth(name) do

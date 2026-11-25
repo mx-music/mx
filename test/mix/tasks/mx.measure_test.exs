@@ -1055,10 +1055,13 @@ defmodule Mix.Tasks.Mx.MeasureTest do
 
     test "measures the fades mx's guitar was built on, over the 15 files played mf", %{dir: dir} do
       args =
-        for path <- Path.wildcard(Path.join(dir, "Guitar.mf.*.aif")) do
+        dir
+        |> Path.join("Guitar.mf.*.aif")
+        |> Path.wildcard()
+        |> Enum.map(fn path ->
           [_, first] = Regex.run(~r/\.([A-G]b?\d)[A-G]?b?\d*\.aif$/, path)
           "#{path}:#{first}"
-        end
+        end)
 
       assert length(args) == 15
       output = capture_io(fn -> Mix.Tasks.Mx.Measure.run(args) end)

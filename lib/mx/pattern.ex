@@ -18,9 +18,12 @@ defmodule Mx.Pattern do
 
   @doc "The cells of a pattern's text, read a character to a step."
   def parse_steps(text) when is_binary(text) do
-    for char <- String.graphemes(String.replace(text, ~r/[\s|]/, "")) do
+    text
+    |> String.replace(~r/[\s|]/, "")
+    |> String.graphemes()
+    |> Enum.map(fn char ->
       %{tokens: if(char == ".", do: [], else: [char]), steps: 1, char: true}
-    end
+    end)
   end
 
   @doc "The cells of a pattern's text, read a word to a step."
@@ -93,7 +96,7 @@ defmodule Mx.Pattern do
           raise ArgumentError, "#{word} takes no length; a grace note takes no step"
         end
 
-        cells(words, [Map.put(%{cell | steps: 0}, :grace, true) | cells])
+        cells(words, [Map.merge(cell, %{steps: 0, grace: true}) | cells])
 
       _ ->
         raise ArgumentError, "#{word} is no grace note; ^ marks a word that sounds"

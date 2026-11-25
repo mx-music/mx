@@ -117,7 +117,12 @@ defmodule Mx.Render do
   # Each effect of a chain with whose it is and how long it rings.
   defp chain_rings(owner, fx, bpm) do
     with {:ok, tails} <- Mxs.effect_tails(fx, bpm) do
-      rings = for {effect, tail} <- Enum.zip(Keyword.keys(fx), tails), do: {owner, effect, tail}
+      rings =
+        fx
+        |> Keyword.keys()
+        |> Enum.zip(tails)
+        |> Enum.map(fn {effect, tail} -> {owner, effect, tail} end)
+
       {:ok, rings}
     end
   end

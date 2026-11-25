@@ -56,11 +56,14 @@ defmodule Mx.MeasureTest do
     {:ok, rumble} = Measure.file(rumble, 45)
     assert [_] = rumble
 
-    for {clean_band, rumble_band} <- Enum.zip(Measure.bands(clean), Measure.bands(rumble)) do
+    clean
+    |> Measure.bands()
+    |> Enum.zip(Measure.bands(rumble))
+    |> Enum.each(fn {clean_band, rumble_band} ->
       assert clean_band.band == rumble_band.band
       assert_in_delta clean_band.level, rumble_band.level, 1
       assert_in_delta clean_band.fade / rumble_band.fade, 1, 0.1
-    end
+    end)
   end
 
   test "a stereo AIFF at 44.1 kHz and a mono WAV at 48 kHz measure the same", ctx do
@@ -70,11 +73,14 @@ defmodule Mx.MeasureTest do
     {:ok, wav} = Measure.file(wav, 55)
     {:ok, aiff} = Measure.file(aiff, 55)
 
-    for {wav_band, aiff_band} <- Enum.zip(Measure.bands(wav), Measure.bands(aiff)) do
+    wav
+    |> Measure.bands()
+    |> Enum.zip(Measure.bands(aiff))
+    |> Enum.each(fn {wav_band, aiff_band} ->
       assert wav_band.band == aiff_band.band
       assert_in_delta wav_band.level, aiff_band.level, 1
       assert_in_delta wav_band.fade / aiff_band.fade, 1, 0.1
-    end
+    end)
   end
 
   test "WAVs of 16, 24 and 32-bit integers measure as one of floats does", ctx do

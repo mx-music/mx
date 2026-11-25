@@ -117,12 +117,11 @@ defmodule Mx.Engine.Mxs do
 
   # mxs glides any number option over its _slide partner, so each one is listed.
   defp defaults(specs) do
-    Map.merge(
-      Map.new(specs, fn spec ->
-        {spec.name, spec.default_name || spec.default}
-      end),
-      Map.new(for spec <- specs, spec.kind != "name", do: {spec.name <> "_slide", 0})
-    )
+    slides = for spec <- specs, spec.kind != "name", into: %{}, do: {spec.name <> "_slide", 0}
+
+    specs
+    |> Map.new(fn spec -> {spec.name, spec.default_name || spec.default} end)
+    |> Map.merge(slides)
   end
 
   @impl GenServer
