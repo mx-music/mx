@@ -149,7 +149,7 @@ defmodule Mx.Band do
   def init(opts) when is_list(opts) do
     Process.flag(:trap_exit, true)
     prepare = Keyword.get(opts, :prepare, & &1)
-    song = prepare.(Keyword.fetch!(opts, :song))
+    song = opts |> Keyword.fetch!(:song) |> prepare.()
     ahead_us = Keyword.get(opts, :ahead_ms, 500) * 1000
     start_us = Keyword.get_lazy(opts, :start_us, fn -> now() + ahead_us end)
 

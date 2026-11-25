@@ -426,12 +426,14 @@ defmodule Mx.Bench do
       Enum.each([band, inputs, engine], &GenServer.stop/1)
       Clock.stop_render()
       percent = fn us -> Float.round(us / step_us * 100, 1) end
+      mean = Enum.sum(costs) / steps
+      worst = Enum.max(costs)
 
       %{
         song: Path.basename(path),
         buffers: steps,
-        mean_percent: percent.(Enum.sum(costs) / steps),
-        worst_percent: percent.(Enum.max(costs)),
+        mean_percent: percent.(mean),
+        worst_percent: percent.(worst),
         over: Enum.count(costs, &(&1 > step_us))
       }
     end

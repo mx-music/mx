@@ -214,8 +214,8 @@ defmodule Mx.Fit.Struck do
     median = fn values -> values |> Enum.sort() |> Enum.at(div(length(values), 2)) end
 
     %{
-      recordings: median.(Enum.map(checks, &elem(&1.pitch, 0))),
-      render: median.(Enum.map(checks, &elem(&1.pitch, 1))),
+      recordings: checks |> Enum.map(&elem(&1.pitch, 0)) |> median.(),
+      render: checks |> Enum.map(&elem(&1.pitch, 1)) |> median.(),
       furthest: Enum.max_by(checks, &abs(elem(&1.pitch, 1))),
       off: Enum.filter(checks, &(abs(elem(&1.pitch, 1)) > 5))
     }

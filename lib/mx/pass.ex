@@ -458,7 +458,10 @@ defmodule Mx.Pass do
     update(&%{&1 | notes: [{&1.beat + offset, note, beats, vel} | &1.notes]})
   end
 
-  defp update(fun), do: Process.put(@key, fun.(Process.get(@key)))
+  defp update(fun) do
+    current = Process.get(@key)
+    Process.put(@key, fun.(current))
+  end
 
   defp format(%Mx.Music.LoopError{line: line} = error, _stacktrace, loop) when is_integer(line) do
     "#{loop.file}:#{line}: #{Exception.message(error)}"

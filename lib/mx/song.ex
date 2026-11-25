@@ -907,5 +907,8 @@ defmodule Mx.Song do
     end
   end
 
-  defp update(fun), do: Process.put(@key, fun.(Process.get(@key)))
+  defp update(fun) do
+    current = Process.get(@key)
+    Process.put(@key, fun.(current))
+  end
 end

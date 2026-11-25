@@ -394,7 +394,7 @@ defmodule Mx.MIDITest do
     {again, _output} = import!(out)
     # The export titles the file after the song, so only the song's first line differs.
     module = &String.replace(&1, ~r/\A.*\n.*\n.*\n/, "")
-    assert module.(File.read!(again)) == module.(File.read!(song))
+    assert again |> File.read!() |> module.() == song |> File.read!() |> module.()
   end
 
   test "a file that is not a MIDI file is refused", %{tmp_dir: dir} do

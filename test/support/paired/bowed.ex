@@ -109,7 +109,8 @@ defmodule Mx.Paired.Bowed do
       |> Enum.with_index()
       |> Enum.reduce(shaped, fn {centre, band}, sound ->
         gain =
-          Map.fetch!(bowed, :"eq#{band}") || by_vel.(Enum.map(fit.gains, &Enum.at(&1, band)))
+          Map.fetch!(bowed, :"eq#{band}") ||
+            fit.gains |> Enum.map(&Enum.at(&1, band)) |> by_vel.()
 
         peak(sound, hz: centre, q: 1.4, db: gain)
       end)

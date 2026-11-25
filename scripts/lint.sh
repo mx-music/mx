@@ -239,8 +239,8 @@ run_check "Don't pipe inside parentheses like '(a |> b()) * c' or 'f(a |> b())';
 run_check "Don't open a module call with another, like 'Enum.map(Enum.slice(xs, 0, 2), f)'; pipe it, as 'xs |> Enum.slice(0, 2) |> Enum.map(f)', or bind the inner call's result to a name" \
           -P '(?<!\|> )(?<![\w.])[A-Z]\w*(?:\.[A-Z]\w*)*\.[a-z_]\w*[?!]?\(\s*[A-Z]\w*(?:\.[A-Z]\w*)*\.[a-z_]\w*[?!]?\('
 # A condition or a message is not a value being transformed, and a call with no arguments can't start a pipe.
-run_check "Don't open a local or Erlang call with a module call, like 'elem(Float.parse(x), 0)'; pipe it, as 'x |> Float.parse() |> elem(0)', or bind the inner call's result to a name" \
-          -P '(?<!\|> )(?<![\w.:@])(?!(?:if|unless|unquote|quote|assert\w*|refute\w*|raise|throw|send)\()(?::\w+\.)?[a-z_]\w*[?!]?\(\s*[A-Z]\w*(?:\.[A-Z]\w*)*\.[a-z_]\w*[?!]?\((?!\s*\))'
+run_check "Don't open a local, Erlang or anonymous call with a module call, like 'elem(Float.parse(x), 0)' or 'fun.(Map.get(x, :k))'; pipe it, as 'x |> Float.parse() |> elem(0)', or bind the inner call's result to a name" \
+          -P '(?<!\|> )(?<![\w.:@])(?!(?:if|unless|unquote|quote|assert\w*|refute\w*|raise|throw|send)\()(?::\w+\.)?[a-z_]\w*(?:[?!]|(?:\.[a-z_]\w*)*\.)?\(\s*[A-Z]\w*(?:\.[A-Z]\w*)*\.[a-z_]\w*[?!]?\((?!\s*\))'
 run_check "Don't call a module inside grouping parentheses like '(Enum.at(xs, i) + 1) * c'; bind the call's result to a name" \
           -P '(?<![\w.?!)\]&\\])\([^()"\n]*\b[A-Z]\w*(?:\.[A-Z]\w*)*\.[a-z_]\w*[?!]?\('
 

@@ -236,10 +236,8 @@ defmodule Mx.Page do
 
     case opts[:sustain] do
       sustain when is_number(sustain) and sustain >= 0 ->
-        min(
-          whole,
-          lasts.(Keyword.get(opts, :attack, 0) + sustain + Keyword.get(opts, :release, 0))
-        )
+        held = Keyword.get(opts, :attack, 0) + sustain + Keyword.get(opts, :release, 0)
+        min(whole, lasts.(held))
 
       _until_the_end ->
         whole
@@ -254,7 +252,7 @@ defmodule Mx.Page do
           beats = opts[key],
           do: beats
 
-    if envelope == [], do: 0.0, else: lasts.(Enum.sum(envelope))
+    if envelope == [], do: 0.0, else: envelope |> Enum.sum() |> lasts.()
   end
 
   defp strength(opts) do

@@ -149,13 +149,15 @@ defmodule Mx.Instrument.Vocabulary do
     Expr.call(:air_jet, [], Enum.map(opts, &through/1))
   end
 
-  defp through({key, fun}) when is_function(fun, 1), do: {key, fun.(Expr.call(:input, []))}
+  defp through({key, fun}) when is_function(fun, 1), do: {key, fun.(input())}
   defp through(option), do: option
 
   @doc "The sound `fun` makes of `sound`, which is built once however many times `fun` uses it, so a noise in it plays the same numbers at each use."
   def share(sound, fun) when is_function(fun, 1) do
-    Expr.call(:share, [sound], through: fun.(Expr.call(:input, [])))
+    Expr.call(:share, [sound], through: fun.(input()))
   end
+
+  defp input, do: Expr.call(:input, [])
 
   @doc "A wind's sound through peaks at mx's bands, `gains:` in dB at each of pp, mf and ff, eight to each for the bands up to 3162 Hz or eleven for all of them up to 12.6 kHz, and `levels:` in dB at each, following `vel:`."
   def wind_bands(sound, opts), do: Expr.call(:wind_bands, [sound], opts)

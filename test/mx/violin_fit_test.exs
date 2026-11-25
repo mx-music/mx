@@ -130,7 +130,7 @@ defmodule Mx.ViolinFitTest do
     assert_in_delta slow.(cents), 1.6, 0.8
 
     for harmonic <- [0, 1, 3, 7] do
-      wander = slow.(Enum.map(levels, &Enum.at(&1, harmonic)))
+      wander = levels |> Enum.map(&Enum.at(&1, harmonic)) |> slow.()
       assert wander > 1.2 and wander < 4, "harmonic #{harmonic + 1} wanders #{wander} dB"
     end
   end

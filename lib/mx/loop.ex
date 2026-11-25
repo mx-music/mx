@@ -521,7 +521,8 @@ defmodule Mx.Loop do
     state =
       Enum.reduce(due, state, fn
         {beat, _, {:out, message}, _, _, _}, state ->
-          state.out.(Band.time_at(timeline, beat), message)
+          time = Band.time_at(timeline, beat)
+          state.out.(time, message)
           state
 
         {beat, synth, step, opts, fx, id}, state ->
@@ -532,7 +533,8 @@ defmodule Mx.Loop do
               state
 
             {:ok, events} ->
-              state.play.(Band.time_at(timeline, beat), events)
+              time = Band.time_at(timeline, beat)
+              state.play.(time, events)
               state
 
             {:missing, ref, path} ->
