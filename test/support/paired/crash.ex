@@ -69,12 +69,14 @@ defmodule Mx.Paired.Crash do
 
     crack = highpass(noise(:white), hz: 6000 * scale) * hit(0.001, 0.06, -4) * (2 * db(@crack_db))
 
-    thud =
-      (noise(:white)
-       |> bpf(330 * scale, 1)
-       |> highpass(hz: 110 * scale)
-       |> lowpass(hz: 400 * scale)
-       |> lowpass(hz: 400 * scale)) * hit(0.001, 0.035, -4) * (31.6 * db(@crack_db))
+    thud_noise =
+      noise(:white)
+      |> bpf(330 * scale, 1)
+      |> highpass(hz: 110 * scale)
+      |> lowpass(hz: 400 * scale)
+      |> lowpass(hz: 400 * scale)
+
+    thud = thud_noise * hit(0.001, 0.035, -4) * (31.6 * db(@crack_db))
 
     held = o.sustain
     release = o.release

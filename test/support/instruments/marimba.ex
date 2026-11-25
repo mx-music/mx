@@ -61,17 +61,21 @@ defmodule Mx.Instruments.Marimba do
           end
       )
 
-    tap =
-      (noise(:white)
-       |> lowpass(hz: 2200, poles: 6)
-       |> highpass(hz: 1000)
-       |> perc(attack: 0.0005, release: 0.12)
-       |> gain(0.55)) +
-        (noise(:white)
-         |> lowpass(hz: 4000, poles: 4)
-         |> highpass(hz: 2500)
-         |> perc(attack: 0.0005, release: 0.05)
-         |> gain(0.3))
+    low_tap =
+      noise(:white)
+      |> lowpass(hz: 2200, poles: 6)
+      |> highpass(hz: 1000)
+      |> perc(attack: 0.0005, release: 0.12)
+      |> gain(0.55)
+
+    high_tap =
+      noise(:white)
+      |> lowpass(hz: 4000, poles: 4)
+      |> highpass(hz: 2500)
+      |> perc(attack: 0.0005, release: 0.05)
+      |> gain(0.3)
+
+    tap = low_tap + high_tap
 
     (struck + tap * (vel / 0.6) ** 0.5)
     |> gain(0.1 * (vel / 0.6) ** 1.9)

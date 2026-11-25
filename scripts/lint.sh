@@ -232,9 +232,9 @@ run_check "Don't use 'apply'; call the function directly, or pass a capture like
 
 run_check 'Use &function/1 instead of &function(&1)' "&[a-z_]+\(&1\)"
 run_check "Don't pipe inside a capture like '&(&1 |> foo() |> bar())'; extract a named function or split the outer pipeline into steps" '&\(&\d+(\.\w+)* \|>'
-# A pipe in the body of a fn passed as an argument is the fn's own pipeline.
+# A pipe in a fn, for or do block passed as an argument is the block's own pipeline.
 run_check "Don't pipe inside parentheses like '(a |> b()) * c' or 'f(a |> b())'; bind the pipeline to a variable, end the pipeline in the call, or extract a function" \
-          -PU '(?<!&)\((?:(?:(?!\bfn\b)[^()\n]|\((?:[^()\n]|\([^()\n]*\))*\))*\|> |\s*\n[^()\n]*\n\s*\|> )'
+          -PU '(?<![&\\])\((?:(?!\b(?:fn|for|do)\b)[^()"|]|\((?:[^()"]|\([^()"]*\))*\))*?\|> '
 
 run_check "Use to_timeout/1" ":timer\.(seconds|minutes|hours)"
 run_check "Avoid sleep, if you really need, use Process.sleep" ":timer\.sleep"

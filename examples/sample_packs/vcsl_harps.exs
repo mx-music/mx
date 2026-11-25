@@ -264,12 +264,8 @@ defmodule PlanxtyIrwin do
   # The tune once through, each strain twice, an A before each and none after the last.
   defp tune do
     strains = [:first, :first, :second, :second]
-
-    seq([
-      line(@lead_in),
-      strains |> Enum.map(&strain/1) |> Enum.intersperse(line(@lead_in)) |> seq(),
-      rest(@eighth)
-    ])
+    played = strains |> Enum.map(&strain/1) |> Enum.intersperse(line(@lead_in)) |> seq()
+    seq([line(@lead_in), played, rest(@eighth)])
   end
 
   defp broken do
