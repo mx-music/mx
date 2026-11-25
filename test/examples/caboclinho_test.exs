@@ -158,7 +158,7 @@ defmodule Mx.Examples.CaboclinhoTest do
   end
 
   defp events(pass, loop) do
-    for line <- String.split(loop_part(print(pass), loop), "\n"),
+    for line <- pass |> print() |> loop_part(loop) |> String.split("\n"),
         [_, beat] <- [Regex.run(~r/^beat ([\d.]+)/, line)],
         do: {number(beat), line}
   end

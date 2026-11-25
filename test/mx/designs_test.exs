@@ -169,7 +169,7 @@ defmodule Mx.DesignsTest do
   @guitar_notes [40, 43, 45, 48, 52, 55, 57, 60, 64, 67, 69, 72, 76]
 
   test "guitar's harmonics fade over the times measured from a real guitar", ctx do
-    bands = Map.new(Measure.bands(guitar_notes(ctx, 0.6)), &{&1.band, &1.fade})
+    bands = ctx |> guitar_notes(0.6) |> Measure.bands() |> Map.new(&{&1.band, &1.fade})
 
     for {band, seconds} <- @guitar_fades do
       fade = bands[band]
@@ -269,7 +269,7 @@ defmodule Mx.DesignsTest do
   test "piano's harmonic levels and fades follow the Steinway's at each strength", ctx do
     for {vel, table} <- @piano do
       bands =
-        Map.new(Measure.bands(piano_notes(ctx, vel, 36..96//4, @trend)), &{&1.band, &1})
+        ctx |> piano_notes(vel, 36..96//4, @trend) |> Measure.bands() |> Map.new(&{&1.band, &1})
 
       for {band, {level, fade}} <- table do
         %{level: synth_level, fade: synth_fade} = bands[band]
@@ -360,10 +360,10 @@ defmodule Mx.DesignsTest do
        ctx do
     for {vel, table} <- @piano_pedal do
       bands =
-        Map.new(
-          Measure.bands(piano_notes(ctx, vel, 36..96//4, [pedal: 1] ++ @trend)),
-          &{&1.band, &1}
-        )
+        ctx
+        |> piano_notes(vel, 36..96//4, [pedal: 1] ++ @trend)
+        |> Measure.bands()
+        |> Map.new(&{&1.band, &1})
 
       assert_bands(bands, table, "pedal 1 vel #{vel}")
     end
@@ -403,7 +403,10 @@ defmodule Mx.DesignsTest do
   test "piano's notes below C2 follow the Steinway's harmonic levels and fades", ctx do
     for {vel, table} <- @piano_low do
       bands =
-        Map.new(Measure.bands(piano_notes(ctx, vel, [22, 24, 28, 32], @trend)), &{&1.band, &1})
+        ctx
+        |> piano_notes(vel, [22, 24, 28, 32], @trend)
+        |> Measure.bands()
+        |> Map.new(&{&1.band, &1})
 
       assert_bands(bands, table, "vel #{vel}")
     end
@@ -1113,7 +1116,7 @@ defmodule Mx.DesignsTest do
 
   test "harp's harmonics fade and stand as the folk harp's do at each strength", ctx do
     for {vel, bands} <- @harp do
-      measured = Map.new(Measure.bands(harp_notes(ctx, vel)), &{&1.band, &1})
+      measured = ctx |> harp_notes(vel) |> Measure.bands() |> Map.new(&{&1.band, &1})
 
       for {band, {fade, level}} <- bands do
         %{fade: synth_fade, level: synth_level} = measured[band]
@@ -1214,7 +1217,8 @@ defmodule Mx.DesignsTest do
   test "electric_bass's harmonics fade and stand as the recorded bass's do at each velocity",
        ctx do
     for {vel, {notes, bands}} <- @electric_bass do
-      measured = Map.new(Measure.bands(electric_bass_notes(ctx, notes, vel)), &{&1.band, &1})
+      measured =
+        ctx |> electric_bass_notes(notes, vel) |> Measure.bands() |> Map.new(&{&1.band, &1})
 
       for {band, {fade, level}} <- bands do
         %{fade: synth_fade, level: synth_level} = measured[band]
@@ -1311,7 +1315,8 @@ defmodule Mx.DesignsTest do
 
   test "deep_bass's harmonics fade and stand as the recorded basses' do at each velocity", ctx do
     for {vel, {notes, bands}} <- @deep_bass do
-      measured = Map.new(Measure.bands(bass_notes(ctx, :deep_bass, notes, vel)), &{&1.band, &1})
+      measured =
+        ctx |> bass_notes(:deep_bass, notes, vel) |> Measure.bands() |> Map.new(&{&1.band, &1})
 
       for {band, {fade, level}} <- bands do
         %{fade: synth_fade, level: synth_level} = measured[band]
@@ -1595,7 +1600,10 @@ defmodule Mx.DesignsTest do
   test "violin's plucked notes fade and stand as Iowa's pizzicato does at pp, mf and ff", ctx do
     for {vel, bands} <- @violin_pizz do
       measured =
-        Map.new(Measure.bands(plucked_notes(ctx, :violin, 55..107//4, vel)), &{&1.band, &1})
+        ctx
+        |> plucked_notes(:violin, 55..107//4, vel)
+        |> Measure.bands()
+        |> Map.new(&{&1.band, &1})
 
       for {band, {fade, level}} <- bands do
         %{fade: synth_fade, level: synth_level} = measured[band]
@@ -1755,7 +1763,7 @@ defmodule Mx.DesignsTest do
   test "viola's plucked notes stand as Iowa's pizzicato does at pp, mf and ff", ctx do
     for {vel, bands} <- @viola_pizz do
       measured =
-        Map.new(Measure.bands(plucked_notes(ctx, :viola, 48..82//3, vel)), &{&1.band, &1})
+        ctx |> plucked_notes(:viola, 48..82//3, vel) |> Measure.bands() |> Map.new(&{&1.band, &1})
 
       for {band, level} <- bands do
         assert_in_delta measured[band].level,
@@ -1911,7 +1919,7 @@ defmodule Mx.DesignsTest do
   test "cello's plucked notes fade and stand as Iowa's pizzicato does at pp, mf and ff", ctx do
     for {vel, bands} <- @cello_pizz do
       measured =
-        Map.new(Measure.bands(plucked_notes(ctx, :cello, 36..82//3, vel)), &{&1.band, &1})
+        ctx |> plucked_notes(:cello, 36..82//3, vel) |> Measure.bands() |> Map.new(&{&1.band, &1})
 
       for {band, {fade, level}} <- bands do
         %{fade: synth_fade, level: synth_level} = measured[band]
@@ -2086,7 +2094,10 @@ defmodule Mx.DesignsTest do
        ctx do
     for {vel, bands} <- @double_bass_pizz do
       measured =
-        Map.new(Measure.bands(plucked_notes(ctx, :double_bass, 28..67//3, vel)), &{&1.band, &1})
+        ctx
+        |> plucked_notes(:double_bass, 28..67//3, vel)
+        |> Measure.bands()
+        |> Map.new(&{&1.band, &1})
 
       for {band, {fade, level}} <- bands do
         %{fade: synth_fade, level: synth_level} = measured[band]
@@ -3844,7 +3855,7 @@ defmodule Mx.DesignsTest do
 
       nears =
         for {sound, at} <- Enum.zip(strokes, settled),
-            do: cents.(pitch(window(sound, reached - 0.01, reached + 0.01), hz), at)
+            do: sound |> window(reached - 0.01, reached + 0.01) |> pitch(hz) |> cents.(at)
 
       assert_in_delta median(nears), 0, 50, "at #{reached} s #{median(nears)} cents off"
 

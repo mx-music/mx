@@ -551,7 +551,7 @@ defmodule ErbarmeDich.Paraphrase do
       }[note.kind]
 
     vel = loudness * weight * (1 + shape(note, lines))
-    Float.round(min(max(vel, 0.04), 0.98), 2)
+    vel |> max(0.04) |> min(0.98) |> Float.round(2)
   end
 
   defp shape(%{kind: kind} = note, lines) when kind in [:melody, :melody_octave, :answer] do

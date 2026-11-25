@@ -55,7 +55,7 @@ defmodule Mx.SampleFormatsTest do
         Path.join(dir, "Membranophones/Struck Membranophones/Darbuka/Darbuka_5_hit_vl2_rr2.wav")
 
       assert {:ok, _} = Samples.path(path)
-      assert Enum.max(Enum.map(played(path, 1), &abs/1)) > 0.01
+      assert path |> played(1) |> Enum.map(&abs/1) |> Enum.max() > 0.01
     end
   end
 

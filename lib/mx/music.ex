@@ -2199,7 +2199,7 @@ defmodule Mx.Music do
   end
 
   defp map_notes(%Loop{fun: loop_fun} = loop, fun, walk) do
-    %{loop | fun: fn pass, inputs -> walk.(returned(loop_fun.(pass, inputs)), fun) end}
+    %{loop | fun: fn pass, inputs -> pass |> loop_fun.(inputs) |> returned() |> walk.(fun) end}
   end
 
   defp map_notes(music, _fun, _walk), do: music

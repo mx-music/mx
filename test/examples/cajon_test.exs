@@ -43,7 +43,7 @@ defmodule Mx.Examples.CajonTest do
     assert accents.(8) == [0.0, 3.0, 6.0, 8.0, 10.0]
     assert accents.(9) == [0.0, 3.0, 6.0, 8.0, 10.0]
     assert accents.(10) == [0.0, 3.0, 7.0, 8.0, 10.0]
-    assert List.last(strokes(print(11))) == {5.0, 0, 0.95}
+    assert 11 |> print() |> strokes() |> List.last() == {5.0, 0, 0.95}
   end
 
   test "the rock beat adds soft slaps until every sixteenth is played, and the roll grows into the bass tone" do

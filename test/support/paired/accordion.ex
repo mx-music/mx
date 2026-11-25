@@ -66,7 +66,10 @@ defmodule Mx.Paired.Accordion do
     tone = select(detune > 0, two, one)
 
     noise =
-      Enum.reduce(Enum.zip(tl(@centres), @noise), 0, fn {centre, level}, sum ->
+      @centres
+      |> tl()
+      |> Enum.zip(@noise)
+      |> Enum.reduce(0, fn {centre, level}, sum ->
         sum +
           (noise(:white) |> bandpass(hz: centre, q: 1 / 0.3) |> bandpass(hz: centre, q: 1 / 0.3)) *
             db(level)

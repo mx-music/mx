@@ -487,7 +487,7 @@ defmodule Mix.Tasks.Mx.Fit do
     IO.puts(name)
 
     for {row, levels} <- rows do
-      IO.puts(row_line(row_name(row), Enum.map(levels, &level(&1, floor))))
+      row |> row_name() |> row_line(Enum.map(levels, &level(&1, floor))) |> IO.puts()
     end
   end
 

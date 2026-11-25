@@ -1236,7 +1236,7 @@ defmodule Mx.BandTest do
       assert_receive {:played, _, [{:note, _, _, note, _, _}]} when note == 1.0
       Agent.update(agent, &Map.put(&1, {:cc, 74}, 64))
 
-      notes = Enum.map(collect_until(counted(%{64 => 1})), &elem(&1, 1))
+      notes = %{64 => 1} |> counted() |> collect_until() |> Enum.map(&elem(&1, 1))
       assert List.last(notes) == 64.0
       assert notes == Enum.sort(notes)
     end

@@ -28,7 +28,7 @@ defmodule Mx.Examples.ChoroTest do
   end
 
   test "the flute opens on Nazareth's first bar, E D C# D F# E D C, with a mordent on the E" do
-    assert Enum.take(notes(loop_part(print(0), "flute")), 10) == [
+    assert 0 |> print() |> loop_part("flute") |> notes() |> Enum.take(10) == [
              76,
              78,
              76,
@@ -54,7 +54,9 @@ defmodule Mx.Examples.ChoroTest do
     assert loop_part(print(0), "clarinet") == ""
 
     opening = notes(loop_part(print(0), "flute"))
-    assert Enum.take(notes(loop_part(print(1), "clarinet")), 100) == Enum.take(opening, 100)
+
+    assert 1 |> print() |> loop_part("clarinet") |> notes() |> Enum.take(100) ==
+             Enum.take(opening, 100)
 
     flute = for note <- notes(before(loop_part(print(7), "flute"), 30)), do: note - 12
     assert notes(before(loop_part(print(7), "clarinet"), 30)) == flute

@@ -115,7 +115,7 @@ defmodule Mx.Examples.PandeiroTest do
 
     for [beat, muted] <-
           Regex.scan(~r/^beat ([\d.]+) +play .*muted: (\d)/m, rows, capture: :all_but_first) do
-      {String.to_float(if(beat =~ ".", do: beat, else: beat <> ".0")), String.to_integer(muted)}
+      {elem(Float.parse(beat), 0), String.to_integer(muted)}
     end
   end
 

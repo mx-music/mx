@@ -244,7 +244,7 @@ defmodule Mx.Performance do
             voices =
               for voice <- bar.voices do
                 for {group, onset} <- onsets(voice, bar_start) do
-                  loud = vel.(loudness.(at.(onset)))
+                  loud = onset |> at.() |> loudness.() |> vel.()
 
                   notes = Enum.map(group.notes, &played_at(&1, loud))
 

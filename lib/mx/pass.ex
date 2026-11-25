@@ -343,7 +343,7 @@ defmodule Mx.Pass do
 
   @doc "A handle to an effect of one of the song's buses, or nil when the song has no such bus or the bus no such effect."
   def bus_effect(bus, effect) when is_atom(bus) and is_atom(effect) do
-    with %{fx: fx} <- Enum.find(Map.get(Process.get(@key), :buses, []), &(&1.name == bus)),
+    with %{fx: fx} <- @key |> Process.get() |> Map.get(:buses, []) |> Enum.find(&(&1.name == bus)),
          index when index != nil <- Enum.find_index(fx, fn {name, _} -> name == effect end) do
       %Handle{target: {:bus, bus, index}, synth: effect}
     else

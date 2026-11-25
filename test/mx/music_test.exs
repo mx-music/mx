@@ -252,7 +252,7 @@ defmodule Mx.MusicTest do
 
       assert [{0, {:sample, {:sonic_pi, :bd_haus}, _}, []}, {1, 60, opts}] = events(song, :a)
       assert opts[:vel] == 0.8
-      assert Mx.beats(Mx.each(Mx.seq(c4: 1, e4: 2), vel: 0.5)) == 3
+      assert [c4: 1, e4: 2] |> Mx.seq() |> Mx.each(vel: 0.5) |> Mx.beats() == 3
     end
 
     @tag :tmp_dir
@@ -328,7 +328,7 @@ defmodule Mx.MusicTest do
         1.6
       ])
 
-      assert Mx.beats(Mx.feel(Mx.seq(c4: 1, e4: 2), step: 1, push: [0.2])) == 3
+      assert [c4: 1, e4: 2] |> Mx.seq() |> Mx.feel(step: 1, push: [0.2]) |> Mx.beats() == 3
     end
 
     @tag :tmp_dir

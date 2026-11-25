@@ -166,7 +166,7 @@ defmodule Mx.Examples.RagaTest do
     pass |> print() |> String.split("\n\n") |> Enum.find(&String.starts_with?(&1, "sitar"))
   end
 
-  defp number(text), do: String.to_float(if(text =~ ".", do: text, else: text <> ".0"))
+  defp number(text), do: elem(Float.parse(text), 0)
 
   defp round_beat(beat), do: Float.round(beat * 1.0, 3)
 

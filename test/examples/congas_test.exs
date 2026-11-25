@@ -55,7 +55,7 @@ defmodule Mx.Examples.CongasTest do
     refute print(11) =~
              ~r/high_conga, pass 11, [^\n]*\n(beat [^\n]*\n)*beat \S+ +play vel: 0.9, amp: 0.55/
 
-    assert List.last(beats(print(13), "high_conga")) == 2.25
+    assert 13 |> print() |> beats("high_conga") |> List.last() == 2.25
   end
 
   test "the conga rolls heel and tip in thirty-seconds, and the ending is a slap on the quinto over the tumba's open tone" do

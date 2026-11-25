@@ -51,9 +51,9 @@ defmodule Mix.Tasks.Mx.VideoTest do
       end
     end
 
-    assert Enum.uniq(bars.(hd(frames))) == [:grey]
-    assert Enum.uniq(bars.(List.last(frames))) == [:amber]
-    assert Enum.uniq(bars.(Enum.at(frames, 30))) == [:amber, :grey]
+    assert frames |> hd() |> bars.() |> Enum.uniq() == [:grey]
+    assert frames |> List.last() |> bars.() |> Enum.uniq() == [:amber]
+    assert frames |> Enum.at(30) |> bars.() |> Enum.uniq() == [:amber, :grey]
   end
 
   @tag :ffmpeg
@@ -88,11 +88,10 @@ defmodule Mix.Tasks.Mx.VideoTest do
     {peak, played} = Native.levels(sound, {"float_little", 32, 1}, 40)
 
     {_peak, recorded} =
-      Native.levels(
-        binary_part(File.read!(path), 44, 4 * 4 * 48_000),
-        {"float_little", 32, 1},
-        40
-      )
+      path
+      |> File.read!()
+      |> binary_part(44, 4 * 4 * 48_000)
+      |> Native.levels({"float_little", 32, 1}, 40)
 
     assert_in_delta 20 * :math.log10(peak), -1.5, 0.5
     gains = Enum.zip_with(played, recorded, &(20 * :math.log10(&1 / &2)))

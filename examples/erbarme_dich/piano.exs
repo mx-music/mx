@@ -228,7 +228,7 @@ defmodule ErbarmeDich.Piano do
       end
 
     vel = loudness * weight * behind * (1 + shape(note, voices))
-    Float.round(min(max(vel, 0.04), 0.95), 2)
+    vel |> max(0.04) |> min(0.95) |> Float.round(2)
   end
 
   defp alto_near?(note, voices), do: singing?(note.at, voices[:alto] || [])

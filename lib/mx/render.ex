@@ -91,7 +91,7 @@ defmodule Mx.Render do
     with {:ok, bpm} <- end_tempo(song, seconds),
          {:ok, main} <- chain_rings(:song, song.fx, bpm * share),
          {:ok, buses} <- map_ok(song.buses, &chain_rings(&1.name, &1.fx, bpm * share)) do
-      buses = Map.new(Enum.zip(Enum.map(song.buses, & &1.name), buses))
+      buses = song.buses |> Enum.map(& &1.name) |> Enum.zip(buses) |> Map.new()
       sends = Map.new(song.buses, &{&1.name, Keyword.keys(&1.send)})
 
       song.loops

@@ -377,10 +377,10 @@ defmodule Mx.InstrumentSongTest do
       """)
 
     assert %{kind: "ms", default: 20.0} =
-             Enum.find(
-               Mx.Instrument.specs(hd(late.__effects__())),
-               &(&1.name == "gap_ms")
-             )
+             late.__effects__()
+             |> hd()
+             |> Mx.Instrument.specs()
+             |> Enum.find(&(&1.name == "gap_ms"))
 
     assert Mx.Synths.check_value({:effect, :late}, :gap_ms, 200) ==
              {:error, "effect late takes gap_ms from 0 to 100, not 200"}

@@ -26,7 +26,7 @@ defmodule Mx.Examples.ClairDeLuneTest do
     opening = 0 |> strokes() |> Enum.map(&elem(&1, 0)) |> Enum.uniq() |> Enum.sort()
     assert opening == [65, 68, 73, 77, 80]
 
-    assert Enum.sort(Enum.map(strokes(71), &elem(&1, 0))) ==
+    assert 71 |> strokes() |> Enum.map(&elem(&1, 0)) |> Enum.sort() ==
              [61, 68, 73, 77, 80, 85, 89, 92]
   end
 

@@ -63,7 +63,7 @@ defmodule Mix.Tasks.Mx.ExportTest do
              "<time><beats>4</beats><beat-type>4</beat-type></time>"
 
     assert File.read!(Path.join(dir, "waltz.abc")) =~ "\nM:3/4\n"
-    {:ok, midi} = Mx.MIDI.parse(File.read!(Path.join(dir, "waltz.mid")), "waltz.mid")
+    {:ok, midi} = dir |> Path.join("waltz.mid") |> File.read!() |> Mx.MIDI.parse("waltz.mid")
     signatures = for {_, {:meta, 0x58, time}} <- hd(midi.tracks), do: time
     assert [<<3, 2, 24, 8>>] = signatures
   end
@@ -93,7 +93,7 @@ defmodule Mix.Tasks.Mx.ExportTest do
              "<key><fifths>2</fifths><mode>major</mode></key>"
 
     assert File.read!(Path.join(dir, "minor.abc")) =~ "\nK:Em"
-    {:ok, midi} = Mx.MIDI.parse(File.read!(Path.join(dir, "minor.mid")), "minor.mid")
+    {:ok, midi} = dir |> Path.join("minor.mid") |> File.read!() |> Mx.MIDI.parse("minor.mid")
     keys = for {_, {:meta, 0x59, key}} <- hd(midi.tracks), do: key
     assert [<<1, 1>>] = keys
   end

@@ -139,7 +139,7 @@ defmodule Mix.Tasks.Mx.Measure do
     measured = Mxs.Native.measure_known()
 
     for known <- measured do
-      name = String.upcase(Measure.name(round(known.note)))
+      name = known.note |> round() |> Measure.name() |> String.upcase()
       strike = :erlang.float_to_binary(known.strike, decimals: 1)
       IO.puts("#{name} #{known.kind}: strike #{signed(strike)} ms")
       Enum.each(known.partials, &print_known/1)
@@ -483,7 +483,7 @@ defmodule Mix.Tasks.Mx.Measure do
     IO.puts(@brightness)
     IO.puts(String.pad_trailing("", 14) <> stretches())
     for row <- Hits.brightness(hits), do: IO.puts(above(row) <> levels(row.levels))
-    IO.puts(highs_peak(Hits.highs_peak(hits)))
+    hits |> Hits.highs_peak() |> highs_peak() |> IO.puts()
     print_highs([{"above 4000 Hz", Hits.highs(hits)}])
   end
 

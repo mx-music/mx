@@ -462,7 +462,7 @@ defmodule Mix.Tasks.Mx.FitTest do
         )
 
       assert names == [["recording"], ["synth"], ["the fit"], ["sines"], ["noise"]]
-      assert length(String.split(hd(String.split(partial, "\n")))) == 23
+      assert partial |> String.split("\n") |> hd() |> String.split() |> length() == 23
       assert output =~ ~r/^ERB bands\n50-\d+ Hz\n  recording /m
 
       printed =

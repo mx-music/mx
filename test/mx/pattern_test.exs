@@ -178,15 +178,23 @@ defmodule Mx.PatternTest do
 
     test "plays an accented word with accent:, a number added to its vel up to 1 or options in place of its own" do
       vels = fn music -> for %Note{opts: opts} <- music.items, do: opts[:vel] end
+      word = ~MX"f >f"
 
-      assert vels.(steps(~MX"f >f", 0.25, strokes: [f: [vel: 0.5]], accent: 0.25)) == [0.5, 0.75]
-
-      assert vels.(steps(~MX"f >f", 0.25, strokes: [f: [vel: 0.5]], accent: [vel: 0.9])) == [
+      assert word |> steps(0.25, strokes: [f: [vel: 0.5]], accent: 0.25) |> vels.() == [
                0.5,
-               0.9
+               0.75
              ]
 
-      assert vels.(steps(~MX"f >f", 0.25, strokes: [f: [vel: 0.9]], accent: 0.25)) == [0.9, 1]
+      assert word |> steps(0.25, strokes: [f: [vel: 0.5]], accent: [vel: 0.9]) |> vels.() ==
+               [
+                 0.5,
+                 0.9
+               ]
+
+      assert word |> steps(0.25, strokes: [f: [vel: 0.9]], accent: 0.25) |> vels.() == [
+               0.9,
+               1
+             ]
 
       assert %Seq{items: [%Note{pitch: 67, opts: [vel: 0.6]}, %Note{pitch: 67, opts: [vel: 0.8]}]} =
                steps(~MX"g4 >g4", 0.25, vel: 0.6, accent: 0.2)

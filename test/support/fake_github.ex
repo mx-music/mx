@@ -58,7 +58,7 @@ defmodule Mx.FakeGitHub do
 
   @doc false
   def unquote(:do)(data) do
-    %{path: path} = URI.parse(to_string(mod(data, :request_uri)))
+    %{path: path} = data |> mod(:request_uri) |> to_string() |> URI.parse()
     segments = path |> String.split("/", trim: true) |> Enum.map(&URI.decode/1)
     {:proceed, [response: answer(segments, Application.fetch_env!(:mx, __MODULE__))]}
   end

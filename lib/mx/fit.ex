@@ -163,7 +163,7 @@ defmodule Mx.Fit do
 
       found ->
         measured = Enum.reverse(found)
-        File.mkdir_p!(Path.dirname(cache_path(dynamics, drone)))
+        dynamics |> cache_path(drone) |> Path.dirname() |> File.mkdir_p!()
         File.write!(cache_path(dynamics, drone), :erlang.term_to_binary(measured))
         {:ok, measured, false}
     end
