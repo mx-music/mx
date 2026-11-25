@@ -15,7 +15,7 @@ defmodule Mx.Examples.ClairDeLuneTest do
   test "the piano plays the 72 bars once, and the song ends", %{song: song} do
     assert [%{name: :piano, passes: 1}] = song.loops
 
-    total = 0..71 |> Enum.map(&pass_beats/1) |> Enum.sum() |> Float.round(3)
+    total = 0..71 |> Enum.sum_by(&pass_beats/1) |> Float.round(3)
     assert print() =~ ~r/\Apiano, #{total} beats at 120 bpm/
 
     for pass <- [0, 40, 71], do: assert(strokes(pass) != [])
@@ -37,7 +37,8 @@ defmodule Mx.Examples.ClairDeLuneTest do
   end
 
   test "every note is struck with the pedal down, and its dampers fall fast" do
-    plays = List.flatten(Regex.scan(~r/play \d+ [^\n]*/, print()))
+    matches = Regex.scan(~r/play \d+ [^\n]*/, print())
+    plays = List.flatten(matches)
     assert length(plays) > 1000
     assert Enum.all?(plays, &String.ends_with?(&1, "pedal: 1, release: 0.3"))
   end
@@ -82,5 +83,8 @@ defmodule Mx.Examples.ClairDeLuneTest do
     for {_beat, note, vel, sustain} <- ClairDeLune.strokes(pass + 1), do: {note, vel, sustain}
   end
 
-  defp pass_beats(pass), do: Float.round(ClairDeLune.warp(pass + 1, 9), 3)
+  defp pass_beats(pass) do
+    number = pass + 1
+    number |> ClairDeLune.warp(9) |> Float.round(3)
+  end
 end

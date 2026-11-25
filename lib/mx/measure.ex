@@ -57,7 +57,8 @@ defmodule Mx.Measure do
         inside != [] do
       fades = for %{fade: fade} <- inside, fade != nil, do: fade
       fade = if fades == [], do: nil, else: Signal.median(fades)
-      level = Signal.median(Enum.map(inside, & &1.level)) - reference
+      median = inside |> Enum.map(& &1.level) |> Signal.median()
+      level = median - reference
       %{band: band, fade: fade, level: level, count: length(inside)}
     end
   end

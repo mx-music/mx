@@ -161,5 +161,8 @@ defmodule Drums do
   defp strokes(:open_hihat, digit), do: [{0, [vel: vel(digit), sustain: 0.25, release: 0.05]}]
   defp strokes(_drum, digit), do: [{0, [vel: vel(digit)]}]
 
-  defp vel(digit), do: Float.round(String.to_integer(digit) / 9, 2)
+  defp vel(digit) do
+    level = String.to_integer(digit) / 9
+    Float.round(level, 2)
+  end
 end

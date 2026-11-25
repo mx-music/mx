@@ -98,8 +98,7 @@ defmodule Mx.Paired.Tanpura do
       slopes
       |> Enum.zip(tl(slopes))
       |> Enum.with_index(1)
-      |> Enum.map(fn {{from, to}, index} -> (to - from) * max(octaves - index, 0) end)
-      |> Enum.sum()
+      |> Enum.sum_by(fn {{from, to}, index} -> (to - from) * max(octaves - index, 0) end)
 
     hd(@body) + octaves * hd(slopes) + bends + 40 * :math.log10(min(freq / 100, 1))
   end

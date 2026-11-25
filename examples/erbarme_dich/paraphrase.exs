@@ -475,7 +475,7 @@ defmodule ErbarmeDich.Paraphrase do
   defp deep(pitch), do: pitch
 
   defp mean([]), do: 0
-  defp mean(notes), do: Enum.sum(Enum.map(notes, & &1.note)) / length(notes)
+  defp mean(notes), do: Enum.sum_by(notes, & &1.note) / length(notes)
 
   defp stroke(note, lines, keys, clock) do
     start = max(time(clock, note.at) + offset(note) * @tempo / 60, 0.0)

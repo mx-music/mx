@@ -146,9 +146,16 @@ defmodule Prelude do
   defp held(range) do
     seq(range, fn number ->
       case number do
-        34 -> note([:c2, :c3], 8)
-        number when number >= 32 -> note(Enum.take(Tuple.to_list(@runs[number]), 2), 4)
-        number -> note(Enum.take(Enum.at(@bars, number - 1), 2), 4)
+        34 ->
+          note([:c2, :c3], 8)
+
+        number when number >= 32 ->
+          run = Tuple.to_list(@runs[number])
+          note(Enum.take(run, 2), 4)
+
+        number ->
+          bar = Enum.at(@bars, number - 1)
+          note(Enum.take(bar, 2), 4)
       end
     end)
   end

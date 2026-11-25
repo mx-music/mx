@@ -147,7 +147,7 @@ defmodule Meditation do
               |> Enum.drop(index + 1)
               |> Enum.take_while(fn {next, _} -> String.starts_with?(next, "~") end)
 
-            held = beats + Enum.sum(Enum.map(glides, &elem(&1, 1)))
+            held = beats + Enum.sum_by(glides, &elem(&1, 1))
 
             {changes, _} =
               Enum.map_reduce(glides, beats, fn {glide, length}, at ->
@@ -282,6 +282,7 @@ defmodule Meditation do
       end
 
     steps = %{"S" => 1, "R" => 9 / 8, "G" => 5 / 4, "P" => 3 / 2, "D" => 5 / 3}
-    Float.round(base + octave + ratio(steps[String.trim(String.trim(token, "."), "'")]), 2)
+    name = token |> String.trim(".") |> String.trim("'")
+    Float.round(base + octave + ratio(steps[name]), 2)
   end
 end

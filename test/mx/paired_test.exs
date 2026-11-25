@@ -15,7 +15,7 @@ defmodule Mx.PairedTest do
     for <<x::float-32-native <- left>>, do: x
   end
 
-  defp rms(samples), do: :math.sqrt(Enum.sum(Enum.map(samples, &(&1 * &1))) / length(samples))
+  defp rms(samples), do: :math.sqrt(Enum.sum_by(samples, &(&1 * &1)) / length(samples))
 
   # How far below the Rust form's level the difference between the two forms is, in decibels.
   defp apart(module, synth, options, seconds) do

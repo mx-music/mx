@@ -47,7 +47,8 @@ defmodule Mx.Measure.HeldTest do
 
   test "gives each band's level against the fundamental of the lowest note" do
     [note] = Held.notes(tone(110, 3), @rate, 45)
-    bands = Map.new(Held.summary([note]).bands, &{&1.band, &1})
+    summary = Held.summary([note])
+    bands = Map.new(summary.bands, &{&1.band, &1})
     assert_in_delta bands[{80, 160}].level, 0, 0.5
     assert_in_delta bands[{160, 250}].level, -6.02, 0.5
   end

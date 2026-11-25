@@ -100,8 +100,7 @@ defmodule Mix.Tasks.Mx.ImportRecordingTest do
       |> Enum.find(&(&1.number == number))
       |> Map.fetch!(:voices)
       |> hd()
-      |> Enum.map(& &1.length)
-      |> Enum.sum()
+      |> Enum.sum_by(& &1.length)
     end
 
     assert length.(5) > length.(2) * 1.3
@@ -230,8 +229,7 @@ defmodule Mix.Tasks.Mx.ImportRecordingTest do
         |> Enum.find(&(&1.number == number))
         |> Map.fetch!(:voices)
         |> hd()
-        |> Enum.map(& &1.length)
-        |> Enum.sum()
+        |> Enum.sum_by(& &1.length)
       end
 
       {slowest, _} = seconds |> Map.delete(0) |> Enum.max_by(&elem(&1, 1))

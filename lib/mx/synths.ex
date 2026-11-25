@@ -37,7 +37,8 @@ defmodule Mx.Synths do
   def option?(%Mx.Sampled{}, option) when is_atom(option), do: Mx.Sampled.option?(option)
 
   def option?(synth, option) when (is_atom(synth) or is_binary(synth)) and is_atom(option) do
-    Map.has_key?(Map.fetch!(catalog(), to_string(synth)), Atom.to_string(option))
+    options = Map.fetch!(catalog(), to_string(synth))
+    Map.has_key?(options, Atom.to_string(option))
   end
 
   @doc "The default of a synth's option, or nil when it has none or the synth takes no such option."
@@ -47,7 +48,8 @@ defmodule Mx.Synths do
 
   @doc "The option of `synth` named `name`, a string such as one given on the command line, or nil when the synth takes no such option."
   def option(synth, name) when (is_atom(synth) or is_binary(synth)) and is_binary(name) do
-    if Map.has_key?(Map.get(catalog(), to_string(synth), %{}), name), do: String.to_atom(name)
+    options = Map.get(catalog(), to_string(synth), %{})
+    if Map.has_key?(options, name), do: String.to_atom(name)
   end
 
   @doc "The family a synth belongs to: `:keys`, `:plucked_strings`, `:bowed_strings`, `:winds`, `:mallets`, `:synths` or `:drums`."
@@ -130,13 +132,12 @@ defmodule Mx.Synths do
 
   @doc "How long an effect chain keeps sounding after its last note ends."
   def tail_seconds(chain) when is_list(chain) do
-    chain
-    |> Enum.map(fn {effect, opts} ->
+    Enum.sum_by(chain, fn {effect, opts} ->
       given = Map.new(opts, fn {key, value} -> {Atom.to_string(key), value} end)
-      opts = Map.merge(Map.fetch!(catalog(), fx(effect)), given)
+      defaults = Map.fetch!(catalog(), fx(effect))
+      opts = Map.merge(defaults, given)
       tail(effect, opts)
     end)
-    |> Enum.sum()
   end
 
   defp tail(:reverb, opts), do: min(opts["room"] * 10 + 1, 11)
@@ -286,7 +287,9 @@ defmodule Mx.Synths do
 
   defp families do
     cached(:families, fn ->
-      Map.new(Mx.Engine.Mxs.Native.families(), fn {name, family, range} ->
+      native = Mx.Engine.Mxs.Native.families()
+
+      Map.new(native, fn {name, family, range} ->
         range = with {low, high} <- range, do: {trunc(low), trunc(high)}
         {name, {String.to_atom(family), range}}
       end)

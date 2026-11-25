@@ -256,7 +256,8 @@ defmodule Mx.GitHubSamplesTest do
       assert Samples.download_source("#{@repo}@#{@commit}:Aerophones") ==
                {:error, "#{@repo} has no folder Aerophones at #{@commit}"}
 
-      refute File.exists?(Mx.GitHub.dir())
+      dir = Mx.GitHub.dir()
+      refute File.exists?(dir)
     end
 
     test "GitHub's limit of requests without a login is named, with when it resets", %{

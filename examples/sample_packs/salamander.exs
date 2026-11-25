@@ -44,6 +44,7 @@ defmodule Salamander do
         {beat, Mx.note(note, sustain, vel: vel, amp: :math.pow(vel, -0.7))}
       end
 
-    Mx.at(strokes, Float.round(ClairDeLune.warp(number, 9), 3))
+    beats = number |> ClairDeLune.warp(9) |> Float.round(3)
+    Mx.at(strokes, beats)
   end
 end

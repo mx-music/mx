@@ -685,8 +685,12 @@ defmodule Mx.Instrument do
   defp spec({name, type, opts}) do
     {kind, values} =
       case type do
-        :atom -> {"name", Enum.map(Keyword.get(opts, :values, []), &Atom.to_string/1)}
-        type -> {Atom.to_string(type), []}
+        :atom ->
+          values = opts |> Keyword.get(:values, []) |> Enum.map(&Atom.to_string/1)
+          {"name", values}
+
+        type ->
+          {Atom.to_string(type), []}
       end
 
     {low, high} = Keyword.get(opts, :range) || {nil, nil}

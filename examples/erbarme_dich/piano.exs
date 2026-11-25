@@ -324,8 +324,7 @@ defmodule ErbarmeDich.Piano do
       end
 
     slowing =
-      cadences
-      |> Enum.map(fn {arrival, weight} ->
+      Enum.sum_by(cadences, fn {arrival, weight} ->
         arrival = trunc(arrival)
 
         cond do
@@ -334,7 +333,6 @@ defmodule ErbarmeDich.Piano do
           true -> 0
         end
       end)
-      |> Enum.sum()
 
     along(pace(), index + place / 12) + linger + slowing
   end
@@ -453,5 +451,5 @@ defmodule ErbarmeDich.Piano do
   end
 
   defp mean([]), do: 0
-  defp mean(notes), do: Enum.sum(Enum.map(notes, &elem(&1, 1))) / length(notes)
+  defp mean(notes), do: Enum.sum_by(notes, &elem(&1, 1)) / length(notes)
 end

@@ -29,7 +29,9 @@ defmodule Mx.Examples.OrganTest do
   end
 
   test "the organ takes vel" do
-    path = Path.join(System.tmp_dir!(), "organ_vel_#{System.unique_integer([:positive])}.exs")
+    tmp = System.tmp_dir!()
+    id = System.unique_integer([:positive])
+    path = Path.join(tmp, "organ_vel_#{id}.exs")
     File.write!(path, "import Mx\nsong(music: part(:a, note(60, 1, vel: 1), synth: :organ))\n")
 
     assert capture_io(fn -> Mix.Tasks.Mx.Print.run([path]) end) =~ ~r/play 60 vel: 1\b/

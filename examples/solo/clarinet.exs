@@ -36,7 +36,8 @@ defmodule Clarinet do
           0..2
           |> Enum.flat_map(fn octave -> Enum.map(chord, &(&1 + 12 * octave + shift)) end)
           |> Enum.take(8),
-        {note, index} <- Enum.with_index(up ++ Enum.drop(Enum.reverse(up), 1)) do
+        down = up |> Enum.reverse() |> Enum.drop(1),
+        {note, index} <- Enum.with_index(up ++ down) do
       {bar * 4 + index / 4, note, 0,
        vel: if(rem(index, 4) == 0, do: 0.75, else: 0.6), sustain: 0.15, release: 0.05}
     end

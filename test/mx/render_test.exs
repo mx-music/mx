@@ -397,7 +397,7 @@ defmodule Mx.RenderTest do
     {samples, second} = sounding(path)
 
     for chunk <- Enum.chunk_every(samples, second, second, :discard) do
-      mean = Enum.sum(Enum.map(chunk, &(&1 * &1))) / second
+      mean = Enum.sum_by(chunk, &(&1 * &1)) / second
       10 * :math.log10(max(mean, 1.0e-12))
     end
   end

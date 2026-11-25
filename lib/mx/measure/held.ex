@@ -52,8 +52,8 @@ defmodule Mx.Measure.Held do
     vibrato =
       if length(vibratos) * 2 >= length(notes) do
         %{
-          rate: Signal.median(Enum.map(vibratos, & &1.rate)),
-          depth: Signal.median(Enum.map(vibratos, & &1.depth))
+          rate: vibratos |> Enum.map(& &1.rate) |> Signal.median(),
+          depth: vibratos |> Enum.map(& &1.depth) |> Signal.median()
         }
       end
 
@@ -73,7 +73,8 @@ defmodule Mx.Measure.Held do
         }
       end
 
-    %{attack: Signal.median(Enum.map(notes, & &1.attack)), vibrato: vibrato, bands: bands}
+    attack = notes |> Enum.map(& &1.attack) |> Signal.median()
+    %{attack: attack, vibrato: vibrato, bands: bands}
   end
 
   defp levels(harmonics, low, high) do

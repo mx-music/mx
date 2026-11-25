@@ -91,9 +91,8 @@ defmodule Mx.Paired.Cowbell do
     levels =
       Enum.zip_with([@levels, @tone, @mute], fn [l, t, m] -> db(l + t * bright + m * muted) end)
 
-    rings =
-      Enum.take(@rings, 12) ++
-        Enum.map(Enum.slice(@rings, 12..13), &(&1 * worn)) ++ Enum.drop(@rings, 14)
+    worn_rings = @rings |> Enum.slice(12..13) |> Enum.map(&(&1 * worn))
+    rings = Enum.take(@rings, 12) ++ worn_rings ++ Enum.drop(@rings, 14)
 
     freqs = Enum.map(@ratios, &(pitch * &1))
 

@@ -117,7 +117,7 @@ defmodule Mx.Notes do
       raise ArgumentError, "chord_at takes a step above 0, not step: #{step}"
     end
 
-    length = Enum.sum(Enum.map(chart, & &1.steps)) * step
+    length = Enum.sum_by(chart, & &1.steps) * step
     beat = beat - length * Float.floor(beat / length)
 
     name =
@@ -149,7 +149,7 @@ defmodule Mx.Notes do
     offsets = offsets!(kind)
     root = note(root)
 
-    case Enum.find(Keyword.keys(opts), &(&1 not in [:octaves, :from, :to])) do
+    case opts |> Keyword.keys() |> Enum.find(&(&1 not in [:octaves, :from, :to])) do
       nil -> :ok
       name -> raise ArgumentError, "scale takes octaves:, or from: and to:, not #{name}:"
     end
@@ -201,7 +201,8 @@ defmodule Mx.Notes do
   # A scale's notes as their steps from the root within one octave, 0 first.
   defp offsets!(kind) when is_atom(kind) do
     steps = fetch!(@scales, kind, "scale")
-    [0 | Enum.scan(Enum.drop(steps, -1), &(&1 + &2))]
+    rising = steps |> Enum.drop(-1) |> Enum.scan(&(&1 + &2))
+    [0 | rising]
   end
 
   defp offsets!([0 | _] = steps) do

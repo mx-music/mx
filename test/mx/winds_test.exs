@@ -148,7 +148,8 @@ defmodule Mx.WindsTest do
         for slur <- 1..(length(steps) - 1) do
           at = round(slur * 0.3 * 200)
           before = levels |> Enum.slice((at - 40)..(at - 10)) |> median()
-          Enum.min(Enum.slice(levels, (at - 16)..(at + 16))) - before
+          lowest = levels |> Enum.slice((at - 16)..(at + 16)) |> Enum.min()
+          lowest - before
         end
 
       assert_in_delta median(dips), @dip, 3, "median dip #{median(dips)} dB at #{inspect(dips)}"
@@ -162,14 +163,14 @@ defmodule Mx.WindsTest do
     |> Enum.chunk_every(2)
     |> Enum.map(fn [name, seconds] ->
       {held, ""} = Float.parse(seconds)
-      {Mx.Notes.note(String.to_atom(name)), held}
+      {name |> String.to_atom() |> Mx.Notes.note(), held}
     end)
   end
 
   defp slurred(ctx, synth, steps, vel, slide \\ 0.02)
 
   defp slurred(ctx, synth, [{first, held} | rest], vel, slide) do
-    total = held + Enum.sum(Enum.map(rest, &elem(&1, 1)))
+    total = held + Enum.sum_by(rest, &elem(&1, 1))
 
     {changes, _} =
       Enum.map_reduce(rest, held, fn {note, seconds}, at ->
@@ -237,7 +238,8 @@ defmodule Mx.WindsTest do
     levels = samples |> windows(hop, hop * 2) |> Enum.map(&db/1)
     floor = Enum.max(levels) - 20
     first = Enum.find_index(levels, &(&1 > floor))
-    last = length(levels) - 1 - Enum.find_index(Enum.reverse(levels), &(&1 > floor))
+    from_end = levels |> Enum.reverse() |> Enum.find_index(&(&1 > floor))
+    last = length(levels) - 1 - from_end
 
     longest =
       levels
@@ -275,7 +277,7 @@ defmodule Mx.WindsTest do
   end
 
   defp db(window) do
-    rms = :math.sqrt(Enum.sum(Enum.map(window, &(&1 * &1))) / max(length(window), 1))
+    rms = :math.sqrt(Enum.sum_by(window, &(&1 * &1)) / max(length(window), 1))
     20 * :math.log10(max(rms, 1.0e-9))
   end
 

@@ -252,7 +252,7 @@ defmodule Mx.Pass do
   def record_midi(note, opts) when (is_number(note) or is_atom(note)) and is_list(opts) do
     opts = Keyword.merge([velocity: 100, channel: 1, length: 1], opts)
 
-    case Enum.find(Keyword.keys(opts), &(&1 not in [:velocity, :channel, :length])) do
+    case opts |> Keyword.keys() |> Enum.find(&(&1 not in [:velocity, :channel, :length])) do
       nil -> :ok
       option -> raise ArgumentError, "midi has no option #{option}"
     end
@@ -274,7 +274,7 @@ defmodule Mx.Pass do
       when is_integer(number) and is_integer(value) and is_list(opts) do
     opts = Keyword.merge([channel: 1], opts)
 
-    case Enum.find(Keyword.keys(opts), &(&1 != :channel)) do
+    case opts |> Keyword.keys() |> Enum.find(&(&1 != :channel)) do
       nil -> :ok
       option -> raise ArgumentError, "midi_cc has no option #{option}"
     end
@@ -327,7 +327,9 @@ defmodule Mx.Pass do
 
   @doc "A handle to one of the loop's effects, refusing an effect the loop does not have."
   def effect(effect) when is_atom(effect) do
-    case Enum.find_index(Process.get(@key).fx, fn {name, _} -> name == effect end) do
+    fx = Process.get(@key).fx
+
+    case Enum.find_index(fx, fn {name, _} -> name == effect end) do
       nil -> raise ArgumentError, "the loop has no effect #{effect}"
       index -> %Handle{target: {:effect, index}, synth: effect}
     end
@@ -335,7 +337,9 @@ defmodule Mx.Pass do
 
   @doc "A handle to one of the effects the whole song plays through, refusing an effect the song does not have."
   def song_effect(effect) when is_atom(effect) do
-    case Enum.find_index(Process.get(@key).song_fx, fn {name, _} -> name == effect end) do
+    song_fx = Process.get(@key).song_fx
+
+    case Enum.find_index(song_fx, fn {name, _} -> name == effect end) do
       nil -> raise ArgumentError, "the song has no effect #{effect}"
       index -> %Handle{target: {:main, index}, synth: effect}
     end

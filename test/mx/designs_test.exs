@@ -3788,8 +3788,8 @@ defmodule Mx.DesignsTest do
     muted = Hits.hit(render(ctx, :surdo, [muted: 1], 4), @rate, 36, partials: 6)
     assert Enum.all?(muted.partials, &(&1.hz > 110))
 
-    open_fade =
-      Enum.find(Hits.hit(render(ctx, :surdo, [], 4), @rate, nil).bands, &(&1.band == {80, 160})).fade
+    open = ctx |> render(:surdo, [], 4) |> Hits.hit(@rate, nil)
+    open_fade = Enum.find(open.bands, &(&1.band == {80, 160})).fade
 
     muted_fade = Enum.find(muted.bands, &(&1.band == {80, 160})).fade
     assert muted_fade <= open_fade / 2, "the muted stroke fades in #{muted_fade} s"
@@ -3883,7 +3883,12 @@ defmodule Mx.DesignsTest do
       assert median(lasts) >= shortest and median(lasts) <= longest, "lasts #{median(lasts)} s"
 
       if @note == @cuica_low do
-        held = for levels <- envelopes, do: Enum.max(levels) - Enum.min(Enum.slice(levels, 6..24))
+        held =
+          for levels <- envelopes do
+            settled = levels |> Enum.slice(6..24) |> Enum.min()
+            Enum.max(levels) - settled
+          end
+
         assert median(held) < 6, "falls #{median(held)} dB from 30 to 120 ms"
       end
     end
@@ -5258,7 +5263,8 @@ defmodule Mx.DesignsTest do
        ctx do
     held = @tanpura.held
     sound = render(ctx, :tanpura, [note: 49, sustain: held], held + 0.5)
-    measured = Map.new(Held.summary([Held.note(sound, @rate, 49)]).bands, &{&1.band, &1})
+    summary = Held.summary([Held.note(sound, @rate, 49)])
+    measured = Map.new(summary.bands, &{&1.band, &1})
 
     for {band, {level, noise}} <- @tanpura.bands do
       if level, do: assert_in_delta(measured[band].level, level, 6, "#{inspect(band)} harmonics")
@@ -5767,11 +5773,12 @@ defmodule Mx.DesignsTest do
       sound
       |> Enum.chunk_every(round(0.01 * @rate))
       |> Enum.map(fn chunk ->
-        :math.sqrt(Enum.sum(Enum.map(chunk, &(&1 * &1))) / length(chunk))
+        :math.sqrt(Enum.sum_by(chunk, &(&1 * &1)) / length(chunk))
       end)
 
     top = Enum.max(levels)
-    (length(levels) - Enum.find_index(Enum.reverse(levels), &(&1 > top / 10))) / 100
+    from_end = levels |> Enum.reverse() |> Enum.find_index(&(&1 > top / 10))
+    (length(levels) - from_end) / 100
   end
 
   # The strongest beat from 30 to 400 a second in the loudness above 2 kHz, taken 2000 times a
@@ -5783,7 +5790,7 @@ defmodule Mx.DesignsTest do
     loudness =
       filtered
       |> Enum.chunk_every(div(@rate, 2000))
-      |> Enum.map(fn chunk -> Enum.sum(Enum.map(chunk, &abs/1)) / length(chunk) end)
+      |> Enum.map(fn chunk -> Enum.sum_by(chunk, &abs/1) / length(chunk) end)
 
     mean = Enum.sum(loudness) / length(loudness)
     centred = loudness |> Enum.map(&(&1 - mean)) |> Enum.with_index()
@@ -5840,7 +5847,7 @@ defmodule Mx.DesignsTest do
 
   defp rms(sound, from, to) do
     samples = window(sound, from, to)
-    :math.sqrt(Enum.sum(Enum.map(samples, &(&1 * &1))) / max(length(samples), 1))
+    :math.sqrt(Enum.sum_by(samples, &(&1 * &1)) / max(length(samples), 1))
   end
 
   defp peak(sound, from, to), do: sound |> window(from, to) |> Enum.map(&abs/1) |> Enum.max()
@@ -5870,7 +5877,7 @@ defmodule Mx.DesignsTest do
   defp highs(sound, hz, from, to) do
     coefficient = :math.exp(-2 * :math.pi() * hz / @rate)
     filtered = sound |> window(from, to) |> high_pass(coefficient) |> high_pass(coefficient)
-    :math.sqrt(Enum.sum(Enum.map(filtered, &(&1 * &1))) / length(filtered))
+    :math.sqrt(Enum.sum_by(filtered, &(&1 * &1)) / length(filtered))
   end
 
   defp hann(samples) do
@@ -5983,7 +5990,7 @@ defmodule Mx.DesignsTest do
   defp picks(sound) do
     levels =
       for chunk <- Enum.chunk_every(sound, 240),
-          do: :math.sqrt(Enum.sum(Enum.map(chunk, &(&1 * &1))) / length(chunk))
+          do: :math.sqrt(Enum.sum_by(chunk, &(&1 * &1)) / length(chunk))
 
     quiet = Enum.max(levels) / 10
 

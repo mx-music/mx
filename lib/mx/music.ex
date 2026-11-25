@@ -161,7 +161,7 @@ defmodule Mx.Music do
     check_beats("sample", beats)
     check_keyword("sample", opts)
 
-    case Enum.find(Keyword.keys(opts), &(not sample_option?(&1))) do
+    case opts |> Keyword.keys() |> Enum.find(&(not sample_option?(&1))) do
       nil -> :ok
       option -> raise ArgumentError, "samples have no option #{option}"
     end
@@ -197,7 +197,7 @@ defmodule Mx.Music do
     if beats == 0, do: raise(ArgumentError, "midi lasts more than 0 beats")
     check_keyword("midi", opts)
 
-    case Enum.find(Keyword.keys(opts), &(&1 not in [:velocity, :channel])) do
+    case opts |> Keyword.keys() |> Enum.find(&(&1 not in [:velocity, :channel])) do
       nil -> :ok
       option -> raise ArgumentError, "midi has no option #{option}"
     end
@@ -211,7 +211,7 @@ defmodule Mx.Music do
   def midi_cc(number, value, opts \\ []) do
     check_keyword("midi_cc", opts)
 
-    case Enum.find(Keyword.keys(opts), &(&1 != :channel)) do
+    case opts |> Keyword.keys() |> Enum.find(&(&1 != :channel)) do
       nil -> :ok
       option -> raise ArgumentError, "midi_cc has no option #{option}"
     end
@@ -650,7 +650,7 @@ defmodule Mx.Music do
   defp closed(run, runs), do: [Enum.reverse(run) | runs]
 
   defp slurred_note([first | rest] = notes, slide, opts) do
-    beats = notes |> Enum.map(& &1.beats) |> Enum.sum()
+    beats = Enum.sum_by(notes, & &1.beats)
 
     {own, _} =
       Enum.map_reduce(rest, {first.beats, first.pitch}, fn note, {beat, previous} ->
@@ -665,7 +665,8 @@ defmodule Mx.Music do
       end)
 
     merged = Keyword.merge(first.opts, opts)
-    changes = Enum.sort_by(Enum.concat(own) ++ Keyword.get(merged, :changes, []), &elem(&1, 0))
+    unsorted = Enum.concat(own) ++ Keyword.get(merged, :changes, [])
+    changes = Enum.sort_by(unsorted, &elem(&1, 0))
 
     merged =
       cond do
@@ -716,7 +717,7 @@ defmodule Mx.Music do
   def feel(music, opts) do
     check_keyword("feel", opts)
 
-    case Enum.find(Keyword.keys(opts), &(&1 not in @feel_options)) do
+    case opts |> Keyword.keys() |> Enum.find(&(&1 not in @feel_options)) do
       nil ->
         :ok
 
@@ -854,7 +855,7 @@ defmodule Mx.Music do
           {entries, at}
 
         words, at ->
-          {[], at + Enum.sum(Enum.map(words, & &1.steps))}
+          {[], at + Enum.sum_by(words, & &1.steps)}
       end)
 
     seq = %Seq{items: items}
@@ -942,7 +943,8 @@ defmodule Mx.Music do
         together(for {:hit, opts} <- hits, do: stroke(sample, beats, accented.(opts ++ each)))
 
       {[], notes} ->
-        note(List.flatten(Keyword.values(notes)), beats, accented.(each))
+        pitches = notes |> Keyword.values() |> List.flatten()
+        note(pitches, beats, accented.(each))
 
       _ ->
         word = Enum.join(tokens, "/")
@@ -1057,7 +1059,7 @@ defmodule Mx.Music do
   def loop(beats, fun, opts) when is_number(beats) and is_function(fun, 2) and is_list(opts) do
     if beats <= 0, do: raise(ArgumentError, "loop takes a length in beats above 0, not #{beats}")
 
-    case Enum.find(Keyword.keys(opts), &(&1 != :times)) do
+    case opts |> Keyword.keys() |> Enum.find(&(&1 != :times)) do
       nil ->
         :ok
 
@@ -1110,7 +1112,7 @@ defmodule Mx.Music do
             "a part cannot be named song: the name is taken by the song's own chain, the effects of its fx:"
     end
 
-    case Enum.find(Keyword.keys(opts), &(&1 not in @part_options)) do
+    case opts |> Keyword.keys() |> Enum.find(&(&1 not in @part_options)) do
       nil -> :ok
       option -> raise ArgumentError, "part #{name} has no option #{option}"
     end
@@ -1162,7 +1164,7 @@ defmodule Mx.Music do
             "part #{name}: defaults: takes a list of options, such as defaults: [amp: 0.5]"
     end
 
-    case Enum.find(Keyword.keys(defaults), &(not Synths.option?(synth, &1))) do
+    case defaults |> Keyword.keys() |> Enum.find(&(not Synths.option?(synth, &1))) do
       nil -> :ok
       option -> raise ArgumentError, "part #{name}: synth #{synth} has no option #{option}"
     end
@@ -1196,7 +1198,7 @@ defmodule Mx.Music do
     {played, triggered} = Enum.map_reduce(played, [], &split_triggered/2)
 
     buses =
-      case Mx.Song.buses(Keyword.get(opts, :buses, [])) do
+      case opts |> Keyword.get(:buses, []) |> Mx.Song.buses() do
         {:ok, buses} -> buses
         {:error, message} -> raise ArgumentError, message
       end
@@ -1221,7 +1223,9 @@ defmodule Mx.Music do
             {part, part_sections(part, played, lengths)}
 
           [{_, _, {:triggered, loop}}] ->
-            if Enum.any?(List.flatten(played), fn {_, %Part{name: name}, _} ->
+            if played
+               |> List.flatten()
+               |> Enum.any?(fn {_, %Part{name: name}, _} ->
                  name == part.name
                end) do
               raise ArgumentError,
@@ -1304,7 +1308,7 @@ defmodule Mx.Music do
   end
 
   defp check_options(opts) do
-    case Enum.find(Keyword.keys(opts), &(&1 not in @song_options)) do
+    case opts |> Keyword.keys() |> Enum.find(&(&1 not in @song_options)) do
       nil -> :ok
       option -> raise ArgumentError, "song has no option #{option}"
     end
@@ -1448,7 +1452,9 @@ defmodule Mx.Music do
   end
 
   defp written_in(part, by_name) do
-    case {part, Enum.sort(Map.keys(by_name))} do
+    names = by_name |> Map.keys() |> Enum.sort()
+
+    case {part, names} do
       {%Part{} = part, _names} -> part
       {_none, [first | _]} -> Map.fetch!(by_name, first)
       {_none, []} -> raise ArgumentError, "change needs a part playing in its section"
@@ -1483,10 +1489,7 @@ defmodule Mx.Music do
       effect == nil ->
         Pass.check_change(part.synth, opts)
 
-      effect in Enum.map(List.wrap(part.fx), fn
-        {name, _} -> name
-        name -> name
-      end) ->
+      effect in effect_names(part.fx) ->
         Pass.check_change({:effect, effect}, opts)
 
       true ->
@@ -1554,12 +1557,10 @@ defmodule Mx.Music do
 
   # The number of passes the loops start before a beat.
   defp passes_before(slots, beat) do
-    slots
-    |> Enum.map(fn slot ->
+    Enum.sum_by(slots, fn slot ->
       until = earlier(slot.cut, beat)
       if until > slot.start, do: ceil((until - slot.start) / slot.beats), else: 0
     end)
-    |> Enum.sum()
   end
 
   defp earlier(:infinity, beat), do: beat
@@ -1875,8 +1876,19 @@ defmodule Mx.Music do
   defp format_beats(beats) when beats == trunc(beats), do: Integer.to_string(trunc(beats))
   defp format_beats(beats), do: to_string(beats)
 
+  defp effect_names(fx) do
+    fx
+    |> List.wrap()
+    |> Enum.map(fn
+      {name, _} -> name
+      name -> name
+    end)
+  end
+
   defp inputs do
-    Enum.reduce(Pass.inputs(), %{cc: %{}, notes: %{}, osc: %{}, values: %{}}, fn
+    given = Pass.inputs()
+
+    Enum.reduce(given, %{cc: %{}, notes: %{}, osc: %{}, values: %{}}, fn
       {{:cc, number}, value}, inputs -> put_in(inputs.cc[number], value)
       {{:note, note}, velocity}, inputs -> put_in(inputs.notes[note], velocity)
       {{:osc, address}, args}, inputs -> put_in(inputs.osc[address], args)

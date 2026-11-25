@@ -34,11 +34,12 @@ defmodule Mx.ReverbTest do
     Enum.slice(samples, round(from * @rate)..(round(to * @rate) - 1))
   end
 
-  defp rms(samples), do: :math.sqrt(Enum.sum(Enum.map(samples, &(&1 * &1))) / length(samples))
+  defp rms(samples), do: :math.sqrt(Enum.sum_by(samples, &(&1 * &1)) / length(samples))
   defp db(level), do: 20 * :math.log10(max(level, 1.0e-12))
 
   defp first_sound(samples) do
-    floor = Enum.max(Enum.map(samples, &abs/1)) / 1000
+    peak = samples |> Enum.map(&abs/1) |> Enum.max()
+    floor = peak / 1000
     Enum.find_index(samples, &(abs(&1) > floor))
   end
 

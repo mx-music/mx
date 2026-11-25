@@ -43,7 +43,7 @@ defmodule Mx.Sampled do
     for file <- files do
       case file do
         {path, opts} when is_binary(path) or is_tuple(path) ->
-          case Enum.find(Keyword.keys(opts), &(&1 not in [:note, :strength, :take])) do
+          case opts |> Keyword.keys() |> Enum.find(&(&1 not in [:note, :strength, :take])) do
             nil -> :ok
             option -> raise ArgumentError, "sampled lists a file with no option #{option}"
           end
@@ -120,7 +120,7 @@ defmodule Mx.Sampled do
   end
 
   defp local(path) do
-    if File.regular?(Path.expand(path)) do
+    if path |> Path.expand() |> File.regular?() do
       {:ok, Path.expand(path)}
     else
       {:error, "sampled file #{path} does not exist"}
@@ -163,7 +163,8 @@ defmodule Mx.Sampled do
     |> Enum.reduce(%{}, fn word, found ->
       cond do
         word =~ ~r/^[A-G][#b]?-?\d$/ ->
-          Map.put(found, :note, Notes.parse(String.replace(word, "#", "s")))
+          note = word |> String.replace("#", "s") |> Notes.parse()
+          Map.put(found, :note, note)
 
         word =~ ~r/^vl?\d+$/ ->
           Map.put(found, :strength, digits(word))

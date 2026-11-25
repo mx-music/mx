@@ -19,7 +19,8 @@ defmodule Mx.Page do
   @doc "Writes the song at `path` to the HTML file `out`, with `seconds:`, `force:` and `title:`, and returns `:ok` once written, or `{:error, message}`."
   def write(path, out, opts \\ []) when is_binary(path) and is_binary(out) and is_list(opts) do
     id = System.unique_integer([:positive])
-    wav_path = Path.join(System.tmp_dir!(), "mx-page-#{id}.wav")
+    tmp = System.tmp_dir!()
+    wav_path = Path.join(tmp, "mx-page-#{id}.wav")
     mp3_path = Path.rootname(wav_path) <> ".mp3"
 
     try do
@@ -201,7 +202,8 @@ defmodule Mx.Page do
     |> Enum.flat_map(fn
       {{beat, pitch, opts}, index} when is_number(pitch) ->
         until = beat + (opts[:sustain] || @unheld_beats)
-        held = [{beat, pitch} | Enum.filter(Map.get(moves, index, []), &(elem(&1, 0) < until))]
+        moved = moves |> Map.get(index, []) |> Enum.filter(&(elem(&1, 0) < until))
+        held = [{beat, pitch} | moved]
         strength = strength(opts)
 
         held
@@ -256,15 +258,20 @@ defmodule Mx.Page do
     strength |> max(0) |> min(1) |> Kernel./(1) |> Float.round(2)
   end
 
-  defp seconds_at(timeline, beat), do: Float.round(Tempo.time_at(timeline, beat) / 1_000_000, 3)
+  defp seconds_at(timeline, beat) do
+    micros = Tempo.time_at(timeline, beat)
+    Float.round(micros / 1_000_000, 3)
+  end
 
   @doc "Checks a file can be written to `out`: `:ok`, or `{:error, message}` when it exists without `force` or its folder does not."
   def check(out, force) when is_binary(out) and is_boolean(force) do
+    folder = Path.dirname(out)
+
     cond do
       File.exists?(out) and not force ->
         {:error, "#{out} already exists; give --force to write over it"}
 
-      not File.dir?(Path.dirname(out)) ->
+      not File.dir?(folder) ->
         {:error, "cannot write #{out}: its folder does not exist"}
 
       true ->

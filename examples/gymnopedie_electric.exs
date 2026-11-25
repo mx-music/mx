@@ -52,7 +52,8 @@ defmodule GymnopedieElectric do
     chords =
       case chords do
         [{_beat, _chord} | _] = struck ->
-          ends = Enum.map(Enum.drop(struck, 1), &elem(&1, 0)) ++ [3]
+          later = struck |> Enum.drop(1) |> Enum.map(&elem(&1, 0))
+          ends = later ++ [3]
 
           notes =
             for {{beat, chord}, until} <- Enum.zip(struck, ends),

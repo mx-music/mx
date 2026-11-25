@@ -167,7 +167,8 @@ defmodule Mx.Paired.Berimbau do
   # A value read at `freq` from `table` along the wire's bands, held beyond them.
   defsoundp at(freq, table) do
     freq = freq |> Kernel.max(hd(@bands)) |> Kernel.min(List.last(@bands))
-    index = Kernel.min(Enum.count(@bands, &(&1 <= freq)) - 1, 5)
+    below = Enum.count(@bands, &(&1 <= freq))
+    index = Kernel.min(below - 1, 5)
     low = Enum.at(@bands, index)
     high = Enum.at(@bands, index + 1)
 

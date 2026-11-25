@@ -523,7 +523,8 @@ defmodule TranquilityBase do
     steps = pattern |> String.replace(" ", "") |> String.graphemes()
     total = length(steps)
     starts = for {step, index} <- Enum.with_index(steps), step != ".", do: {index, step}
-    stops = Enum.drop(Enum.map(starts, &elem(&1, 0)), 1) ++ [total]
+    later = starts |> Enum.map(&elem(&1, 0)) |> Enum.drop(1)
+    stops = later ++ [total]
 
     entries =
       for {{index, step}, stop} <- Enum.zip(starts, stops) do

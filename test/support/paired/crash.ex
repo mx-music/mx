@@ -56,8 +56,8 @@ defmodule Mx.Paired.Crash do
 
     noise_rings = Enum.zip_with(@rings, @shorter, fn r, s -> r * (vel / 0.55) ** -s end)
 
-    early_rings =
-      Enum.take(noise_rings, 3) ++ Enum.map(Enum.drop(noise_rings, 3), &min(&1, @early_ring))
+    {first_rings, later_rings} = Enum.split(noise_rings, 3)
+    early_rings = first_rings ++ Enum.map(later_rings, &min(&1, @early_ring))
 
     noises =
       band_noise(@levels, noise_rings, 1, scale) * db(@bank_db) +

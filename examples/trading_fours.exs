@@ -48,6 +48,9 @@ defmodule TradingFours do
   part :piano, synth: :piano, fx: [reverb: [decay_seconds: 1.2, mix: 0.2]]
 
   def song do
+    busier_bars = Enum.take(busier(), 4)
+    turnaround = List.replace_at(busier_bars, 3, "......6..7.8")
+
     seq([
       intro(),
       mambo(),
@@ -74,7 +77,7 @@ defmodule TradingFours do
       second_four(),
       swing(
         Enum.to_list(4..7),
-        List.replace_at(Enum.take(busier(), 4), 3, "......6..7.8"),
+        turnaround,
         feathered(4, %{0 => "8..3..3..3.."}),
         answer(Enum.to_list(4..7), second_answer())
       ),
@@ -353,7 +356,8 @@ defmodule TradingFours do
       hits =
         for {cell, index} <- Enum.with_index(cells), cell != "." do
           chord = chord_at(chart(), 4, if(index == 11, do: bar + 1, else: bar) * 4)
-          vel = Float.round(String.to_integer(cell) / 9 * 0.7, 2)
+          level = String.to_integer(cell) / 9 * 0.7
+          vel = Float.round(level, 2)
           {index / 3, note(pitch(shells[chord]), 0.5, vel: vel, sustain: 0.5, release: 0.3)}
         end
 
@@ -598,7 +602,10 @@ defmodule TradingFours do
 
   defp stroke(_voice, digit), do: [{0, [vel: vel(digit)]}]
 
-  defp vel(digit), do: Float.round(String.to_integer(digit) / 9, 2)
+  defp vel(digit) do
+    level = String.to_integer(digit) / 9
+    Float.round(level, 2)
+  end
 
   # The snare's soft strokes are far quieter than its hard ones, so the softer a stroke the more
   # it is turned up, and a ghost note is heard under the band.

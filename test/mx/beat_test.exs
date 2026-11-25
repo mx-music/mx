@@ -65,7 +65,8 @@ defmodule Mx.BeatTest do
       refute_receive {:mx_beat, _}, 2_500
 
       assert_in_delta Beat.at(message, start_us + 5_000_000), 10, 0.01
-      assert_in_delta Band.beat_at(Band.timeline(band), start_us + 5_000_000), 10, 0.01
+      timeline = Band.timeline(band)
+      assert_in_delta Band.beat_at(timeline, start_us + 5_000_000), 10, 0.01
     end)
   end
 
@@ -121,7 +122,8 @@ defmodule Mx.BeatTest do
       refute_receive {:mx_beat, _}
       now = System.os_time(:microsecond)
       assert_in_delta Beat.at(message, now), (now - start_us) / 500_000, 1.0e-9
-      assert_in_delta Beat.at(message, now), Band.beat_at(Band.timeline(band), now), 1.0e-9
+      timeline = Band.timeline(band)
+      assert_in_delta Beat.at(message, now), Band.beat_at(timeline, now), 1.0e-9
     end)
   end
 

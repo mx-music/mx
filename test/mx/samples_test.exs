@@ -30,7 +30,8 @@ defmodule Mx.SamplesTest do
   end
 
   test "keeps the pack outside the repository by default" do
-    refute String.starts_with?(Samples.default_dir(), File.cwd!())
+    dir = Samples.default_dir()
+    refute String.starts_with?(dir, File.cwd!())
   end
 
   describe "download/1" do

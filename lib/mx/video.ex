@@ -19,10 +19,8 @@ defmodule Mx.Video do
   @doc "Writes the video of the recording at `path` to `out`, with `picture:`, `bitrate:` and `force:`, and returns `{:ok, seconds, bytes}`, the video's length and size, or `{:error, message}`."
   def write(path, out, opts \\ []) when is_binary(path) and is_binary(out) and is_list(opts) do
     id = System.unique_integer([:positive])
-
-    pictures =
-      for name <- ["played", "ahead"],
-          do: Path.join(System.tmp_dir!(), "mx-video-#{id}-#{name}.png")
+    tmp = System.tmp_dir!()
+    pictures = for name <- ["played", "ahead"], do: Path.join(tmp, "mx-video-#{id}-#{name}.png")
 
     try do
       with {:ok, ffmpeg} <- ffmpeg(),

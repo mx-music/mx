@@ -34,12 +34,14 @@ defmodule Mix.Tasks.Mx.Levels do
   defp print_rows(path, opts) do
     case Levels.rows(path, Keyword.take(opts, [:per_second])) do
       {:ok, rows} ->
-        bands = Enum.map(Levels.bands(), fn {low, high} -> "#{low}-#{high} Hz" end)
-        IO.puts(Enum.join(["seconds", "level"] ++ bands ++ ["brightness"], ","))
+        bands = for {low, high} <- Levels.bands(), do: "#{low}-#{high} Hz"
+        header = ["seconds", "level"] ++ bands ++ ["brightness"]
+        header |> Enum.join(",") |> IO.puts()
 
         for row <- rows do
           values = [seconds(row.at), decibels(row.level)] ++ Enum.map(row.bands, &decibels/1)
-          IO.puts(Enum.join(values ++ [round(row.brightness)], ","))
+          line = values ++ [round(row.brightness)]
+          line |> Enum.join(",") |> IO.puts()
         end
 
       {:error, message} ->

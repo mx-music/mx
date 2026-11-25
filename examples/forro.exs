@@ -214,7 +214,8 @@ defmodule PoeiraNoTerreiro do
         ]
       end
 
-    at(Enum.filter(List.flatten(changes), fn {at, _change} -> at < beats end), beats)
+    heard = changes |> List.flatten() |> Enum.filter(fn {at, _change} -> at < beats end)
+    at(heard, beats)
   end
 
   defp riff, do: sung(riff_bars(), 0.8)

@@ -88,7 +88,7 @@ defmodule Raga do
               |> Enum.drop(index + 1)
               |> Enum.take_while(fn {next, _} -> String.starts_with?(next, "~") end)
 
-            held = beats + Enum.sum(Enum.map(glides, &elem(&1, 1)))
+            held = beats + Enum.sum_by(glides, &elem(&1, 1))
 
             {changes, _} =
               Enum.map_reduce(glides, beats, fn {glide, length}, at ->
@@ -307,7 +307,8 @@ defmodule Raga do
       end)
       |> Enum.reverse()
 
-    ends = Enum.map(Enum.drop(starts, 1), &elem(&1, 0)) ++ [8 + length(cells())]
+    later = starts |> Enum.drop(1) |> Enum.map(&elem(&1, 0))
+    ends = later ++ [8 + length(cells())]
 
     Enum.zip_with(starts, ends, fn {start, note, changes, _}, next ->
       {start, note, Float.round((next - start) / 1, 3), changes}

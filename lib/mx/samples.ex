@@ -125,7 +125,7 @@ defmodule Mx.Samples do
 
   @doc "The path of the sample `ref` played with a sample's options `opts`, as `{:ok, path}`, or `{:error, message}` refusing a file that cannot play, an option samples do not take, or one that cannot cut it."
   def check(ref, opts) when is_list(opts) do
-    case Enum.find(Keyword.keys(opts), &(not known_option?(&1))) do
+    case opts |> Keyword.keys() |> Enum.find(&(not known_option?(&1))) do
       nil ->
         with {:ok, path} <- path(ref),
              :ok <- check_cut(ref, path, opts),
@@ -286,7 +286,8 @@ defmodule Mx.Samples do
 
   def download_source(source) when is_binary(source) do
     [name | folder] = String.split(source, ":", parts: 2)
-    collection = Enum.find(Collections.names(), &(to_string(&1) == name))
+    collections = Collections.names()
+    collection = Enum.find(collections, &(to_string(&1) == name))
 
     case {collection && Collections.github(collection), github_source(source)} do
       {{repo, commit}, _} ->
@@ -296,7 +297,7 @@ defmodule Mx.Samples do
         download_github(source, repo, ref, List.first(folder))
 
       {nil, nil} ->
-        names = Enum.join(Collections.names(), ", ")
+        names = Enum.join(collections, ", ")
 
         {:error,
          "SOURCE is a collection, one of #{names}, or a GitHub repository as owner/repo@ref, optionally followed by :folder, not #{source}"}
@@ -316,7 +317,7 @@ defmodule Mx.Samples do
     with {:ok, files} <- Mx.GitHub.list(repo, ref, folder) do
       result =
         Enum.reduce_while(files, {:ok, 0}, fn file, {:ok, count} ->
-          if File.exists?(Mx.GitHub.local(repo, ref, file)) do
+          if repo |> Mx.GitHub.local(ref, file) |> File.exists?() do
             {:cont, {:ok, count}}
           else
             case Mx.GitHub.fetch(repo, ref, file) do

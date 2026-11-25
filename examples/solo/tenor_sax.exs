@@ -24,7 +24,8 @@ defmodule TenorSax do
   # beat.
   defp strokes(:choro, pass) do
     bar = choro(pass)
-    ends = Enum.map(Enum.drop(bar, 1), &elem(&1, 0)) ++ [8]
+    later = bar |> Enum.drop(1) |> Enum.map(&elem(&1, 0))
+    ends = later ++ [8]
 
     for half <- [0, 8],
         {{beat, note}, next} <- Enum.zip(bar, ends) do

@@ -1,9 +1,12 @@
 # Writes THIRD_PARTY_NOTICES.md, or the path given, from the native crate's lock file and
 # mix.lock. Run it before a release, with cargo-about installed: elixir scripts/notices.exs
 
-out = List.first(System.argv(), "THIRD_PARTY_NOTICES.md")
+args = System.argv()
+out = List.first(args, "THIRD_PARTY_NOTICES.md")
 native = "native/mxs_nif"
-crates = Path.join(System.tmp_dir!(), "mx-crates-#{System.unique_integer([:positive])}.md")
+tmp = System.tmp_dir!()
+id = System.unique_integer([:positive])
+crates = Path.join(tmp, "mx-crates-#{id}.md")
 
 {output, status} =
   System.cmd("cargo", ["about", "generate", "--fail", "-c", "about.toml", "about.hbs", "-o", crates],

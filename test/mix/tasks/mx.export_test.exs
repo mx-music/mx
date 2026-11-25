@@ -143,7 +143,7 @@ defmodule Mix.Tasks.Mx.ExportTest do
     {:ok, score} = Score.read(path)
 
     for bar <- hd(score.parts).bars,
-        do: {bar.number, bar.voices |> hd() |> Enum.map(& &1.length) |> Enum.sum()}
+        do: {bar.number, Enum.sum_by(hd(bar.voices), & &1.length)}
   end
 
   test "--pickup 0.5 writes the aria's first eighth as bar 0, and every note in the bar and place the score has it",
@@ -240,7 +240,7 @@ defmodule Mix.Tasks.Mx.ExportTest do
     out = Path.join(dir, "staves_aria.musicxml")
     capture_io(fn -> Export.run([Path.join(dir, "staves_aria.exs"), "--out", out]) end)
 
-    [violin, alto, organ] = tl(String.split(File.read!(out), ~r/<part id=/))
+    [_, violin, alto, organ] = out |> File.read!() |> String.split(~r/<part id=/)
     refute violin =~ "<staves>"
     refute alto =~ "<staves>"
     assert organ =~ "<staves>2</staves>"

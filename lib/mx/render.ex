@@ -56,7 +56,8 @@ defmodule Mx.Render do
 
   defp check_parts(song, opts) do
     names = Enum.map(song.loops, &Atom.to_string(&1.name))
-    asked = Enum.map(Keyword.get(opts, :mute, []) ++ Keyword.get(opts, :solo, []), &to_string/1)
+    chosen = Keyword.get(opts, :mute, []) ++ Keyword.get(opts, :solo, [])
+    asked = Enum.map(chosen, &to_string/1)
 
     case Enum.find(asked, &(&1 not in names)) do
       nil -> :ok
@@ -98,7 +99,7 @@ defmodule Mx.Render do
       |> map_ok(fn loop ->
         with {:ok, own} <- chain_rings(loop.name, loop.fx, bpm * share) do
           rings = own ++ sent_rings(Keyword.keys(loop.send), buses, sends) ++ main
-          {:ok, {loop.name, rings |> Enum.map(&elem(&1, 2)) |> Enum.sum(), rings}}
+          {:ok, {loop.name, Enum.sum_by(rings, &elem(&1, 2)), rings}}
         end
       end)
       |> then(
@@ -106,7 +107,7 @@ defmodule Mx.Render do
               do:
                 {:ok,
                  [
-                   {:song, main |> Enum.map(fn {_, _, tail} -> tail end) |> Enum.sum(), main}
+                   {:song, Enum.sum_by(main, fn {_, _, tail} -> tail end), main}
                    | rings
                  ]}
       )
@@ -132,7 +133,7 @@ defmodule Mx.Render do
   defp sent_rings(names, buses, sends) do
     names
     |> Enum.map(fn name -> buses[name] ++ sent_rings(sends[name], buses, sends) end)
-    |> Enum.max_by(fn rings -> rings |> Enum.map(&elem(&1, 2)) |> Enum.sum() end, fn -> [] end)
+    |> Enum.max_by(fn rings -> Enum.sum_by(rings, &elem(&1, 2)) end, fn -> [] end)
   end
 
   defp longest_ring({:ok, rings}) do

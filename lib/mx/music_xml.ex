@@ -450,7 +450,8 @@ defmodule Mx.MusicXML do
   end
 
   defp key_alter(step, fifths) when fifths < 0 do
-    if step in Enum.take(Enum.reverse(@sharp_order), -fifths), do: -1, else: 0
+    flats = @sharp_order |> Enum.reverse() |> Enum.take(-fifths)
+    if step in flats, do: -1, else: 0
   end
 
   defp key_alter(_step, 0), do: 0

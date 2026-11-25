@@ -275,7 +275,8 @@ defmodule Mx.Engine.MxsTest do
 
     test "says how many buffers it filled since it was last asked, and none late" do
       Mxs.buffer_load()
-      Mxs.render_to(System.os_time(:microsecond) + 1_000_000)
+      until = System.os_time(:microsecond) + 1_000_000
+      Mxs.render_to(until)
       assert %{buffers: buffers, late: 0, mean_percent: mean} = Mxs.buffer_load()
       assert buffers > 0 and mean >= 0
       assert %{buffers: 0} = Mxs.buffer_load()
@@ -566,9 +567,8 @@ defmodule Mx.Engine.MxsTest do
       %{bands: levels} = List.last(levels())
       assert length(levels) == 25
 
-      band = fn hz ->
-        Enum.find_index(Mxs.bands(), fn {low, high} -> low <= hz and hz < high end)
-      end
+      bands = Mxs.bands()
+      band = fn hz -> Enum.find_index(bands, fn {low, high} -> low <= hz and hz < high end) end
 
       loudest = Enum.max(levels)
       assert Enum.at(levels, band.(440)) == loudest
@@ -740,7 +740,7 @@ defmodule Mx.Engine.MxsTest do
     for <<sample::float-32-native <- left>>, do: sample
   end
 
-  defp rms(samples), do: :math.sqrt(Enum.sum(Enum.map(samples, &(&1 * &1))) / length(samples))
+  defp rms(samples), do: :math.sqrt(Enum.sum_by(samples, &(&1 * &1)) / length(samples))
 
   # The cents from `hz`, in steps of 5 from -100 to 300, at which `samples` are loudest.
   defp loudest_cents(samples, hz) do

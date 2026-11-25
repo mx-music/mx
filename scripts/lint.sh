@@ -235,6 +235,9 @@ run_check "Don't pipe inside a capture like '&(&1 |> foo() |> bar())'; extract a
 # A pipe in a fn, for or do block passed as an argument is the block's own pipeline.
 run_check "Don't pipe inside parentheses like '(a |> b()) * c' or 'f(a |> b())'; bind the pipeline to a variable, end the pipeline in the call, or extract a function" \
           -PU '(?<![&\\])\((?:(?!\b(?:fn|for|do)\b)[^()"|]|\((?:[^()"]|\([^()"]*\))*\))*?\|> '
+# A call on the right of a pipe already has its first argument, so the call written inside is its second.
+run_check "Don't open a module call with another, like 'Enum.map(Enum.slice(xs, 0, 2), f)'; pipe it, as 'xs |> Enum.slice(0, 2) |> Enum.map(f)', or bind the inner call's result to a name" \
+          -P '(?<!\|> )(?<![\w.])[A-Z]\w*(?:\.[A-Z]\w*)*\.[a-z_]\w*[?!]?\(\s*[A-Z]\w*(?:\.[A-Z]\w*)*\.[a-z_]\w*[?!]?\('
 run_check "Don't call a module inside grouping parentheses like '(Enum.at(xs, i) + 1) * c'; bind the call's result to a name" \
           -P '(?<![\w.?!)\]&\\])\([^()"\n]*\b[A-Z]\w*(?:\.[A-Z]\w*)*\.[a-z_]\w*[?!]?\('
 

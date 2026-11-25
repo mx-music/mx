@@ -146,7 +146,8 @@ defmodule Mx.Measure.HitsTest do
     assert quiet.highs == []
     silence = List.duplicate(0.0, @rate)
     hits = Hits.hits(swelling() ++ silence ++ swelling(), @rate, nil)
-    assert_in_delta Enum.at(Hits.highs(hits), 3), -2, 1.5
+    highs = Hits.highs(hits)
+    assert_in_delta Enum.at(highs, 3), -2, 1.5
   end
 
   test "a stretch after the hit ends has no share, and a hit with nothing above 4 kHz has no peak there" do

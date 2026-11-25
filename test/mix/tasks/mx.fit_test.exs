@@ -641,7 +641,7 @@ defmodule Mix.Tasks.Mx.FitTest do
         for part <- [0, 1] do
           start = round(part * 3.9 * rate)
           half = Enum.slice(samples, start, round(0.55 * rate))
-          10 * :math.log10(Enum.sum(Enum.map(half, &(&1 * &1))) / length(half))
+          10 * :math.log10(Enum.sum_by(half, &(&1 * &1)) / length(half))
         end
 
       assert_in_delta recording, synth, 0.5
@@ -1067,7 +1067,8 @@ defmodule Mix.Tasks.Mx.FitTest do
       lines =
         for {dynamic, velocity} <- [pp: 40, mf: 80, ff: 127],
             file <- ~w(C2B2 C3B3 C4B4 C5B5 C6B6 C7) do
-          [first | _] = notes = List.flatten(Regex.scan(~r/[A-G]\d/, file))
+          matches = Regex.scan(~r/[A-G]\d/, file)
+          [first | _] = notes = List.flatten(matches)
           range = if notes == [first], do: first, else: "#{first}:#{List.last(notes)}"
           "#{range} #{velocity} kept #{marimba}/Marimba.yarn.#{dynamic}.#{file}.aif"
         end
@@ -1159,7 +1160,8 @@ defmodule Mix.Tasks.Mx.FitTest do
       lines =
         for {dynamic, velocity} <- [pp: 40, mf: 80, ff: 127],
             file <- ~w(C2B2 C3B3 C4B4 C5B5 C6B6 C7) do
-          [first | _] = notes = List.flatten(Regex.scan(~r/[A-G]\d/, file))
+          matches = Regex.scan(~r/[A-G]\d/, file)
+          [first | _] = notes = List.flatten(matches)
           range = if notes == [first], do: first, else: "#{first}:#{List.last(notes)}"
           "#{range} #{velocity} kept #{marimba}/Marimba.yarn.#{dynamic}.#{file}.aif"
         end
@@ -1450,8 +1452,7 @@ defmodule Mix.Tasks.Mx.FitTest do
         wave =
           ratios
           |> Enum.with_index(1)
-          |> Enum.map(fn {ratio, n} -> :math.sin(2 * :math.pi() * hz * ratio * time) / n end)
-          |> Enum.sum()
+          |> Enum.sum_by(fn {ratio, n} -> :math.sin(2 * :math.pi() * hz * ratio * time) / n end)
 
         gain * wave * 10 ** (-fade * time / 20) * min(time / 0.002, 1)
       end
@@ -1506,7 +1507,7 @@ defmodule Mix.Tasks.Mx.FitTest do
 
   # The mean of levels in dB taken as powers, in dB.
   defp power_mean(levels) do
-    10 * :math.log10(Enum.sum(Enum.map(levels, &(10 ** (&1 / 10)))) / length(levels))
+    10 * :math.log10(Enum.sum_by(levels, &(10 ** (&1 / 10))) / length(levels))
   end
 
   # The rows --check --note prints for the partial or band whose name matches, by row, each figure
@@ -1563,7 +1564,7 @@ defmodule Mix.Tasks.Mx.FitTest do
 
     white = for _ <- 1..round(seconds * rate), do: :rand.normal()
     band = white |> pass.() |> pass.()
-    power = band |> Enum.map(&(&1 * &1)) |> Enum.sum()
+    power = Enum.sum_by(band, &(&1 * &1))
     rms = :math.sqrt(power / length(band))
 
     List.duplicate(0.0, round(0.2 * rate)) ++

@@ -80,7 +80,7 @@ defmodule Mx.Score do
   A MIDI file gives its `tracks`, its `tracks_with_notes`, its `ticks` to a quarter note, its `meter`, its `fifths`, and its `tempos`, each as `%{bar: bar, beat: beat, tempo: tempo}` from the start.
   """
   def about(path) when is_binary(path) do
-    case String.downcase(Path.extname(path)) do
+    case path |> Path.extname() |> String.downcase() do
       extension when extension in [".mid", ".midi"] -> Mx.MIDI.about(path)
       _other -> about_musicxml(path)
     end
@@ -423,12 +423,8 @@ defmodule Mx.Score do
     with [time | _] <- children(attributes, "time"),
          beats when is_binary(beats) <- text(time, "beats"),
          beat_type when beat_type != nil <- number(time, "beat-type") do
-      beats =
-        ~r/\d+/
-        |> Regex.scan(beats)
-        |> List.flatten()
-        |> Enum.map(&String.to_integer/1)
-        |> Enum.sum()
+      digits = ~r/\d+/ |> Regex.scan(beats) |> List.flatten()
+      beats = Enum.sum_by(digits, &String.to_integer/1)
 
       %{state | meter: beats * 4 / beat_type}
     else

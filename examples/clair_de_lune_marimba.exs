@@ -110,7 +110,8 @@ defmodule ClairDeLune.Marimba do
         {at, note, length, vel: min(level(bar + at / 9) * top * touch, 1.0), brightness: bright}
       end
 
-    at(Enum.uniq_by(strokes, &Enum.take(Tuple.to_list(&1), 2)) ++ thrown(bar), 9)
+    once = Enum.uniq_by(strokes, &{elem(&1, 0), elem(&1, 1)})
+    at(once ++ thrown(bar), 9)
   end
 
   # The left hand's arpeggios on the second marimba, from Un poco mosso to the end of the theme's
@@ -240,12 +241,10 @@ defmodule ClairDeLune.Marimba do
       {73, 0.25}
     ]
 
+    pairs = Enum.chunk_every(keys, 2, 1, :discard)
+
     [{from, a}, {to, b}] =
-      keys
-      |> Enum.chunk_every(2, 1, :discard)
-      |> Enum.find(List.last(Enum.chunk_every(keys, 2, 1, :discard)), fn [{from, _}, {to, _}] ->
-        at >= from and at < to
-      end)
+      Enum.find(pairs, List.last(pairs), fn [{from, _}, {to, _}] -> at >= from and at < to end)
 
     a + (b - a) * (at - from) / (to - from)
   end

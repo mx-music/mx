@@ -457,8 +457,10 @@ defmodule Mx.MusicTest do
       assert %Mx.Music.Note{opts: [changes: [{1, [note: 64]}, {1, [amp: 0.5]}]]} =
                [c4: 1, e4: 1] |> Mx.seq() |> Mx.slur(changes: [{1, amp: 0.5}])
 
+      twice = [e4: 0.5] |> Mx.seq() |> Mx.repeat(2)
+
       assert %Mx.Music.Note{opts: [changes: [{1, [note: 64]}, {2.0, [note: 67]}]]} =
-               [Mx.seq(c4: 1), Mx.repeat(Mx.seq(e4: 0.5), 2), Mx.note(:g4, 1)]
+               [Mx.seq(c4: 1), twice, Mx.note(:g4, 1)]
                |> Mx.seq()
                |> Mx.slur()
 
@@ -870,14 +872,18 @@ defmodule Mx.MusicTest do
     test "tongue: starts a new note where it returns true, given the beat from the music's start and both pitches" do
       on_beat = fn beat, _from, _to -> beat == trunc(beat) end
 
-      assert Mx.slur(Mx.seq(a4: 0.5, c5: 0.5, e5: 1), tongue: on_beat).items == [
+      line = Mx.seq(a4: 0.5, c5: 0.5, e5: 1)
+
+      assert Mx.slur(line, tongue: on_beat).items == [
                Mx.note(69, 1, changes: [{0.5, [note: 72]}]),
                Mx.note(76, 1)
              ]
 
       repeated = fn _beat, from, to -> from == to end
 
-      assert Mx.slur(Mx.seq(a4: 1, a4: 1, c5: 1), tongue: repeated).items == [
+      line = Mx.seq(a4: 1, a4: 1, c5: 1)
+
+      assert Mx.slur(line, tongue: repeated).items == [
                Mx.note(69, 1),
                Mx.note(69, 2, changes: [{1, [note: 72]}])
              ]

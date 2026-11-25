@@ -63,7 +63,7 @@ defmodule Mx.ScoreNotes do
 
   defp join_tie({beat, note, beats, tie, false}, notes), do: [{beat, note, beats, tie} | notes]
 
-  defp bar_length(bar), do: bar.voices |> hd() |> Enum.map(& &1.length) |> Enum.sum()
+  defp bar_length(bar), do: Enum.sum_by(hd(bar.voices), & &1.length)
 
   defp round6(number), do: Float.round(number * 1.0, 6)
 end

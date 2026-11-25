@@ -240,7 +240,8 @@ defmodule Fado do
   defp octave_string(name) do
     if pitch(name) < pitch(:e4) do
       String.replace(name, ~r/\d$/, fn octave ->
-        Integer.to_string(String.to_integer(octave) + 1)
+        next = String.to_integer(octave) + 1
+        Integer.to_string(next)
       end)
     else
       name

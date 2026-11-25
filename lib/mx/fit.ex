@@ -122,7 +122,9 @@ defmodule Mx.Fit do
   def step(value, %{step: step}, direction), do: value + step * direction
 
   defp render(synth, notes, %{vel: vel, held: held}, controls) do
-    dir = Path.join(System.tmp_dir!(), "mx-fit-#{System.unique_integer([:positive])}")
+    tmp = System.tmp_dir!()
+    id = System.unique_integer([:positive])
+    dir = Path.join(tmp, "mx-fit-#{id}")
     File.mkdir_p!(dir)
 
     try do
@@ -190,7 +192,7 @@ defmodule Mx.Fit do
     %{
       vel: vel,
       attack: if(drone, do: nil, else: summary.attack),
-      held: Signal.median(Enum.map(kept, & &1.held)),
+      held: kept |> Enum.map(& &1.held) |> Signal.median(),
       bands: Map.new(summary.bands, &{&1.band, &1.level}),
       noise: Map.new(summary.bands, &{&1.band, &1.noise}),
       notes: length(kept),

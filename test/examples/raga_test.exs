@@ -111,8 +111,8 @@ defmodule Mx.Examples.RagaTest do
 
   test "the song plays only the tanpura, the sitar and the tabla, and no samples" do
     for pass <- @passes do
-      loops =
-        List.flatten(Regex.scan(~r/^(\w+), pass /m, print(pass), capture: :all_but_first))
+      matches = Regex.scan(~r/^(\w+), pass /m, print(pass), capture: :all_but_first)
+      loops = List.flatten(matches)
 
       assert Enum.sort(loops) == ~w(chikari sitar tabla_ghe tabla_na tabla_tun tanpura)
       refute print(pass) =~ "sample "

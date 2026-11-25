@@ -163,7 +163,7 @@ defmodule Mx.EffectsTest do
     Mxs.render_through(:saw, opts, seconds + 0.2, ctx.tmp_dir, chain)
   end
 
-  defp rms(samples), do: :math.sqrt(Enum.sum(Enum.map(samples, &(&1 * &1))) / length(samples))
+  defp rms(samples), do: :math.sqrt(Enum.sum_by(samples, &(&1 * &1)) / length(samples))
 
   defp db(level), do: 20 * :math.log10(level + 1.0e-12)
 
@@ -203,7 +203,7 @@ defmodule Mx.EffectsTest do
     mean = Enum.sum(band_levels) / length(band_levels)
 
     spread =
-      :math.sqrt(Enum.sum(Enum.map(band_levels, &((&1 - mean) ** 2))) / length(band_levels))
+      :math.sqrt(Enum.sum_by(band_levels, &((&1 - mean) ** 2)) / length(band_levels))
 
     spread / mean
   end
@@ -226,8 +226,8 @@ defmodule Mx.EffectsTest do
     centred = Enum.map(curve, &(&1 - mean))
 
     Enum.max_by(4..16, fn lag ->
-      Enum.sum(Enum.zip_with(centred, Enum.drop(centred, lag), &(&1 * &2))) /
-        (length(curve) - lag)
+      products = Enum.zip_with(centred, Enum.drop(centred, lag), &(&1 * &2))
+      Enum.sum(products) / (length(curve) - lag)
     end)
   end
 

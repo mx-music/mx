@@ -692,7 +692,7 @@ defmodule Mx.Song do
       synth = loop.synth
 
       if Keyword.keyword?(loop.defaults) do
-        case Enum.find(Keyword.keys(loop.defaults), &(not Synths.option?(synth, &1))) do
+        case loop.defaults |> Keyword.keys() |> Enum.find(&(not Synths.option?(synth, &1))) do
           nil ->
             nil
 
@@ -820,7 +820,7 @@ defmodule Mx.Song do
     with true <- Synths.effect?(effect) || {:error, "mx has no effect #{effect}"},
          {:ok, key, opts} <- pop_key(effect, opts),
          {:ok, opts} <- Synths.bands(effect, opts) do
-      case Enum.find(Keyword.keys(opts), &(not Synths.effect_option?(effect, &1))) do
+      case opts |> Keyword.keys() |> Enum.find(&(not Synths.effect_option?(effect, &1))) do
         nil -> check_effect_values(effect, opts) || {effect, opts ++ key}
         option -> {:error, "effect #{effect} has no option #{option}"}
       end

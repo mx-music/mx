@@ -45,7 +45,9 @@ defmodule Mx.SampleCutTest do
   end
 
   test "a sample reads its length from its file" do
-    assert_in_delta Samples.seconds(Path.join(Samples.dir(), "loop_amen.flac")), @amen, 1.0e-9
+    dir = Samples.dir()
+    amen = Path.join(dir, "loop_amen.flac")
+    assert_in_delta Samples.seconds(amen), @amen, 1.0e-9
   end
 
   test "beats fits a sample to that many beats at the tempo where it starts", %{tmp_dir: dir} do

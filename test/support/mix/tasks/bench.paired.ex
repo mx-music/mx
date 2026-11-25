@@ -37,7 +37,7 @@ defmodule Mix.Tasks.Bench.Paired do
 
   @impl true
   def run(args) do
-    if String.contains?(System.get_env("ERL_FLAGS", ""), @busy) do
+    if "ERL_FLAGS" |> System.get_env("") |> String.contains?(@busy) do
       measure_all(args)
     else
       Mx.Command.fail(~s(run it as ERL_FLAGS="#{@busy}" mix bench.paired))
@@ -161,7 +161,10 @@ defmodule Mix.Tasks.Bench.Paired do
     micros / 1000
   end
 
-  defp mean(cases, key), do: Float.round(Enum.sum(Enum.map(cases, & &1[key])) / length(cases), 2)
+  defp mean(cases, key) do
+    average = Enum.sum_by(cases, & &1[key]) / length(cases)
+    Float.round(average, 2)
+  end
 
   defp times(elixir_ms, rust_ms), do: Float.round(elixir_ms / max(rust_ms, 0.001), 2)
 

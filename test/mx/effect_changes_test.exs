@@ -28,7 +28,11 @@ defmodule Mx.EffectChangesTest do
   # The largest difference between two renders from one second to another.
   defp apart(first, second, from, to) do
     range = round(from * @rate)..(round(to * @rate) - 1)
-    peak(Enum.zip_with(Enum.slice(first, range), Enum.slice(second, range), &(&1 - &2)))
+
+    differences =
+      first |> Enum.slice(range) |> Enum.zip_with(Enum.slice(second, range), &(&1 - &2))
+
+    peak(differences)
   end
 
   for {effect, given, option, value} <- [

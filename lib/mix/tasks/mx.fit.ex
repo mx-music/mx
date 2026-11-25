@@ -593,8 +593,10 @@ defmodule Mix.Tasks.Mx.Fit do
       {:ok, recorded, cached} ->
         if cached, do: IO.puts("using the recordings' figures from an earlier run")
 
+        lowest = dynamics |> Fit.lowest() |> Measure.name()
+
         for dynamic <- recorded do
-          below = "#{dynamic.below} below #{Measure.name(Fit.lowest(dynamics))}"
+          below = "#{dynamic.below} below #{lowest}"
 
           IO.puts(
             "vel #{number(dynamic.vel)}: #{dynamic.notes} notes, left out #{dynamic.quiet} quiet stretches and #{below}"
@@ -646,8 +648,14 @@ defmodule Mix.Tasks.Mx.Fit do
       Mx.Command.fail("give the synth first, such as mix mx.fit clarinet")
     end
 
-    {Enum.find(Synths.synths(), &(&1 == name)) ||
-       Mx.Command.fail("unknown synth #{name}"), rest}
+    synth =
+      if name in Synths.synths() do
+        name
+      else
+        Mx.Command.fail("unknown synth #{name}")
+      end
+
+    {synth, rest}
   end
 
   defp synth!([]), do: Mx.Command.fail("give the synth first, such as mix mx.fit clarinet")

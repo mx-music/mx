@@ -810,7 +810,8 @@ defmodule Mx.BandTest do
       assert [{beat, at_us, 60.0} | _] = Band.timeline(band)
       assert_received {:tempo_set, ^beat, 60.0}
       assert (at_us - asked_us) in 150_000..200_000
-      assert_in_delta Band.time_at(Band.timeline(band), beat + 1) - at_us, 1_000_000, 1
+      timeline = Band.timeline(band)
+      assert_in_delta Band.time_at(timeline, beat + 1) - at_us, 1_000_000, 1
 
       assert Band.scale_tempo(band, 1) == :ok
       assert [{_beat, _us, 120.0} | _] = Band.timeline(band)

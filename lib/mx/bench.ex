@@ -198,7 +198,9 @@ defmodule Mx.Bench do
   def saves(path, seconds, saves, opts \\ [])
       when is_binary(path) and is_integer(seconds) and is_list(saves) do
     live = Keyword.get(opts, :live, false)
-    dir = Path.join(System.tmp_dir!(), "mx-bench-#{System.unique_integer([:positive])}")
+    tmp = System.tmp_dir!()
+    id = System.unique_integer([:positive])
+    dir = Path.join(tmp, "mx-bench-#{id}")
     File.mkdir_p!(dir)
     copy = Path.join(dir, Path.basename(path))
     File.cp!(path, copy)

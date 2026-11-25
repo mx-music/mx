@@ -91,7 +91,7 @@ defmodule FitBowed do
 
         measured = misses |> Map.values() |> List.flatten() |> Enum.reject(&is_nil/1)
         mean = Enum.sum(measured) / length(measured)
-        spread = :math.sqrt(Enum.sum(Enum.map(measured, &((&1 - mean) ** 2))) / length(measured))
+        spread = :math.sqrt(Enum.sum_by(measured, &((&1 - mean) ** 2)) / length(measured))
         IO.puts("round #{round}: body #{Float.round(body, 1)} Hz, mean miss #{Float.round(mean, 1)} dB, spread #{Float.round(spread, 1)} dB")
         body = (body * :math.pow(2, mean / 20)) |> max(lowest * 0.5) |> min(lowest * 3)
 
@@ -133,7 +133,7 @@ defmodule FitBowed do
 
       all = List.flatten(misses)
       mean = Enum.sum(all) / length(all)
-      spread = :math.sqrt(Enum.sum(Enum.map(all, &((&1 - mean) ** 2))) / length(all))
+      spread = :math.sqrt(Enum.sum_by(all, &((&1 - mean) ** 2)) / length(all))
       IO.puts("#{synth} body #{Float.round(lowest * factor, 1)} Hz: spread #{Float.round(spread, 1)} dB, misses #{inspect(Enum.map(misses, fn m -> Enum.map(m, &Float.round(&1, 0)) end))}")
     end
   end
@@ -153,7 +153,8 @@ defmodule FitBowed do
 end
 
 if args != [] do
-  dir = Path.join(System.tmp_dir!(), "mxs-fit-bowed")
+  tmp = System.tmp_dir!()
+  dir = Path.join(tmp, "mxs-fit-bowed")
   File.mkdir_p!(dir)
   [synth | rest] = args
   synth = String.to_existing_atom(synth)
@@ -161,6 +162,8 @@ if args != [] do
   case rest do
     ["body"] -> FitBowed.body(synth, dir)
     ["score"] -> for vel <- [0.3, 0.6, 1.0], do: FitBowed.report(synth, vel, FitBowed.measure(synth, vel, List.duplicate(nil, 8), dir))
-    _ -> FitBowed.fit(synth, String.to_integer(List.first(rest) || "8"), dir)
+    _ ->
+      rounds = rest |> List.first("8") |> String.to_integer()
+      FitBowed.fit(synth, rounds, dir)
   end
 end

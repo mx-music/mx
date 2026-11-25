@@ -10,7 +10,8 @@ defmodule Mx.Import do
 
   @doc "Whether `path` names a file `song/2` reads: a MusicXML score, a MIDI file or an ABC tune."
   def score?(path) when is_binary(path) do
-    String.downcase(Path.extname(path)) in ~w(.mxl .musicxml .xml .mid .midi .abc)
+    extension = path |> Path.extname() |> String.downcase()
+    extension in ~w(.mxl .musicxml .xml .mid .midi .abc)
   end
 
   @doc """
@@ -117,10 +118,7 @@ defmodule Mx.Import do
   end
 
   defp synth(name) do
-    case Enum.find(Mx.Synths.synths(), &(&1 == name)) do
-      nil -> fail("unknown synth #{name}")
-      synth -> synth
-    end
+    if name in Mx.Synths.synths(), do: name, else: fail("unknown synth #{name}")
   end
 
   defp performance(score, opts) do
@@ -203,7 +201,11 @@ defmodule Mx.Import do
   end
 
   defp sentence([one]), do: one
-  defp sentence(names), do: Enum.join(Enum.drop(names, -1), ", ") <> " and " <> List.last(names)
+
+  defp sentence(names) do
+    {others, [last]} = Enum.split(names, -1)
+    Enum.join(others, ", ") <> " and " <> last
+  end
 
   defp summary(part, synth) do
     notes =
@@ -500,8 +502,12 @@ defmodule Mx.Import do
     vels = for note <- group.notes, note.vel != nil and not note.continues, do: note.vel
 
     case vels do
-      [] -> vel(group.mark, default)
-      vels -> Float.round(Enum.sum(vels) / length(vels), 2)
+      [] ->
+        vel(group.mark, default)
+
+      vels ->
+        mean = Enum.sum(vels) / length(vels)
+        Float.round(mean, 2)
     end
   end
 
@@ -587,12 +593,12 @@ defmodule Mx.Import do
   defp beats(score) do
     part = hd(score.parts)
     lengths = Map.new(part.bars, &{&1.number, bar_length(&1)})
-    score.order |> Enum.map(&Map.fetch!(lengths, &1)) |> Enum.sum()
+    Enum.sum_by(score.order, &Map.fetch!(lengths, &1))
   end
 
   defp bar_length(bar) do
     bar.voices
-    |> Enum.map(fn voice -> voice |> Enum.map(& &1.length) |> Enum.sum() end)
+    |> Enum.map(fn voice -> Enum.sum_by(voice, & &1.length) end)
     |> Enum.max(fn -> 0 end)
   end
 

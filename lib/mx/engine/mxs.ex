@@ -606,7 +606,9 @@ defmodule Mx.Engine.Mxs do
   end
 
   defp instruments(engine) do
-    Enum.reduce_while(Mx.Instrument.modules(), :ok, fn module, :ok ->
+    modules = Mx.Instrument.modules()
+
+    Enum.reduce_while(modules, :ok, fn module, :ok ->
       case Mx.Instrument.register(engine, module) do
         :ok -> {:cont, :ok}
         error -> {:halt, error}
@@ -884,7 +886,8 @@ defmodule Mx.Engine.Mxs do
   def handle_info({:mxs_report, _report}, state), do: {:noreply, state}
 
   def handle_info({:DOWN, _ref, :process, pid, _reason}, state) do
-    {:noreply, Enum.reduce(Map.keys(state.asked), state, &stop_sending(&2, &1, pid))}
+    state = state.asked |> Map.keys() |> Enum.reduce(state, &stop_sending(&2, &1, pid))
+    {:noreply, state}
   end
 
   # The clock's reports keep the delay current, which the output's report gives only as the device

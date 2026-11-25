@@ -454,8 +454,9 @@ defmodule Mix.Tasks.Mx.Measure do
 
   defp print_moments(moments) do
     IO.puts(@moments)
-    times = Enum.map_join(Hits.moment_times(), &String.pad_leading("#{&1}", 5))
-    IO.puts(String.pad_trailing("band", 14) <> times)
+    moment_times = Hits.moment_times()
+    times = Enum.map_join(moment_times, &String.pad_leading("#{&1}", 5))
+    print_row("band", times)
     for band <- moments, heard?(band.levels), do: IO.puts(label(band) <> levels(band.levels))
   end
 
@@ -464,9 +465,7 @@ defmodule Mix.Tasks.Mx.Measure do
     heading = String.pad_trailing(heading(synth, given), 21) <> " "
     IO.puts(@moments)
 
-    IO.puts(
-      String.pad_trailing("band", 14) <> "recordings            " <> heading <> "difference"
-    )
+    print_row("band", "recordings            " <> heading <> "difference")
 
     for band <- recorded, heard?(band.levels ++ Map.get(rendered, band.band, [])) do
       case rendered[band.band] do
@@ -483,7 +482,7 @@ defmodule Mix.Tasks.Mx.Measure do
 
   defp print_brightness(hits) do
     IO.puts(@brightness)
-    IO.puts(String.pad_trailing("", 14) <> stretches())
+    print_row("", stretches())
     for row <- Hits.brightness(hits), do: IO.puts(above(row) <> levels(row.levels))
     hits |> Hits.highs_peak() |> highs_peak() |> IO.puts()
     print_highs([{"above 4000 Hz", Hits.highs(hits)}])
@@ -493,7 +492,7 @@ defmodule Mix.Tasks.Mx.Measure do
     theirs = rendered |> Hits.brightness() |> Map.new(&{&1.above, &1.levels})
     heading = String.pad_trailing(heading(synth, given), 16) <> " "
     IO.puts(@brightness)
-    IO.puts(String.pad_trailing("", 14) <> "recordings       " <> heading <> "difference")
+    print_row("", "recordings       " <> heading <> "difference")
 
     for row <- Hits.brightness(recorded) do
       other = Map.get(theirs, row.above, Enum.map(row.levels, fn _level -> nil end))
@@ -517,14 +516,24 @@ defmodule Mix.Tasks.Mx.Measure do
       IO.puts(@highs)
       width = rows |> Enum.map(fn {name, _highs} -> String.length(name) end) |> Enum.max()
 
-      for {name, highs} <- rows,
-          do: IO.puts(String.pad_trailing(name, width + 1) <> levels(highs))
+      for {name, highs} <- rows do
+        padded = String.pad_trailing(name, width + 1)
+        IO.puts(padded <> levels(highs))
+      end
     end
   end
 
   defp stretches do
-    Enum.map_join(Hits.stretches(), fn {from, _to} -> String.pad_leading("#{from}", 5) end)
+    spans = Hits.stretches()
+    Enum.map_join(spans, fn {from, _to} -> String.pad_leading("#{from}", 5) end)
   end
+
+  defp print_row(label, text) do
+    padded = String.pad_trailing(label, 14)
+    IO.puts(padded <> text)
+  end
+
+  defp print_trimmed(line), do: line |> String.trim_trailing() |> IO.puts()
 
   defp above(%{above: above}), do: String.pad_trailing("above #{above} Hz", 14)
 
@@ -633,7 +642,11 @@ defmodule Mix.Tasks.Mx.Measure do
   end
 
   defp listed([one]), do: one
-  defp listed(names), do: Enum.join(Enum.drop(names, -1), ", ") <> " and " <> List.last(names)
+
+  defp listed(names) do
+    {others, [last]} = Enum.split(names, -1)
+    Enum.join(others, ", ") <> " and " <> last
+  end
 
   defp compare!(opts, synth) do
     case {opts[:compare], opts[:hits], synth} do
@@ -679,8 +692,7 @@ defmodule Mix.Tasks.Mx.Measure do
   end
 
   defp synth!(name) do
-    Enum.find(Synths.synths(), &(&1 == name)) ||
-      Mx.Command.fail("unknown synth #{name}")
+    if name in Synths.synths(), do: name, else: Mx.Command.fail("unknown synth #{name}")
   end
 
   defp print_file(_path, {:error, message}), do: Mx.Command.fail(message)
@@ -836,12 +848,18 @@ defmodule Mix.Tasks.Mx.Measure do
     end)
   end
 
+  defp tmp_dir do
+    tmp = System.tmp_dir!()
+    id = System.unique_integer([:positive])
+    Path.join(tmp, "mx-measure-#{id}")
+  end
+
   defp synth_opts(synth, opts) do
     for {key, value} <- opts, value != nil, Synths.option?(synth, key), do: {key, value}
   end
 
   defp in_tmp_dir(fun) do
-    dir = Path.join(System.tmp_dir!(), "mx-measure-#{System.unique_integer([:positive])}")
+    dir = tmp_dir()
     File.mkdir_p!(dir)
 
     try do
@@ -852,7 +870,7 @@ defmodule Mix.Tasks.Mx.Measure do
   end
 
   defp render(synth, given, notes) do
-    dir = Path.join(System.tmp_dir!(), "mx-measure-#{System.unique_integer([:positive])}")
+    dir = tmp_dir()
     File.mkdir_p!(dir)
 
     try do
@@ -873,19 +891,19 @@ defmodule Mix.Tasks.Mx.Measure do
   end
 
   defp print_bands(bands) do
-    IO.puts(String.pad_trailing("band", 14) <> "      fade     level")
+    print_row("band", "      fade     level")
 
     for band <- bands do
-      IO.puts(String.trim_trailing(label(band) <> figures(band)))
+      print_trimmed(label(band) <> figures(band))
     end
   end
 
   defp print_held(summary) do
     vibrato = if summary.vibrato, do: vibrato(summary.vibrato), else: "none"
-    IO.puts(String.pad_trailing("attack", 14) <> seconds(summary.attack))
-    IO.puts(String.pad_trailing("vibrato", 14) <> vibrato)
+    print_row("attack", seconds(summary.attack))
+    print_row("vibrato", vibrato)
     IO.puts("")
-    IO.puts(String.pad_trailing("band", 14) <> "     level     noise")
+    print_row("band", "     level     noise")
 
     for band <- summary.bands do
       IO.puts(label(band) <> held_figures(band))
@@ -895,22 +913,18 @@ defmodule Mix.Tasks.Mx.Measure do
   defp print_held_beside(recorded, rendered, synth, given) do
     heading = heading(synth, given)
 
-    IO.puts(
-      String.pad_trailing("", 14) <> column("recordings") <> column(heading) <> "difference"
-    )
+    print_row("", column("recordings") <> column(heading) <> "difference")
 
     attack = signed(round((rendered.attack / recorded.attack - 1) * 100), 0) <> "%"
     attacks = column(seconds(recorded.attack)) <> column(seconds(rendered.attack)) <> attack
-    IO.puts(String.pad_trailing("attack", 14) <> attacks)
+    print_row("attack", attacks)
     vibratos = column(vibrato(recorded.vibrato)) <> column(vibrato(rendered.vibrato))
 
-    IO.puts(
-      String.pad_trailing("vibrato", 14) <> vibratos <> vibrato_difference(recorded, rendered)
-    )
+    print_row("vibrato", vibratos <> vibrato_difference(recorded, rendered))
 
     IO.puts("")
     figures = "     level     noise"
-    IO.puts(String.pad_trailing("band", 14) <> figures <> figures <> figures)
+    print_row("band", figures <> figures <> figures)
     rendered = Map.new(rendered.bands, &{&1.band, &1})
 
     for band <- recorded.bands do
@@ -992,12 +1006,12 @@ defmodule Mix.Tasks.Mx.Measure do
   defp print_beside(recorded, rendered, synth, given) do
     rendered = Map.new(rendered, &{&1.band, &1})
     heading = column(heading(synth, given))
-    IO.puts(String.pad_trailing("band", 14) <> "recordings          " <> heading <> "difference")
+    print_row("band", "recordings          " <> heading <> "difference")
 
     for band <- recorded do
       case rendered[band.band] do
         nil ->
-          IO.puts(String.trim_trailing(label(band) <> figures(band)))
+          print_trimmed(label(band) <> figures(band))
 
         other ->
           IO.puts(label(band) <> figures(band) <> figures(other) <> difference(band, other))

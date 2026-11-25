@@ -13,8 +13,10 @@ defmodule Mx.Examples.TranquilityBaseTest do
     refute source =~ "~/"
 
     for file <-
-          ~w(a11kennedy.aiff a11liftoff.aiff a11landing.aiff a11step.aiff a11magnif.aiff sputnik.wav apollo_13_problem.wav),
-        do: assert(File.exists?(Path.join("examples/tranquility_base", file)))
+          ~w(a11kennedy.aiff a11liftoff.aiff a11landing.aiff a11step.aiff a11magnif.aiff sputnik.wav apollo_13_problem.wav) do
+      path = Path.join("examples/tranquility_base", file)
+      assert File.exists?(path)
+    end
   end
 
   test "the licence notes name VCSL and NASA's recordings with their source, and the examples guide lists the piece" do

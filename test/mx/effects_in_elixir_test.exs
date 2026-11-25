@@ -31,7 +31,7 @@ defmodule Mx.EffectsInElixirTest do
 
   defp peak(samples), do: samples |> Enum.map(&abs/1) |> Enum.max()
 
-  defp rms(samples), do: :math.sqrt(Enum.sum(Enum.map(samples, &(&1 * &1))) / length(samples))
+  defp rms(samples), do: :math.sqrt(Enum.sum_by(samples, &(&1 * &1)) / length(samples))
 
   # How far below the first render's peak the two renders differ at most, on either side, in
   # decibels.

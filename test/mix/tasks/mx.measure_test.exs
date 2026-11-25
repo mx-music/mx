@@ -330,7 +330,8 @@ defmodule Mix.Tasks.Mx.MeasureTest do
     end
 
     capture_io(fn -> Mix.Tasks.Mx.Spectrogram.run([out]) end)
-    assert File.exists?(Path.rootname(out) <> ".png")
+    png = Path.rootname(out) <> ".png"
+    assert File.exists?(png)
   end
 
   @tag :engine
@@ -357,8 +358,10 @@ defmodule Mix.Tasks.Mx.MeasureTest do
     synths = samples |> Enum.chunk_every(each) |> Enum.drop(3)
 
     loudest =
-      for synth <- synths,
-          do: Enum.max_by(Hits.hit(synth, 48_000, 60, partials: 4).partials, & &1.level).hz
+      for synth <- synths do
+        hit = Hits.hit(synth, 48_000, 60, partials: 4)
+        Enum.max_by(hit.partials, & &1.level).hz
+      end
 
     assert loudest |> Enum.map(&round/1) |> Enum.sort() == [262, 277, 294]
   end
@@ -769,13 +772,14 @@ defmodule Mix.Tasks.Mx.MeasureTest do
       small = Path.join(dir, "Shaker, Small")
       large = Path.join(dir, "Shaker, Large")
 
+      files = fn dir, pattern -> dir |> Path.join(pattern) |> Path.wildcard() end
+
       cases = [
-        {"ganza", [], Path.wildcard(Path.join(small, "*_Down_*.wav"))},
+        {"ganza", [], files.(small, "*_Down_*.wav")},
         {"ganza", ["--option", "up=1"],
-         Path.wildcard(Path.join(small, "*_Up_*.wav")) --
-           [Path.join(small, "Mid_ShakerLowFaster_Up_rr2.wav")]},
-        {"shaker", [], Path.wildcard(Path.join(large, "*Shake1D*.wav"))},
-        {"shaker", ["--option", "up=1"], Path.wildcard(Path.join(large, "*Shake1U*.wav"))}
+         files.(small, "*_Up_*.wav") -- [Path.join(small, "Mid_ShakerLowFaster_Up_rr2.wav")]},
+        {"shaker", [], files.(large, "*Shake1D*.wav")},
+        {"shaker", ["--option", "up=1"], files.(large, "*Shake1U*.wav")}
       ]
 
       for {synth, option, paths} <- cases do

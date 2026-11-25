@@ -30,6 +30,7 @@ defmodule ClairDeLune.Piano do
       for {beat, note, vel, sustain} <- ClairDeLune.strokes(number),
           do: {beat, note(note, sustain, vel: vel)}
 
-    at(strokes, Float.round(ClairDeLune.warp(number, 9), 3))
+    beats = number |> ClairDeLune.warp(9) |> Float.round(3)
+    at(strokes, beats)
   end
 end

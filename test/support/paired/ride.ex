@@ -85,9 +85,8 @@ defmodule Mx.Paired.Ride do
     ping_hz = Enum.flat_map(groups, &elem(&1, 3))
     ping_levels = Enum.flat_map(groups, &elem(&1, 4))
 
-    cup_levels =
-      Enum.map(Enum.take(@bell_levels, 2), &db(&1 + @cup_low)) ++
-        Enum.map(Enum.drop(@bell_levels, 2), fn level -> db(level) end)
+    {cup, rim} = Enum.split(@bell_levels, 2)
+    cup_levels = Enum.map(cup, &db(&1 + @cup_low)) ++ Enum.map(rim, fn level -> db(level) end)
 
     cup_level = bell * db(@cup_db)
 

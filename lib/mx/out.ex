@@ -153,7 +153,7 @@ defmodule Mx.Out do
         {state, [conn]}
 
       :error ->
-        case Enum.find(Midiex.ports(:output), &(&1.name == name)) do
+        case :output |> Midiex.ports() |> Enum.find(&(&1.name == name)) do
           nil ->
             {state, []}
 

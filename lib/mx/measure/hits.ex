@@ -135,7 +135,7 @@ defmodule Mx.Measure.Hits do
 
       %{
         band: band,
-        level: Signal.median(Enum.map(inside, & &1.level)),
+        level: inside |> Enum.map(& &1.level) |> Signal.median(),
         fade: fade,
         count: length(inside)
       }

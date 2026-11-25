@@ -49,15 +49,9 @@ defmodule Viola do
 
     seq(
       for chord <- chords,
-          {group, i} <-
-            Enum.with_index(
-              Enum.chunk_every(
-                chord ++
-                  Enum.map(chord, &(&1 + 12)) ++
-                  Enum.reverse(Enum.map(chord, &(&1 + 12))) ++ Enum.reverse(chord),
-                4
-              )
-            ) do
+          up = Enum.map(chord, &(&1 + 12)),
+          arpeggio = chord ++ up ++ Enum.reverse(up) ++ Enum.reverse(chord),
+          {group, i} <- arpeggio |> Enum.chunk_every(4) |> Enum.with_index() do
         bow(Enum.map(group, &{&1, 0.25}), if(i == 0, do: 0.75, else: 0.6), across: true)
       end
     )
@@ -106,7 +100,7 @@ defmodule Viola do
   # A swelled stroke grows louder to its middle and eases off to its end, and a stroke across the
   # strings changes note without sliding.
   defp bow(notes, vel, opts) do
-    beats = notes |> Enum.map(&elem(&1, 1)) |> Enum.sum()
+    beats = Enum.sum_by(notes, &elem(&1, 1))
 
     slide = fn previous, note ->
       if abs(note - previous) > 4 and !opts[:across], do: 0.08, else: 0.01

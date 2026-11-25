@@ -102,7 +102,7 @@ defmodule Mx.Performance do
 
   defp bar_length(bar) do
     bar.voices
-    |> Enum.map(fn voice -> voice |> Enum.map(& &1.length) |> Enum.sum() end)
+    |> Enum.map(fn voice -> Enum.sum_by(voice, & &1.length) end)
     |> Enum.max(fn -> 0 end)
   end
 

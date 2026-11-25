@@ -232,7 +232,7 @@ defmodule Mx.ABC do
   end
 
   defp bpm(count, quarters) do
-    case Float.parse(String.trim(count)) do
+    case count |> String.trim() |> Float.parse() do
       {count, _} ->
         tempo = count * quarters
         if tempo == trunc(tempo), do: trunc(tempo), else: Float.round(tempo, 2)
@@ -306,7 +306,7 @@ defmodule Mx.ABC do
         {start, text} =
           if open, do: {elem(open, 0), elem(open, 1) <> " " <> line}, else: {index, line}
 
-        if String.ends_with?(String.trim_trailing(text), "\\") do
+        if text |> String.trim_trailing() |> String.ends_with?("\\") do
           {:cont, {start, text |> String.trim_trailing() |> String.trim_trailing("\\")}}
         else
           {:cont, {start, text}, nil}
@@ -553,7 +553,8 @@ defmodule Mx.ABC do
   end
 
   defp key_alter(fifths, step) when fifths < 0 do
-    if step in Enum.take(Enum.reverse(@sharps), -fifths), do: -1, else: 0
+    flats = @sharps |> Enum.reverse() |> Enum.take(-fifths)
+    if step in flats, do: -1, else: 0
   end
 
   defp key_alter(_fifths, _step), do: 0
@@ -643,8 +644,13 @@ defmodule Mx.ABC do
       |> String.split(",")
       |> Enum.flat_map(fn part ->
         case String.split(part, "-") do
-          [from, to] -> Enum.to_list(String.to_integer(from)..String.to_integer(to))
-          [one] -> [String.to_integer(one)]
+          [from, to] ->
+            first = String.to_integer(from)
+            last = String.to_integer(to)
+            Enum.to_list(first..last)
+
+          [one] ->
+            [String.to_integer(one)]
         end
       end)
 

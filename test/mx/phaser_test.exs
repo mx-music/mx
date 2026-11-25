@@ -34,7 +34,7 @@ defmodule Mx.PhaserTest do
     Enum.slice(samples, round(from * @rate)..(round(to * @rate) - 1))
   end
 
-  defp rms(samples), do: :math.sqrt(Enum.sum(Enum.map(samples, &(&1 * &1))) / length(samples))
+  defp rms(samples), do: :math.sqrt(Enum.sum_by(samples, &(&1 * &1)) / length(samples))
   defp db(level), do: 20 * :math.log10(max(level, 1.0e-12))
 
   # How far in dB a sine at each frequency comes out of the effects below the same sine dry, on
@@ -74,8 +74,9 @@ defmodule Mx.PhaserTest do
   # How far apart two runs of levels are, as a share of how far the first moves.
   defp apart(first, second) do
     mean = Enum.sum(first) / length(first)
-    moves = first |> Enum.map(&abs(&1 - mean)) |> Enum.sum()
-    Enum.sum(Enum.zip_with(first, second, &abs(&1 - &2))) / moves
+    moves = Enum.sum_by(first, &abs(&1 - mean))
+    differences = Enum.zip_with(first, second, &abs(&1 - &2))
+    Enum.sum(differences) / moves
   end
 
   @tag :engine
