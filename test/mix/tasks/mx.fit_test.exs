@@ -732,7 +732,7 @@ defmodule Mix.Tasks.Mx.FitTest do
       end
     end
 
-    test "--processor goes with --descent, and --descent with --struck and without --note", ctx do
+    test "--processor goes with --descent, and --descent with --struck", ctx do
       list = write_list(ctx, ["C4 80 c4.wav"])
 
       assert_raise Mix.Error, "--processor goes with --descent", fn ->
@@ -742,22 +742,6 @@ defmodule Mix.Tasks.Mx.FitTest do
       assert_raise Mix.Error, "--descent goes with --struck, not --held", fn ->
         Mix.Tasks.Mx.Fit.run(["cello", "--held", list, "--check", "--descent"])
       end
-
-      assert_raise Mix.Error,
-                   "--note and --vel show the fit partial by partial, not --descent",
-                   fn ->
-                     Mix.Tasks.Mx.Fit.run([
-                       "marimba",
-                       "--struck",
-                       list,
-                       "--check",
-                       "--descent",
-                       "--note",
-                       "C4",
-                       "--vel",
-                       "80"
-                     ])
-                   end
     end
 
     @tag :without_gpu
@@ -786,6 +770,41 @@ defmodule Mix.Tasks.Mx.FitTest do
 
       assert output =~ "fitting by gradient descent on the GPU"
       assert File.read!(first) == File.read!(second)
+    end
+
+    @tag :gpu
+    test "--check --note --own --descent prints the descent's own render frame by frame", ctx do
+      write_wav(ctx.tmp_dir, "c4.wav", struck_note(60, 2))
+      list = write_list(ctx, ["C4 127 c4.wav"])
+      args = ~w(marimba --struck #{list} --check --note C4 --vel 127 --until 1 --own)
+      partials = capture_io(fn -> Mix.Tasks.Mx.Fit.run(args) end)
+      descent = capture_io(fn -> Mix.Tasks.Mx.Fit.run(args ++ ["--descent"]) end)
+
+      assert descent =~ "ERB bands"
+      assert descent != partials
+    end
+
+    @tag :gpu
+    test "--descent fits a noise band that swells after the strike with levels that rise, where the fit partial by partial has none",
+         ctx do
+      samples = Enum.zip_with(struck_note(60, 3), swelling_hiss(3), &(&1 + &2))
+      write_wav(ctx.tmp_dir, "c4.wav", samples)
+      {:ok, [recording], _lines} = ctx |> write_list(["C4 127 c4.wav"]) |> Struck.listed()
+
+      # How far each band from 2 to 3.2 kHz rises in the fit's noise from 25 ms after the
+      # strike to its loudest by 300 ms.
+      [partials, descent] =
+        for how <- ~w(partials gpu) do
+          frames = Struck.frames(nil, recording, Enum.map(1..12, &(&1 * 0.025)), how: how)
+
+          for %{at: {low, _high}, rows: rows} <- frames.bands, low > 1900 and low < 2900 do
+            [first | later] = rows |> List.keyfind("noise", 0) |> elem(1)
+            Enum.max(later) - first
+          end
+        end
+
+      assert length(descent) == 4 and Enum.all?(descent, &(&1 > 30))
+      assert Enum.all?(partials, &(&1 < 10))
     end
 
     test "--steady goes with --held, not --struck", ctx do
@@ -1517,6 +1536,42 @@ defmodule Mix.Tasks.Mx.FitTest do
   defp packed(samples) do
     {data, packing} = Mx.Signal.packed(samples)
     {data, packing, Mxs.render_rate() / 1}
+  end
+
+  # White noise through two band-pass filters at 2449 Hz, Q 2.45, rising from 50 ms after
+  # the strike until 200 ms and falling 60 dB a second after.
+  defp swelling_hiss(seconds) do
+    rate = Mxs.render_rate()
+    :rand.seed(:exsss, {4, 5, 6})
+    angle = 2 * :math.pi() * 2449 / rate
+    alpha = :math.sin(angle) / (2 * 2.45)
+
+    {gain, first, second} =
+      {alpha / (1 + alpha), -2 * :math.cos(angle) / (1 + alpha), (1 - alpha) / (1 + alpha)}
+
+    pass = fn samples ->
+      samples
+      |> Enum.map_reduce({0.0, 0.0, 0.0, 0.0}, fn input, {last, earlier, out, out_earlier} ->
+        output = gain * (input - earlier) - first * out - second * out_earlier
+        {output, {input, last, output, out}}
+      end)
+      |> elem(0)
+    end
+
+    white = for _ <- 1..round(seconds * rate), do: :rand.normal()
+    band = white |> pass.() |> pass.()
+    power = band |> Enum.map(&(&1 * &1)) |> Enum.sum()
+    rms = :math.sqrt(power / length(band))
+
+    List.duplicate(0.0, round(0.2 * rate)) ++
+      for {noise, index} <- Enum.with_index(band) do
+        time = index / rate
+
+        level =
+          0.03 * min(max((time - 0.05) / 0.15, 0), 1) * 10 ** (-60 * max(time - 0.2, 0) / 20)
+
+        level * noise / rms
+      end
   end
 
   defp write_list(ctx, lines) do

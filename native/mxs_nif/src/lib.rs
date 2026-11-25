@@ -886,7 +886,10 @@ fn fitting(how: &str) -> NifResult<&str> {
     not(all(feature = "gpu", target_os = "macos")),
     allow(unused_variables)
 )]
-fn struck_fit(recording: &analysis::fit::Recording, how: &str) -> analysis::fit::Figures {
+fn struck_fit(
+    recording: &analysis::fit::Recording,
+    how: &str,
+) -> (analysis::fit::Figures, analysis::partials::Note) {
     #[cfg_attr(
         not(all(feature = "gpu", target_os = "macos")),
         allow(unused_mut, unused_variables)
@@ -910,7 +913,7 @@ fn struck_fit(recording: &analysis::fit::Recording, how: &str) -> analysis::fit:
             on,
         );
     }
-    figures
+    (figures, recorded)
 }
 
 /// Whether this build of mxs can fit struck notes by gradient descent with MLX.
@@ -956,7 +959,8 @@ fn fit_struck<'a>(env: Env<'a>, recordings: Vec<Struck<'a>>, how: String) -> Nif
                         room: room.as_ref(),
                     },
                     how,
-                ),
+                )
+                .0,
             )
         },
     );
@@ -1001,7 +1005,7 @@ fn check_fit_struck(recording: Struck, how: String) -> NifResult<analysis::fit::
         top,
         room: room.as_ref(),
     };
-    let figures = struck_fit(&recording, fitting(&how)?);
+    let (figures, _) = struck_fit(&recording, fitting(&how)?);
     Ok(analysis::fit::own(&figures, &recording))
 }
 
@@ -1011,6 +1015,7 @@ fn frames_struck(
     recording: Struck,
     rendered: Option<Sound>,
     times: Vec<f64>,
+    how: String,
 ) -> NifResult<analysis::fit::Frames> {
     let ((data, format, rate), within, (note, _velocity, seconds, exact, top)) = recording;
     let (theirs, room) = span_in_room(&data, &format, within, rate, note)?;
@@ -1021,17 +1026,17 @@ fn frames_struck(
     let synth = synth
         .as_ref()
         .map(|(sound, rate)| (sound.as_slice(), *rate));
-    Ok(analysis::fit::frames(
-        &theirs,
+    let recording = analysis::fit::Recording {
+        sound: &theirs,
         rate,
         note,
         seconds,
         exact,
         top,
-        synth,
-        &times,
-        room.as_ref(),
-    ))
+        room: room.as_ref(),
+    };
+    let fitted = struck_fit(&recording, fitting(&how)?);
+    Ok(analysis::fit::frames(&recording, fitted, synth, &times))
 }
 
 /// A tour for listening of recordings of struck notes, each given as to `fit_struck`, beside renders given as their data, format and rate, as 32-bit floats at the renders' rate.

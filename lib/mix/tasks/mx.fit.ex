@@ -215,9 +215,6 @@ defmodule Mix.Tasks.Mx.Fit do
       opts[:processor] && !opts[:descent] ->
         Mx.Command.fail("--processor goes with --descent")
 
-      opts[:descent] && opts[:note] ->
-        Mx.Command.fail("--note and --vel show the fit partial by partial, not --descent")
-
       opts[:descent] && !Mx.Engine.Mxs.Native.descent_built() ->
         Mx.Command.fail(
           "--descent needs mxs built with MLX: MX_GPU=1 mix compile --force, on macOS"
@@ -417,7 +414,7 @@ defmodule Mix.Tasks.Mx.Fit do
     note = note!(opts[:note])
     recording = recording!(recordings, note, opts[:vel])
     times = times(opts[:until])
-    frames = Struck.frames(synth || nil, recording, times, options)
+    frames = Struck.frames(synth || nil, recording, times, [how: how(opts)] ++ options)
 
     cents =
       :erlang.float_to_binary(1200 * :math.log2(frames.pitch / Signal.hz(note)), decimals: 1)

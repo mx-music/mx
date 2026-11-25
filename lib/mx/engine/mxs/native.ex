@@ -143,8 +143,8 @@ defmodule Mx.Engine.Mxs.Native do
   @doc "How far the fit's own render of a struck note is from the recording, the recording as `fit_struck/1` takes it."
   def check_fit_struck(_recording, _how), do: :erlang.nif_error(:nif_not_loaded)
 
-  @doc "A recording of a struck note beside a render of it, or the fit's own render alone when `rendered` is nil, frame by frame at `times` seconds after the strike, as `Mx.Fit.Struck.frames/4` gives them."
-  def frames_struck(_recording, _rendered, _times), do: :erlang.nif_error(:nif_not_loaded)
+  @doc "A recording of a struck note beside a render of it, or the fit's own render alone when `rendered` is nil, frame by frame at `times` seconds after the strike, as `Mx.Fit.Struck.frames/4` gives them, fitted as `how` says."
+  def frames_struck(_recording, _rendered, _times, _how), do: :erlang.nif_error(:nif_not_loaded)
 
   @doc "A tour for listening of recordings, each as `fit_struck/1` takes it, beside a render as `{data, format, rate}`, as 32-bit floats at the renders' rate."
   def tour_struck(_pairs), do: :erlang.nif_error(:nif_not_loaded)

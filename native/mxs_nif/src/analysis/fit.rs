@@ -929,30 +929,23 @@ pub struct Frames {
     pub bands: Vec<Rows>,
 }
 
-/// Fits a recording, renders the figures with their sines and noise together and apart, and gives each partial within 60 dB of the loudest, lowest first, and each ERB band at `times` seconds after the strike.
+/// Renders a recording's fitted figures with their sines and noise together and apart, and gives each partial within 60 dB of the loudest, lowest first, and each ERB band at `times` seconds after the strike.
 /// Each sound is brought to the recording's total over its first half second as `check` brings it, the sines and noise by the fit's own render's shift.
 /// The synth and the fit's own render have the `room` the recording was made in added, as `check` adds it, and the room has a row of its own.
-#[allow(clippy::too_many_arguments)]
 pub fn frames(
-    sound: &[f64],
-    rate: f64,
-    note: f64,
-    seconds: f64,
-    exact: bool,
-    top: f64,
+    recording: &Recording,
+    (figures, theirs): (Figures, Note),
     synth: Option<(&[f64], f64)>,
     times: &[f64],
-    room: Option<&Room>,
 ) -> Frames {
-    let (figures, theirs) = fit(&Recording {
-        sound,
+    let Recording {
         rate,
         note,
         seconds,
-        exact,
         top,
         room,
-    });
+        ..
+    } = *recording;
     let own = render(&figures, rate, 0.05, seconds + 0.3);
     let mut sines = figures.clone();
     for band in &mut sines.noise {

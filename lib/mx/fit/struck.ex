@@ -138,11 +138,13 @@ defmodule Mx.Fit.Struck do
   One recording beside `synth`, or with `nil` the fit's own render alone, frame by frame at `times` seconds after the strike.
   Returns its `pitch` in Hz, the second of its file the `strike` was found at, and `partials`, each within 60 dB of the loudest, lowest first, and ERB `bands`, each with its `at`, `floor` and `rows`: the recording, the synth, the fit's own render, and that render's sines and noise apart, in dB against the loudest partial.
   A partial's `at` is its ratio to the pitch and its harmonic, 0 between harmonics; a band's is its edges in Hz.
+  The fit is made as `figures/2` makes it with `:how` in `options`, "partials" unless given.
   """
   def frames(synth, recording, times, options \\ []) when is_list(times) do
+    {how, options} = Keyword.pop(options, :how, "partials")
     {{_data, _packing, rate}, {from, _to}, _note} = struck = struck(recording, raws([recording]))
     rendered = synth && render(synth, recording, options)
-    frames = Native.frames_struck(struck, rendered, times)
+    frames = Native.frames_struck(struck, rendered, times, how)
     %{frames | strike: from / rate + frames.strike}
   end
 
