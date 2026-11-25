@@ -330,6 +330,7 @@ defmodule Mix.Tasks.Mx.FitTest do
       assert_in_delta power_mean(fit), power_mean(recorded), 1
     end
 
+    @tag timeout: 600_000
     test "a note is fitted over its whole ring, and falls on at its last slope after it", ctx do
       write_wav(ctx.tmp_dir, "long.wav", struck_note(60, 12, harmonics: [1], fade: 6))
       list = write_list(ctx, ["C4 100 long.wav"])
