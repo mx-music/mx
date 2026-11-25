@@ -18,6 +18,16 @@ jobs:
 
       - run: sudo apt-get update && sudo apt-get install -y ripgrep libasound2-dev
 
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy, rust-analyzer
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: native/mxs_nif
+
+      - run: cargo install deslop-please --version 0.1.4 --locked
+
       - uses: actions/cache@v6
         with:
           path: |

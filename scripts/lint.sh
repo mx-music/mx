@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Dependencies: rg
+# Dependencies: rg, cargo with clippy and rustfmt, deslop-please
 # Run from the root of the project: scripts/lint.sh
 # Flags: -t prints timings, -r runs only the ripgrep checks, -p skips credo.
 
@@ -417,6 +417,10 @@ if [ "$RG_ONLY" -eq 0 ]; then
   run_mix_check "mix ex_dna"                           mix ex_dna
   run_mix_check "public functions without a @doc"      mix run --no-start scripts/undocumented.exs
   run_mix_check "mix xref graph (compile-connected cycles)" mix xref graph --format cycles --label compile-connected --fail-above 0
+
+  run_mix_check "cargo fmt --check (native/mxs_nif)"   cargo fmt --manifest-path native/mxs_nif/Cargo.toml --check
+  run_mix_check "cargo clippy (native/mxs_nif)"        cargo clippy --manifest-path native/mxs_nif/Cargo.toml --all-targets -- -D warnings
+  run_mix_check "deslop-please (native/mxs_nif)"       bash -c "cd native/mxs_nif && deslop-please"
 fi
 
 # Allows running custom / experimental checks locally
