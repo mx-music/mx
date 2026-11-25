@@ -43,7 +43,7 @@ defmodule Mx.Notes do
   def note(number) when is_number(number), do: number
 
   def note(name) when is_atom(name) and name not in [nil, true, false] do
-    parse(Atom.to_string(name))
+    name |> Atom.to_string() |> parse()
   end
 
   @doc ~s(The note number for text giving a number or a note name, such as "60" or "c4", raising `ArgumentError` for neither.)
@@ -92,7 +92,7 @@ defmodule Mx.Notes do
   }
 
   def chord(name, opts) when is_binary(name) and is_list(opts) do
-    from = note(Keyword.fetch!(opts, :from))
+    from = opts |> Keyword.fetch!(:from) |> note()
     {class, kind} = chord_name(name)
     chord(from + Integer.mod(class - from, 12), kind)
   end

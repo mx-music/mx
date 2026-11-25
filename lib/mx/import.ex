@@ -232,7 +232,7 @@ defmodule Mx.Import do
 
   defp song(score, parts, tempo, file, out, recording) do
     song_module = song_module(out)
-    names = loop_names(Enum.map(parts, fn {part, _synth} -> part.name end))
+    names = parts |> Enum.map(fn {part, _synth} -> part.name end) |> loop_names()
     rendered = Enum.map(parts, fn {part, synth} -> render(part, synth, score.order) end)
 
     # A bar plays the same wherever the score plays it, unless a tie into it or out of it differs,
@@ -241,7 +241,7 @@ defmodule Mx.Import do
       Enum.all?(rendered, fn bars ->
         bars
         |> Enum.group_by(&elem(&1, 0), &elem(&1, 2))
-        |> Enum.all?(fn {_number, musics} -> length(Enum.uniq(musics)) == 1 end)
+        |> Enum.all?(fn {_number, musics} -> musics |> Enum.uniq() |> length() == 1 end)
       end)
 
     bars =
@@ -277,7 +277,7 @@ defmodule Mx.Import do
 
     players =
       Enum.map(names, fn name ->
-        "      part(:#{name}, seq(Enum.map(order(), &bar(:#{name}, &1))))"
+        "      part(:#{name}, seq(order(), &bar(:#{name}, &1)))"
       end)
 
     players =
@@ -624,9 +624,15 @@ defmodule Mx.Import do
            [1, 2, 4, 8, 16, 32, 64, 3, 6, 12, 24, 48, 5, 10, 20, 7, 14, 28],
            &whole?(length * &1)
          ) do
-      nil -> format_beats(Float.round(length * 1.0, 4))
-      under when under in [1, 2, 4, 8, 16, 32, 64] -> format_beats(length)
-      under -> "#{round(length * under)}/#{under}"
+      nil ->
+        rounded = Float.round(length * 1.0, 4)
+        format_beats(rounded)
+
+      under when under in [1, 2, 4, 8, 16, 32, 64] ->
+        format_beats(length)
+
+      under ->
+        "#{round(length * under)}/#{under}"
     end
   end
 

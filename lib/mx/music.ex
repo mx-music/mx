@@ -1191,7 +1191,7 @@ defmodule Mx.Music do
     {sections, forever} = sections(music)
     lengths = Enum.map(sections, &beats/1)
 
-    check_endless(Enum.reject(lengths, &(&1 == 0)), forever)
+    lengths |> Enum.reject(&(&1 == 0)) |> check_endless(forever)
     played = Enum.zip_with(sections, lengths, &flatten(&1, 0, nil, &2))
     {played, changes} = played |> Enum.map(&split_tempos/1) |> Enum.unzip()
     changes = carry_tempos(changes, lengths)

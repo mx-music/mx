@@ -48,6 +48,9 @@ defmodule TradingFours do
   part :piano, synth: :piano, fx: [reverb: [decay_seconds: 1.2, mix: 0.2]]
 
   def song do
+    all_bars = Enum.to_list(0..7)
+    first_bars = Enum.to_list(0..3)
+    last_bars = Enum.to_list(4..7)
     busier_bars = Enum.take(busier(), 4)
     turnaround = List.replace_at(busier_bars, 3, "......6..7.8")
 
@@ -56,30 +59,30 @@ defmodule TradingFours do
       mambo(),
       mambo_bell(setup()),
       swing(
-        Enum.to_list(0..7),
+        all_bars,
         ghosts(),
         feathered(8, %{0 => "7..3..3..3.."}),
-        comp(Enum.to_list(0..7), comping())
+        comp(all_bars, comping())
       ),
       swing(
-        Enum.to_list(0..7),
+        all_bars,
         busier(),
         feathered(8, %{0 => "7..3..3..3..", 3 => "3..3....6..3", 5 => "3....6.3..3."}),
-        together([riff(), comp(Enum.to_list(0..7), comping())])
+        together([riff(), comp(all_bars, comping())])
       ),
       first_four(),
       swing(
-        Enum.to_list(0..3),
+        first_bars,
         Enum.take(ghosts(), 4),
         feathered(4, %{0 => "8..3..3..3.."}),
-        answer(Enum.to_list(0..3), first_answer())
+        answer(first_bars, first_answer())
       ),
       second_four(),
       swing(
-        Enum.to_list(4..7),
+        last_bars,
         turnaround,
         feathered(4, %{0 => "8..3..3..3.."}),
-        answer(Enum.to_list(4..7), second_answer())
+        answer(last_bars, second_answer())
       ),
       mambo_bell([]),
       ending()
@@ -350,7 +353,9 @@ defmodule TradingFours do
       "A7" => [:g3, :cs4, :f4]
     }
 
-    seq(Enum.zip(walk_bars, patterns), fn {bar, pattern} ->
+    walk_bars
+    |> Enum.zip(patterns)
+    |> seq(fn {bar, pattern} ->
       cells = pattern |> String.replace(" ", "") |> String.graphemes()
 
       hits =
@@ -538,7 +543,9 @@ defmodule TradingFours do
   # Bars of one voice's strokes, a character to each step: a dot is silence, and spaces are left
   # out.
   defp strokes(voice, patterns, per_beat) do
-    seq(List.wrap(patterns), fn pattern ->
+    patterns
+    |> List.wrap()
+    |> seq(fn pattern ->
       cells = pattern |> String.replace(" ", "") |> String.graphemes()
 
       hits =

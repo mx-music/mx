@@ -131,8 +131,9 @@ defmodule MapleLeafRag.Xylophone do
     basses =
       for {:left, sixteenth, notes, _} <- MapleLeafRag.written(bar),
           (sixteenth in [0, 4, 6] and bar == 0) or sixteenth in beats,
-          Enum.min(notes) < 52,
-          do: {start(bar, sixteenth), fold(Enum.min(notes)), 0.5, vel: 0.6}
+          lowest = Enum.min(notes),
+          lowest < 52,
+          do: {start(bar, sixteenth), fold(lowest), 0.5, vel: 0.6}
 
     at(basses, span(bar))
   end

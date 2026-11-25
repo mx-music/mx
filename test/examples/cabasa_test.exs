@@ -21,7 +21,8 @@ defmodule Mx.Examples.CabasaTest do
 
   test "the pulse twists the beads on every sixteenth, harder forward than back" do
     pulse = print(1)
-    assert length(Regex.scan(~r/^beat .* rub: 1, sustain: 0.1, amp: 0.6$/m, pulse)) == 32
+    matches = Regex.scan(~r/^beat .* rub: 1, sustain: 0.1, amp: 0.6$/m, pulse)
+    assert length(matches) == 32
 
     assert pulse =~
              ~r/\nbeat 0 +play vel: 0.55, rub: 1, sustain: 0.1, amp: 0.6\nbeat 0.25 +play vel: 0.35, rub: 1, sustain: 0.1, amp: 0.6\nbeat 0.5 +play vel: 0.55, /
@@ -29,7 +30,8 @@ defmodule Mx.Examples.CabasaTest do
 
   test "the bossa nova figure is struck over the pulse, in the twists' place" do
     bossa = print(3)
-    assert length(Regex.scan(~r/^beat /m, bossa)) == 32
+    matches = Regex.scan(~r/^beat /m, bossa)
+    assert length(matches) == 32
 
     struck =
       for [beat] <-
@@ -41,7 +43,8 @@ defmodule Mx.Examples.CabasaTest do
 
   test "the figure alone leaves the beads spinning after each stroke, and the ending's turn grows into a stroke" do
     spinning = print(7)
-    assert length(Regex.scan(~r/^beat /m, spinning)) == 12
+    matches = Regex.scan(~r/^beat /m, spinning)
+    assert length(matches) == 12
 
     assert spinning =~
              ~r/\nbeat 1.5 +play vel: 0.8, amp: 0.6\nbeat 1.5 +play vel: 0.45, rub: 1, sustain: 0.5, amp: 0.6\n/

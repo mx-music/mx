@@ -167,11 +167,13 @@ defmodule Paredao do
 
   # Two more bars of the beat under the hook, and a last stroke.
   defp outro do
+    opening = Enum.take(bass_bars(), 2)
+
     together([
       part(:kick, seq([repeat(kick_bar(), 2), sample(@kick, 4)])),
       part(:snare, seq([repeat(snare_bar(), 2), rest(4)])),
       part(:keyboard, hook(0..1)),
-      part(:bass, seq([boom(Enum.take(bass_bars(), 2)), note(:g1, 4)]))
+      part(:bass, seq([boom(opening), note(:g1, 4)]))
     ])
   end
 
@@ -188,7 +190,7 @@ defmodule Paredao do
       ~MX"f4:2 _ f4 ~a4:2 _ g4 ~gb4:4 _:4"
     ]
 
-    steps(Enum.slice(hook, bars), 0.25, vel: 0.8, slide: 0.05)
+    hook |> Enum.slice(bars) |> steps(0.25, vel: 0.8, slide: 0.05)
   end
 
   # The baião's triangle: four sixteenths to a beat, the hand open on the third and closed on the

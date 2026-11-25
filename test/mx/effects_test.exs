@@ -59,7 +59,7 @@ defmodule Mx.EffectsTest do
         Enum.find_index(half, &(&1 == Enum.min(half)))
       end
 
-    assert length(Enum.uniq(lows)) == 1
+    assert lows |> Enum.uniq() |> length() == 1
   end
 
   test "an rlpf rings at its cutoff, where an lpf there does not", ctx do
@@ -163,19 +163,25 @@ defmodule Mx.EffectsTest do
     Mxs.render_through(:saw, opts, seconds + 0.2, ctx.tmp_dir, chain)
   end
 
-  defp rms(samples), do: :math.sqrt(Enum.sum_by(samples, &(&1 * &1)) / length(samples))
+  defp rms(samples) do
+    squares = Enum.sum_by(samples, &(&1 * &1))
+    :math.sqrt(squares / length(samples))
+  end
 
   defp db(level), do: 20 * :math.log10(level + 1.0e-12)
 
   defp peak(samples), do: samples |> Enum.map(&abs/1) |> Enum.max()
 
   defp difference(samples, reference) do
-    db(rms(Enum.zip_with(samples, reference, &(&1 - &2))) / rms(reference))
+    residue = Enum.zip_with(samples, reference, &(&1 - &2))
+    db(rms(residue) / rms(reference))
   end
 
   # The level of the left minus the right against the level of their sum: 0 for a centred sound.
   defp width(left, right) do
-    rms(Enum.zip_with(left, right, &(&1 - &2))) / rms(Enum.zip_with(left, right, &(&1 + &2)))
+    side = Enum.zip_with(left, right, &(&1 - &2))
+    middle = Enum.zip_with(left, right, &(&1 + &2))
+    rms(side) / rms(middle)
   end
 
   defp levels(samples, seconds) do
@@ -202,8 +208,8 @@ defmodule Mx.EffectsTest do
 
     mean = Enum.sum(band_levels) / length(band_levels)
 
-    spread =
-      :math.sqrt(Enum.sum_by(band_levels, &((&1 - mean) ** 2)) / length(band_levels))
+    squares = Enum.sum_by(band_levels, &((&1 - mean) ** 2))
+    spread = :math.sqrt(squares / length(band_levels))
 
     spread / mean
   end

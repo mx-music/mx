@@ -23,7 +23,7 @@ defmodule Mx.CLI do
 
     case Map.fetch(commands(), words) do
       {:ok, module} ->
-        help(Enum.join(words, " "), module)
+        words |> Enum.join(" ") |> help(module)
         0
 
       :error ->

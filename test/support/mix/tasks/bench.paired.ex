@@ -205,7 +205,8 @@ defmodule Mix.Tasks.Bench.Paired do
       [String.pad_trailing(name, width) | padded] |> Enum.join("  ") |> IO.puts()
     end
 
-    mean = :math.exp(Enum.sum(for row <- rows, do: :math.log(max(row.times, 0.1))) / length(rows))
+    log_mean = Enum.sum_by(rows, &:math.log(max(&1.times, 0.1))) / length(rows)
+    mean = :math.exp(log_mean)
     rounded = Float.round(mean, 1)
     IO.puts("\ngeometric mean of ×: #{rounded}")
   end

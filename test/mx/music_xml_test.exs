@@ -73,7 +73,8 @@ defmodule Mx.MusicXMLTest do
     xml =
       xml(dir, "song(music: part(:keys, seq([note([:c4, :e4, :g4], 2), rest(2)]), synth: :tri))")
 
-    assert length(Regex.scan(~r/<chord\/>/, xml)) == 2
+    matches = Regex.scan(~r/<chord\/>/, xml)
+    assert length(matches) == 2
     refute xml =~ "<voice>2</voice>"
     refute xml =~ "<backup>"
   end
@@ -87,7 +88,8 @@ defmodule Mx.MusicXMLTest do
     measure = measure(xml, 1)
     assert measure =~ "<backup><duration>96</duration></backup>"
     assert [voice_one, voice_two] = String.split(measure, "<backup>")
-    assert length(Regex.scan(~r/<voice>1<\/voice>/, voice_one)) == 4
+    matches = Regex.scan(~r/<voice>1<\/voice>/, voice_one)
+    assert length(matches) == 4
     assert voice_two =~ "<step>C</step><octave>4</octave></pitch><duration>96</duration>"
     assert voice_two =~ "<voice>2</voice><type>whole</type>"
   end

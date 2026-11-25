@@ -26,7 +26,8 @@ defmodule Mx.WidthTest do
   end
 
   defp rms(samples) do
-    :math.sqrt(Enum.sum_by(samples, &(&1 * &1)) / length(samples))
+    squares = Enum.sum_by(samples, &(&1 * &1))
+    :math.sqrt(squares / length(samples))
   end
 
   defp db(level), do: 20 * :math.log10(max(level, 1.0e-15))

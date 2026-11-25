@@ -46,13 +46,15 @@ defmodule Mx.MusicXML do
          {:ok, song} <- Song.load(path),
          {:ok, key} <- key(song_key(song, opts)),
          {:ok, time} <- song_time(song, opts),
-         {:ok, pickup} <- pickup(Keyword.get(opts, :pickup), time),
+         {:ok, pickup} <- opts |> Keyword.get(:pickup) |> pickup(time),
          {:ok, parts, left_out} <- parts(song, path) do
       beats = parts |> Enum.map(&elem(&1, 2)) |> Enum.max(fn -> 0 end)
       title = Keyword.get_lazy(opts, :title, fn -> title(path) end)
 
       xml =
-        score(Enum.map(parts, fn {name, notes, _, _} -> {name, notes} end),
+        parts
+        |> Enum.map(fn {name, notes, _, _} -> {name, notes} end)
+        |> score(
           tempo: song.tempo,
           time: time,
           key: key,
@@ -74,7 +76,7 @@ defmodule Mx.MusicXML do
   @doc "The time signature given as `time:` in `opts`, or else the song's meter over 4, as `time/1` gives it."
   def song_time(song, opts) do
     meter = song.meter
-    time(Keyword.get(opts, :time, "#{meter}/4"))
+    opts |> Keyword.get(:time, "#{meter}/4") |> time()
   end
 
   @doc "A time signature such as `12/8` as `{:ok, {12, 8}}`, or `{:error, message}`."
@@ -145,8 +147,11 @@ defmodule Mx.MusicXML do
           {start, length, _} <- voice,
           do: start + length
 
-    length = Enum.max([round(Keyword.fetch!(opts, :beats) * @divisions) | ends], fn -> 0 end)
-    pickup = round(Keyword.get(opts, :pickup, 0) * @divisions)
+    song_beats = Keyword.fetch!(opts, :beats)
+    length = Enum.max([round(song_beats * @divisions) | ends], fn -> 0 end)
+    pickup_beats = Keyword.get(opts, :pickup, 0)
+    pickup = round(pickup_beats * @divisions)
+    title = opts |> Keyword.fetch!(:title) |> escape()
     bars = bars(length, bar, pickup)
 
     list = Enum.with_index(parts, 1)
@@ -156,7 +161,7 @@ defmodule Mx.MusicXML do
       ~s(<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 4.0 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">\n),
       ~s(<score-partwise version="4.0">\n),
       "  <work><work-title>",
-      escape(Keyword.fetch!(opts, :title)),
+      title,
       "</work-title></work>\n",
       "  <part-list>\n",
       for {{name, _, _}, index} <- list do
@@ -167,7 +172,7 @@ defmodule Mx.MusicXML do
       for {{_name, notes, staves}, index} <- list do
         clefs = if length(staves) == 2, do: :grand, else: clef(notes)
         attributes = attributes(key, {beats, type}, clefs)
-        tempo = if index == 1, do: tempo(Keyword.fetch!(opts, :tempo)), else: ""
+        tempo = if index == 1, do: opts |> Keyword.fetch!(:tempo) |> tempo(), else: ""
 
         [
           ~s(  <part id="P#{index}">\n),
@@ -205,7 +210,7 @@ defmodule Mx.MusicXML do
       end)
 
     ends = for {_, voices} <- parts, voice <- voices, {start, held, _} <- voice, do: start + held
-    bars = bars(Enum.max([round(length * @divisions) | ends]), bar, pickup)
+    bars = [round(length * @divisions) | ends] |> Enum.max() |> bars(bar, pickup)
 
     parts =
       for {name, voices} <- parts do
@@ -269,7 +274,7 @@ defmodule Mx.MusicXML do
     notes
     |> Enum.group_by(fn {start, length, _} -> {start, length} end, &elem(&1, 2))
     |> Enum.flat_map(fn {{start, length}, notes} ->
-      for notes <- unisons(Enum.sort(notes)), do: {start, length, notes}
+      for notes <- notes |> Enum.sort() |> unisons(), do: {start, length, notes}
     end)
   end
 
@@ -564,12 +569,13 @@ defmodule Mx.MusicXML do
   @doc false
   def summary(name, notes, {fifths, _mode}) do
     pitches = Enum.map(notes, &round(elem(&1, 1)))
+    {lowest, highest} = Enum.min_max(pitches)
 
     %{
       name: name,
       notes: length(notes),
-      low: name(Enum.min(pitches), fifths),
-      high: name(Enum.max(pitches), fifths)
+      low: name(lowest, fifths),
+      high: name(highest, fifths)
     }
   end
 

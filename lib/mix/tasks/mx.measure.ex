@@ -224,9 +224,11 @@ defmodule Mix.Tasks.Mx.Measure do
     IO.puts("")
 
     if synth do
-      print_beside(Measure.bands(notes), Measure.bands(render(synth, given, notes)), synth, given)
+      notes
+      |> Measure.bands()
+      |> print_beside(Measure.bands(render(synth, given, notes)), synth, given)
     else
-      print_bands(Measure.bands(notes))
+      notes |> Measure.bands() |> print_bands()
     end
   end
 
@@ -342,7 +344,7 @@ defmodule Mix.Tasks.Mx.Measure do
       IO.puts("")
       print_beside(recorded, Hits.summary(rendered), synth, given)
       IO.puts("")
-      print_moments_beside(Hits.moments(found), Hits.moments(rendered), synth, given)
+      found |> Hits.moments() |> print_moments_beside(Hits.moments(rendered), synth, given)
       IO.puts("")
       print_brightness_beside(found, rendered, synth, given)
       if compare, do: compare(compare, measured, recorded, synth, given)
@@ -350,7 +352,7 @@ defmodule Mix.Tasks.Mx.Measure do
       IO.puts("")
       print_bands(recorded)
       IO.puts("")
-      print_moments(Hits.moments(found))
+      found |> Hits.moments() |> print_moments()
       IO.puts("")
       print_brightness(found)
     end
@@ -484,7 +486,7 @@ defmodule Mix.Tasks.Mx.Measure do
     IO.puts(@brightness)
     print_row("", stretches())
     for row <- Hits.brightness(hits), do: IO.puts(above(row) <> levels(row.levels))
-    hits |> Hits.highs_peak() |> highs_peak() |> IO.puts()
+    hits |> highs_peak() |> IO.puts()
     print_highs([{"above 4000 Hz", Hits.highs(hits)}])
   end
 
@@ -501,8 +503,8 @@ defmodule Mix.Tasks.Mx.Measure do
       IO.puts(above(row) <> groups)
     end
 
-    IO.puts("recordings: " <> highs_peak(Hits.highs_peak(recorded)))
-    IO.puts(heading(synth, given) <> ": " <> highs_peak(Hits.highs_peak(rendered)))
+    IO.puts("recordings: " <> highs_peak(recorded))
+    IO.puts(heading(synth, given) <> ": " <> highs_peak(rendered))
 
     print_highs([
       {"recordings", Hits.highs(recorded)},
@@ -537,11 +539,15 @@ defmodule Mix.Tasks.Mx.Measure do
 
   defp above(%{above: above}), do: String.pad_trailing("above #{above} Hz", 14)
 
-  defp highs_peak(nil), do: "nothing above 4 kHz to peak"
+  defp highs_peak(hits) do
+    case Hits.highs_peak(hits) do
+      nil ->
+        "nothing above 4 kHz to peak"
 
-  defp highs_peak(ms) do
-    rounded = round(ms)
-    "the sound above 4 kHz is loudest #{rounded} ms after the hit starts"
+      ms ->
+        rounded = round(ms)
+        "the sound above 4 kHz is loudest #{rounded} ms after the hit starts"
+    end
   end
 
   # A band that stays 40 dB or more below the loudest at every moment is left out.
@@ -582,7 +588,7 @@ defmodule Mix.Tasks.Mx.Measure do
         "#{Path.basename(path)} at #{:erlang.float_to_binary(hit.start, decimals: 2)} s"
       end)
 
-    times = if length(Enum.uniq(notes)) > 1, do: "at the same notes", else: "three times"
+    times = if notes |> Enum.uniq() |> length() > 1, do: "at the same notes", else: "three times"
     IO.puts("")
     IO.puts("wrote #{out}: #{listed(names)}, then #{synth} #{times}")
   end
@@ -590,9 +596,10 @@ defmodule Mix.Tasks.Mx.Measure do
   defp distance(hit, recorded) do
     levels = Map.new(hit.bands, &{&1.band, &1.level})
 
-    Enum.sum(
-      for %{band: band, level: level} <- recorded, do: abs(Map.get(levels, band, -60) - level)
-    )
+    Enum.sum_by(recorded, fn %{band: band, level: level} ->
+      heard = Map.get(levels, band, -60)
+      abs(heard - level)
+    end)
   end
 
   # The hit from 5 ms before it starts, up to the next hit, high-passed at 30 Hz and at the rate
@@ -788,7 +795,7 @@ defmodule Mix.Tasks.Mx.Measure do
 
   defp print_hits_file(_path, {:error, message}), do: Mx.Command.fail(message)
 
-  defp print_hits_file(path, {:ok, hits}), do: print_hits(Path.basename(path), hits)
+  defp print_hits_file(path, {:ok, hits}), do: path |> Path.basename() |> print_hits(hits)
 
   defp print_hits(name, hits) do
     count = length(hits)

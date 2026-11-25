@@ -27,7 +27,9 @@ defmodule Mx.Video do
            :ok <- check(out, Keyword.get(opts, :force, false)),
            {:ok, format, data} <- Audio.raw(path),
            {:ok, inputs, filter} <-
-             draw(Keyword.get(opts, :picture, :waveform), path, pictures, seconds(format, data)),
+             opts
+             |> Keyword.get(:picture, :waveform)
+             |> draw(path, pictures, seconds(format, data)),
            sound = [path, gain(format, data), Keyword.get(opts, :bitrate, @bitrate)],
            :ok <- encode(ffmpeg, inputs, filter, sound, seconds(format, data), out) do
         {:ok, seconds(format, data), File.stat!(out).size}

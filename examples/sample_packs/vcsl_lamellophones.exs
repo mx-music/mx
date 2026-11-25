@@ -252,7 +252,8 @@ defmodule ThreeTunings do
   end
 
   defp canon(times) do
-    repeat(seq(List.flatten(@round), fn name -> note(name, 0.5) end), times)
+    notes = List.flatten(@round)
+    repeat(seq(notes, fn name -> note(name, 0.5) end), times)
   end
 
   # A chord in four pulses: its root, the fifth above the octave, the octave, and the fifth.

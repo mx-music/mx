@@ -86,7 +86,7 @@ defmodule Mix.Tasks.Mx.FitTest do
       end)
 
     [_, attack] = Regex.run(~r/^vel 0.6 attack ([-+]\d+)%/m, output)
-    assert abs(String.to_integer(attack)) <= 10, output
+    assert attack |> String.to_integer() |> abs() <= 10, output
   end
 
   @tag :engine
@@ -222,7 +222,7 @@ defmodule Mix.Tasks.Mx.FitTest do
 
       assert output =~ "run.wav: c4 d4 e4\n  not found: cs4 ds4\n"
       assert output =~ "wrote the figures of 3 recordings"
-      assert {_times, [%{note: 60}, %{note: 62}, %{note: 64}]} = figures(File.read!(out))
+      assert {_times, [%{note: 60}, %{note: 62}, %{note: 64}]} = out |> File.read!() |> figures()
     end
 
     test "a list leaves out a note that sounds an octave from its name, and fits a drum given in Hz at the nearest note",
@@ -239,7 +239,7 @@ defmodule Mix.Tasks.Mx.FitTest do
 
       assert output =~ "octave.wav: \n  left out c3 at 0.0 s: sounds an octave above it\n"
       assert output =~ "drum.wav: b2\n"
-      assert {_times, [%{note: 47, partials: partials}]} = figures(File.read!(out))
+      assert {_times, [%{note: 47, partials: partials}]} = out |> File.read!() |> figures()
       ratios = partials |> Enum.map(& &1.ratio) |> Enum.sort() |> Enum.take(4)
       expected = Enum.map([1, 1.5, 1.99, 2.44], &(&1 * 125.6 / Mx.Signal.hz(47)))
       for {ratio, want} <- Enum.zip(ratios, expected), do: assert_in_delta(ratio, want, 0.002)
@@ -282,11 +282,8 @@ defmodule Mix.Tasks.Mx.FitTest do
 
     test "--check --own measures the room the run was recorded in and prints it for each file",
          ctx do
-      write_wav(
-        ctx.tmp_dir,
-        "room.wav",
-        in_a_room(Enum.flat_map([60, 64, 67], &struck_note(&1, 3)))
-      )
+      run = [60, 64, 67] |> Enum.flat_map(&struck_note(&1, 3)) |> in_a_room()
+      write_wav(ctx.tmp_dir, "room.wav", run)
 
       write_wav(ctx.tmp_dir, "silent.wav", struck_note(72, 2))
       list = write_list(ctx, ["C4:G4 127 room.wav", "C5 127 silent.wav"])
@@ -302,11 +299,8 @@ defmodule Mix.Tasks.Mx.FitTest do
 
     test "--check --note adds the room to the fit's own render and shows it as its own row",
          ctx do
-      write_wav(
-        ctx.tmp_dir,
-        "room.wav",
-        in_a_room(Enum.flat_map([60, 64, 67], &struck_note(&1, 3)))
-      )
+      run = [60, 64, 67] |> Enum.flat_map(&struck_note(&1, 3)) |> in_a_room()
+      write_wav(ctx.tmp_dir, "room.wav", run)
 
       list = write_list(ctx, ["C4:G4 127 room.wav"])
 
@@ -325,7 +319,7 @@ defmodule Mix.Tasks.Mx.FitTest do
       times = for step <- 0..23, do: step * 0.1
       frames = Struck.frames(nil, recording, times)
       hiss = Enum.find(frames.bands, fn %{at: {low, _high}} -> low > 4000 end)
-      [recorded, fit] = Enum.map(~w(recording fit), &elem(List.keyfind(hiss.rows, &1, 0), 1))
+      [recorded, fit] = Enum.map(~w(recording fit), &row(hiss.rows, &1))
 
       assert_in_delta power_mean(fit), power_mean(recorded), 1
     end
@@ -337,7 +331,7 @@ defmodule Mix.Tasks.Mx.FitTest do
       out = Path.join(ctx.tmp_dir, "long.mxf")
       capture_io(fn -> Mix.Tasks.Mx.Fit.run(["piano", "--struck", list, "--out", out]) end)
 
-      {times, [%{partials: partials}]} = figures(File.read!(out))
+      {times, [%{partials: partials}]} = out |> File.read!() |> figures()
       %{levels: levels, tail: tail} = Enum.find(partials, &(&1.harmonic == 1))
       at = times |> Enum.zip(levels) |> Map.new()
       assert_in_delta at[8.8] - at[1.1], -6 * 7.7, 1.5
@@ -532,7 +526,8 @@ defmodule Mix.Tasks.Mx.FitTest do
       base = with_floor(struck_note(60, 2))
       check = fn render -> Mxs.Native.check_struck(struck(base), packed(render)) end
       same = check.(struck_note(60, 2))
-      up = check.(struck_note(Mx.Signal.hz(60) * 2 ** (10 / 1200), 2))
+      up_hz = Mx.Signal.hz(60) * 2 ** (10 / 1200)
+      up = check.(struck_note(up_hz, 2))
 
       for check <- [same, up], partial <- check.partials, partial.below <= 30 do
         assert abs(partial.strike) <= 0.1 and partial.mean <= 0.1
@@ -583,7 +578,8 @@ defmodule Mix.Tasks.Mx.FitTest do
 
     test "the pitch of the checks names each note a render plays more than 5 cents from its name" do
       base = with_floor(struck_note(60, 2))
-      sharp = with_floor(struck_note(Mx.Signal.hz(60) * 2 ** (8 / 1200), 2))
+      sharp_hz = Mx.Signal.hz(60) * 2 ** (8 / 1200)
+      sharp = sharp_hz |> struck_note(2) |> with_floor()
       in_tune = Mxs.Native.check_struck(struck(base), packed(base))
       off = Mxs.Native.check_struck(struck(base), packed(sharp))
 
@@ -641,7 +637,8 @@ defmodule Mix.Tasks.Mx.FitTest do
         for part <- [0, 1] do
           start = round(part * 3.9 * rate)
           half = Enum.slice(samples, start, round(0.55 * rate))
-          10 * :math.log10(Enum.sum_by(half, &(&1 * &1)) / length(half))
+          power = Enum.sum_by(half, &(&1 * &1)) / length(half)
+          10 * :math.log10(power)
         end
 
       assert_in_delta recording, synth, 0.5
@@ -660,7 +657,9 @@ defmodule Mix.Tasks.Mx.FitTest do
 
       assert output =~ "run.wav: c4 d4 e4\n  not found: cs4 ds4\n"
       assert output =~ "wrote the figures of 3 recordings"
-      assert {_times, [%{note: 60}, %{note: 62}, %{note: 64}]} = held_figures(File.read!(out))
+
+      assert {_times, [%{note: 60}, %{note: 62}, %{note: 64}]} =
+               out |> File.read!() |> held_figures()
     end
 
     test "fits the vibrato's rate and depth, and each harmonic's swing with it", ctx do
@@ -669,7 +668,9 @@ defmodule Mix.Tasks.Mx.FitTest do
       out = Path.join(ctx.tmp_dir, "vib.mxh")
       capture_io(fn -> Mix.Tasks.Mx.Fit.run(["cello", "--held", list, "--out", out]) end)
 
-      {_times, [%{vibrato: {rate, depth}, partials: partials}]} = held_figures(File.read!(out))
+      {_times, [%{vibrato: {rate, depth}, partials: partials}]} =
+        out |> File.read!() |> held_figures()
+
       assert_in_delta rate, 5.0, 0.2
       assert_in_delta depth, 20, 3
       assert Enum.all?(partials, &(abs(&1.swing) < 1))
@@ -683,7 +684,7 @@ defmodule Mix.Tasks.Mx.FitTest do
       capture_io(fn -> Mix.Tasks.Mx.Fit.run(["cello", "--held", list, "--out", out]) end)
 
       {times, [%{held: held, release: release, partials: partials}]} =
-        held_figures(File.read!(out))
+        out |> File.read!() |> held_figures()
 
       assert_in_delta release, 2.0, 0.1
       assert held < 0.5
@@ -984,7 +985,7 @@ defmodule Mix.Tasks.Mx.FitTest do
       assert output =~ "wrote the figures of 36 recordings"
       assert output =~ "marimba against 36 recordings"
       [recordings] = captures(~r/c4 vel 40: recordings (-[\d.]+) dB/, output)
-      {times, fitted} = figures(File.read!(out))
+      {times, fitted} = out |> File.read!() |> figures()
       at = fn velocity -> Enum.find(fitted, &(&1.note == 60 and &1.velocity == velocity)) end
       assert_in_delta loudness(times, at.(40)) - loudness(times, at.(127)), recordings, 1.5
     end
@@ -1109,7 +1110,7 @@ defmodule Mix.Tasks.Mx.FitTest do
 
       for rows <- frames.partials ++ frames.bands,
           [fit, sines, noise, room] =
-            Enum.map(~w(fit sines noise room), &elem(List.keyfind(rows.rows, &1, 0), 1)),
+            Enum.map(~w(fit sines noise room), &row(rows.rows, &1)),
           {fit, sines, noise, room} <- Enum.zip([fit, sines, noise, room]),
           fit > rows.floor and abs(sines - noise) > 20 do
         power = 10 ** (sines / 10) + 10 ** (noise / 10) + 10 ** (room / 10)
@@ -1129,7 +1130,7 @@ defmodule Mix.Tasks.Mx.FitTest do
       assert length(bands) > 20
 
       for %{at: {low, high}, rows: rows} <- bands do
-        [recorded, fit] = Enum.map(~w(recording fit), &elem(List.keyfind(rows, &1, 0), 1))
+        [recorded, fit] = Enum.map(~w(recording fit), &row(rows, &1))
         {recorded, fit} = {power_mean(recorded), power_mean(fit)}
 
         assert abs(fit - recorded) <= 2,
@@ -1148,7 +1149,7 @@ defmodule Mix.Tasks.Mx.FitTest do
       assert length(bands) == 5
 
       for %{at: {low, high}, rows: rows} <- bands do
-        [[recorded], [room]] = Enum.map(~w(recording room), &elem(List.keyfind(rows, &1, 0), 1))
+        [[recorded], [room]] = Enum.map(~w(recording room), &row(rows, &1))
         name = "#{round(low)}-#{round(high)} Hz"
         assert room < recorded - 15, "#{name}: the room #{room} against #{recorded}"
       end
@@ -1177,7 +1178,8 @@ defmodule Mix.Tasks.Mx.FitTest do
           ])
         end)
 
-      assert length(Regex.scan(~r/^Marimba\.yarn\.\w+\.\w+\.aif( +-\d+\.\d)+$/m, output)) == 18
+      marimbas = Regex.scan(~r/^Marimba\.yarn\.\w+\.\w+\.aif( +-\d+\.\d)+$/m, output)
+      assert length(marimbas) == 18
     end
 
     test "splits the xylophone's mf run from C6 to B6 into its twelve notes, and names the vibraphone's pp C#6 as not found",
@@ -1224,7 +1226,7 @@ defmodule Mix.Tasks.Mx.FitTest do
                "EWHarp_Normal_C3_v3_RR1.wav: \n  left out c3 at 0.0 s: sounds an octave above it\n"
 
       assert output =~ "EWHarp_Normal_C3_v3_RR1.wav: c4\n"
-      assert {_times, [%{note: 60}]} = figures(File.read!(out))
+      assert {_times, [%{note: 60}]} = out |> File.read!() |> figures()
     end
 
     @tag timeout: 600_000
@@ -1242,7 +1244,7 @@ defmodule Mix.Tasks.Mx.FitTest do
       %{levels: checked} = Enum.find(partials, &(&1.harmonic == 1))
       assert {17.0, _recorded, _rendered} = List.keyfind(checked, 17.0, 0)
 
-      {times, [%{partials: fitted}]} = figures(File.read!(out))
+      {times, [%{partials: fitted}]} = out |> File.read!() |> figures()
       %{levels: levels} = Enum.find(fitted, &(&1.harmonic == 1))
 
       for second <- [11.0, 14.0] do
@@ -1275,7 +1277,7 @@ defmodule Mix.Tasks.Mx.FitTest do
         capture_io(fn -> Mix.Tasks.Mx.Fit.run(["timpani", "--struck", list, "--out", out]) end)
 
       assert output =~ "Timpani3_Hit_v4_rr1_Sum.wav: b2\n"
-      assert {_times, [%{note: 47, partials: partials}]} = figures(File.read!(out))
+      assert {_times, [%{note: 47, partials: partials}]} = out |> File.read!() |> figures()
       lowest = partials |> Enum.map(& &1.ratio) |> Enum.min()
       assert_in_delta lowest * Mx.Signal.hz(47), 125.6, 1
     end
@@ -1476,7 +1478,8 @@ defmodule Mix.Tasks.Mx.FitTest do
         {0.2 * wave * level, phase + 2 * :math.pi() * freq / rate}
       end)
 
-    with_floor(List.duplicate(0.0, round(0.2 * rate)) ++ samples)
+    silence = List.duplicate(0.0, round(0.2 * rate))
+    with_floor(silence ++ samples)
   end
 
   # Held notes one after another, each held a second, with digital silence then a room's noise
@@ -1507,8 +1510,11 @@ defmodule Mix.Tasks.Mx.FitTest do
 
   # The mean of levels in dB taken as powers, in dB.
   defp power_mean(levels) do
-    10 * :math.log10(Enum.sum_by(levels, &(10 ** (&1 / 10))) / length(levels))
+    power = Enum.sum_by(levels, &(10 ** (&1 / 10))) / length(levels)
+    10 * :math.log10(power)
   end
+
+  defp row(rows, name), do: rows |> List.keyfind(name, 0) |> elem(1)
 
   # The rows --check --note prints for the partial or band whose name matches, by row, each figure
   # as a float or nil for "-".

@@ -160,6 +160,9 @@ defmodule Virtuosity do
   part :roll_room, []
 
   def song do
+    all_bars = Enum.to_list(0..7)
+    first_bars = Enum.to_list(0..3)
+    last_bars = Enum.to_list(4..7)
     busier_bars = Enum.take(@busier, 4)
     turnaround = List.replace_at(busier_bars, 3, ~MX"......6..7.8"s)
 
@@ -167,17 +170,17 @@ defmodule Virtuosity do
       intro(),
       mambo(),
       mambo_bell(setup()),
-      swing(Enum.to_list(0..7), @comping, feathered(8, %{0 => ~MX"7..3..3..3.."s})),
+      swing(all_bars, @comping, feathered(8, %{0 => ~MX"7..3..3..3.."s})),
       swing(
-        Enum.to_list(0..7),
+        all_bars,
         @busier,
         feathered(8, %{0 => ~MX"7..3..3..3.."s, 3 => ~MX"3..3....6..3"s, 5 => ~MX"3....6.3..3."s})
       ),
       first_four(),
-      swing(Enum.to_list(0..3), Enum.take(@comping, 4), feathered(4, %{0 => ~MX"8..3..3..3.."s})),
+      swing(first_bars, Enum.take(@comping, 4), feathered(4, %{0 => ~MX"8..3..3..3.."s})),
       second_four(),
       swing(
-        Enum.to_list(4..7),
+        last_bars,
         turnaround,
         feathered(4, %{0 => ~MX"8..3..3..3.."s})
       ),

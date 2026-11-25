@@ -62,7 +62,7 @@ defmodule Mx.SampleLevelTest do
   test "normalize raises a sample so its loudest moment reaches full scale, before amp", %{
     tmp_dir: dir
   } do
-    quiet = tone(Path.join(dir, "quiet.wav"), 0.005)
+    quiet = dir |> Path.join("quiet.wav") |> tone(0.005)
 
     assert_in_delta rendered_peak(song(dir, "sample(#{inspect(quiet)}, 1, normalize: true)")),
                     0,
@@ -76,7 +76,7 @@ defmodule Mx.SampleLevelTest do
   end
 
   test "a mono file normalized reaches full scale in both channels at the centre", %{tmp_dir: dir} do
-    mono = tone(Path.join(dir, "mono.wav"), 0.3, 1)
+    mono = dir |> Path.join("mono.wav") |> tone(0.3, 1)
 
     assert_in_delta rendered_peak(
                       song(dir, "sample(#{inspect(mono)}, 1, normalize: true, amp: 0.5)")
@@ -95,7 +95,7 @@ defmodule Mx.SampleLevelTest do
         [sample, sample]
       end
 
-    path = wav(Path.join(dir, "steps.wav"), frames)
+    path = dir |> Path.join("steps.wav") |> wav(frames)
 
     assert_in_delta rendered_peak(
                       song(
@@ -109,7 +109,7 @@ defmodule Mx.SampleLevelTest do
 
   test "a sample more than 40 dB below full scale, played without normalize, is named once when the song loads",
        %{tmp_dir: dir} do
-    quiet = tone(Path.join(dir, "quiet.wav"), 0.005)
+    quiet = dir |> Path.join("quiet.wav") |> tone(0.005)
 
     assert load_warnings(
              song(dir, "seq([sample(#{inspect(quiet)}, 1), sample(#{inspect(quiet)}, 1)])")
@@ -120,24 +120,24 @@ defmodule Mx.SampleLevelTest do
   end
 
   test "a sample 21 dB below full scale is not named", %{tmp_dir: dir} do
-    tone = tone(Path.join(dir, "tone.wav"), 0.0891)
+    tone = dir |> Path.join("tone.wav") |> tone(0.0891)
     assert load_warnings(song(dir, "sample(#{inspect(tone)}, 1)")) == ""
   end
 
   test "a silent file plays silence, normalized or not, and is named as silent", %{tmp_dir: dir} do
-    silence = wav(Path.join(dir, "silence.wav"), List.duplicate([0.0, 0.0], 4800))
+    silence = dir |> Path.join("silence.wav") |> wav(List.duplicate([0.0, 0.0], 4800))
     path = song(dir, "sample(#{inspect(silence)}, 1, normalize: true)")
     assert load_warnings(path) == "sample #{silence} is silent\n"
     assert rendered_peak(path) == :silent
   end
 
   test "a sample without normalize plays at its own level", %{tmp_dir: dir} do
-    tone = tone(Path.join(dir, "tone.wav"), 0.5)
+    tone = dir |> Path.join("tone.wav") |> tone(0.5)
     assert_in_delta rendered_peak(song(dir, "sample(#{inspect(tone)}, 1)")), -6.02, 0.01
   end
 
   test "mix mx.print shows normalize as written", %{tmp_dir: dir} do
-    tone = tone(Path.join(dir, "tone.wav"), 0.5)
+    tone = dir |> Path.join("tone.wav") |> tone(0.5)
     path = song(dir, "sample(#{inspect(tone)}, 1, normalize: true)")
 
     assert capture_io(fn -> Mix.Tasks.Mx.Print.run([path]) end) =~

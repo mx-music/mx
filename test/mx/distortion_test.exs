@@ -53,7 +53,8 @@ defmodule Mx.DistortionTest do
 
     both = if hz == 0, do: 1, else: 2
     squares = Enum.sum_by(window, &(&1 * &1))
-    both * (re * re + im * im) * squares / :math.pow(Enum.sum(window), 2)
+    sum = Enum.sum(window)
+    both * (re * re + im * im) * squares / :math.pow(sum, 2)
   end
 
   defp db(energy), do: 10 * :math.log10(max(energy, 1.0e-30))

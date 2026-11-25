@@ -21,7 +21,7 @@ defmodule Mx.Examples.ChoroTest do
     roots =
       for pass <- 0..7 do
         [_, note] = Regex.run(~r/^beat 30 +play (\d+)/m, loop_part(print(pass), "guitar"))
-        rem(String.to_integer(note), 12)
+        note |> String.to_integer() |> rem(12)
       end
 
     assert roots == [7, 7, 4, 4, 7, 0, 0, 7]
@@ -113,7 +113,7 @@ defmodule Mx.Examples.ChoroTest do
     |> String.split("\n", trim: true)
     |> Enum.filter(fn line ->
       [_, at] = Regex.run(~r/^beat ([\d.]+)/, line)
-      elem(Float.parse(at), 0) < beat
+      at |> Float.parse() |> elem(0) < beat
     end)
     |> Enum.join("\n")
   end

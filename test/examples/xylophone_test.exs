@@ -24,7 +24,8 @@ defmodule Mx.Examples.XylophoneTest do
 
   test "one note is struck every sixteenth while a melody moves under it" do
     repeats = print(2)
-    assert length(Regex.scan(~r/play 79 /, repeats)) == 32
+    matches = Regex.scan(~r/play 79 /, repeats)
+    assert length(matches) == 32
 
     assert repeats =~
              ~r/\nbeat 0 +play 79 vel: 0.75\nbeat 0 +play 76 vel: 0.7\nbeat 0.25 +play 79 vel: 0.5\n/

@@ -116,7 +116,7 @@ defmodule MaracatuDub do
       part(
         :trombone,
         together([
-          seq([legato(Enum.take(phrase(:a), 10)), rest(24)]),
+          seq([first_notes(:a, 10), rest(24)]),
           throw(:trombone, :echo, 0, 12, 0.5, 0.15)
         ])
       ),
@@ -148,6 +148,8 @@ defmodule MaracatuDub do
   # through the filter; then two bars without alfaias or bass, the shakers in the flanger and a
   # piece of the tune whose echo bends; the alfaias come back for the virada.
   defp section(:dub) do
+    imale = List.duplicate(:imale, 4)
+
     out = fn music -> seq([music.(1..4), rest(8), music.(7..8)]) end
 
     together([
@@ -175,9 +177,9 @@ defmodule MaracatuDub do
       ),
       part(
         :low_alfaia,
-        seq([alfaia(List.duplicate(:imale, 4)), rest(8), alfaia([:imale, :virada])])
+        seq([alfaia(imale), rest(8), alfaia([:imale, :virada])])
       ),
-      part(:high_alfaia, seq([alfaia(List.duplicate(:imale, 4)), rest(12), alfaia([:virada])])),
+      part(:high_alfaia, seq([alfaia(imale), rest(12), alfaia([:virada])])),
       part(:bass, out.(&bass/1)),
       part(:sub, out.(&bass/1)),
       part(
@@ -197,7 +199,7 @@ defmodule MaracatuDub do
       part(
         :trombone,
         together([
-          at([{16, legato(Enum.take(phrase(:a), 6))}], 32),
+          at([{16, first_notes(:a, 6)}], 32),
           throw(:trombone, :echo, 16, 30, 0.6, 0.15),
           at(
             [
@@ -258,20 +260,22 @@ defmodule MaracatuDub do
   # second fills the beats in.
   defp gongue(pattern, bars) do
     bar = if pattern == 1, do: ~MX".x..x.x..x..x.x."s, else: ~MX"x.xxx.x.xx.xx.x."s
-    steps(List.duplicate(bar, bars), 0.25, vel: 0.7)
+    bar |> List.duplicate(bars) |> steps(0.25, vel: 0.7)
   end
 
   # The mineiro shakes sixteenths with the third of each beat accented: d is down and u is up, in
   # capitals where accented.
   defp mineiro(bars) do
     strokes = [d: [vel: 0.45, up: 0], u: [vel: 0.45, up: 1], D: [vel: 0.85, up: 0]]
-    steps(List.duplicate(~MX"duDu"s, 4 * bars), 0.25, strokes: strokes)
+    pattern = List.duplicate(~MX"duDu"s, 4 * bars)
+    steps(pattern, 0.25, strokes: strokes)
   end
 
   # The agbê plays an eighth and two sixteenths to a beat.
   defp agbe(bars) do
     strokes = [X: [vel: 0.8], x: [vel: 0.55]]
-    steps(List.duplicate(~MX"X.xx"s, 4 * bars), 0.25, strokes: strokes)
+    pattern = List.duplicate(~MX"X.xx"s, 4 * bars)
+    steps(pattern, 0.25, strokes: strokes)
   end
 
   # Bars of the caixa in sixteenths: A is an accent, g a soft stroke between accents and B an
@@ -282,7 +286,7 @@ defmodule MaracatuDub do
 
   defp caixa(bar, bars) do
     strokes = [A: [vel: 0.85], B: [vel: 0.85, buzz: 1], g: [vel: 0.3]]
-    steps(List.duplicate(bar, bars), 0.25, strokes: strokes)
+    bar |> List.duplicate(bars) |> steps(0.25, strokes: strokes)
   end
 
   # Eight bars of a baque: seven of its bar and the virada.
@@ -323,7 +327,7 @@ defmodule MaracatuDub do
     ]
 
     short = fn _step, steps -> [sustain: steps / 4 - 0.05] end
-    steps(Enum.map(bars, &ring(riddim, &1 - 1)), 0.25, each: short)
+    bars |> Enum.map(&ring(riddim, &1 - 1)) |> steps(0.25, each: short)
   end
 
   # The skank on two and four, chopped twice on the last bar of the riddim.
@@ -359,6 +363,8 @@ defmodule MaracatuDub do
 
   # Each run of different notes slurred into one held note that slides between them; a rest, a
   # repeated note or a note on the beat starts a new note, as the player tongues it.
+  defp first_notes(name, count), do: name |> phrase() |> Enum.take(count) |> legato()
+
   defp legato(notes) do
     slur(seq(notes), tongue: fn beat, from, to -> from == to or beat == trunc(beat) end)
   end

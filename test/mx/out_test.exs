@@ -107,7 +107,8 @@ defmodule Mx.OutTest do
 
     song(tempo: 120, osc_to: {"127.0.0.1", #{port}}, music: together([
       part(:out, loop(4, fn _, _ ->
-        at(Enum.flat_map(0..15, fn step -> [{step * 0.25, midi(60 + rem(step, 12), 0.125)}, {step * 0.25, osc("/step", [step])}] end), 4)
+        steps = Enum.flat_map(0..15, fn step -> [{step * 0.25, midi(60 + rem(step, 12), 0.125)}, {step * 0.25, osc("/step", [step])}] end)
+        at(steps, 4)
       end), midi: "#{name}"),
       part(:hats, loop(0.25, fn _, _ -> seq([note(60, 0, amp: 0.2), rest(0.25)]) end)),
       part(:busy, loop(0.125, fn _, _ ->
@@ -142,7 +143,8 @@ defmodule Mx.OutTest do
 
     assert length(offsets) >= 2 * 470
     assert hd(sorted) >= 0
-    assert percentile_99 < 2000, inspect(Enum.take(sorted, -10))
+    slowest = Enum.take(sorted, -10)
+    assert percentile_99 < 2000, inspect(slowest)
     assert List.last(sorted) < 10_000
   end
 

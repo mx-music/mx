@@ -37,7 +37,7 @@ defmodule Mx.Hum.Recorder do
            "Recording #{wav} at #{format(tempo)} bpm after a bar of clicks; press Enter to stop."
          ),
          :ok <- play_and_record(wav, tempo, source, opts) do
-      seconds = :erlang.float_to_binary(Recording.seconds(wav), decimals: 1)
+      seconds = wav |> Recording.seconds() |> :erlang.float_to_binary(decimals: 1)
       IO.puts("Recorded #{wav}: #{seconds} seconds.")
       transcribe(wav, out, tempo)
     end

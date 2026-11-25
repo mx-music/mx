@@ -17,9 +17,9 @@ defmodule Aria do
 
   def song do
     together([
-      part(:violin, seq(Enum.map(order(), &bar(:violin, &1)))),
-      part(:alto, seq(Enum.map(order(), &bar(:alto, &1)))),
-      part(:organo_a_canne, seq(Enum.map(order(), &bar(:organo_a_canne, &1))))
+      part(:violin, seq(order(), &bar(:violin, &1))),
+      part(:alto, seq(order(), &bar(:alto, &1))),
+      part(:organo_a_canne, seq(order(), &bar(:organo_a_canne, &1)))
     ])
   end
 

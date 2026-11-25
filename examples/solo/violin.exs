@@ -59,7 +59,7 @@ defmodule Violin do
       |> Enum.chunk_every(8)
       |> Enum.with_index()
       |> Enum.map(fn {group, index} ->
-        bow(Enum.map(group, &{&1, 0.25}), Enum.at([0.5, 0.65, 0.7, 0.55], index))
+        group |> Enum.map(&{&1, 0.25}) |> bow(Enum.at([0.5, 0.65, 0.7, 0.55], index))
       end)
 
     arpeggios = [62, 65, 69, 74, 67, 70, 74, 79, 69, 73, 76, 79, 74, 77, 81, 86]
@@ -77,7 +77,8 @@ defmodule Violin do
     chords = [{62, [65, 69, 74]}, {55, [62, 67, 70]}, {57, [61, 64, 67]}, {62, [65, 69, 74]}]
 
     seq(chords, fn {bass, chord} ->
-      notes = [bass | chord] ++ tl(Enum.reverse(chord)) ++ [bass + 7]
+      down = chord |> Enum.reverse() |> tl()
+      notes = [bass | chord] ++ down ++ [bass + 7]
 
       plucks =
         Enum.with_index(

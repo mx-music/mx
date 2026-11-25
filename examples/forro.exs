@@ -156,18 +156,20 @@ defmodule PoeiraNoTerreiro do
   # one, the sixteenth before two, and two.
   defp ending do
     last = [vel: 0.7, sustain: 1.5, release: 0.4]
+    riff = Enum.take(riff_bars(), 2)
+    thirds = Enum.take(riff_thirds_bars(), 2)
 
     together([
       lead(
         seq([
-          sung(Enum.take(riff_bars(), 2) ++ [~MX"g5 ~f5 ~e5 ~d5 ~cs5 ~b4 ~a4 ~f4"], 0.8),
+          sung(riff ++ [~MX"g5 ~f5 ~e5 ~d5 ~cs5 ~b4 ~a4 ~f4"], 0.8),
           steps(~MX"g4/b4/d5/g5:3 g4/b4/d5/g5", 0.25, vel: 0.8, sustain: 0.15, release: 0.05),
           note([:g4, :b4, :d5, :g5], 4, last)
         ])
       ),
       hand(
         :second_voice,
-        sung(Enum.take(riff_thirds_bars(), 2) ++ [~MX"e5 ~d5 ~cs5 ~b4 ~a4 ~g4 ~f4 ~d4"], 0.7)
+        sung(thirds ++ [~MX"e5 ~d5 ~cs5 ~b4 ~a4 ~g4 ~f4 ~d4"], 0.7)
       ),
       hand(
         :basses,
@@ -340,7 +342,7 @@ defmodule PoeiraNoTerreiro do
       [vel: loud + wobble(step, 0.03), sustain: 0.13, release: 0.04]
     end
 
-    steps(Enum.map(chords, &bars[&1]), 0.25, each: turn)
+    chords |> Enum.map(&bars[&1]) |> steps(0.25, each: turn)
   end
 
   # The left hand's bar for each chord, a sixteenth to a step: bass notes where the zabumba's
@@ -367,7 +369,7 @@ defmodule PoeiraNoTerreiro do
       [vel: vel + wobble(step, 0.03), held: 0.6, release: 0.05]
     end
 
-    steps(Enum.map(chords, &bars[rhythm][&1]), 0.25, each: button)
+    chords |> Enum.map(&bars[rhythm][&1]) |> steps(0.25, each: button)
   end
 
   # The zabumba's bars, each named by what it plays, on its two heads.

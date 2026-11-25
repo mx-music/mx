@@ -62,27 +62,29 @@ defmodule Maracatu do
         ~MX"x.xxx.x.xx.xx.x."s
       end
 
-    steps(List.duplicate(bar, 8), 0.25, vel: 0.7)
+    bar |> List.duplicate(8) |> steps(0.25, vel: 0.7)
   end
 
   # The mineiro shakes sixteenths with the third of each beat accented: d is down and u is up, in
   # capitals where accented.
   defp mineiro do
     strokes = [d: [vel: 0.45, up: 0], u: [vel: 0.45, up: 1], D: [vel: 0.85, up: 0]]
-    steps(List.duplicate(~MX"duDu"s, 32), 0.25, strokes: strokes)
+    pattern = List.duplicate(~MX"duDu"s, 32)
+    steps(pattern, 0.25, strokes: strokes)
   end
 
   # The agbê plays an eighth and two sixteenths to a beat.
   defp agbe do
     strokes = [X: [vel: 0.8], x: [vel: 0.55]]
-    steps(List.duplicate(~MX"X.xx"s, 32), 0.25, strokes: strokes)
+    pattern = List.duplicate(~MX"X.xx"s, 32)
+    steps(pattern, 0.25, strokes: strokes)
   end
 
   # Eight bars of a caixa's bar of sixteenths: A is an accent, g a soft stroke between accents and
   # B an accent the stick buzzes after.
   defp caixa(bar) do
     strokes = [A: [vel: 0.85], B: [vel: 0.85, buzz: 1], g: [vel: 0.3]]
-    steps(List.duplicate(bar, 8), 0.25, strokes: strokes)
+    bar |> List.duplicate(8) |> steps(0.25, strokes: strokes)
   end
 
   # A baque's bar on the alfaia seven times, then the virada.

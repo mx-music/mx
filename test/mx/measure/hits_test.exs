@@ -36,7 +36,8 @@ defmodule Mx.Measure.HitsTest do
   test "finds each hit of a file, one after another from silence, with no note given" do
     silence = List.duplicate(0.0, round(@rate * 0.3))
     one = hit(500, [{1, 1}, {2.7, 0.4}], 0.4)
-    assert length(Hits.hits(one ++ silence ++ one ++ silence ++ one, @rate, nil)) == 3
+    three = one ++ silence ++ one ++ silence ++ one
+    assert three |> Hits.hits(@rate, nil) |> length() == 3
   end
 
   test "summary gives the median level and fade of each band over the hits" do

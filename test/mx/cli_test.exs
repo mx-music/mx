@@ -63,7 +63,8 @@ defmodule Mx.CLITest do
                  "  mx #{String.pad_trailing(name, 16)}  # #{Mix.Task.shortdoc(module)}\n"
       end
 
-      assert length(Regex.scan(~r/^  mx /m, listing)) == length(@tasks)
+      listed = Regex.scan(~r/^  mx /m, listing)
+      assert length(listed) == length(@tasks)
     end
   end
 

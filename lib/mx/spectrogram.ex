@@ -65,10 +65,12 @@ defmodule Mx.Spectrogram do
 
   defp image(%{rate: rate, channels: channels, bits: bits, kind: kind}, data, opts) do
     frames = div(byte_size(data), div(bits, 8) * channels)
-    from = min(round(Keyword.get(opts, :from, 0.0) * rate), frames)
+    start = Keyword.get(opts, :from, 0.0)
+    from = min(round(start * rate), frames)
     seconds = opts[:seconds]
     count = if seconds, do: min(round(seconds * rate), frames - from), else: frames - from
-    size = min(round(Keyword.get(opts, :window, @fft / rate) * rate), @fft)
+    window = Keyword.get(opts, :window, @fft / rate)
+    size = min(round(window * rate), @fft)
 
     {width, hop} =
       columns(opts[:width], count, rate / Keyword.get(opts, :per_second, @per_second))

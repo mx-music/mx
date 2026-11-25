@@ -447,7 +447,7 @@ defmodule VassourinhasSamples do
         {name, held} =
           case String.split(word, ":") do
             [name] -> {name, 0.5}
-            [name, held] -> {name, elem(Float.parse(held), 0)}
+            [name, held] -> {name, held |> Float.parse() |> elem(0)}
           end
 
         if name == "r" do
@@ -531,7 +531,8 @@ defmodule VassourinhasSamples do
 
         {beat, pitch, _} = note, [{before, last, held} | _] = breath ->
           joined = pitch != last and abs(before + held - beat) < 0.01 and held < 1.5
-          same_span = trunc(beat / span) == trunc(elem(List.last(breath), 0) / span)
+          {first, _, _} = List.last(breath)
+          same_span = trunc(beat / span) == trunc(first / span)
 
           if joined and same_span do
             {:cont, [note | breath]}
@@ -632,7 +633,8 @@ defmodule VassourinhasSamples do
           length(chords) - 1
         )
 
-      {at, near(around, tone(Enum.at(chords, bar), place, key)), 0.3}
+      chord = Enum.at(chords, bar)
+      {at, near(around, tone(chord, place, key)), 0.3}
     end
   end
 

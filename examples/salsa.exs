@@ -205,7 +205,9 @@ defmodule Salsa do
       left =
         if rem(step, 8) in [0, 5] do
           [
-            note(Enum.map(chord, &(&1 - 12)), 0, vel: 0.4, amp: 0.6, sustain: 0.3, release: 0.2)
+            chord
+            |> Enum.map(&(&1 - 12))
+            |> note(0, vel: 0.4, amp: 0.6, sustain: 0.3, release: 0.2)
           ]
         else
           []
@@ -215,7 +217,10 @@ defmodule Salsa do
 
       index =
         if rem(step, 2) == 0 do
-          Enum.min_by(0..14, &{rem(Enum.at(notes, &1), 12) not in classes, abs(&1 - index)})
+          Enum.min_by(0..14, fn at ->
+            pitch = Enum.at(notes, at)
+            {rem(pitch, 12) not in classes, abs(at - index)}
+          end)
         else
           index
         end
@@ -427,9 +432,8 @@ defmodule Salsa do
     entries =
       for {beat, bar} <- stabs,
           chord = beat_chord(bar * 4),
-          do:
-            {beat,
-             stab(voicing(Enum.max(chord), chord), 0.2, cutoff: 110, amp: 0.3, release: 0.25)}
+          top = Enum.max(chord),
+          do: {beat, stab(voicing(top, chord), 0.2, cutoff: 110, amp: 0.3, release: 0.25)}
 
     at(entries, 16)
   end
@@ -440,7 +444,7 @@ defmodule Salsa do
   # second on the low drum every other bar.
   defp high_conga do
     strokes = [t: [amp: 0.12, slap: 0.3], S: [amp: 0.45, slap: 1], o: [amp: 0.45, slap: 0]]
-    steps(List.duplicate([~MX"ttSt ttoo"s, ~MX"ttSt tto."s], 2), 0.5, strokes: strokes)
+    [~MX"ttSt ttoo"s, ~MX"ttSt tto."s] |> List.duplicate(2) |> steps(0.5, strokes: strokes)
   end
 
   defp low_conga, do: steps(~MX"........ .......x ........ .......x"s, 0.5, amp: 0.55)
@@ -449,7 +453,8 @@ defmodule Salsa do
   # solo, where the bell takes over.
   defp cascara do
     strokes = [X: [amp: 0.3], x: [amp: 0.22]]
-    steps(List.duplicate(~MX"X.X.Xx.x X.Xx.x.x"s, 2), 0.5, strokes: strokes)
+    pattern = List.duplicate(~MX"X.X.Xx.x X.Xx.x.x"s, 2)
+    steps(pattern, 0.5, strokes: strokes)
   end
 
   # The campana, the bongocero's bell, in its third gear over the clave's two bars, a cell to each
@@ -462,7 +467,8 @@ defmodule Salsa do
       c: [amp: 0.3, vel: 0.6, muted: 1]
     ]
 
-    steps(List.duplicate(~MX"O.c.o.cc o.cco.cc"s, 2), 0.5, strokes: strokes)
+    pattern = List.duplicate(~MX"O.c.o.cc o.cco.cc"s, 2)
+    steps(pattern, 0.5, strokes: strokes)
   end
 
   # Until the bell, the bongocero plays the martillo in eighths, M t o t M t H t: M is a muted
@@ -470,17 +476,20 @@ defmodule Salsa do
   # and H the large drum's open tone.
   defp high_bongo do
     strokes = [M: [muted: 1, vel: 0.8], t: [muted: 1, vel: 0.4], o: [muted: 0, vel: 0.7]]
-    steps(List.duplicate(~MX"Mtot Mt.t"s, 4), 0.5, strokes: strokes)
+    pattern = List.duplicate(~MX"Mtot Mt.t"s, 4)
+    steps(pattern, 0.5, strokes: strokes)
   end
 
   defp low_bongo do
-    steps(List.duplicate(~MX".... ..H."s, 4), 0.5, strokes: [H: [muted: 0, vel: 0.8]])
+    pattern = List.duplicate(~MX".... ..H."s, 4)
+    steps(pattern, 0.5, strokes: [H: [muted: 0, vel: 0.8]])
   end
 
   # The maracas in eighths, the beat stronger than the stroke after it.
   defp maracas do
     strokes = [d: [vel: 0.5, up: 0], u: [vel: 0.35, up: 1]]
-    steps(List.duplicate(~MX"du"s, 16), 0.5, strokes: strokes)
+    pattern = List.duplicate(~MX"du"s, 16)
+    steps(pattern, 0.5, strokes: strokes)
   end
 
   # A timbale fill in the last bar before the stabs, the mambo and the horn solo first come in.
@@ -507,7 +516,8 @@ defmodule Salsa do
   # The güiro, long and two short, while the piano leads.
   defp guiro do
     strokes = [L: [amp: 0.3, sustain: 0.6], s: [amp: 0.22, sustain: 0.18]]
-    steps(List.duplicate(~MX"L.ss"s, 8), 0.5, strokes: strokes)
+    pattern = List.duplicate(~MX"L.ss"s, 8)
+    steps(pattern, 0.5, strokes: strokes)
   end
 
   # Whether a pass ends leading into the first stabs, mambo or horn solo, which a timbale fill

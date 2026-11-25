@@ -110,8 +110,10 @@ defmodule Mx.Paired.Report do
 
   defp chart(rows) do
     clamped = for row <- rows, do: max(row.times, 0.1)
-    low = :math.pow(2, Float.floor(:math.log2(Enum.min([0.5 | clamped]))))
-    high = :math.pow(2, Float.ceil(:math.log2(Enum.max([2.0 | clamped]))))
+    lowest = Enum.min([0.5 | clamped])
+    highest = Enum.max([2.0 | clamped])
+    low = :math.pow(2, Float.floor(:math.log2(lowest)))
+    high = :math.pow(2, Float.ceil(:math.log2(highest)))
 
     position = fn times ->
       @label + (:math.log2(times) - :math.log2(low)) / :math.log2(high / low) * @plot
@@ -253,7 +255,8 @@ defmodule Mx.Paired.Report do
 
   defp geometric_mean(rows) do
     logs = for row <- rows, do: :math.log(max(row.times, 0.1))
-    :math.exp(Enum.sum(logs) / length(logs))
+    log_mean = Enum.sum(logs) / length(logs)
+    :math.exp(log_mean)
   end
 
   defp tick(value) when value >= 1, do: Integer.to_string(round(value))

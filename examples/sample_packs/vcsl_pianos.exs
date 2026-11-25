@@ -80,7 +80,8 @@ defmodule MapleLeafRag do
 
   # Bars of the score on one of the pianos.
   defp strain(name, bars) do
-    part(name, seq(Enum.concat(bars), &bar/1))
+    music = bars |> Enum.concat() |> seq(&bar/1)
+    part(name, music)
   end
 
   defp bar(0), do: together([seq(r: 0.5), seq([note([:eb2, :eb3], 0.5)])])

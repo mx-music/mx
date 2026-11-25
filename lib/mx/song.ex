@@ -337,7 +337,8 @@ defmodule Mx.Song do
     try do
       # Seeded from the file, so the random numbers a song's music is built with are the same on
       # every load.
-      :rand.seed(:exsss, {:erlang.phash2(Path.expand(path)), 0, 0})
+      seed = path |> Path.expand() |> :erlang.phash2()
+      :rand.seed(:exsss, {seed, 0, 0})
 
       value = eval_file(path, opts[:source])
       if match?(%Mx.Music.Song{}, value), do: Mx.Music.load(value)
@@ -760,7 +761,7 @@ defmodule Mx.Song do
         {:error, message}
 
       true ->
-        with {:ok, chain} <- chain(Keyword.get(opts, :fx, [])),
+        with {:ok, chain} <- opts |> Keyword.get(:fx, []) |> chain(),
              {:ok, chain} <- check_effects(chain) do
           {:ok,
            %{live | input: input, stereo: stereo == true, opts: synth_opts, fx: chain, send: send}}

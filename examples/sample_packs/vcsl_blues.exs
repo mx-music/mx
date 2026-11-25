@@ -267,9 +267,11 @@ defmodule TwelveBars do
   end
 
   defp chromatic_chorus do
+    chromatic = @chromatic_chorus |> List.flatten() |> line()
+
     together(
       [
-        chromatic: line(List.flatten(@chromatic_chorus)),
+        chromatic: chromatic,
         piano: comping(),
         bass: bass(),
         drums: together([shuffle(:ride), sample(@kit.crash, 4, amp: 0.8)])
@@ -278,9 +280,11 @@ defmodule TwelveBars do
   end
 
   defp saxello_chorus do
+    saxello = @saxello_chorus |> List.flatten() |> line()
+
     together(
       [
-        saxello: line(List.flatten(@saxello_chorus)),
+        saxello: saxello,
         piano: triplets(),
         bass: bass(),
         drums: shuffle(:ride)
@@ -364,7 +368,9 @@ defmodule TwelveBars do
     seq(changes, fn chord ->
       root = pitch(@chords[chord].root)
 
-      seq(Enum.with_index([0, 4, 7, 9, 10, 9, 7, 4]), fn {step, index} ->
+      [0, 4, 7, 9, 10, 9, 7, 4]
+      |> Enum.with_index()
+      |> seq(fn {step, index} ->
         pulses = if rem(index, 2) == 0, do: 2, else: 1
         note(root + step, pulses * @pulse, amp: if(rem(index, 2) == 0, do: 1.0, else: 0.7))
       end)
@@ -386,7 +392,7 @@ defmodule TwelveBars do
     )
   end
 
-  defp riff, do: line(List.flatten(@riff))
+  defp riff, do: @riff |> List.flatten() |> line()
 
   # The piano's right hand: the chord on one, on the short note after two, and on four.
   defp comping(changes \\ @changes) do
@@ -444,9 +450,11 @@ defmodule TwelveBars do
 
   # One harmonica's bars through the chords, silent where the chord is the other harmonica's.
   defp harps(bars) do
+    numbered = Enum.with_index(@changes, 1)
+
     for harp <- [:harp_c, :harp_f] do
       {harp,
-       seq(Enum.with_index(@changes, 1), fn {chord, number} ->
+       seq(numbered, fn {chord, number} ->
          hits = if @chords[chord].harp == harp, do: bars.(number), else: []
          bar(@chords[chord].blown, hits)
        end)}

@@ -4053,7 +4053,8 @@ defmodule Mx.DesignsTest do
 
     File.write!(song, """
     import Mx
-    song(tempo: 120, music: part(:caxixi, at(Enum.map(0..9, &{&1, hit()}), 10), synth: :caxixi))
+    hits = Enum.map(0..9, &{&1, hit()})
+    song(tempo: 120, music: part(:caxixi, at(hits, 10), synth: :caxixi))
     """)
 
     capture_io(fn -> assert :ok = Mx.Render.render(song, out, seconds: 6) end)
@@ -5434,10 +5435,11 @@ defmodule Mx.DesignsTest do
     end
 
     higher = partials.(61)
+    higher_hz = higher |> Enum.map(& &1.hz) |> inspect()
 
     for %{hz: hz} <- partials.(60) do
       assert Enum.any?(higher, &(abs(1200 * :math.log2(&1.hz / hz) - 100) <= 50)),
-             "no partial a semitone above #{hz} Hz: #{inspect(Enum.map(higher, & &1.hz))}"
+             "no partial a semitone above #{hz} Hz: #{higher_hz}"
     end
   end
 
@@ -5773,7 +5775,8 @@ defmodule Mx.DesignsTest do
       sound
       |> Enum.chunk_every(round(0.01 * @rate))
       |> Enum.map(fn chunk ->
-        :math.sqrt(Enum.sum_by(chunk, &(&1 * &1)) / length(chunk))
+        squares = Enum.sum_by(chunk, &(&1 * &1))
+        :math.sqrt(squares / length(chunk))
       end)
 
     top = Enum.max(levels)
@@ -5826,7 +5829,8 @@ defmodule Mx.DesignsTest do
 
     File.write!(song, """
     import Mx
-    song(tempo: 120, music: part(:cuica, at(Enum.map(0..14, &{&1, hit(note: #{note})}), 15), synth: :cuica))
+    hits = Enum.map(0..14, &{&1, hit(note: #{note})})
+    song(tempo: 120, music: part(:cuica, at(hits, 15), synth: :cuica))
     """)
 
     capture_io(fn -> assert :ok = Mx.Render.render(song, out, seconds: 8) end)
@@ -5847,7 +5851,8 @@ defmodule Mx.DesignsTest do
 
   defp rms(sound, from, to) do
     samples = window(sound, from, to)
-    :math.sqrt(Enum.sum_by(samples, &(&1 * &1)) / max(length(samples), 1))
+    squares = Enum.sum_by(samples, &(&1 * &1))
+    :math.sqrt(squares / max(length(samples), 1))
   end
 
   defp peak(sound, from, to), do: sound |> window(from, to) |> Enum.map(&abs/1) |> Enum.max()
@@ -5877,7 +5882,8 @@ defmodule Mx.DesignsTest do
   defp highs(sound, hz, from, to) do
     coefficient = :math.exp(-2 * :math.pi() * hz / @rate)
     filtered = sound |> window(from, to) |> high_pass(coefficient) |> high_pass(coefficient)
-    :math.sqrt(Enum.sum_by(filtered, &(&1 * &1)) / length(filtered))
+    squares = Enum.sum_by(filtered, &(&1 * &1))
+    :math.sqrt(squares / length(filtered))
   end
 
   defp hann(samples) do
@@ -5907,7 +5913,8 @@ defmodule Mx.DesignsTest do
 
     level = fn spectrum, {low, high} ->
       bins = ceil(low * 1024 / @rate)..(ceil(high * 1024 / @rate) - 1)
-      10 * :math.log10(Enum.sum(for at <- bins, do: elem(spectrum, at) ** 2) + 1.0e-24)
+      power = Enum.sum_by(bins, &(elem(spectrum, &1) ** 2))
+      10 * :math.log10(power + 1.0e-24)
     end
 
     power = fn spectrum ->
@@ -5989,8 +5996,10 @@ defmodule Mx.DesignsTest do
   # Counts the attacks: 5 ms levels that jump to half again the one before, at least 50 ms apart.
   defp picks(sound) do
     levels =
-      for chunk <- Enum.chunk_every(sound, 240),
-          do: :math.sqrt(Enum.sum_by(chunk, &(&1 * &1)) / length(chunk))
+      for chunk <- Enum.chunk_every(sound, 240) do
+        squares = Enum.sum_by(chunk, &(&1 * &1))
+        :math.sqrt(squares / length(chunk))
+      end
 
     quiet = Enum.max(levels) / 10
 

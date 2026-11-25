@@ -47,7 +47,7 @@ defmodule Surdos do
         ]
       end
 
-    at(List.flatten(strokes), 16)
+    strokes |> List.flatten() |> at(16)
   end
 
   # The segunda answers on the first beat, and in every second bar with a muted pickup on the last
@@ -65,7 +65,7 @@ defmodule Surdos do
         [{2 * bar, hit(note: segunda_note(), vel: 0.65)} | pickup]
       end
 
-    at(List.flatten(strokes), 16)
+    strokes |> List.flatten() |> at(16)
   end
 
   defp terceira(fill) do

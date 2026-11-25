@@ -40,7 +40,7 @@ defmodule Mx.Loudness do
 
   @doc "Scales a WAV recording of 32-bit floats by a gain in dB, in place."
   def scale(path, db) when is_binary(path) and is_number(db) do
-    {head, data, tail} = split(File.read!(path))
+    {head, data, tail} = path |> File.read!() |> split()
     gain = :math.pow(10, db / 20)
     scaled = for <<x::little-float-32 <- data>>, into: <<>>, do: <<x * gain::little-float-32>>
     File.write!(path, [head, scaled, tail])
@@ -51,7 +51,7 @@ defmodule Mx.Loudness do
 
     if heard != [] do
       floor = lufs(mean(heard)) + @relative_gate
-      lufs(mean(Enum.filter(heard, &(lufs(&1) > floor))))
+      heard |> Enum.filter(&(lufs(&1) > floor)) |> mean() |> lufs()
     end
   end
 

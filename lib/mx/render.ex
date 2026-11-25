@@ -98,7 +98,8 @@ defmodule Mx.Render do
       song.loops
       |> map_ok(fn loop ->
         with {:ok, own} <- chain_rings(loop.name, loop.fx, bpm * share) do
-          rings = own ++ sent_rings(Keyword.keys(loop.send), buses, sends) ++ main
+          sent = loop.send |> Keyword.keys() |> sent_rings(buses, sends)
+          rings = own ++ sent ++ main
           {:ok, {loop.name, Enum.sum_by(rings, &elem(&1, 2)), rings}}
         end
       end)
@@ -442,7 +443,7 @@ defmodule Mx.Render do
             "part #{part} sends #{kind |> Atom.to_string() |> String.upcase()}, which a render leaves out"
           )
 
-          tell_sent(MapSet.put(told, {part, kind}))
+          told |> MapSet.put({part, kind}) |> tell_sent()
         end
     after
       0 -> told

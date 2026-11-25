@@ -16,7 +16,7 @@ defmodule Mix.Tasks.Mx.WaveformTest do
 
     assert capture_io(fn -> Waveform.run([path]) end) =~ "Wrote #{ctx.tmp_dir}/tone.png"
 
-    {1500, 150, rows} = read_png(Path.join(ctx.tmp_dir, "tone.png"))
+    {1500, 150, rows} = ctx.tmp_dir |> Path.join("tone.png") |> read_png()
     middle = Enum.at(rows, 75)
     assert pixel(hd(rows), 0) == @background
     assert pixel(middle, 20) == @background
@@ -32,7 +32,7 @@ defmodule Mix.Tasks.Mx.WaveformTest do
        ctx do
     path = write(ctx, "late.wav", tone(2, fn at -> if at < 1, do: 0.0, else: 0.5 end))
     capture_io(fn -> Waveform.run([path]) end)
-    {_width, _height, rows} = read_png(Path.join(ctx.tmp_dir, "late.png"))
+    {_width, _height, rows} = ctx.tmp_dir |> Path.join("late.png") |> read_png()
 
     heights = heights(rows)
     {left, right} = Enum.split(heights, div(length(heights), 2))
@@ -43,7 +43,7 @@ defmodule Mix.Tasks.Mx.WaveformTest do
   test "a recording with a crescendo has bars that grow from left to right", ctx do
     path = write(ctx, "louder.wav", tone(2, fn at -> 0.05 + 0.2 * at end))
     capture_io(fn -> Waveform.run([path]) end)
-    {_width, _height, rows} = read_png(Path.join(ctx.tmp_dir, "louder.png"))
+    {_width, _height, rows} = ctx.tmp_dir |> Path.join("louder.png") |> read_png()
 
     tenths = rows |> heights() |> Enum.chunk_every(43, 43, :discard) |> Enum.map(&Enum.sum/1)
     assert tenths == Enum.sort(tenths)

@@ -39,7 +39,10 @@ defmodule Bongos do
 
   # A bar of the two drums, each silent where the bar gives it no cells.
   defp drums(cells) do
-    together([:high_bongo, :low_bongo], &part(&1, bar(Keyword.get(cells, &1, ""))))
+    together([:high_bongo, :low_bongo], fn drum ->
+      cell = Keyword.get(cells, drum, "")
+      part(drum, bar(cell))
+    end)
   end
 
   defp bars do

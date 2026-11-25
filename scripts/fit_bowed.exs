@@ -91,7 +91,8 @@ defmodule FitBowed do
 
         measured = misses |> Map.values() |> List.flatten() |> Enum.reject(&is_nil/1)
         mean = Enum.sum(measured) / length(measured)
-        spread = :math.sqrt(Enum.sum_by(measured, &((&1 - mean) ** 2)) / length(measured))
+        squares = Enum.sum_by(measured, &((&1 - mean) ** 2))
+        spread = :math.sqrt(squares / length(measured))
         IO.puts("round #{round}: body #{Float.round(body, 1)} Hz, mean miss #{Float.round(mean, 1)} dB, spread #{Float.round(spread, 1)} dB")
         body = (body * :math.pow(2, mean / 20)) |> max(lowest * 0.5) |> min(lowest * 3)
 
@@ -133,8 +134,10 @@ defmodule FitBowed do
 
       all = List.flatten(misses)
       mean = Enum.sum(all) / length(all)
-      spread = :math.sqrt(Enum.sum_by(all, &((&1 - mean) ** 2)) / length(all))
-      IO.puts("#{synth} body #{Float.round(lowest * factor, 1)} Hz: spread #{Float.round(spread, 1)} dB, misses #{inspect(Enum.map(misses, fn m -> Enum.map(m, &Float.round(&1, 0)) end))}")
+      squares = Enum.sum_by(all, &((&1 - mean) ** 2))
+      spread = :math.sqrt(squares / length(all))
+      rounded = Enum.map(misses, fn m -> Enum.map(m, &Float.round(&1, 0)) end)
+      IO.puts("#{synth} body #{Float.round(lowest * factor, 1)} Hz: spread #{Float.round(spread, 1)} dB, misses #{inspect(rounded)}")
     end
   end
 

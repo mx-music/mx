@@ -35,7 +35,10 @@ defmodule Mx.Examples.OdeonTest do
     beats =
       Regex.scan(~r/^beat ([\d.]+)/m, loop_part(print(0), "shaker"), capture: :all_but_first)
 
-    assert Enum.any?(beats, fn [beat] -> rem(round(elem(Float.parse(beat), 0) * 100), 25) != 0 end)
+    assert Enum.any?(beats, fn [beat] ->
+             {at, _} = Float.parse(beat)
+             rem(round(at * 100), 25) != 0
+           end)
   end
 
   test "the examples guide points to the demo" do

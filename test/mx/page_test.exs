@@ -80,7 +80,7 @@ defmodule Mx.PageTest do
 
   test "names a part that plays only samples by its sample, or the first and the count of the others, and one that also plays notes by its synth",
        %{tmp_dir: dir} do
-    [kick, snare] = for name <- ["kick", "snare"], do: silent(Path.join(dir, "#{name}.wav"))
+    [kick, snare] = for name <- ["kick", "snare"], do: dir |> Path.join("#{name}.wav") |> silent()
 
     {{song, path}, warnings} =
       with_io(:stderr, fn ->

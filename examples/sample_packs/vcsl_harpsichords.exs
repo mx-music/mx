@@ -151,11 +151,11 @@ defmodule Prelude do
 
         number when number >= 32 ->
           run = Tuple.to_list(@runs[number])
-          note(Enum.take(run, 2), 4)
+          run |> Enum.take(2) |> note(4)
 
         number ->
           bar = Enum.at(@bars, number - 1)
-          note(Enum.take(bar, 2), 4)
+          bar |> Enum.take(2) |> note(4)
       end
     end)
   end

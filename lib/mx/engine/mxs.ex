@@ -142,7 +142,8 @@ defmodule Mx.Engine.Mxs do
          :ok <- instruments(engine),
          :ok <- record(engine, opts[:record]) do
       {reports, output} = reports(engine, live)
-      origin = Mx.Clock.now() - round(Native.now(engine) * 1_000_000)
+      engine_seconds = Native.now(engine)
+      origin = Mx.Clock.now() - round(engine_seconds * 1_000_000)
       :persistent_term.put(__MODULE__, {engine, origin})
       :persistent_term.put({__MODULE__, :main}, nil)
       :persistent_term.put({__MODULE__, :ids}, :atomics.new(1, []))
@@ -463,7 +464,7 @@ defmodule Mx.Engine.Mxs do
 
   defp written_tail(option, attrs, opts, bpm) do
     {^option, type, declared} = List.keyfind(attrs, option, 0)
-    value = abs(Keyword.get(opts, option, Keyword.get(declared, :default, 0)))
+    value = opts |> Keyword.get(option, Keyword.get(declared, :default, 0)) |> abs()
     if type == :beats, do: value * 60 / bpm, else: value / 1
   end
 
@@ -687,7 +688,7 @@ defmodule Mx.Engine.Mxs do
   defp key(%{key: key}), do: key
 
   # A compressor's key names a part, which the engine is told once both chains have started.
-  defp effect_options(opts), do: options(Keyword.delete(opts, :key))
+  defp effect_options(opts), do: opts |> Keyword.delete(:key) |> options()
 
   defp options(params) do
     for {name, value} <- params, do: {Atom.to_string(name), value(value)}

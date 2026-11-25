@@ -31,16 +31,17 @@ defmodule Mx.EffectsInElixirTest do
 
   defp peak(samples), do: samples |> Enum.map(&abs/1) |> Enum.max()
 
-  defp rms(samples), do: :math.sqrt(Enum.sum_by(samples, &(&1 * &1)) / length(samples))
+  defp rms(samples) do
+    squares = Enum.sum_by(samples, &(&1 * &1))
+    :math.sqrt(squares / length(samples))
+  end
 
   # How far below the first render's peak the two renders differ at most, on either side, in
   # decibels.
   defp apart({left, right}, {other_left, other_right}) do
-    difference =
-      max(
-        peak(Enum.zip_with(left, other_left, &(&1 - &2))),
-        peak(Enum.zip_with(right, other_right, &(&1 - &2)))
-      )
+    left_difference = left |> Enum.zip_with(other_left, &(&1 - &2)) |> peak()
+    right_difference = right |> Enum.zip_with(other_right, &(&1 - &2)) |> peak()
+    difference = max(left_difference, right_difference)
 
     20 * :math.log10(max(difference, 1.0e-12) / max(peak(left), peak(right)))
   end
@@ -53,10 +54,12 @@ defmodule Mx.EffectsInElixirTest do
     brightness =
       for repeat <- 1..3 do
         heard = Enum.slice(left, round(repeat * 0.25 * @rate), round(0.2 * @rate))
-        rms(Enum.zip_with(tl(heard), heard, &(&1 - &2))) / rms(heard)
+        changes = Enum.zip_with(tl(heard), heard, &(&1 - &2))
+        rms(changes) / rms(heard)
       end
 
-    assert brightness == Enum.sort(brightness, :desc) and length(Enum.uniq(brightness)) == 3
+    assert brightness == Enum.sort(brightness, :desc) and
+             brightness |> Enum.uniq() |> length() == 3
   end
 
   test "an effect over both sides that swaps them moves a note on the left to the right" do
@@ -151,7 +154,7 @@ defmodule Mx.EffectsInElixirTest do
   test "the all-pass keeps every frequency's level, and added to the dry sound it cuts a notch at its frequency" do
     steady = fn options ->
       {left, _right} = through(all_passed: options)
-      rms(Enum.drop(left, div(@rate, 2)))
+      left |> Enum.drop(div(@rate, 2)) |> rms()
     end
 
     for hz <- [250, 500, 1000, 2000, 4000] do
@@ -185,6 +188,8 @@ defmodule Mx.EffectsInElixirTest do
 
     # The triangle sweep is at its top a quarter of its 0.25 seconds in, and at 0 at three
     # quarters.
-    assert peak(Enum.slice(left, 2400, 1200)) > 3 * peak(Enum.slice(left, 8400, 1200))
+    top = left |> Enum.slice(2400, 1200) |> peak()
+    bottom = left |> Enum.slice(8400, 1200) |> peak()
+    assert top > 3 * bottom
   end
 end

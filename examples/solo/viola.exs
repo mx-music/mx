@@ -52,7 +52,7 @@ defmodule Viola do
           up = Enum.map(chord, &(&1 + 12)),
           arpeggio = chord ++ up ++ Enum.reverse(up) ++ Enum.reverse(chord),
           {group, i} <- arpeggio |> Enum.chunk_every(4) |> Enum.with_index() do
-        bow(Enum.map(group, &{&1, 0.25}), if(i == 0, do: 0.75, else: 0.6), across: true)
+        group |> Enum.map(&{&1, 0.25}) |> bow(if(i == 0, do: 0.75, else: 0.6), across: true)
       end
     )
   end
@@ -71,7 +71,8 @@ defmodule Viola do
 
   # The melody where it was written, its last note left for the low C, held and swelled.
   defp section(:ending, _pass) do
-    seq(Enum.drop(melody(0), -1) ++ [bow([{48, 4}], 0.65, swell: true, vibrato: 0.08)])
+    written = Enum.drop(melody(0), -1)
+    seq(written ++ [bow([{48, 4}], 0.65, swell: true, vibrato: 0.08)])
   end
 
   # The melody as strokes, each a slur of {note, beats}, and whether its long note swells.
@@ -87,7 +88,9 @@ defmodule Viola do
         {[{67, 4}], true}
       ],
       fn {notes, swell} ->
-        bow(Enum.map(notes, fn {note, beats} -> {note + octave, beats} end), 0.6,
+        notes
+        |> Enum.map(fn {note, beats} -> {note + octave, beats} end)
+        |> bow(0.6,
           swell: swell,
           vibrato: 0.08
         )

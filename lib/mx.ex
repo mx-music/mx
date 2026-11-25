@@ -49,7 +49,7 @@ defmodule Mx do
 
   @doc """
   Music played one item after another, each the music the function returns for an item of the collection, a list, a range or any other enumerable.
-  It is `seq(Enum.map(collection, fun))`, so the function may return a `{name, beats}` note.
+  It is `collection |> Enum.map(fun) |> seq()`, so the function may return a `{name, beats}` note.
 
       seq(1..72, &bar/1)
       seq(@tune, fn {name, beats} -> note(name, beats, vel: 0.6) end)

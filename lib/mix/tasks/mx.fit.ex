@@ -336,11 +336,11 @@ defmodule Mix.Tasks.Mx.Fit do
 
     IO.puts("ERB bands: #{median}; #{worst}")
     print_stretch(checks, kind)
-    print_pitch(Struck.pitch(checks), render)
+    checks |> Struck.pitch() |> print_pitch(render)
     print_partials(checks, first_short)
 
     own_loudness = fit && checks |> Enum.map(& &1.own) |> Struck.loudness()
-    print_loudness(Struck.loudness(checks), own_loudness, render)
+    checks |> Struck.loudness() |> print_loudness(own_loudness, render)
 
     print_notes(checks)
     print_room(checks)
@@ -625,7 +625,8 @@ defmodule Mix.Tasks.Mx.Fit do
       end
     end
 
-    IO.puts("score #{decimals(Fit.score(misses))}")
+    score = misses |> Fit.score() |> decimals()
+    IO.puts("score #{score}")
   end
 
   defp attack(nil), do: "-"

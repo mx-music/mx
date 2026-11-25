@@ -27,7 +27,10 @@ defmodule SmallHours do
 
   # The libraries name their notes in different octaves: the saxophone and the cello an octave
   # below the pitch mx names, the bass an octave above, the guitar the same.
-  key = fn name, octaves -> pitch(String.downcase(name)) + 12 * octaves end
+  key = fn name, octaves ->
+    lower = String.downcase(name)
+    pitch(lower) + 12 * octaves
+  end
 
   # The saxophone through its condenser microphone: soft and hard, two takes of each.
   @alto for name <-
@@ -355,9 +358,11 @@ defmodule SmallHours do
     seq(bars, fn bar ->
       case bar do
         [chord] ->
+          upper = Enum.drop(@chords[chord], 1)
+
           seq([
             note(@chords[chord], 1 + 2 / 3, dyn(0.45) ++ [strum: 0.06]),
-            note(Enum.drop(@chords[chord], 1), 2 + 1 / 3, dyn(0.2) ++ [strum: 0.03])
+            note(upper, 2 + 1 / 3, dyn(0.2) ++ [strum: 0.03])
           ])
 
         [first, second] ->

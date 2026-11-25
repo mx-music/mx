@@ -47,7 +47,7 @@ defmodule Mx.Fit.Struck do
               ],
               note = String.to_integer(note),
               notes == nil or note in notes,
-              do: whole(Path.join(folder, name), note, String.to_integer(velocity))
+              do: folder |> Path.join(name) |> whole(note, String.to_integer(velocity))
 
         if found == [] do
           {:error, "found no recordings named like name-064-025.wav in #{folder}"}
@@ -298,7 +298,7 @@ defmodule Mx.Fit.Struck do
     |> Enum.with_index(1)
     |> Enum.reject(fn {line, _number} -> String.trim(line) in [""] or comment?(line) end)
     |> Enum.reduce_while({:ok, []}, fn {line, number}, {:ok, lines} ->
-      case line(String.trim(line), folder) do
+      case line |> String.trim() |> line(folder) do
         {:ok, line} -> {:cont, {:ok, [line | lines]}}
         :error -> {:halt, {:error, "cannot read line #{number}: #{line}"}}
       end

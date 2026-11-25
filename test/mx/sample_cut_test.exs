@@ -90,7 +90,7 @@ defmodule Mx.SampleCutTest do
   end
 
   test "from and to name seconds of the recording, forwards and backwards", %{tmp_dir: dir} do
-    ramp = ramp(Path.join(dir, "ramp.wav"))
+    ramp = dir |> Path.join("ramp.wav") |> ramp()
     forwards = play(ramp, Samples.cut([from: 0.25, to: 0.5], 1, 120))
     backwards = play(ramp, Samples.cut([from: 0.25, to: 0.5, rate: -1], 1, 120))
 

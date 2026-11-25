@@ -348,7 +348,9 @@ defmodule ErbarmeDich.Paraphrase do
 
     length = bottom + 6
 
-    section(Enum.map(notes, &Map.merge(%{eighth: 0.5, bar: 43, voice: :cadenza}, &1)), length,
+    notes
+    |> Enum.map(&Map.merge(%{eighth: 0.5, bar: 43, voice: :cadenza}, &1))
+    |> section(length,
       loudness: [{0, 0.6}, {0.28, 0.88}, {0.45, 0.8}, {0.78, 0.42}, {1, 0.32}],
       pace: [
         {0, 1.0},

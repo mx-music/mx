@@ -255,7 +255,7 @@ defmodule NightService do
     seq(
       for _ <- 1..cycles,
           {_, notes} <- @chords,
-          do: note(Enum.map(notes, &(pitch(&1) + up)), 4, vel: 0.7)
+          do: notes |> Enum.map(&(pitch(&1) + up)) |> note(4, vel: 0.7)
     )
   end
 
@@ -297,7 +297,7 @@ defmodule NightService do
     figure("1.2.3.4.5.4.3.2.", cycles, fn {_, [first, second, third | _]}, cell ->
       notes = [pitch(first), pitch(second), pitch(third), pitch(first) + 12, pitch(second) + 12]
       index = String.to_integer(cell) - 1
-      note(Enum.at(notes, index), 0.5, vel: if(index == 0, do: 0.9, else: 0.7))
+      notes |> Enum.at(index) |> note(0.5, vel: if(index == 0, do: 0.9, else: 0.7))
     end)
   end
 
@@ -333,7 +333,9 @@ defmodule NightService do
     up = Keyword.get(opts, :up, 0)
 
     figure(pattern, cycles, fn {_, notes}, cell ->
-      note(Enum.map(notes, &(pitch(&1) + up)), 0.25,
+      notes
+      |> Enum.map(&(pitch(&1) + up))
+      |> note(0.25,
         vel: String.to_integer(cell) / 9,
         sustain: 0.3
       )

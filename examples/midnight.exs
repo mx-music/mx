@@ -367,7 +367,8 @@ defmodule Midnight do
     |> Enum.chunk_by(&(elem(&1, 0) == "-"))
     |> Enum.flat_map(fn
       [{"-", _} | _] = rests ->
-        [rest(Enum.sum_by(rests, &elem(&1, 1)))]
+        beats = Enum.sum_by(rests, &elem(&1, 1))
+        [rest(beats)]
 
       phrase ->
         notes = for {token, beats} <- phrase, do: {nil, parse(token), beats}
@@ -465,7 +466,9 @@ defmodule Midnight do
   defp gat_pass(:alap, _time), do: nil
 
   defp piano_note(index, vel) do
-    note(swara(Enum.at(figure(), rem(index, 12)), @sa + 12), 1,
+    name = Enum.at(figure(), rem(index, 12))
+
+    note(swara(name, @sa + 12), 1,
       vel: vel,
       pedal: 1,
       sustain: 1,

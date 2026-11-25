@@ -33,7 +33,7 @@ defmodule Cello do
 
     seq(
       for bar <- bars, i <- 0..1 do
-        bow(Enum.map(bar, &{&1, 0.25}), if(i == 0, do: 0.65, else: 0.55), across: true)
+        bar |> Enum.map(&{&1, 0.25}) |> bow(if(i == 0, do: 0.65, else: 0.55), across: true)
       end
     )
   end
@@ -60,11 +60,11 @@ defmodule Cello do
   defp section(:pizz, _pass) do
     line = [43, 47, 50, 47, 40, 43, 47, 45, 36, 40, 43, 45, 38, 42, 45, 42]
 
-    seq(
-      Enum.with_index(line, fn note, i ->
-        note(note, 1, vel: if(rem(i, 4) == 0, do: 0.8, else: 0.6), pizz: 1, sustain: 2)
-      end)
-    )
+    line
+    |> Enum.with_index(fn note, i ->
+      note(note, 1, vel: if(rem(i, 4) == 0, do: 0.8, else: 0.6), pizz: 1, sustain: 2)
+    end)
+    |> seq()
   end
 
   # Up the A string in one bow to a long high D, then down by the arpeggio to the low G, held and

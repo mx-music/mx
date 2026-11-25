@@ -55,7 +55,7 @@ defmodule Mix.Tasks.Mx.BenchTest do
     assert ["loads by mx: 3", " described to the window after, ms: " <> waits] =
              lines |> List.last() |> String.split(";")
 
-    assert length(String.split(waits, ", ")) == 3
+    assert waits |> String.split(", ") |> length() == 3
     assert File.read!("examples/choro.exs") == before
   end
 

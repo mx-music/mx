@@ -92,7 +92,7 @@ defmodule Raga do
 
             {changes, _} =
               Enum.map_reduce(glides, beats, fn {glide, length}, at ->
-                {{at, note: swara(String.trim_leading(glide, "~"))}, at + length}
+                {{at, note: glide |> String.trim_leading("~") |> swara()}, at + length}
               end)
 
             [

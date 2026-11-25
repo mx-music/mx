@@ -372,9 +372,11 @@ defmodule Choro do
         else
           leading = target + if(rem(bar, 2) == 0, do: -1, else: 1)
 
+          upper = Enum.at(chord.(bar * 2 + 1), 2)
+
           seq([
             note(root, 1, vel: 0.7, sustain: 0.8, release: 0.1),
-            note(Enum.at(chord.(bar * 2 + 1), 2), 0.5,
+            note(upper, 0.5,
               vel: 0.5,
               sustain: 0.35,
               release: 0.08,

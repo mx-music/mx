@@ -788,7 +788,9 @@ defmodule Mx.Score do
   # The bars in the order the score plays them: a backward repeat goes back to the last
   # forward repeat, or to the start, and an ending plays only on the times through it names.
   defp order(measures, numbers) do
-    played = walk(List.to_tuple(measures), 0, %{start: 0, time: 1, played: %{}, ending: nil}, [])
+    played =
+      measures |> List.to_tuple() |> walk(0, %{start: 0, time: 1, played: %{}, ending: nil}, [])
+
     measures = List.to_tuple(measures)
     numbers = List.to_tuple(numbers)
 

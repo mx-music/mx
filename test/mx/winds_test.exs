@@ -277,7 +277,8 @@ defmodule Mx.WindsTest do
   end
 
   defp db(window) do
-    rms = :math.sqrt(Enum.sum_by(window, &(&1 * &1)) / max(length(window), 1))
+    squares = Enum.sum_by(window, &(&1 * &1))
+    rms = :math.sqrt(squares / max(length(window), 1))
     20 * :math.log10(max(rms, 1.0e-9))
   end
 
@@ -295,7 +296,8 @@ defmodule Mx.WindsTest do
             []
           )
 
-        {vel, db(Enum.slice(sound, round(1.0 * @rate), round(0.5 * @rate)))}
+        held = Enum.slice(sound, round(1.0 * @rate), round(0.5 * @rate))
+        {vel, db(held)}
       end,
       timeout: :infinity
     )

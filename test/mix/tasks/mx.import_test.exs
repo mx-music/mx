@@ -49,7 +49,7 @@ defmodule Mix.Tasks.Mx.ImportTest do
     assert song =~ "\n  part :alto, synth: :tri\n"
     assert song =~ "\n  part :tenor, synth: :tri\n"
     assert song =~ "\n  part :bass, synth: :cello\n"
-    assert song =~ "\n      part(:soprano, seq(Enum.map(order(), &bar(:soprano, &1)))),\n"
+    assert song =~ "\n      part(:soprano, seq(order(), &bar(:soprano, &1))),\n"
 
     assert print(ctx.song, "soprano") =~ ~r/^beat 0 +play 63 sustain: 1$/m
     assert output =~ "Soprano on oboe: 62 notes from :eb4 to :g5\n"
@@ -87,7 +87,8 @@ defmodule Mix.Tasks.Mx.ImportTest do
     assert song =~
              "\n  defp bar(:bass, 1) do\n    seq([\n      note(:eb3, 2, sustain: 2.5),\n      rest(0.5),\n      note(:g3, 0.5),\n      note(:bb3, 0.5),\n      note(:ab3, 0.5)\n    ])\n  end\n"
 
-    assert length(Regex.scan(~r/, sustain: /, song)) == 2
+    matches = Regex.scan(~r/, sustain: /, song)
+    assert length(matches) == 2
 
     bass = print(ctx.song, "bass")
     assert bass =~ ~r/^beat 0 +play 51 sustain: 2.5$/m
@@ -108,7 +109,7 @@ defmodule Mix.Tasks.Mx.ImportTest do
 
     path = score!(dir, "across.musicxml", [{"Organ", [bar]}])
     import!([path, "--tempo", "60"])
-    organ = print(Path.join(dir, "across.exs"), "organ")
+    organ = dir |> Path.join("across.exs") |> print("organ")
 
     assert organ =~ ~r/^beat 0 +play 71 sustain: 2$/m
     refute organ =~ ~r/^beat 1 /m
@@ -127,10 +128,11 @@ defmodule Mix.Tasks.Mx.ImportTest do
 
     path = score!(dir, "within.musicxml", [{"Organ", [bar]}])
     import!([path, "--tempo", "60"])
-    organ = print(Path.join(dir, "within.exs"), "organ")
+    organ = dir |> Path.join("within.exs") |> print("organ")
 
     assert organ =~ ~r/^beat 0 +play 72 sustain: 4$/m
-    assert length(Regex.scan(~r/^beat 2 +play 72 sustain: 2$/m, organ)) == 1
+    matches = Regex.scan(~r/^beat 2 +play 72 sustain: 2$/m, organ)
+    assert length(matches) == 1
   end
 
   test "the aria's notes play as the score writes them, its tie between voices too", %{
@@ -362,7 +364,7 @@ defmodule Mix.Tasks.Mx.ImportTest do
   end
 
   test "the chorale saved uncompressed gives the same song", %{tmp_dir: dir} = ctx do
-    {:ok, files} = :zip.unzip(String.to_charlist(@chorale), [:memory])
+    {:ok, files} = @chorale |> String.to_charlist() |> :zip.unzip([:memory])
     {_, xml} = Enum.find(files, fn {name, _} -> to_string(name) == "bwv140.7.xml" end)
     plain = Path.join([dir, "plain", "bwv140.7.musicxml"])
     plain |> Path.dirname() |> File.mkdir_p!()

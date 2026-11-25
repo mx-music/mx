@@ -29,7 +29,7 @@ defmodule Mx.Examples.PandeiroTest do
     slaps = fn pass -> pass |> print() |> strokes("pandeiro_slap") |> length() end
     counts = Enum.map(0..7, slaps)
     [first, second, trio] = [Enum.at(counts, 0), Enum.at(counts, 2), Enum.at(counts, 5)]
-    assert length(Enum.uniq([first, second, trio])) == 3
+    assert [first, second, trio] |> Enum.uniq() |> length() == 3
     assert counts == [first, first, second, second, first, trio, trio, first]
   end
 
@@ -115,7 +115,8 @@ defmodule Mx.Examples.PandeiroTest do
 
     for [beat, muted] <-
           Regex.scan(~r/^beat ([\d.]+) +play .*muted: (\d)/m, rows, capture: :all_but_first) do
-      {elem(Float.parse(beat), 0), String.to_integer(muted)}
+      {at, _} = Float.parse(beat)
+      {at, String.to_integer(muted)}
     end
   end
 

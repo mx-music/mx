@@ -42,7 +42,10 @@ defmodule Cowbell do
 
   # A clave of the two bells, each silent where the pass gives it no cells.
   defp bells(cells) do
-    together([:campana, :contracampana], &part(&1, bell(Keyword.get(cells, &1, ~MX"."s))))
+    together([:campana, :contracampana], fn name ->
+      cell = Keyword.get(cells, name, ~MX"."s)
+      part(name, bell(cell))
+    end)
   end
 
   defp passes do

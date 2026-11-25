@@ -53,7 +53,8 @@ defmodule Mx.RecordingTest do
 
   test "reads the peak of a recording in dB below full scale, and no clips", %{tmp_dir: dir} do
     path = Path.join(dir, "half.wav")
-    File.write!(path, wav(List.duplicate({4_194_304, -2_097_152}, 4800) ++ [{0, 0}]))
+    half = List.duplicate({4_194_304, -2_097_152}, 4800) ++ [{0, 0}]
+    File.write!(path, wav(half))
 
     assert %{peak: peak, clips: 0, first_clip: nil} = Recording.level(path)
     assert_in_delta peak, -6.02, 0.01
@@ -89,7 +90,8 @@ defmodule Mx.RecordingTest do
 
   test "the report gives the length and the peak, and warns of clips", %{tmp_dir: dir} do
     clean = Path.join(dir, "clean.wav")
-    File.write!(clean, wav(List.duplicate({4_194_304, 0}, 24_000)))
+    half = List.duplicate({4_194_304, 0}, 24_000)
+    File.write!(clean, wav(half))
     assert Recording.report(clean) == ["Recorded 0.5 seconds to #{clean}, peaking at -6.0 dB."]
 
     clipped = Path.join(dir, "clipped.wav")
@@ -108,7 +110,8 @@ defmodule Mx.RecordingTest do
 
   test "reads a 32-bit float recording, where a sample beyond full scale clips", %{tmp_dir: dir} do
     clean = Path.join(dir, "float.wav")
-    File.write!(clean, float_wav(List.duplicate({0.5, -0.25}, 24_000)))
+    half = List.duplicate({0.5, -0.25}, 24_000)
+    File.write!(clean, float_wav(half))
     assert Recording.report(clean) == ["Recorded 0.5 seconds to #{clean}, peaking at -6.0 dB."]
 
     loud = Path.join(dir, "loud.wav")

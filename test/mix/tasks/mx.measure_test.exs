@@ -39,7 +39,7 @@ defmodule Mix.Tasks.Mx.MeasureTest do
       assert length(figures) > 60
 
       for [_, value | mark] <- figures do
-        assert abs(String.to_float(value)) > 2 == (mark != []),
+        assert value |> String.to_float() |> abs() > 2 == (mark != []),
                "#{value} dB is marked #{inspect(mark)}"
       end
     end
@@ -194,7 +194,8 @@ defmodule Mix.Tasks.Mx.MeasureTest do
       assert_in_delta String.to_float(lowest), hz, 1.5
     end
 
-    assert length(Regex.scan(~r/^  hit \d, (c4|cs4|d4): /m, output)) == 6
+    matches = Regex.scan(~r/^  hit \d, (c4|cs4|d4): /m, output)
+    assert length(matches) == 6
   end
 
   @tag :engine
@@ -222,7 +223,8 @@ defmodule Mix.Tasks.Mx.MeasureTest do
     assert output =~ ~r/^ +18[34]\d\.\d Hz +9\.[12]\d +-(9|10)\.\d dB +(0\.9\d|1\.0\d) s$/m
 
     two = capture_io(fn -> Mix.Tasks.Mx.Measure.run(["--hits", path, "--partials", "2"]) end)
-    assert length(Regex.scan(~r/^ +\d+\.\d Hz/m, two)) == 2
+    matches = Regex.scan(~r/^ +\d+\.\d Hz/m, two)
+    assert length(matches) == 2
   end
 
   test "with --hits, prints each band's level at 0, 50, 100 and 200 ms after the loudest moment",
@@ -748,8 +750,8 @@ defmodule Mix.Tasks.Mx.MeasureTest do
         assert length(rows) >= 5, output
 
         for {fade, level} <- rows do
-          assert abs(String.to_integer(fade)) <= 30, output
-          assert abs(String.to_float(level)) <= 6, output
+          assert fade |> String.to_integer() |> abs() <= 30, output
+          assert level |> String.to_float() |> abs() <= 6, output
         end
       end
     end
@@ -801,8 +803,8 @@ defmodule Mix.Tasks.Mx.MeasureTest do
         assert length(rows) >= 4, output
 
         for {fade, level} <- rows do
-          assert abs(String.to_integer(fade)) <= 30, output
-          assert abs(String.to_float(level)) <= 6, output
+          assert fade |> String.to_integer() |> abs() <= 30, output
+          assert level |> String.to_float() |> abs() <= 6, output
         end
       end
     end
@@ -842,8 +844,8 @@ defmodule Mix.Tasks.Mx.MeasureTest do
       assert length(rows) == 6, output
 
       for {fade, level} <- rows do
-        assert abs(String.to_integer(fade)) <= 30, output
-        assert abs(String.to_float(level)) <= 6, output
+        assert fade |> String.to_integer() |> abs() <= 30, output
+        assert level |> String.to_float() |> abs() <= 6, output
       end
     end
   end
@@ -877,8 +879,8 @@ defmodule Mix.Tasks.Mx.MeasureTest do
         assert length(rows) == 10, output
 
         for {fade, level} <- rows do
-          assert abs(String.to_integer(fade)) <= 30, output
-          assert abs(String.to_float(level)) <= 6, output
+          assert fade |> String.to_integer() |> abs() <= 30, output
+          assert level |> String.to_float() |> abs() <= 6, output
         end
       end
     end
@@ -920,8 +922,8 @@ defmodule Mix.Tasks.Mx.MeasureTest do
         assert length(rows) == 10, output
 
         for {fade, level} <- rows do
-          assert abs(String.to_integer(fade)) <= 30, output
-          assert abs(String.to_float(level)) <= 6, output
+          assert fade |> String.to_integer() |> abs() <= 30, output
+          assert level |> String.to_float() |> abs() <= 6, output
         end
       end
     end
@@ -965,8 +967,10 @@ defmodule Mix.Tasks.Mx.MeasureTest do
         assert length(rows) == 8, output
 
         for {low, fade, level} <- rows do
-          assert abs(String.to_float(level)) <= 6, output
-          assert (layer == 2 and low >= 1000) or abs(String.to_integer(fade)) <= 30, output
+          assert level |> String.to_float() |> abs() <= 6, output
+
+          assert (layer == 2 and low >= 1000) or fade |> String.to_integer() |> abs() <= 30,
+                 output
         end
       end
     end

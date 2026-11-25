@@ -286,7 +286,7 @@ defmodule ValseDuZinc do
     |> Enum.chunk_by(& &1)
     |> Enum.flat_map(fn run ->
       for {chord, index} <- Enum.with_index(run) do
-        note(Enum.at(@pairs[chord], rem(index, 2)), 3, vel: 0.45, attack: 0.3, release: 0.4)
+        @pairs[chord] |> Enum.at(rem(index, 2)) |> note(3, vel: 0.45, attack: 0.3, release: 0.4)
       end
     end)
     |> seq()
@@ -300,7 +300,7 @@ defmodule ValseDuZinc do
     |> Enum.flat_map(fn run ->
       for {chord, index} <- Enum.with_index(run) do
         {basses, notes} = @chords[chord]
-        {pitch(Enum.at(basses, rem(index, 2))), Enum.map(notes, &pitch/1)}
+        {basses |> Enum.at(rem(index, 2)) |> pitch(), Enum.map(notes, &pitch/1)}
       end
     end)
   end

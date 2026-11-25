@@ -394,7 +394,9 @@ defmodule ColdFront do
       "s" => {6, 3, -4}
     }
 
-    seq(List.wrap(patterns), fn pattern ->
+    patterns
+    |> List.wrap()
+    |> seq(fn pattern ->
       cells = pattern |> String.replace(" ", "") |> String.graphemes()
 
       hits =

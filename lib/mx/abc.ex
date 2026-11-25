@@ -177,7 +177,7 @@ defmodule Mx.ABC do
         state = %{
           meter: tune.meter,
           unit: tune.unit || default_unit(tune.meter),
-          fifths: fifths(String.trim_leading(key, "K:")),
+          fifths: key |> String.trim_leading("K:") |> fifths(),
           tempo: tune.tempo
         }
 
@@ -371,16 +371,8 @@ defmodule Mx.ABC do
   end
 
   defp update_voice(acc, id, fun) do
-    %{
-      acc
-      | voices:
-          List.keyreplace(
-            acc.voices,
-            id,
-            0,
-            {id, fun.(elem(List.keyfind!(acc.voices, id, 0), 1))}
-          )
-    }
+    voice = acc.voices |> List.keyfind!(id, 0) |> elem(1) |> fun.()
+    %{acc | voices: List.keyreplace(acc.voices, id, 0, {id, voice})}
   end
 
   defp music(acc, line, index) do
@@ -393,10 +385,9 @@ defmodule Mx.ABC do
   defp tokens(line, at, index, acc) do
     case Regex.run(@token, line, offset: at, capture: :all_names, return: :index) do
       nil ->
-        throw(
-          {:unreadable, index,
-           inspect(String.slice(binary_part(line, at, byte_size(line) - at), 0, 1))}
-        )
+        rest = binary_part(line, at, byte_size(line) - at)
+        first = String.slice(rest, 0, 1)
+        throw({:unreadable, index, inspect(first)})
 
       captures ->
         {kind, {start, length}} =

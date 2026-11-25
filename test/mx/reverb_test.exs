@@ -34,7 +34,11 @@ defmodule Mx.ReverbTest do
     Enum.slice(samples, round(from * @rate)..(round(to * @rate) - 1))
   end
 
-  defp rms(samples), do: :math.sqrt(Enum.sum_by(samples, &(&1 * &1)) / length(samples))
+  defp rms(samples) do
+    squares = Enum.sum_by(samples, &(&1 * &1))
+    :math.sqrt(squares / length(samples))
+  end
+
   defp db(level), do: 20 * :math.log10(max(level, 1.0e-12))
 
   defp first_sound(samples) do
@@ -57,7 +61,8 @@ defmodule Mx.ReverbTest do
         re * re + im * im
       end
 
-    10 * :math.log10(Enum.sum(powers) / length(powers))
+    mean = Enum.sum(powers) / length(powers)
+    10 * :math.log10(mean)
   end
 
   @tag :engine

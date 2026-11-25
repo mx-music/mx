@@ -121,10 +121,9 @@ defmodule Tani do
 
   # The first lesson, a stroke to every half beat and softly, then at speed.
   defp lesson do
-    seq([
-      say(List.duplicate("tha . dhi . thom . nam .", 4), 4, 0.25, 0.5),
-      say(List.duplicate("tha dhi thom nam", 8))
-    ])
+    slow = List.duplicate("tha . dhi . thom . nam .", 4)
+    fast = List.duplicate("tha dhi thom nam", 8)
+    seq([say(slow, 4, 0.25, 0.5), say(fast)])
   end
 
   # Four cycles of the pattern that keeps the tala, the second pair with the left hand bending the
@@ -166,7 +165,9 @@ defmodule Tani do
     words = rows |> List.wrap() |> Enum.join(" ") |> String.split()
     beats = length(words) / per_beat
 
-    together(Keyword.keys(@strokes), fn stroke ->
+    @strokes
+    |> Keyword.keys()
+    |> together(fn stroke ->
       hits =
         for {word, index} <- Enum.with_index(words),
             word != ".",

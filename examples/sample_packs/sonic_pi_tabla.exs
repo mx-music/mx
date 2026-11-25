@@ -86,7 +86,7 @@ defmodule Kaida do
       hits =
         for {word, index} <- Enum.with_index(words),
             word != ".",
-            stroke = elem(Map.fetch!(@bols, word), hand),
+            stroke = @bols |> Map.fetch!(word) |> elem(hand),
             stroke != nil do
           stroke = if stroke == :tabla_te1 and rem(index, 2) == 1, do: :tabla_te2, else: stroke
           amp = if rem(index, per_beat) == 0, do: 1.0, else: 0.65

@@ -51,7 +51,9 @@ defmodule Mx.Examples.EffectsTest do
       assert [_all, beats, bpm, effects] =
                Regex.run(~r/^\w+, ([\d.]+) beats at ([\d.]+) bpm, through (.+)$/, header)
 
-      assert effects |> String.split(" then ") |> Enum.map(&hd(String.split(&1, " "))) == [
+      assert effects
+             |> String.split(" then ")
+             |> Enum.map(fn effect -> effect |> String.split(" ") |> hd() end) == [
                @effect
              ]
 

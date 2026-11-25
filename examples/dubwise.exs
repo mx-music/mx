@@ -147,7 +147,7 @@ defmodule Dubwise do
       part(
         :melodica,
         together([
-          seq([legato(Enum.take(phrase(:a), 11)), rest(8)]),
+          seq([first_notes(:a, 11), rest(8)]),
           throw(:melodica, 0, 12, 16, 0.5)
         ])
       ),
@@ -288,7 +288,7 @@ defmodule Dubwise do
         part(
           :melodica,
           together([
-            at([{16, legato(Enum.take(phrase(:a), 5))}], 32),
+            at([{16, first_notes(:a, 5)}], 32),
             throw(:melodica, 16, 28, 32, 0.6),
             at(
               [
@@ -381,7 +381,7 @@ defmodule Dubwise do
           :skank,
           together([delay(seq(7..8, &skank/1), 24), throw(:skank, 24, 31, 32)])
         ),
-        part(:melodica, at([{24, legato(Enum.drop(phrase(:b), 12))}], 32)),
+        part(:melodica, at([{24, notes_after(:b, 12)}], 32)),
         part(:siren, at([{26, siren()}], 32))
       ] ++ hands(1..8)
     )
@@ -592,6 +592,9 @@ defmodule Dubwise do
   # Each run of different notes slurred into one held note that slides between them, moved by some
   # semitones; a rest, a repeated note or a note on the beat starts a new note, as the player
   # tongues it.
+  defp first_notes(name, count), do: name |> phrase() |> Enum.take(count) |> legato()
+  defp notes_after(name, count), do: name |> phrase() |> Enum.drop(count) |> legato()
+
   defp legato(notes, shift \\ 0) do
     slur(transpose(seq(notes), shift),
       tongue: fn beat, from, to -> from == to or beat == trunc(beat) end

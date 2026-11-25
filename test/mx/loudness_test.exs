@@ -126,7 +126,7 @@ defmodule Mx.LoudnessTest do
     {:ok, output, out} = render(ctx, song(ctx, -20), loudness: -23)
     assert_in_delta Loudness.measure(out), -23, 0.2
     assert output =~ ~r/peaking at -23\.\d dB, loudness -23\.0 LUFS\.$/m
-    assert byte_size(File.read!(out)) == byte_size(plain)
+    assert out |> File.read!() |> byte_size() == byte_size(plain)
     assert %{channels: 2, rate: 48_000} = Mx.Recording.read_wav(out)
 
     {:ok, output, out} = render(ctx, song(ctx, -20), loudness: -12)

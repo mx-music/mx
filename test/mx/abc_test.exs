@@ -257,7 +257,7 @@ defmodule Mx.ABCTest do
     out = Path.join(dir, "band.abc")
     output = capture_io(fn -> Export.run([song, "--out", out]) end)
 
-    assert length(String.split(output, "ABC leaves out")) == 2
+    assert output |> String.split("ABC leaves out") |> length() == 2
     assert output =~ "ABC leaves out velocity, the pedal, each part's synth and its effects\n"
     assert output =~ "kick is left out: it plays no notes with a pitch\n"
     assert Regex.scan(~r/^V:\d+ name=/m, File.read!(out)) == [["V:1 name="], ["V:2 name="]]

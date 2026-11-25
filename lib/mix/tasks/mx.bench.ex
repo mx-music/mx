@@ -34,13 +34,13 @@ defmodule Mix.Tasks.Mx.Bench do
 
     case OptionParser.parse!(args, strict: strict) do
       {opts, ["lead", path]} ->
-        report(Bench.lead(path, seconds(opts), live(opts)), &lead/1, opts)
+        path |> Bench.lead(seconds(opts), live(opts)) |> report(&lead/1, opts)
 
       {opts, ["saves", path]} ->
         report(saves(path, opts), &saved/1, opts)
 
       {opts, ["buffers" | [_ | _] = paths]} ->
-        report(Bench.buffers(paths, seconds(opts), live(opts)), &buffers/1, opts)
+        paths |> Bench.buffers(seconds(opts), live(opts)) |> report(&buffers/1, opts)
 
       _other ->
         Mx.Command.fail(

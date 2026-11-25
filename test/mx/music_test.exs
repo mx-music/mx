@@ -396,7 +396,7 @@ defmodule Mx.MusicTest do
       assert events(first, :a) == events(second, :a)
 
       felt = for {beat, _note, opts} <- events(first, :a), do: {beat, opts[:vel]}
-      assert length(Enum.uniq(felt)) == 8
+      assert felt |> Enum.uniq() |> length() == 8
 
       for {{beat, vel}, step} <- Enum.with_index(felt) do
         assert abs(beat - step * 0.25) <= 0.01

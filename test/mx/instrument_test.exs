@@ -45,7 +45,7 @@ defmodule Mx.InstrumentTest do
     flute = render(Mx.Instruments.Flute, :flute, note: 72, vel: 0.6, sustain: 0.5)
     assert peak(marimba) > 0.01
     assert peak(flute) > 0.01
-    assert peak(Enum.drop(flute, round(0.9 * 48_000))) < 1.0e-4
+    assert flute |> Enum.drop(round(0.9 * 48_000)) |> peak() < 1.0e-4
   end
 
   test "the tabla plays the clause its bol matches, at the bol's own pitch unless the note gives one" do
@@ -230,7 +230,7 @@ defmodule Mx.InstrumentTest do
       {first, rest} = Enum.split(render(module, :scaled, []), quarter)
       second = Enum.take(rest, quarter)
       assert peak(first) > 0.1
-      assert peak(Enum.zip_with(first, second, &(&1 - &2))) < 1.0e-3
+      assert first |> Enum.zip_with(second, &(&1 - &2)) |> peak() < 1.0e-3
     end
 
     test "worked out as 1 divided by a tremolo of 0 plays once, as without every:", %{

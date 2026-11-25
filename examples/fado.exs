@@ -187,7 +187,7 @@ defmodule Fado do
     }
 
     chord = fn step -> if rem(step, 2) == 0, do: thumb(vel, step), else: strum(vel, step) end
-    steps(Enum.map(chords, &bars[&1]), 0.5, each: chord)
+    chords |> Enum.map(&bars[&1]) |> steps(0.5, each: chord)
   end
 
   defp thumb(vel, step), do: [vel: vel + 0.08 + wobble(step, 0.04), sustain: 0.45, release: 0.3]
@@ -200,14 +200,14 @@ defmodule Fado do
   defp baixo(chords, vel) do
     bars = %{dm: ~MX"d3 a2", a7: ~MX"a2 e3", eb: ~MX"eb3 bb2"}
     loud = fn step -> [vel: vel + wobble(step, 0.05), sustain: 0.8, release: 0.3] end
-    steps(Enum.map(chords, &bars[&1]), 1, each: loud)
+    chords |> Enum.map(&bars[&1]) |> steps(1, each: loud)
   end
 
   # The guitarra's bars, each note on two strings: the second a few cents sharp and a moment late,
   # an octave up below the third course.
   defp plucked(bars, vel) do
     first = steps(bars, 0.25, each: &dedilho(vel, &1))
-    second = steps(Enum.map(bars, &paired/1), 0.25, each: &dedilho(vel * 0.62, &1))
+    second = bars |> Enum.map(&paired/1) |> steps(0.25, each: &dedilho(vel * 0.62, &1))
 
     together([
       swing(first, &placed/1),

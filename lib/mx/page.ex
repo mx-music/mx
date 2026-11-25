@@ -32,7 +32,8 @@ defmodule Mx.Page do
            {:ok, data} <- data(song, path, Recording.seconds(wav_path)) do
         title = Keyword.get_lazy(opts, :title, fn -> title(path) end)
         audio = mp3_path |> File.read!() |> Base.encode64()
-        File.write!(out, html(Map.merge(data, %{title: title, audio: audio})))
+        page = data |> Map.merge(%{title: title, audio: audio}) |> html()
+        File.write!(out, page)
       end
     after
       File.rm(wav_path)
@@ -227,8 +228,11 @@ defmodule Mx.Page do
   end
 
   defp sounds({:sample, _, path}, opts, _synth, files, lasts) do
-    span = abs(Keyword.get(opts, :finish, 1) - Keyword.get(opts, :start, 0))
-    whole = Float.round(files[path] * span / abs(Keyword.get(opts, :rate, 1)), 3)
+    finish = Keyword.get(opts, :finish, 1)
+    start = Keyword.get(opts, :start, 0)
+    span = abs(finish - start)
+    rate = opts |> Keyword.get(:rate, 1) |> abs()
+    whole = Float.round(files[path] * span / rate, 3)
 
     case opts[:sustain] do
       sustain when is_number(sustain) and sustain >= 0 ->

@@ -20,8 +20,8 @@ defmodule Mix.Tasks.Mx.SpectrogramTest do
       Spectrogram.run([high, "--out", Path.join(ctx.tmp_dir, "high.png")])
     end)
 
-    {low_width, height, low_rows} = read_png(Path.join(ctx.tmp_dir, "a4.png"))
-    {high_width, ^height, high_rows} = read_png(Path.join(ctx.tmp_dir, "high.png"))
+    {low_width, height, low_rows} = ctx.tmp_dir |> Path.join("a4.png") |> read_png()
+    {high_width, ^height, high_rows} = ctx.tmp_dir |> Path.join("high.png") |> read_png()
 
     assert high_width == 2 * low_width
     assert brightest(high_rows, div(high_width, 2)) < brightest(low_rows, div(low_width, 2))
@@ -35,11 +35,11 @@ defmodule Mix.Tasks.Mx.SpectrogramTest do
     low = write_wav(ctx, "a4.wav", sine(440, 2))
     high = write_wav(ctx, "a5.wav", sine(880, 4))
     capture_io(fn -> Spectrogram.run([low]) end)
-    {_width, height, alone} = read_png(Path.join(ctx.tmp_dir, "a4.png"))
+    {_width, height, alone} = ctx.tmp_dir |> Path.join("a4.png") |> read_png()
 
     args = [low, high, "--from", "0.5", "--seconds", "1", "--per-second", "40", "--window", "20"]
     assert capture_io(fn -> Spectrogram.run(args) end) =~ "Wrote #{ctx.tmp_dir}/a4.png"
-    {width, stacked, rows} = read_png(Path.join(ctx.tmp_dir, "a4.png"))
+    {width, stacked, rows} = ctx.tmp_dir |> Path.join("a4.png") |> read_png()
 
     assert width == 40
     assert stacked == 2 * height
@@ -62,7 +62,7 @@ defmodule Mix.Tasks.Mx.SpectrogramTest do
     args = [path, "--from", "0.1", "--seconds", "0.4", "--per-second", "200", "--window", "10"]
     capture_io(fn -> Spectrogram.run(args) end)
 
-    {width, height, rows} = read_png(Path.join(ctx.tmp_dir, "two.png"))
+    {width, height, rows} = ctx.tmp_dir |> Path.join("two.png") |> read_png()
     assert {^width, ^height, before} = read_png("test/support/spectrograms/in_elixir.png")
 
     drawn = rows |> IO.iodata_to_binary() |> :binary.bin_to_list()
@@ -73,7 +73,7 @@ defmodule Mix.Tasks.Mx.SpectrogramTest do
   test "reads AIFF and stereo recordings as it reads a mono WAV", ctx do
     samples = sine(440, 1)
     capture_io(fn -> Spectrogram.run([write_wav(ctx, "mono.wav", samples)]) end)
-    expected = read_png(Path.join(ctx.tmp_dir, "mono.png"))
+    expected = ctx.tmp_dir |> Path.join("mono.png") |> read_png()
 
     stereo =
       for sample <- samples, into: <<>>, do: <<sample::float-little-32, sample::float-little-32>>
@@ -104,21 +104,21 @@ defmodule Mix.Tasks.Mx.SpectrogramTest do
     for name <- ["stereo", "big"] do
       [path] = ctx.tmp_dir |> Path.join(name <> ".*") |> Path.wildcard()
       capture_io(fn -> Spectrogram.run([path]) end)
-      assert read_png(Path.join(ctx.tmp_dir, name <> ".png")) == expected
+      assert ctx.tmp_dir |> Path.join(name <> ".png") |> read_png() == expected
     end
   end
 
   test "--no-seconds leaves out the line at each second and keeps the line at each octave", ctx do
     path = write_wav(ctx, "quiet.wav", sine(440, 2))
     capture_io(fn -> Spectrogram.run([path]) end)
-    {_, height, lined} = read_png(Path.join(ctx.tmp_dir, "quiet.png"))
+    {_, height, lined} = ctx.tmp_dir |> Path.join("quiet.png") |> read_png()
     capture_io(fn -> Spectrogram.run([path, "--no-seconds"]) end)
-    {200, ^height, bare} = read_png(Path.join(ctx.tmp_dir, "quiet.png"))
+    {200, ^height, bare} = ctx.tmp_dir |> Path.join("quiet.png") |> read_png()
 
     line = <<60, 60, 60>>
-    assert binary_part(Enum.at(lined, 10), 100 * 3, 3) == line
-    assert binary_part(Enum.at(bare, 10), 100 * 3, 3) == <<0, 0, 0>>
-    assert binary_part(Enum.at(bare, 10), 0, 3) == <<0, 0, 0>>
+    assert lined |> Enum.at(10) |> binary_part(100 * 3, 3) == line
+    assert bare |> Enum.at(10) |> binary_part(100 * 3, 3) == <<0, 0, 0>>
+    assert bare |> Enum.at(10) |> binary_part(0, 3) == <<0, 0, 0>>
     assert Enum.at(bare, 47) == :binary.copy(line, 200)
   end
 
@@ -128,7 +128,7 @@ defmodule Mix.Tasks.Mx.SpectrogramTest do
     before = List.duplicate(0.0, round(5.15 * 48_000))
     path = write_wav(ctx, "click.wav", before ++ click ++ List.duplicate(0.0, 5 * 48_000))
     capture_io(fn -> Spectrogram.run([path, "--width", "50"]) end)
-    {width, _height, rows} = read_png(Path.join(ctx.tmp_dir, "click.png"))
+    {width, _height, rows} = ctx.tmp_dir |> Path.join("click.png") |> read_png()
 
     assert width == 50
     lit = for row <- rows, column <- 0..49, binary_part(row, column * 3, 1) == <<255>>, do: column

@@ -65,6 +65,9 @@ defmodule HouseKit do
   part :bass, synth: :low_tom, fx: [level: [amp: 2.0]] ++ @room
 
   def song do
+    all_bars = Enum.to_list(0..7)
+    first_bars = Enum.to_list(0..3)
+    last_bars = Enum.to_list(4..7)
     busier_bars = Enum.take(busier(), 4)
     turnaround = List.replace_at(busier_bars, 3, "......6..7.8")
 
@@ -72,17 +75,17 @@ defmodule HouseKit do
       intro(),
       mambo(),
       mambo_bell(setup()),
-      swing(Enum.to_list(0..7), comping(), feathered(8, %{0 => "7..3..3..3.."})),
+      swing(all_bars, comping(), feathered(8, %{0 => "7..3..3..3.."})),
       swing(
-        Enum.to_list(0..7),
+        all_bars,
         busier(),
         feathered(8, %{0 => "7..3..3..3..", 3 => "3..3....6..3", 5 => "3....6.3..3."})
       ),
       first_four(),
-      swing(Enum.to_list(0..3), Enum.take(comping(), 4), feathered(4, %{0 => "8..3..3..3.."})),
+      swing(first_bars, Enum.take(comping(), 4), feathered(4, %{0 => "8..3..3..3.."})),
       second_four(),
       swing(
-        Enum.to_list(4..7),
+        last_bars,
         turnaround,
         feathered(4, %{0 => "8..3..3..3.."})
       ),

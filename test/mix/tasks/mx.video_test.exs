@@ -42,11 +42,11 @@ defmodule Mix.Tasks.Mx.VideoTest do
     assert capture_io(fn -> Video.run([path]) end) =~
              ~r/^Wrote #{ctx.tmp_dir}\/tone.mp4, 2.0 seconds and 0.\d MB\n$/
 
-    frames = frames(Path.join(ctx.tmp_dir, "tone.mp4"), 1500, 150)
+    frames = ctx.tmp_dir |> Path.join("tone.mp4") |> frames(1500, 150)
     assert length(frames) == 60
 
     bars = fn frame ->
-      for left <- 40..1456//3, {_red, green, _blue} = pixel(Enum.at(frame, 75), left) do
+      for left <- 40..1456//3, {_red, green, _blue} = frame |> Enum.at(75) |> pixel(left) do
         if green > 130, do: :amber, else: :grey
       end
     end
@@ -62,7 +62,7 @@ defmodule Mix.Tasks.Mx.VideoTest do
     path = write(ctx, "tone.wav", tone(20, fn _ -> 0.5 end))
     capture_io(fn -> Video.run([path, "--picture", "spectrogram"]) end)
 
-    frames = frames(Path.join(ctx.tmp_dir, "tone.mp4"), 1500, 480)
+    frames = ctx.tmp_dir |> Path.join("tone.mp4") |> frames(1500, 480)
     top = frames |> Enum.at(div(length(frames), 2)) |> Enum.at(10)
 
     white =
@@ -111,7 +111,7 @@ defmodule Mix.Tasks.Mx.VideoTest do
 
     assert File.read!(out) == "kept"
     capture_io(fn -> Video.run([path, "--force"]) end)
-    assert byte_size(File.read!(out)) > 1000
+    assert out |> File.read!() |> byte_size() > 1000
   end
 
   defp tone(seconds, level) do

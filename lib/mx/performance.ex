@@ -43,7 +43,7 @@ defmodule Mx.Performance do
       {seconds, costs, levels} =
         Native.align(data, native_format(format), format.rate / 1, frames, @hop, @free)
 
-      at = second_at(List.to_tuple(seconds), step)
+      at = seconds |> List.to_tuple() |> second_at(step)
 
       if length(seconds) < length(frames) do
         played = (length(seconds) - 1) * step
@@ -80,7 +80,7 @@ defmodule Mx.Performance do
   end
 
   defp once(score) do
-    if length(Enum.uniq(score.order)) == length(score.order) do
+    if score.order |> Enum.uniq() |> length() == length(score.order) do
       :ok
     else
       {:error, "a score that repeats bars cannot take a recording's timing yet"}

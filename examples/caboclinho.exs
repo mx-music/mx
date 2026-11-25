@@ -146,7 +146,7 @@ defmodule Caboclinho do
       U: [vel: accent, up: 1]
     ]
 
-    steps(List.duplicate(beat, 16), sixteenth(toque), strokes: strokes)
+    beat |> List.duplicate(16) |> steps(sixteenth(toque), strokes: strokes)
   end
 
   # The tarol's bar in sixteenths, and the fourth bar of each four, which varies.
@@ -180,7 +180,7 @@ defmodule Caboclinho do
   # one is mx's own.
   defp preacas(toque) do
     bar = if toque == :baiao, do: ~MX"x...x..."s, else: ~MX"x......."s
-    steps(List.duplicate(bar, 8), sixteenth(toque), vel: 0.7)
+    bar |> List.duplicate(8) |> steps(sixteenth(toque), vel: 0.7)
   end
 
   # The atabaque of macumba do índio, written for mx: the bass tone on the beats and slaps between
@@ -195,7 +195,8 @@ defmodule Caboclinho do
       s5: [slap: 1, vel: 0.5]
     ]
 
-    steps(List.duplicate(~MX"8 _ s5 6 | 7 _ s6 _", 8), sixteenth(:macumba), strokes: strokes)
+    pattern = List.duplicate(~MX"8 _ s5 6 | 7 _ s6 _", 8)
+    steps(pattern, sixteenth(:macumba), strokes: strokes)
   end
 
   defp atabaque(toque), do: rest(16 * unit(toque))

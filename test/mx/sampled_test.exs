@@ -29,7 +29,7 @@ defmodule Mx.SampledTest do
   defp folder(dir, name, files, seconds \\ 0.5) do
     folder = Path.join(dir, name)
     File.mkdir_p!(folder)
-    for file <- files, do: wav(Path.join(folder, file), seconds)
+    for file <- files, do: folder |> Path.join(file) |> wav(seconds)
     folder
   end
 
@@ -44,21 +44,23 @@ defmodule Mx.SampledTest do
       for take <- 1..2,
           do: {{:virtuosity_drums, "Samples/kickmic/kick/kickmic_kick_vl1_rr#{take}.flac"}, []}
 
-    assert to_string(Sampled.new(kick)) ==
+    assert kick |> Sampled.new() |> to_string() ==
              "sampled instrument Samples/kickmic/kick of virtuosity_drums"
 
-    assert to_string(Sampled.new([{"keys/c4.wav", note: 60}, {"keys/soft/c4.wav", note: 60}])) ==
+    assert [{"keys/c4.wav", note: 60}, {"keys/soft/c4.wav", note: 60}]
+           |> Sampled.new()
+           |> to_string() ==
              "sampled instrument keys"
 
     apart = [{"kick.wav", note: 36}, {"snare.wav", note: 38}, {"hat.wav", note: 42}]
-    assert to_string(Sampled.new(apart)) == "sampled instrument kick.wav and 2 others"
+    assert apart |> Sampled.new() |> to_string() == "sampled instrument kick.wav and 2 others"
 
     mixed = [{{:vcsl, "Drums/kick.wav"}, note: 36}, {"Drums/snare.wav", note: 38}]
-    assert to_string(Sampled.new(mixed)) == "sampled instrument kick.wav and 1 other"
+    assert mixed |> Sampled.new() |> to_string() == "sampled instrument kick.wav and 1 other"
 
     folder = {:vcsl, "Idiophones/Plucked Idiophones/Mbira dzaVadzimu Nyamaropa, Zimbabwe, Low B"}
 
-    assert to_string(Sampled.new(folder)) ==
+    assert folder |> Sampled.new() |> to_string() ==
              "sampled instrument Idiophones/Plucked Idiophones/Mbira dzaVadzimu Nyamaropa, Zimbabwe, Low B of vcsl"
   end
 
@@ -142,8 +144,8 @@ defmodule Mx.SampledTest do
   end
 
   test "a list of files gives each its note, strength and take", %{tmp_dir: dir} do
-    low = wav(Path.join(dir, "low.wav"), 0.5)
-    high = wav(Path.join(dir, "high.wav"), 0.5)
+    low = dir |> Path.join("low.wav") |> wav(0.5)
+    high = dir |> Path.join("high.wav") |> wav(0.5)
 
     {:ok, song} =
       load(dir, """

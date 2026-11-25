@@ -320,10 +320,10 @@ defmodule Mx.InstrumentSongTest do
     assert peak(dry) > 0.01
 
     {left, _} = zeroed(ctx, "[silenced: []]")
-    assert peak(Enum.zip_with(left, dry, &(&1 - &2))) <= peak(dry) * 1.0e-5
+    assert left |> Enum.zip_with(dry, &(&1 - &2)) |> peak() <= peak(dry) * 1.0e-5
 
     {left, _} = zeroed(ctx, "[wetter: []]")
-    assert peak(Enum.zip_with(left, dry, &(&1 - &2))) <= peak(dry) * 1.0e-5
+    assert left |> Enum.zip_with(dry, &(&1 - &2)) |> peak() <= peak(dry) * 1.0e-5
     {left, _} = zeroed(ctx, "[wetter: [wet: 1]]")
     assert_in_delta peak(left), 2 * peak(dry), 1.0e-4
 

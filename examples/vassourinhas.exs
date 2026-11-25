@@ -173,9 +173,11 @@ defmodule Vassourinhas do
         {wind, slurred(mine, shift, 0.7, 2)}
       end
 
+    closing = Enum.filter(tune, fn {beat, _, _} -> beat >= 28 end)
+
     tutti =
       for {wind, shift} <- together_at_the_end, into: %{} do
-        {wind, slurred(Enum.filter(tune, fn {beat, _, _} -> beat >= 28 end), shift, 0.85, 2)}
+        {wind, slurred(closing, shift, 0.85, 2)}
       end
 
     line = bass(chords, 0, 38)
@@ -289,12 +291,14 @@ defmodule Vassourinhas do
             :bassoon,
             :tuba
           ] do
-        part(wind, at(Map.get(winds, wind, []), beats))
+        notes = Map.get(winds, wind, [])
+        part(wind, at(notes, beats))
       end
 
     drum_parts =
       for name <- [:caixa, :surdo, :pandeiro_thumb, :pandeiro_jingles] do
-        part(name, at(Map.get(percussion, name, []), beats))
+        strokes = Map.get(percussion, name, [])
+        part(name, at(strokes, beats))
       end
 
     together(wind_parts ++ drum_parts)
@@ -356,7 +360,7 @@ defmodule Vassourinhas do
         {name, held} =
           case String.split(word, ":") do
             [name] -> {name, 0.5}
-            [name, held] -> {name, elem(Float.parse(held), 0)}
+            [name, held] -> {name, held |> Float.parse() |> elem(0)}
           end
 
         if name == "r" do
@@ -419,7 +423,8 @@ defmodule Vassourinhas do
 
         {beat, pitch, _} = note, [{before, last, held} | _] = breath ->
           joined = pitch != last and abs(before + held - beat) < 0.01 and held < 1.5
-          same_span = trunc(beat / span) == trunc(elem(List.last(breath), 0) / span)
+          {first, _, _} = List.last(breath)
+          same_span = trunc(beat / span) == trunc(first / span)
 
           if joined and same_span do
             {:cont, [note | breath]}
@@ -532,7 +537,8 @@ defmodule Vassourinhas do
           length(chords) - 1
         )
 
-      {at, near(around, tone(Enum.at(chords, bar), place, key)), 0.25}
+      chord = Enum.at(chords, bar)
+      {at, near(around, tone(chord, place, key)), 0.25}
     end
   end
 

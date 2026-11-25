@@ -92,12 +92,13 @@ defmodule LunaDeCabarete do
   # The derecho: the requinto sings eight bars over A minor, D minor and E seventh.
   defp verse do
     chords = ~w(am dm e7 am am dm e7 am)a
+    strokes = List.duplicate(:derecho, 7) ++ [:roll]
 
     together([
       part(:requinto, tune()),
       part(:segunda, segunda(chords)),
       part(:bass, bass(chords)),
-      bongos(List.duplicate(:derecho, 7) ++ [:roll]),
+      bongos(strokes),
       part(:guira, guira(:derecho, 8))
     ])
   end
@@ -106,13 +107,14 @@ defmodule LunaDeCabarete do
   # seventh home.
   defp chorus do
     chords = ~w(f g c am dm e7 am am)a
+    strokes = List.duplicate(:majao, 7) ++ [:roll]
 
     together([
       part(:requinto, hook(0..7)),
       part(:second_voice, thirds(0..7)),
       part(:segunda, segunda(chords)),
       part(:bass, bass(chords)),
-      bongos(List.duplicate(:majao, 7) ++ [:roll]),
+      bongos(strokes),
       part(:guira, guira(:majao, 8))
     ])
   end
@@ -161,7 +163,7 @@ defmodule LunaDeCabarete do
       ~MX"_:5 e5 f5 g5"
     ]
 
-    plucked(Enum.slice(hook, bars), 0.85)
+    hook |> Enum.slice(bars) |> plucked(0.85)
   end
 
   # The voice under the hook, a third or a sixth below it.
@@ -177,7 +179,7 @@ defmodule LunaDeCabarete do
       ~MX"_:8"
     ]
 
-    plucked(Enum.slice(thirds, bars), 0.7)
+    thirds |> Enum.slice(bars) |> plucked(0.7)
   end
 
   # The verse's tune: a phrase that climbs the chord and falls back, asked twice and answered.
@@ -244,7 +246,7 @@ defmodule LunaDeCabarete do
       end
     end
 
-    steps(Enum.map(chords, &bars[&1]), 0.5, each: stroke)
+    chords |> Enum.map(&bars[&1]) |> steps(0.5, each: stroke)
   end
 
   # The bass's bar for each chord, an eighth to a step: the root on one and again on the and of
@@ -264,7 +266,7 @@ defmodule LunaDeCabarete do
       [vel: loud + wobble(step, 0.04), sustain: length / 2 - 0.1]
     end
 
-    steps(Enum.map(chords, &bars[&1]), 0.5, each: pluck)
+    chords |> Enum.map(&bars[&1]) |> steps(0.5, each: pluck)
   end
 
   # The bongos' bars, each named by what it plays.
@@ -277,7 +279,7 @@ defmodule LunaDeCabarete do
     ]
 
     drum = fn drum ->
-      steps(Enum.map(bars, fn bar -> bongo(bar)[drum] end), 0.25, strokes: strokes)
+      bars |> Enum.map(fn bar -> bongo(bar)[drum] end) |> steps(0.25, strokes: strokes)
     end
 
     together([part(:macho, drum.(:macho)), part(:hembra, drum.(:hembra))])

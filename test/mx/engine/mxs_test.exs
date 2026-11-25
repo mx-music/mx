@@ -48,7 +48,7 @@ defmodule Mx.Engine.MxsTest do
     test "sounds until it is let go, then falls silent over its release" do
       engine = offline([{0.0, {:held, 1, :piano, 60, [vel: 0.6], nil}}])
       before = render(engine, 5)
-      assert rms(Enum.take(before, -4_800)) > 1.0e-4
+      assert before |> Enum.take(-4_800) |> rms() > 1.0e-4
 
       :ok = Mxs.Native.play(engine, [{5.0, Mxs.event({:release, [1]})}])
       after_release = render(engine, 3)
@@ -65,8 +65,8 @@ defmodule Mx.Engine.MxsTest do
 
       sound = render(engine, 1.2)
       rate = Mxs.render_rate()
-      before = loudest_cents(Enum.slice(sound, round(0.85 * rate), round(0.1 * rate)), 392.0)
-      bent = loudest_cents(Enum.slice(sound, round(1.01 * rate), round(0.1 * rate)), 392.0)
+      before = sound |> Enum.slice(round(0.85 * rate), round(0.1 * rate)) |> loudest_cents(392.0)
+      bent = sound |> Enum.slice(round(1.01 * rate), round(0.1 * rate)) |> loudest_cents(392.0)
       assert_in_delta bent - before, 200, 10
     end
 
@@ -74,7 +74,7 @@ defmodule Mx.Engine.MxsTest do
       engine = offline([{0.0, {:held, 1, :saw, 60, [], nil}}, {1.0, {:stop, [1]}}])
       sound = render(engine, 1.5)
       rate = Mxs.render_rate()
-      assert rms(Enum.slice(sound, round(0.9 * rate), round(0.05 * rate))) > 0.01
+      assert sound |> Enum.slice(round(0.9 * rate), round(0.05 * rate)) |> rms() > 0.01
       assert sound |> Enum.drop(round(1.01 * rate)) |> Enum.all?(&(&1 == 0.0))
     end
   end
@@ -740,7 +740,10 @@ defmodule Mx.Engine.MxsTest do
     for <<sample::float-32-native <- left>>, do: sample
   end
 
-  defp rms(samples), do: :math.sqrt(Enum.sum_by(samples, &(&1 * &1)) / length(samples))
+  defp rms(samples) do
+    squares = Enum.sum_by(samples, &(&1 * &1))
+    :math.sqrt(squares / length(samples))
+  end
 
   # The cents from `hz`, in steps of 5 from -100 to 300, at which `samples` are loudest.
   defp loudest_cents(samples, hz) do

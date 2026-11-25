@@ -61,7 +61,8 @@ defmodule Mx.OSC do
   def decode(packet) when is_binary(packet) do
     {address, rest} = read_string(packet)
     {"," <> tags, rest} = read_string(rest)
-    {address, decode_args(String.graphemes(tags), rest)}
+    args = tags |> String.graphemes() |> decode_args(rest)
+    {address, args}
   end
 
   defp decode_elements(<<>>), do: []

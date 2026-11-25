@@ -117,8 +117,10 @@ defmodule Mx.Paired.Berimbau do
     wire_levels =
       Enum.zip_with([@wire_open, @wire_pressed, @wire_fit], fn [a, b, fit] -> mix.(a, b) + fit end)
 
+    strike = V.noise(:white, seed: 1) * perc(attack: 0.0002, release: 0.002) * 0.6
+
     wire =
-      mode(V.noise(:white, seed: 1) * perc(attack: 0.0002, release: 0.002) * 0.6,
+      mode(strike,
         hz: Enum.map(@wire, &elem(&1, 0)),
         level:
           Enum.map(@wire, fn {wf, _, long} ->
@@ -151,8 +153,10 @@ defmodule Mx.Paired.Berimbau do
 
     # With buzz, the coin rests on the wire and rattles against it; at 0 the rattle is silent,
     # where mxs leaves it out.
+    coin = V.pulse(hz: pitch, width: 0.08) * 0.5 + 0.42
+
     rattle =
-      highpass(V.pulse(hz: pitch, width: 0.08) * 0.5 + 0.42, hz: 1200) *
+      highpass(coin, hz: 1200) *
         perc(attack: 0.002, release: 0.12) *
         (buzz * 0.3)
 

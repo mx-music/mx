@@ -62,7 +62,7 @@ defmodule Mx.SongEffectsTest do
     {dry, _, _} = render(ctx, "song(tempo: 120, music: #{parts})")
     {halved, _, _} = render(ctx, "song(tempo: 120, fx: [level: [amp: 0.5]], music: #{parts})")
     assert peak(dry) > 0.05
-    assert peak(Enum.zip_with(dry, halved, &(&1 * 0.5 - &2))) < 1.0e-6
+    assert dry |> Enum.zip_with(halved, &(&1 * 0.5 - &2)) |> peak() < 1.0e-6
 
     silent = "seq([#{parts}, rest(2)])"
     {dry, _, _} = render(ctx, "song(tempo: 120, music: #{silent})")

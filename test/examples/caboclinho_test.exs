@@ -52,7 +52,8 @@ defmodule Mx.Examples.CaboclinhoTest do
       ends =
         for {beat, line} <- notes, do: beat + option(line, "sustain") + option(line, "release")
 
-      starts = tl(Enum.map(notes, &elem(&1, 0))) ++ [pass_beats(pass)]
+      later = notes |> Enum.map(&elem(&1, 0)) |> tl()
+      starts = later ++ [pass_beats(pass)]
 
       for {ending, start} <- Enum.zip(ends, starts), do: assert(ending <= start + 1.0e-9)
     end
@@ -173,7 +174,7 @@ defmodule Mx.Examples.CaboclinhoTest do
     number(value)
   end
 
-  defp number(text), do: elem(Float.parse(text), 0)
+  defp number(text), do: text |> Float.parse() |> elem(0)
 
   defp print(pass) do
     pass = Integer.to_string(pass)

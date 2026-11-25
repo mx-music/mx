@@ -43,7 +43,7 @@ defmodule Sitar do
 
             String.starts_with?(token, "~") ->
               [{start, pitch, held, glides} | rest] = plucks
-              glide = {beat - start, note: swara(String.trim_leading(token, "~"))}
+              glide = {beat - start, note: token |> String.trim_leading("~") |> swara()}
               [{start, pitch, held + beats, glides ++ [glide]} | rest]
 
             true ->
@@ -64,7 +64,8 @@ defmodule Sitar do
 
   # A gat part's notes over teentaal's 16 beats, the short ones softer.
   defp gat(time) do
-    words = for name <- ~w(.N D G G' M N P R R' S S')a, do: {name, swara(Atom.to_string(name))}
+    words =
+      for name <- ~w(.N D G G' M N P R R' S S')a, do: {name, name |> Atom.to_string() |> swara()}
 
     steps(cells(time), 1,
       words: words,

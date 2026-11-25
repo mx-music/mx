@@ -607,8 +607,12 @@ defmodule Mx.Loop do
 
     delay_ms =
       case beats do
-        [] -> max_ms
-        _ -> div(Band.time_at(timeline, Enum.min(beats)) - state.ahead_us - now, 1000)
+        [] ->
+          max_ms
+
+        _ ->
+          next = Band.time_at(timeline, Enum.min(beats))
+          div(next - state.ahead_us - now, 1000)
       end
 
     delay_ms |> max(0) |> min(max_ms)

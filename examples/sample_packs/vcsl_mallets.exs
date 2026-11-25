@@ -184,7 +184,7 @@ defmodule SevenStrokes do
     seq(
       for {chord, index} <- Enum.with_index(@chords), half <- 0..1 do
         count = if growing, do: min(index * 2 + half + 1, 7), else: 7
-        bar(Enum.take(@seven, count), chord.marimba)
+        @seven |> Enum.take(count) |> bar(chord.marimba)
       end
     )
   end

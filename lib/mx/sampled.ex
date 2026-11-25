@@ -102,7 +102,7 @@ defmodule Mx.Sampled do
       Enum.reduce_while(files, [], fn {file, opts}, found ->
         case local(file) do
           {:ok, path} ->
-            {:cont, [{path, Map.merge(describe(Path.basename(path)), listed(opts))} | found]}
+            {:cont, [{path, Map.merge(described(path), listed(opts))} | found]}
 
           {:error, message} ->
             {:halt, {:error, message}}
@@ -111,7 +111,7 @@ defmodule Mx.Sampled do
 
     case found do
       {:error, message} -> {:error, message}
-      found -> {:ok, %{sampled | keys: keys(Enum.reverse(found))}}
+      found -> {:ok, %{sampled | keys: found |> Enum.reverse() |> keys()}}
     end
   end
 
@@ -134,7 +134,7 @@ defmodule Mx.Sampled do
       |> Path.wildcard()
       |> Enum.sort()
       |> Enum.filter(&File.regular?/1)
-      |> Enum.map(&{&1, describe(Path.basename(&1))})
+      |> Enum.map(&{&1, described(&1)})
       |> Enum.reject(fn {_, described} -> described == %{} end)
 
     case files do
@@ -154,6 +154,8 @@ defmodule Mx.Sampled do
       other -> other
     end)
   end
+
+  defp described(path), do: path |> Path.basename() |> describe()
 
   @doc "The note, strength and take a file's name carries, each only when it carries one."
   def describe(name) when is_binary(name) do

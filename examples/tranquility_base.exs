@@ -195,6 +195,8 @@ defmodule TranquilityBase do
   # Sputnik over the ocean and the glasses, then Kennedy's challenge over the four chords bowed,
   # and a cymbal and a timpani roll rising to liftoff.
   defp signal do
+    third = Enum.at(chords(), 2)
+
     section(48,
       ocean: ocean(48),
       glass: seq([glasses(32, 0.16), glasses(16, 0.16)]),
@@ -204,7 +206,7 @@ defmodule TranquilityBase do
         at(
           [
             {16, note(hd(chords()).vibes, 8, vel: 0.45, strum: 0.08)},
-            {32, note(Enum.at(chords(), 2).vibes, 8, vel: 0.45, strum: 0.08)}
+            {32, note(third.vibes, 8, vel: 0.45, strum: 0.08)}
           ],
           48
         ),
@@ -248,6 +250,8 @@ defmodule TranquilityBase do
   # Apollo 13's problem stops the band, then a snare roll, a bass drum and a cymbal rise under the
   # landing, "The Eagle" cut and repeated ever higher, until "The Eagle has landed" alone.
   defp problem do
+    second = Enum.at(chords(), 1)
+
     roll =
       for {from, step} <- [{16, 1}, {20, 1 / 2}, {24, 1 / 3}, {28, 1 / 6}],
           count <- 0..(round(4 / step) - 1),
@@ -289,7 +293,7 @@ defmodule TranquilityBase do
       bowed:
         seq([
           pad(hd(chords())),
-          pad(Enum.at(chords(), 1)),
+          pad(second),
           note([:f4, :bb4, :d5], 14, vel: 0.8)
         ]),
       vibes: note(hd(chords()).vibes, 8, vel: 0.5, strum: 0.08),
@@ -530,8 +534,8 @@ defmodule TranquilityBase do
       for {{index, step}, stop} <- Enum.zip(starts, stops) do
         vel = if rem(index, 6) == 0, do: loud, else: soft
 
-        {index / 6,
-         note(Enum.at(notes, String.to_integer(step) - 1), (stop - index) / 6, vel: vel)}
+        played = Enum.at(notes, String.to_integer(step) - 1)
+        {index / 6, note(played, (stop - index) / 6, vel: vel)}
       end
 
     at(entries, total / 6)

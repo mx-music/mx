@@ -280,10 +280,11 @@ defmodule PlanxtyIrwin do
   defp strums do
     strum = fn chord ->
       notes = @strummed[chord]
+      down = Enum.reverse(notes)
 
       seq([
         note(notes, 2 * @eighth, strum: 0.03),
-        note(Enum.reverse(notes), @eighth, strum: 0.02, amp: 0.5)
+        note(down, @eighth, strum: 0.02, amp: 0.5)
       ])
     end
 
@@ -315,7 +316,7 @@ defmodule PlanxtyIrwin do
 
     bars =
       for _ <- 1..2, chord <- @chords.second do
-        seq(Enum.chunk_every(notes[chord], 2), fn [name, beats] -> note(name, beats) end)
+        notes[chord] |> Enum.chunk_every(2) |> seq(fn [name, beats] -> note(name, beats) end)
       end
 
     seq(bars)

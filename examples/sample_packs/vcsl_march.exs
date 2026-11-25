@@ -290,6 +290,7 @@ defmodule Parade do
   end
 
   defp tune(bars, times) do
-    repeat(seq(List.flatten(bars), fn {name, beats} -> note(name, beats) end), times)
+    notes = List.flatten(bars)
+    repeat(seq(notes, fn {name, beats} -> note(name, beats) end), times)
   end
 end

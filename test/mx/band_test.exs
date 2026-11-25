@@ -2266,7 +2266,7 @@ defmodule Mx.BandTest do
     bands = Enum.filter(bands, &Process.alive?/1)
     wakes = for band <- bands, pid <- loops(band), do: tick(pid)
     now = Clock.now()
-    next = max(Enum.min(wakes, fn -> :infinity end), now + 1000)
+    next = wakes |> Enum.min(fn -> :infinity end) |> max(now + 1000)
     Clock.advance(max(now, min(next, System.os_time(:microsecond))))
     Process.sleep(1)
     drive(bands)

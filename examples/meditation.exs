@@ -109,7 +109,8 @@ defmodule Meditation do
   defp flute(:gat, time) do
     base = sa() + 12
 
-    words = for name <- ~w(.D D G G' P R R' S S')a, do: {name, swara(Atom.to_string(name), base)}
+    words =
+      for name <- ~w(.D D G G' P R R' S S')a, do: {name, name |> Atom.to_string() |> swara(base)}
 
     steps(cells(gat(time)), 1,
       words: words,
@@ -151,7 +152,7 @@ defmodule Meditation do
 
             {changes, _} =
               Enum.map_reduce(glides, beats, fn {glide, length}, at ->
-                {{at, note: swara(String.trim_leading(glide, "~"), base)}, at + length}
+                {{at, note: glide |> String.trim_leading("~") |> swara(base)}, at + length}
               end)
 
             [
@@ -237,7 +238,7 @@ defmodule Meditation do
         ]
       end
 
-    at(List.flatten(strokes), 16)
+    strokes |> List.flatten() |> at(16)
   end
 
   defp dayan(_section), do: rest(16)
@@ -257,7 +258,8 @@ defmodule Meditation do
   # beat: D is the beat's stroke, d a softer one down and u one up.
   defp ganza(:gat) do
     strokes = [D: [vel: 0.22, up: 0], d: [vel: 0.14, up: 0], u: [vel: 0.14, up: 1]]
-    steps(List.duplicate(~MX"Dudu"s, 16), 0.25, strokes: strokes, amp: 1.5)
+    pattern = List.duplicate(~MX"Dudu"s, 16)
+    steps(pattern, 0.25, strokes: strokes, amp: 1.5)
   end
 
   defp ganza(_section), do: rest(16)

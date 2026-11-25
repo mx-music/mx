@@ -398,7 +398,7 @@ defmodule Dub do
   defp rimshot(bar) do
     ghosts = ring([[5.5], [2, 4], [5, 5.5], [1, 4, 5.5]], bar - 1)
     ghosts = for offset <- ghosts, do: {offset, hit(amp: 0.15)}
-    at(Enum.sort([{3, hit()} | ghosts]), 6)
+    [{3, hit()} | ghosts] |> Enum.sort() |> at(6)
   end
 
   # The parts thrown into the echo from one beat and brought back at another, within music of the

@@ -68,7 +68,8 @@ defmodule Mx.Examples.MidnightTest do
 
   test "the tihai's last Sa lands on the sam of shanti, with the tabla and the claves" do
     tihai = loop_part(print(16), "oboe")
-    assert length(Regex.scan(~r/control note: 68\.16, note_slide: 0\.06/, tihai)) == 3
+    matches = Regex.scan(~r/control note: 68\.16, note_slide: 0\.06/, tihai)
+    assert length(matches) == 3
 
     shanti = print(17)
     assert loop_part(shanti, "oboe") =~ ~r/\Abeat 0 +play 65\.0 /

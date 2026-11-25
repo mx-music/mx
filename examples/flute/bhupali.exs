@@ -155,7 +155,12 @@ defmodule Bhupali do
     [body | swell] = String.split(text, "@")
     [name, beats] = String.split(body, ":")
     {beats, ""} = Float.parse(beats)
-    swell = swell |> Enum.map(&elem(Float.parse(&1), 0)) |> List.first()
+
+    swell =
+      case swell do
+        [text | _] -> text |> Float.parse() |> elem(0)
+        [] -> nil
+      end
 
     case name do
       "~" <> swara -> {:glide, swara, beats, swell}

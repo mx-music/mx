@@ -47,7 +47,8 @@ defmodule Mx.Examples.MeditationTest do
 
   test "the gat ends with a tihai whose last Sa lands on the sam of shanti" do
     tihai = loop_part(print(15), "flute")
-    assert length(Regex.scan(~r/play 62\.0 /, tihai)) == 2
+    matches = Regex.scan(~r/play 62\.0 /, tihai)
+    assert length(matches) == 2
     assert loop_part(print(16), "flute") =~ ~r/\Abeat 0 +play 62\.0 /
   end
 

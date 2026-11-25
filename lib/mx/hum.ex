@@ -57,9 +57,8 @@ defmodule Mx.Hum do
         []
 
       pitched ->
-        states = [
-          :silence | Enum.to_list((floor(Enum.min(pitched)) - 1)..(ceil(Enum.max(pitched)) + 1))
-        ]
+        {low, high} = Enum.min_max(pitched)
+        states = [:silence | Enum.to_list((floor(low) - 1)..(ceil(high) + 1))]
 
         runs =
           pitches

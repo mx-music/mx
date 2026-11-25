@@ -107,7 +107,8 @@ defmodule Mx.Examples.BerimbauTest do
           true -> :open
         end
 
-      {elem(Float.parse(beat), 0), kind, opts}
+      {at, _} = Float.parse(beat)
+      {at, kind, opts}
     end
   end
 

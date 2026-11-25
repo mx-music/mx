@@ -27,7 +27,8 @@ defmodule Harmonium do
   # The right hand's line, each word a note held a little short of its length.
   defp right_hand(section, time) do
     words =
-      for name <- ~w(.d .N S r G M P d N S' r' G' M')a, do: {name, swara(Atom.to_string(name))}
+      for name <- ~w(.d .N S r G M P d N S' r' G' M')a,
+          do: {name, name |> Atom.to_string() |> swara()}
 
     steps(line(section, time), 1,
       words: words,

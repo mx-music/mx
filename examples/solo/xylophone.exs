@@ -23,7 +23,8 @@ defmodule Xylophone do
   defp strokes(:runs, pass) do
     from = Enum.find_index(scale(), &(&1 == 72 + 7 * pass))
     up = Enum.slice(scale(), from, 15)
-    notes = up ++ tl(Enum.reverse(up)) ++ [hd(up)]
+    down = up |> Enum.reverse() |> tl()
+    notes = up ++ down ++ [hd(up)]
 
     notes
     |> Enum.with_index()

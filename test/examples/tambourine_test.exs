@@ -28,7 +28,8 @@ defmodule Mx.Examples.TambourineTest do
     assert backbeat =~
              ~r/tambourine, pass 1, [^\n]*\nbeat 1 +play vel: 1, amp: 0.5\nbeat 3 +play vel: 1, amp: 0.5\n/
 
-    assert length(Regex.scan(~r/sustain: 0.25/, backbeat)) == 8
+    matches = Regex.scan(~r/sustain: 0.25/, backbeat)
+    assert length(matches) == 8
   end
 
   test "the tarantella plays triplets with the palm on each beat, and the soft strokes are the softest" do

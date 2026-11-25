@@ -44,10 +44,10 @@ defmodule Congas do
 
   # A bar of the three drums, each silent where the bar gives it no cells.
   defp drums(cells) do
-    together(
-      [:low_conga, :mid_conga, :high_conga],
-      &part(&1, bar(Keyword.get(cells, &1, ~MX"."s)))
-    )
+    together([:low_conga, :mid_conga, :high_conga], fn drum ->
+      cell = Keyword.get(cells, drum, ~MX"."s)
+      part(drum, bar(cell))
+    end)
   end
 
   defp bars do

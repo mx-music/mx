@@ -34,7 +34,11 @@ defmodule Mx.PhaserTest do
     Enum.slice(samples, round(from * @rate)..(round(to * @rate) - 1))
   end
 
-  defp rms(samples), do: :math.sqrt(Enum.sum_by(samples, &(&1 * &1)) / length(samples))
+  defp rms(samples) do
+    squares = Enum.sum_by(samples, &(&1 * &1))
+    :math.sqrt(squares / length(samples))
+  end
+
   defp db(level), do: 20 * :math.log10(max(level, 1.0e-12))
 
   # How far in dB a sine at each frequency comes out of the effects below the same sine dry, on
@@ -105,8 +109,9 @@ defmodule Mx.PhaserTest do
        ctx do
     {left, right} = levels(ctx, "[phaser: [phase: 1, low: 60, high: 84, mix: 0.5]]")
     assert Enum.min(left) < Enum.max(left) / 4
-    assert apart(Enum.slice(left, 0, 50), Enum.slice(left, 50, 50)) < 0.1
-    assert apart(Enum.slice(left, 0, 50), Enum.slice(left, 25, 50)) > 0.5
+    opening = Enum.slice(left, 0, 50)
+    assert apart(opening, Enum.slice(left, 50, 50)) < 0.1
+    assert apart(opening, Enum.slice(left, 25, 50)) > 0.5
     assert apart(left, right) < 0.05
   end
 
@@ -114,8 +119,9 @@ defmodule Mx.PhaserTest do
   test "with stereo_invert_wave: 1 the left is half a sweep away from the right", ctx do
     fx = "[phaser: [phase: 1, low: 60, high: 84, mix: 0.5, stereo_invert_wave: 1]]"
     {left, right} = levels(ctx, fx)
-    assert apart(Enum.slice(left, 0, 50), Enum.slice(right, 0, 50)) > 0.5
-    assert apart(Enum.slice(left, 0, 50), Enum.slice(right, 25, 50)) < 0.1
+    opening = Enum.slice(left, 0, 50)
+    assert apart(opening, Enum.slice(right, 0, 50)) > 0.5
+    assert apart(opening, Enum.slice(right, 25, 50)) < 0.1
   end
 
   @tag :engine

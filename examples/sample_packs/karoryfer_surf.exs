@@ -288,7 +288,9 @@ defmodule RustWave do
 
     bars =
       for {root, _, _} <- @chords do
-        seq(Enum.with_index(steps), fn {step, index} ->
+        steps
+        |> Enum.with_index()
+        |> seq(fn {step, index} ->
           note(
             pitch(root) + 12 + step,
             0.5,
@@ -335,9 +337,11 @@ defmodule RustWave do
   # four.
   defp strums(cycles) do
     bar = fn chord ->
+      down = Enum.reverse(chord)
+
       seq([
         note(chord, 1.5, dyn(0.8) ++ [strum: 0.03]),
-        note(Enum.reverse(chord), 1.5, dyn(0.5) ++ [strum: 0.02]),
+        note(down, 1.5, dyn(0.5) ++ [strum: 0.02]),
         note(chord, 1, dyn(0.7) ++ [strum: 0.03])
       ])
     end

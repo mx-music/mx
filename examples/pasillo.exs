@@ -262,7 +262,7 @@ defmodule Pasillo do
         {names, held} =
           case String.split(word, ":") do
             [names] -> {names, 0.5}
-            [names, held] -> {names, elem(Float.parse(held), 0)}
+            [names, held] -> {names, held |> Float.parse() |> elem(0)}
           end
 
         if names == "r" do
