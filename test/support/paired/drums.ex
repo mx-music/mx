@@ -131,7 +131,9 @@ defmodule Mx.Paired.Drums do
 
     [low, high] = Enum.slice(bands, index, 2)
     along = (value - low) / (high - low)
-    Enum.at(table, index) + (Enum.at(table, index + 1) - Enum.at(table, index)) * along
+    from = Enum.at(table, index)
+    to = Enum.at(table, index + 1)
+    from + (to - from) * along
   end
 
   @doc "The pandeiro's stroke `s` at `f`, struck at `vel`, its head pressed `mute` of the way: a hand ringing the head's modes, a crack of band-passed noise, and the jingles' rattle ringing the discs."

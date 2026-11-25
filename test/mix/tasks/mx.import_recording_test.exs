@@ -157,7 +157,8 @@ defmodule Mix.Tasks.Mx.ImportRecordingTest do
         )
 
       assert String.to_integer(bar) in 44..46
-      assert (String.to_integer(minutes) * 60 + String.to_integer(seconds)) in 360..400
+      elapsed = String.to_integer(minutes) * 60 + String.to_integer(seconds)
+      assert elapsed in 360..400
       refute File.exists?(song)
 
       cut = Path.join(dir, "anderson.wav")

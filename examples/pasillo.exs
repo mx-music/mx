@@ -317,7 +317,8 @@ defmodule Pasillo do
   # of each phrase of four.
   defp plucked(vel, beat, note, middle) do
     lift = (note - middle) / 12 * 0.12
-    swell = :math.sin(:math.pi() * (beat - Float.floor(beat / 12) * 12) / 9.0) * 0.08 - 0.03
+    phrase_beat = beat - Float.floor(beat / 12) * 12
+    swell = :math.sin(:math.pi() * phrase_beat / 9.0) * 0.08 - 0.03
 
     weight =
       cond do

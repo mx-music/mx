@@ -75,7 +75,8 @@ defmodule FitBowed do
   # miss of a few dB does.
   def fit(synth, rounds, dir) do
     {notes, _} = @recorded[synth]
-    lowest = 440 * :math.pow(2, (Enum.min(notes) - 69) / 12)
+    lowest_note = Enum.min(notes)
+    lowest = 440 * :math.pow(2, (lowest_note - 69) / 12)
     reference = Enum.find_index(@bands, fn {low, high} -> lowest >= low and lowest < high end)
     vels = [0.3, 0.6, 1.0]
 
@@ -119,7 +120,8 @@ defmodule FitBowed do
   # then have to make up.
   def body(synth, dir) do
     {notes, _} = @recorded[synth]
-    lowest = 440 * :math.pow(2, (Enum.min(notes) - 69) / 12)
+    lowest_note = Enum.min(notes)
+    lowest = 440 * :math.pow(2, (lowest_note - 69) / 12)
 
     for factor <- [0.75, 1.0, 1.25, 1.5, 2.0] do
       misses =

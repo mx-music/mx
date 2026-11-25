@@ -90,7 +90,8 @@ defmodule ClairDeLune.Marimba do
   defp marimba(bar) do
     own =
       for {staff, beat, notes, length} <- ClairDeLune.written(bar),
-          staff == :upper or (bar < 27 and Enum.min(notes) >= 48),
+          lowest = Enum.min(notes),
+          staff == :upper or (bar < 27 and lowest >= 48),
           do: {beat, notes |> Enum.filter(&(&1 >= 48)) |> Enum.map(&in_range/1), length}
 
     tops =

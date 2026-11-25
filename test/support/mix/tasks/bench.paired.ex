@@ -167,7 +167,8 @@ defmodule Mix.Tasks.Bench.Paired do
 
   # How far apart the runs' render times are, as a percentage of their median.
   defp spread(renders) do
-    round((Enum.max(renders) - Enum.min(renders)) / max(median(renders), 0.001) * 100)
+    {fastest, slowest} = Enum.min_max(renders)
+    round((slowest - fastest) / max(median(renders), 0.001) * 100)
   end
 
   defp median(values) do

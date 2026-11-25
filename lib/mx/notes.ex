@@ -255,7 +255,8 @@ defmodule Mx.Notes do
   @doc "The note of a chord, in any octave, closest below a note."
   def below(note, chord) when (is_integer(note) or is_atom(note)) and is_list(chord) do
     note = note(note)
-    Enum.max(for tone <- chord, do: note - (Integer.mod(note - tone - 1, 12) + 1))
+    gaps = for tone <- chord, do: Integer.mod(note - tone - 1, 12) + 1
+    note - Enum.min(gaps)
   end
 
   @doc "Each note of a chord placed once from `from:` up to `to:`, leaving out the root of a chord of more notes than `limit:`."

@@ -754,8 +754,10 @@ defmodule Mx.ABC do
 
     parts =
       for voice <- voices do
+        padding = List.duplicate(empty(voice), count - length(voice.measures))
+
         measures =
-          (voice.measures ++ List.duplicate(empty(voice), count - length(voice.measures)))
+          (voice.measures ++ padding)
           |> Enum.with_index(1)
           |> Enum.map(fn {measure, number} -> %{measure | number: Integer.to_string(number)} end)
 
@@ -765,7 +767,8 @@ defmodule Mx.ABC do
 
     counts =
       for {kind, _words} <- @kinds,
-          (count = Map.get(acc.counts, kind, 0)) > 0,
+          count = Map.get(acc.counts, kind, 0),
+          count > 0,
           do: {nil, kind, count}
 
     %{

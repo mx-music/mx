@@ -171,7 +171,8 @@ defmodule Mx.Paired.Berimbau do
     low = Enum.at(@bands, index)
     high = Enum.at(@bands, index + 1)
 
-    Enum.at(table, index) +
-      (Enum.at(table, index + 1) - Enum.at(table, index)) * ((freq - low) / (high - low))
+    from = Enum.at(table, index)
+    to = Enum.at(table, index + 1)
+    from + (to - from) * ((freq - low) / (high - low))
   end
 end

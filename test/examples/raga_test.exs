@@ -173,7 +173,8 @@ defmodule Mx.Examples.RagaTest do
   # A printed note as a swara of Yaman on Sa C#3, with a dot below or a quote above for the
   # octaves, or nil when it is none.
   defp name(note) do
-    cents = round((String.to_float(note) - 49) * 100)
+    semitones = String.to_float(note) - 49
+    cents = round(semitones * 100)
     octave = Integer.floor_div(cents, 1200)
     swara = @steps[cents - octave * 1200]
 

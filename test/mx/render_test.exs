@@ -28,7 +28,8 @@ defmodule Mx.RenderTest do
       |> Enum.filter(fn {frame, before} -> before == nil or frame - before > 4800 end)
       |> Enum.map(&elem(&1, 0))
 
-    (List.last(starts) - hd(starts)) / rate
+    span = List.last(starts) - hd(starts)
+    span / rate
   end
 
   test "a render at a share of 0.5 of the tempo lasts twice as long as at 1, and a share of 5 is refused",

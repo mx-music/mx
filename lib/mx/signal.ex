@@ -62,7 +62,9 @@ defmodule Mx.Signal do
     if rem(count, 2) == 1 do
       Enum.at(sorted, middle)
     else
-      (Enum.at(sorted, middle - 1) + Enum.at(sorted, middle)) / 2
+      below = Enum.at(sorted, middle - 1)
+      above = Enum.at(sorted, middle)
+      (below + above) / 2
     end
   end
 

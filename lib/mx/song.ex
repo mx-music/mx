@@ -219,13 +219,15 @@ defmodule Mx.Song do
         part_cells =
           for cell <- cells,
               cell = %{cell | tokens: Enum.filter(cell.tokens, &(&1 in plays))},
-              not (Map.get(cell, :grace, false) and cell.tokens == []),
+              not empty_grace?(cell),
               do: cell
 
         Mx.part(part, Mx.steps(part_cells, step, [strokes: own] ++ opts), declared(parts, part))
       end
     )
   end
+
+  defp empty_grace?(cell), do: Map.get(cell, :grace, false) and cell.tokens == []
 
   # The hits a stroke plays, as {part, options}, a stroke of other strokes playing theirs.
   defp struck(strokes, stroke) do
@@ -600,8 +602,7 @@ defmodule Mx.Song do
   @doc "What is wrong with the sends of `owner`, such as `\"part snare\"`, given the names of the song's buses, or nil."
   def sends_error(owner, sends, buses) do
     cond do
-      not (Keyword.keyword?(sends) and
-               Enum.all?(sends, fn {_, level} -> is_number(level) and level >= 0 end)) ->
+      not valid_sends?(sends) ->
         sends = inspect(sends)
 
         "#{owner}: send: takes a level of 0 or more for each bus, such as send: [room: 0.3], not #{sends}"
@@ -612,6 +613,11 @@ defmodule Mx.Song do
       true ->
         nil
     end
+  end
+
+  defp valid_sends?(sends) do
+    Keyword.keyword?(sends) and
+      Enum.all?(sends, fn {_, level} -> is_number(level) and level >= 0 end)
   end
 
   # The message for a bus that reaches itself through its sends, naming those on the way.

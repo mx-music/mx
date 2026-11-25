@@ -200,7 +200,8 @@ defmodule Mx.Sampled do
 
   @doc "Whether a sampled instrument takes an option."
   def option?(option) do
-    option == :vel or (option not in @not_options and Mx.Synths.option?(:stereo_player, option))
+    player_option = option not in @not_options and Mx.Synths.option?(:stereo_player, option)
+    option == :vel or player_option
   end
 
   @doc "The takes of the key and strength a note or `:own_note` at `vel` plays, with the rate it plays them at, or `{:error, message}`."

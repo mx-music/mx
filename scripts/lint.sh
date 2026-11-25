@@ -235,6 +235,8 @@ run_check "Don't pipe inside a capture like '&(&1 |> foo() |> bar())'; extract a
 # A pipe in a fn, for or do block passed as an argument is the block's own pipeline.
 run_check "Don't pipe inside parentheses like '(a |> b()) * c' or 'f(a |> b())'; bind the pipeline to a variable, end the pipeline in the call, or extract a function" \
           -PU '(?<![&\\])\((?:(?!\b(?:fn|for|do)\b)[^()"|]|\((?:[^()"]|\([^()"]*\))*\))*?\|> '
+run_check "Don't call a module inside grouping parentheses like '(Enum.at(xs, i) + 1) * c'; bind the call's result to a name" \
+          -P '(?<![\w.?!)\]&\\])\([^()"\n]*\b[A-Z]\w*(?:\.[A-Z]\w*)*\.[a-z_]\w*[?!]?\('
 
 run_check "Use to_timeout/1" ":timer\.(seconds|minutes|hours)"
 run_check "Avoid sleep, if you really need, use Process.sleep" ":timer\.sleep"
