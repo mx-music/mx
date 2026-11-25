@@ -25,6 +25,8 @@ const MOST_FRAMES: usize = 400;
 const STRONG: f64 = 30.0;
 /// The highest a noise band's level goes, in dB.
 const LOUDEST_NOISE: f32 = 40.0;
+/// What each dB past a guard costs, against the 1 a dB of gap costs, so a guard holds rather than gives way to a larger gain elsewhere.
+const GUARD: f32 = 10.0;
 
 /// The loss before and after the descent, which leaves the figures unchanged where it finds no lower loss.
 pub fn descend(
@@ -469,7 +471,9 @@ fn run(
             .subtract(&theirs_top)?
             .abs()?;
         let past = |now: Array, allowed: &Array| -> Result<Array, Exception> {
-            ops::maximum(now.subtract(allowed)?, Array::from_f32(0.0))?.sum(None)
+            ops::maximum(now.subtract(allowed)?, Array::from_f32(0.0))?
+                .sum(None)?
+                .multiply(Array::from_f32(GUARD))
         };
         apart
             .multiply(&striking)?
@@ -477,20 +481,33 @@ fn run(
             .add(past(means, &mean_allowed)?)?
             .add(past(strikes, &strike_allowed)?)
     };
+    let band_gap = |sound: &Array| -> Result<Array, Exception> {
+        let bands = spectrum(sound, &own_index, &hann_own, size)?.matmul(&own_bands)?;
+        gap(
+            matched(bands, bands_first)?,
+            &own_rooms,
+            &own_floors,
+            &theirs_bands,
+        )
+    };
+    let band_then = band_gap(&render(&start[0], &start[1])?)?;
+    band_then.eval()?;
+    let band_allowed = Array::from_f32(band_then.item_exact::<f32>());
     // The partials' levels are moved by their own gaps alone, so the noise does not pull a partial off its measured level to fill a band, and the noise's by every gap, so it does not fill a band by lifting what the partials read.
+    // The partials also pay for every dB the bands go past where they started, so a partial moved closer to its own level does not leave the note's bands further off.
     let loss = |inputs: &[Array]| -> Result<Vec<Array>, Exception> {
         let (levels, noise) = (&inputs[0], &inputs[1]);
         let for_partials = render(levels, noise)?;
         let for_noise = render(&mlx_rs::stop_gradient(levels)?, noise)?;
         let partial_gap = partial_gap(matched(read(&for_partials)?, peaks_first)?)?;
-        let band_gap = spectrum(&for_noise, &own_index, &hann_own, size)?.matmul(&own_bands)?;
-        let band_gap = gap(
-            matched(band_gap, bands_first)?,
-            &own_rooms,
-            &own_floors,
-            &theirs_bands,
-        )?;
-        Ok(vec![band_gap.add(partial_gap)?])
+        let bands_past = ops::maximum(
+            band_gap(&for_partials)?.subtract(&band_allowed)?,
+            Array::from_f32(0.0),
+        )?
+        .multiply(Array::from_f32(GUARD))?;
+        Ok(vec![
+            band_gap(&for_noise)?.add(partial_gap)?.add(bands_past)?,
+        ])
     };
 
     let free: Vec<f32> = (0..times)

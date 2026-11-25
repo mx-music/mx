@@ -823,6 +823,27 @@ defmodule Mix.Tasks.Mx.FitTest do
       assert_close(output)
     end
 
+    @tag :gpu
+    test "the descent leaves the D#4 and B4 at velocity 127 no more than 0.6 dB further off in ERB bands, or in any strong partial on average, than the fit partial by partial",
+         %{dir: dir} do
+      {:ok, recordings} = Struck.recordings(dir, [63, 71])
+      recordings = Enum.filter(recordings, &(&1.velocity == 127))
+      [today, descent] = for how <- ["partials", "gpu"], do: Struck.own(recordings, how)
+
+      further =
+        for {fitted_note, descended_note} <- Enum.zip(today, descent),
+            {fitted, descended} <- Enum.zip(fitted_note.partials, descended_note.partials),
+            fitted.below <= 30 do
+          {fitted_note.note, fitted.ratio, descended.mean - fitted.mean}
+        end
+
+      assert Enum.filter(further, fn {_note, _ratio, worse} -> worse > 0.6 end) == []
+
+      assert Enum.filter(Enum.zip(today, descent), fn {fitted, descended} ->
+               descended.erb > fitted.erb + 0.6
+             end) == []
+    end
+
     @tag timeout: 600_000
     test "--check finds electric_guitar within 2 dB partial by partial and 1.5 dB in ERB bands from E2 to D6",
          %{nsynth: nsynth} do
