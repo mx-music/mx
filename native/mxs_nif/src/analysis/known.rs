@@ -290,7 +290,9 @@ mod tests {
     use super::*;
 
     // Each partial's gap over the first 20 ms and on average when mx-00177 was done, None where it was not found, so a change to the measuring that follows any note worse fails.
-    const RECORDED: [(&str, f64, &[Option<(f64, f64)>]); 18] = [
+    type Gaps = (&'static str, f64, &'static [Option<(f64, f64)>]);
+
+    const RECORDED: [Gaps; 18] = [
         ("slow", 36.0, &[Some((2.708, 0.058))]),
         ("slow", 60.0, &[Some((1.590, 0.038))]),
         ("slow", 96.0, &[Some((1.638, 0.031))]),

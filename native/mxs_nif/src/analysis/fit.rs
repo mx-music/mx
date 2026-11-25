@@ -2,6 +2,7 @@
 //! A note's figures are its pitch and, for each partial, its ratio to the pitch and its level in dB at fixed times after the strike, falling at a last slope after them; the synth plays them as sines.
 //! They also hold the noise of the strike, as the level of white noise through each ERB band's filter at the same times.
 
+use super::bands::{band_power, erb_bands_to};
 use super::hz;
 use super::partials::{self, CLEAR, HOP, LEAD, Note, Track};
 use super::room::{self, Room};
@@ -352,9 +353,12 @@ fn reached(seconds: f64, window: f64) -> usize {
 fn fall_on(figures: &mut Figures, seconds: f64, window: f64) {
     let reached = reached(seconds, window);
     for partial in &mut figures.partials {
-        for j in reached + 1..TIMES.len() {
-            partial.levels[j] =
-                partial.levels[reached] + partial.tail * (TIMES[j] - TIMES[reached]);
+        let (from, at) = (partial.levels[reached], TIMES[reached]);
+        for (level, time) in partial.levels[reached + 1..]
+            .iter_mut()
+            .zip(&TIMES[reached + 1..])
+        {
+            *level = from + partial.tail * (time - at);
         }
     }
 }
@@ -967,7 +971,8 @@ pub fn frames(
         track_target - tracks_total(&own_tracks),
         band_target - bands_total(&own_bands),
     );
-    let mut sounds: Vec<(String, Vec<Vec<f64>>, Vec<Vec<f64>>, (f64, f64), bool)> = vec![(
+    type Sound = (String, Vec<Vec<f64>>, Vec<Vec<f64>>, (f64, f64), bool);
+    let mut sounds: Vec<Sound> = vec![(
         "recording".to_string(),
         recorded,
         recorded_bands,
@@ -1094,38 +1099,9 @@ pub fn erb_bands_under(top: f64, rate: f64) -> Vec<(f64, f64)> {
     erb_bands_to(top.min(0.45 * rate))
 }
 
-/// The bands one ERB wide from 50 Hz to `top`.
-pub fn erb_bands_to(top: f64) -> Vec<(f64, f64)> {
-    let erb = |hz: f64| 21.4 * (1.0 + 0.00437 * hz).log10();
-    let inverse = |e: f64| (10f64.powf(e / 21.4) - 1.0) / 0.00437;
-    let (low, high) = (erb(50.0), erb(top));
-    let count = (high - low).round() as usize;
-    (0..count)
-        .map(|k| {
-            (
-                inverse(low + (high - low) * k as f64 / count as f64),
-                inverse(low + (high - low) * (k + 1) as f64 / count as f64),
-            )
-        })
-        .collect()
-}
-
 fn bins(spectra: &partials::Spectra, low: f64, high: f64) -> (usize, usize) {
     let a = (low / spectra.bin).round() as usize;
     (a, ((high / spectra.bin).round() as usize).max(a + 1))
-}
-
-/// The power of a frame's magnitudes over a band from `low` to `high` Hz.
-/// Each bin covers half a bin either side of its centre and counts for the share of that inside the band, so a band moved with a pitch takes the same part of each partial.
-pub fn band_power(frame: &[f64], bin: f64, low: f64, high: f64) -> f64 {
-    let (from, to) = (low / bin, high / bin);
-    let first = (from - 0.5).floor().max(0.0) as usize;
-    let last = ((to + 0.5).ceil() as usize).min(frame.len());
-    (first..last)
-        .map(|i| {
-            (frame[i] * frame[i]) * ((i as f64 + 0.5).min(to) - (i as f64 - 0.5).max(from)).max(0.0)
-        })
-        .sum()
 }
 
 pub fn erb_levels(spectra: &partials::Spectra, bands: &[(f64, f64)]) -> Vec<Vec<f64>> {
@@ -1158,10 +1134,7 @@ fn erb_gap(
         .iter()
         .map(|(low, high)| (low * ratio, high * ratio))
         .collect();
-    let (a, b) = (
-        erb_levels(&theirs.spectra, &bands),
-        erb_levels(ours, &moved),
-    );
+    let (a, b) = (erb_levels(&theirs.spectra, bands), erb_levels(ours, &moved));
     let half = (0.5 / HOP) as usize;
     let total = |e: &[Vec<f64>]| {
         10.0 * e

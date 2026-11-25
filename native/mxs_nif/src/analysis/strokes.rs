@@ -523,15 +523,11 @@ fn fit(frame: Frame, heard: Option<&[f64]>, window: &[f64], rate: f64) -> Fit {
         };
     };
     let weighted: Vec<f64> = heard.iter().zip(window).map(|(s, w)| s * w).collect();
-    let mut best: Option<(f64, f64, Vec<f64>, Vec<f64>, Vec<Vec<f64>>)> = None;
-    for step in -6..=6 {
-        let hz = followed * (1.0 + step as f64 * SEARCH / 6.0);
-        let (left, harmonics, found, columns) = fit_at(&weighted, window, hz, rate);
-        if best.as_ref().is_none_or(|b| left < b.0) {
-            best = Some((left, hz, harmonics, found, columns));
-        }
-    }
-    let (_, hz, harmonics, found, columns) = best.unwrap();
+    let (hz, (_, harmonics, found, columns)) = (-6..=6)
+        .map(|step| followed * (1.0 + step as f64 * SEARCH / 6.0))
+        .map(|hz| (hz, fit_at(&weighted, window, hz, rate)))
+        .min_by(|a, b| a.1.0.total_cmp(&b.1.0))
+        .unwrap();
     let wave = (0..window.len())
         .map(|at| {
             found
@@ -805,7 +801,9 @@ fn steps((hz, frames): (f64, Vec<(f64, Vec<f64>, f64)>), body: usize) -> Tracks 
     let late = mean_cents(&frames[from..(from + 2).min(frames.len())]);
     let mean_square = |values: &[f64]| (dot(values, values) / values.len() as f64).sqrt();
     let steps: Vec<(i64, Vec<f64>, f64)> = frames
-        .chunks_exact(STEP)
+        .as_chunks::<STEP>()
+        .0
+        .iter()
         .map(|pair| {
             let cents = (pair.iter().fold(0.0, |sum, f| sum + f.0) / STEP as f64).round() as i64;
             let harmonics = (0..KEPT)

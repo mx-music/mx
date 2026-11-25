@@ -316,8 +316,8 @@ fn attack(sound: &[f64], rate: f64, held: &[usize], centre: usize) -> f64 {
         .unwrap();
     let start = envelope[..reached]
         .iter()
-        .filter(|(_, v)| *v < level / 100.0)
-        .last()
+        .rev()
+        .find(|(_, v)| *v < level / 100.0)
         .map_or(0.0, |(t, _)| *t);
     envelope[reached].0 - start
 }

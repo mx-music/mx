@@ -1,6 +1,7 @@
 //! Measuring recordings, for `Mx.Measure`: the pieces plucked notes, held notes and hits share, as `Mx.Signal` described them.
 //! Levels are in dB, and a spectrum holds the magnitude of each frequency bin below half the sample rate.
 
+pub mod bands;
 pub mod fit;
 pub mod held;
 pub mod hits;

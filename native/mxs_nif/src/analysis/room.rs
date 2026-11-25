@@ -3,7 +3,7 @@
 //! The quietest frames of a steady noise read under its mean, the more so the narrower the band, so each band's mean is brought back up by what the same share of its spread reads, as minimum statistics estimate noise (Martin, Noise power spectral density estimation based on optimal smoothing and minimum statistics, IEEE Transactions on Speech and Audio Processing, 2001).
 //! A file that falls silent anywhere, as one made rather than recorded does, has no room.
 
-use super::fit::{band_power, erb_bands_to};
+use super::bands::{band_power, erb_bands_to};
 use super::partials;
 use rustfft::{FftPlanner, num_complex::Complex};
 

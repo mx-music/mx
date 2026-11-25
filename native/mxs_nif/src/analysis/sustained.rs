@@ -2,6 +2,7 @@
 //! A held note's pitch is followed every 5 ms and the note resampled along it to one steady pitch, so its vibrato and drift no longer smear its partials, which are then followed as a struck note's are.
 //! Its figures are each partial's level at the struck notes' times up to where the note holds, one level while it holds, and a slope in dB a second once it is let go; the noise between the partials the same, in each ERB band; and the vibrato's rate and depth, with how far each partial's level swings with it.
 
+use super::bands::erb_bands_to;
 use super::fit::{self, Band, Figures, Partial, SILENT, TIMES};
 use super::partials::{self, CLEAR, Floor, HOP, LEAD, Track};
 use super::{db, hz, median};
@@ -589,7 +590,7 @@ pub fn fit(sound: &[f64], rate: f64, note: f64, seconds: f64, steady: bool) -> (
             }
         })
         .collect();
-    let bands = fit::erb_bands_to(NOISE_TOP);
+    let bands = erb_bands_to(NOISE_TOP);
     let noise = bands
         .iter()
         .map(|(low, high)| Band {
@@ -1173,7 +1174,7 @@ pub fn figures_bytes(recordings: &[(u8, u8, Held)]) -> Vec<u8> {
     for time in TIMES {
         bytes.extend((time as f32).to_le_bytes());
     }
-    let bands = fit::erb_bands_to(NOISE_TOP);
+    let bands = erb_bands_to(NOISE_TOP);
     bytes.extend((bands.len() as u16).to_le_bytes());
     for (low, high) in &bands {
         bytes.extend((*low as f32).to_le_bytes());

@@ -143,9 +143,11 @@ fn devices() -> Result<
         .collect())
 }
 
+type Family = (String, String, Option<(f64, f64)>);
+
 /// Each synth's family, such as `winds`, and the lowest and highest notes it is meant to play, or nil when it has no range, as `{name, family, range}`.
 #[rustler::nif]
-fn families() -> Vec<(String, String, Option<(f64, f64)>)> {
+fn families() -> Vec<Family> {
     engine()
         .synths()
         .map(|s| {
@@ -838,12 +840,10 @@ fn split_struck(
     ))
 }
 
+/// A sound's data, format and rate.
+type Sound<'a> = (Binary<'a>, (String, usize, usize), f64);
 /// A recording of a struck note: its data, format and rate; the samples the note spans; and its note, a MIDI number or between them for a pitch given in Hz, its velocity, the seconds fitted, and whether the note's frequency is its pitch exactly.
-type Struck<'a> = (
-    (Binary<'a>, (String, usize, usize), f64),
-    (usize, usize),
-    (f64, u8, f64, bool, f64),
-);
+type Struck<'a> = (Sound<'a>, (usize, usize), (f64, u8, f64, bool, f64));
 
 /// The samples of a recording's data from `from` to `to`.
 fn span(
@@ -908,10 +908,7 @@ fn fit_struck<'a>(env: Env<'a>, recordings: Vec<Struck<'a>>) -> NifResult<Binary
 
 /// How far a render of a struck note is from a recording of it, partial by partial and in ERB bands: the recording as a struck one is given to `fit_struck`, the render as its data, format and rate.
 #[rustler::nif(schedule = "DirtyCpu")]
-fn check_struck(
-    recording: Struck,
-    rendered: (Binary, (String, usize, usize), f64),
-) -> NifResult<analysis::fit::Check> {
+fn check_struck(recording: Struck, rendered: Sound) -> NifResult<analysis::fit::Check> {
     let ((data, format, rate), within, (note, _velocity, seconds, exact, top)) = recording;
     let ((theirs, room), ours) = (
         span_in_room(&data, &format, within, rate, note)?,
@@ -950,7 +947,7 @@ fn check_fit_struck(recording: Struck) -> NifResult<analysis::fit::Check> {
 #[rustler::nif(schedule = "DirtyCpu")]
 fn frames_struck(
     recording: Struck,
-    rendered: Option<(Binary, (String, usize, usize), f64)>,
+    rendered: Option<Sound>,
     times: Vec<f64>,
 ) -> NifResult<analysis::fit::Frames> {
     let ((data, format, rate), within, (note, _velocity, seconds, exact, top)) = recording;
@@ -977,10 +974,7 @@ fn frames_struck(
 
 /// A tour for listening of recordings of struck notes, each given as to `fit_struck`, beside renders given as their data, format and rate, as 32-bit floats at the renders' rate.
 #[rustler::nif(schedule = "DirtyCpu")]
-fn tour_struck<'a>(
-    env: Env<'a>,
-    pairs: Vec<(Struck<'a>, (Binary<'a>, (String, usize, usize), f64))>,
-) -> NifResult<Binary<'a>> {
+fn tour_struck<'a>(env: Env<'a>, pairs: Vec<(Struck<'a>, Sound<'a>)>) -> NifResult<Binary<'a>> {
     let rate = pairs.first().map_or(48000.0, |(_, (_, _, rate))| *rate);
     let sounds = pairs
         .iter()
@@ -1039,10 +1033,7 @@ fn fit_held<'a>(env: Env<'a>, recordings: Vec<Struck<'a>>, steady: bool) -> NifR
 
 /// How far a render of a held note is from a recording of it, as `check_struck` takes them.
 #[rustler::nif(schedule = "DirtyCpu")]
-fn check_held(
-    recording: Struck,
-    rendered: (Binary, (String, usize, usize), f64),
-) -> NifResult<analysis::fit::Check> {
+fn check_held(recording: Struck, rendered: Sound) -> NifResult<analysis::fit::Check> {
     let ((data, format, rate), within, (note, _velocity, seconds, _, _)) = recording;
     let (theirs, ours) = (
         span(&data, &format, within)?,
