@@ -26,7 +26,10 @@ pub fn chroma(sound: &[f64], rate: f64, hop: f64) -> (Vec<[f64; 12]>, Vec<f64>) 
     let mut buffer = vec![Complex::new(0.0, 0.0); size];
     let mut start = 0;
     while start + size <= sound.len() {
-        for (slot, (x, w)) in buffer.iter_mut().zip(sound[start..start + size].iter().zip(&window)) {
+        for (slot, (x, w)) in buffer
+            .iter_mut()
+            .zip(sound[start..start + size].iter().zip(&window))
+        {
             *slot = Complex::new(x * w, 0.0);
         }
         fft.process(&mut buffer);
@@ -40,7 +43,11 @@ pub fn chroma(sound: &[f64], rate: f64, hop: f64) -> (Vec<[f64; 12]>, Vec<f64>) 
         starts.push(start as f64 / rate);
         start += step;
     }
-    let loudest = frames.iter().flatten().fold(0.0f64, |m, e| m.max(*e)).max(1e-12);
+    let loudest = frames
+        .iter()
+        .flatten()
+        .fold(0.0f64, |m, e| m.max(*e))
+        .max(1e-12);
     for frame in &mut frames {
         for e in frame.iter_mut() {
             *e = (1.0 + 100.0 * *e / loudest).ln();
@@ -66,7 +73,13 @@ pub fn path(score: &[[f64; 12]], recording: &[[f64; 12]], free: usize) -> (Vec<f
     if n == 0 || m == 0 {
         return (Vec::new(), Vec::new());
     }
-    let cost = |i: usize, j: usize| 1.0 - score[i].iter().zip(&recording[j]).map(|(a, b)| a * b).sum::<f64>();
+    let cost = |i: usize, j: usize| {
+        1.0 - score[i]
+            .iter()
+            .zip(&recording[j])
+            .map(|(a, b)| a * b)
+            .sum::<f64>()
+    };
     let mut total = vec![f64::INFINITY; n * m];
     let mut steps = vec![0u32; n * m];
     for j in 0..free.min(m) {
@@ -79,7 +92,10 @@ pub fn path(score: &[[f64; 12]], recording: &[[f64; 12]], free: usize) -> (Vec<f
             let mut best = (total[at(i - 1, j - 1)], steps[at(i - 1, j - 1)]);
             // Two score frames on one recording frame pay for both, so a path cannot lower its cost by skipping score.
             if i >= 2 && total[at(i - 2, j - 1)] + cost(i - 1, j) < best.0 {
-                best = (total[at(i - 2, j - 1)] + cost(i - 1, j), steps[at(i - 2, j - 1)] + 1);
+                best = (
+                    total[at(i - 2, j - 1)] + cost(i - 1, j),
+                    steps[at(i - 2, j - 1)] + 1,
+                );
             }
             if j >= 2 && total[at(i - 1, j - 2)] < best.0 {
                 best = (total[at(i - 1, j - 2)], steps[at(i - 1, j - 2)]);
@@ -111,7 +127,10 @@ pub fn path(score: &[[f64; 12]], recording: &[[f64; 12]], free: usize) -> (Vec<f
         if j >= 2 {
             options.push((total[at(i - 1, j - 2)], i - 1, j - 2));
         }
-        let (_, before_i, before_j) = options.into_iter().min_by(|a, b| a.0.total_cmp(&b.0)).unwrap();
+        let (_, before_i, before_j) = options
+            .into_iter()
+            .min_by(|a, b| a.0.total_cmp(&b.0))
+            .unwrap();
         if before_i + 2 == i {
             frames[i - 1] = j as f64 - 0.5;
         }
@@ -119,7 +138,11 @@ pub fn path(score: &[[f64; 12]], recording: &[[f64; 12]], free: usize) -> (Vec<f
         j = before_j;
         frames[i] = j as f64;
     }
-    let costs = frames.iter().enumerate().map(|(i, j)| cost(i, j.round() as usize)).collect();
+    let costs = frames
+        .iter()
+        .enumerate()
+        .map(|(i, j)| cost(i, j.round() as usize))
+        .collect();
     (frames, costs)
 }
 
@@ -143,7 +166,10 @@ mod tests {
         let mut sound = Vec::new();
         for &(midi, seconds) in midis {
             let hz = 440.0 * 2f64.powf((midi - 69.0) / 12.0);
-            sound.extend((0..(seconds * rate) as usize).map(|i| (std::f64::consts::TAU * hz * i as f64 / rate).sin() * 0.3));
+            sound.extend(
+                (0..(seconds * rate) as usize)
+                    .map(|i| (std::f64::consts::TAU * hz * i as f64 / rate).sin() * 0.3),
+            );
         }
         sound
     }
@@ -159,9 +185,16 @@ mod tests {
         let rate = 16000.0;
         let sound = tone(&[(60.0, 1.0), (62.0, 1.0)], rate);
         let (recording, _starts) = chroma(&sound, rate, 0.1);
-        let score: Vec<[f64; 12]> = [0, 2, 4, 5].iter().flat_map(|c| std::iter::repeat_n(frame(*c), 10)).collect();
+        let score: Vec<[f64; 12]> = [0, 2, 4, 5]
+            .iter()
+            .flat_map(|c| std::iter::repeat_n(frame(*c), 10))
+            .collect();
         let (frames, _costs) = path(&score, &recording, 5);
-        assert!((15..25).contains(&frames.len()), "{} frames placed", frames.len());
+        assert!(
+            (15..25).contains(&frames.len()),
+            "{} frames placed",
+            frames.len()
+        );
     }
 
     #[test]
@@ -169,11 +202,18 @@ mod tests {
         let rate = 16000.0;
         let sound = tone(&[(60.0, 1.5), (62.0, 1.5), (64.0, 1.5), (65.0, 1.5)], rate);
         let (recording, starts) = chroma(&sound, rate, 0.1);
-        let score: Vec<[f64; 12]> = [0, 2, 4, 5].iter().flat_map(|c| std::iter::repeat_n(frame(*c), 10)).collect();
+        let score: Vec<[f64; 12]> = [0, 2, 4, 5]
+            .iter()
+            .flat_map(|c| std::iter::repeat_n(frame(*c), 10))
+            .collect();
         let (frames, _costs) = path(&score, &recording, 5);
         let second = |k: usize| starts[frames[k].round() as usize];
         for (note, starts) in [(1, 1.5), (2, 3.0), (3, 4.5)] {
-            assert!((second(note * 10) - starts).abs() < 0.2, "note {note} at {}", second(note * 10));
+            assert!(
+                (second(note * 10) - starts).abs() < 0.2,
+                "note {note} at {}",
+                second(note * 10)
+            );
         }
     }
 }

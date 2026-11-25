@@ -43,7 +43,11 @@ pub fn rows(sound: &[f64], rate: f64, per_second: f64) -> Vec<Row> {
             let bands = edges
                 .iter()
                 .map(|&(low, high)| {
-                    let share = if total > 0.0 { spectrum[low..high].iter().sum::<f64>() / total } else { 0.0 };
+                    let share = if total > 0.0 {
+                        spectrum[low..high].iter().sum::<f64>() / total
+                    } else {
+                        0.0
+                    };
                     power * share
                 })
                 .collect();
@@ -52,11 +56,24 @@ pub fn rows(sound: &[f64], rate: f64, per_second: f64) -> Vec<Row> {
         .collect();
 
     let loudest = measured.iter().map(|m| m.0).fold(0.0, f64::max);
-    let db = |power: f64| if loudest > 0.0 && power > 0.0 { (10.0 * (power / loudest).log10()).max(FLOOR) } else { FLOOR };
+    let db = |power: f64| {
+        if loudest > 0.0 && power > 0.0 {
+            (10.0 * (power / loudest).log10()).max(FLOOR)
+        } else {
+            FLOOR
+        }
+    };
     measured
         .into_iter()
         .enumerate()
-        .map(|(index, (power, bands, brightness))| (index as f64 / per_second, db(power), bands.into_iter().map(db).collect(), brightness))
+        .map(|(index, (power, bands, brightness))| {
+            (
+                index as f64 / per_second,
+                db(power),
+                bands.into_iter().map(db).collect(),
+                brightness,
+            )
+        })
         .collect()
 }
 
@@ -66,7 +83,10 @@ pub fn strokes(sound: &[f64], rate: f64) -> Vec<(f64, f64)> {
     let fft = FftPlanner::<f64>::new().plan_fft_forward(STROKE_FFT);
     let window = hann(STROKE_FFT);
     let bin = rate / STROKE_FFT as f64;
-    let (low, high) = ((30.0 / bin) as usize, ((16_000.0 / bin) as usize).min(STROKE_FFT / 2));
+    let (low, high) = (
+        (30.0 / bin) as usize,
+        ((16_000.0 / bin) as usize).min(STROKE_FFT / 2),
+    );
     let count = sound.len().div_ceil(hop);
     let spectra: Vec<Vec<f64>> = (0..count)
         .map(|index| {
@@ -75,11 +95,17 @@ pub fn strokes(sound: &[f64], rate: f64) -> Vec<(f64, f64)> {
             spectrum[low..high].iter().map(|p| p.sqrt()).collect()
         })
         .collect();
-    let top = spectra.iter().flat_map(|s| s.iter().copied()).fold(0.0, f64::max);
+    let top = spectra
+        .iter()
+        .flat_map(|s| s.iter().copied())
+        .fold(0.0, f64::max);
     if top <= 0.0 {
         return Vec::new();
     }
-    let compressed: Vec<Vec<f64>> = spectra.iter().map(|s| s.iter().map(|m| (1.0 + 1000.0 * m / top).log10()).collect()).collect();
+    let compressed: Vec<Vec<f64>> = spectra
+        .iter()
+        .map(|s| s.iter().map(|m| (1.0 + 1000.0 * m / top).log10()).collect())
+        .collect();
     // Each bin rises against the loudest of its neighbours a frame before, so a partial that beats or drifts does not.
     let flux: Vec<f64> = (0..count)
         .map(|t| {
@@ -89,7 +115,10 @@ pub fn strokes(sound: &[f64], rate: f64) -> Vec<(f64, f64)> {
             let (now, before) = (&compressed[t], &compressed[t - STROKE_LAG]);
             (0..now.len())
                 .map(|k| {
-                    let near = before[k.saturating_sub(1)..(k + 2).min(before.len())].iter().copied().fold(0.0, f64::max);
+                    let near = before[k.saturating_sub(1)..(k + 2).min(before.len())]
+                        .iter()
+                        .copied()
+                        .fold(0.0, f64::max);
                     (now[k] - near).max(0.0)
                 })
                 .sum()
@@ -110,14 +139,19 @@ pub fn strokes(sound: &[f64], rate: f64) -> Vec<(f64, f64)> {
         let peak = near.iter().all(|&f| f <= flux[t]);
         // A recording that stops on a sound jumps to silence at its end, which is no stroke.
         let inside = t * hop + STROKE_FFT / 2 <= sound.len();
-        if inside && peak && flux[t] >= mean + STROKE_RISE * loudest && found.last().is_none_or(|&at| t > at + gap) {
+        if inside
+            && peak
+            && flux[t] >= mean + STROKE_RISE * loudest
+            && found.last().is_none_or(|&at| t > at + gap)
+        {
             found.push(t);
         }
     }
 
     let power = |t: usize| {
         let from = t * hop;
-        let slice = &sound[from.min(sound.len())..(from + (STROKE_GAP * rate) as usize).min(sound.len())];
+        let slice =
+            &sound[from.min(sound.len())..(from + (STROKE_GAP * rate) as usize).min(sound.len())];
         slice.iter().map(|x| x * x).sum::<f64>() / slice.len().max(1) as f64
     };
     let powers: Vec<f64> = found.iter().map(|&t| power(t)).collect();
@@ -128,12 +162,19 @@ pub fn strokes(sound: &[f64], rate: f64) -> Vec<(f64, f64)> {
         .into_iter()
         .zip(powers)
         .filter(|&(_, p)| p > 0.0 && 10.0 * (p / strongest).log10() > -STROKE_RANGE)
-        .map(|(t, p)| (((t * hop) as f64 / rate - lead).max(0.0), 10.0 * (p / strongest).log10()))
+        .map(|(t, p)| {
+            (
+                ((t * hop) as f64 / rate - lead).max(0.0),
+                10.0 * (p / strongest).log10(),
+            )
+        })
         .collect()
 }
 
 fn hann(size: usize) -> Vec<f64> {
-    (0..size).map(|i| 0.5 - 0.5 * (2.0 * std::f64::consts::PI * i as f64 / size as f64).cos()).collect()
+    (0..size)
+        .map(|i| 0.5 - 0.5 * (2.0 * std::f64::consts::PI * i as f64 / size as f64).cos())
+        .collect()
 }
 
 /// The bins of each octave from 20 Hz, as `[low, high)`, for a spectrum of `size` samples.
@@ -143,19 +184,32 @@ fn band_edges(rate: f64, size: usize) -> Vec<(usize, usize)> {
         .map(|band| {
             let low = (LOW * 2f64.powi(band as i32) / bin).round() as usize;
             let high = (LOW * 2f64.powi(band as i32 + 1) / bin).round() as usize;
-            (low.min(size / 2), high.clamp(low + 1, size / 2).max(low.min(size / 2)))
+            (
+                low.min(size / 2),
+                high.clamp(low + 1, size / 2).max(low.min(size / 2)),
+            )
         })
         .collect()
 }
 
 /// Adds the power spectrum of the window of `sound` centred on sample `centre` to `spectrum`.
-fn add_spectrum(sound: &[f64], centre: usize, window: &[f64], fft: &Arc<dyn Fft<f64>>, spectrum: &mut [f64]) {
+fn add_spectrum(
+    sound: &[f64],
+    centre: usize,
+    window: &[f64],
+    fft: &Arc<dyn Fft<f64>>,
+    spectrum: &mut [f64],
+) {
     let size = window.len();
     let start = centre as isize - (size / 2) as isize;
     let mut buffer: Vec<Complex<f64>> = (0..size)
         .map(|i| {
             let at = start + i as isize;
-            let x = if at >= 0 && (at as usize) < sound.len() { sound[at as usize] } else { 0.0 };
+            let x = if at >= 0 && (at as usize) < sound.len() {
+                sound[at as usize]
+            } else {
+                0.0
+            };
             Complex::new(x * window[i], 0.0)
         })
         .collect();

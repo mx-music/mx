@@ -13,7 +13,14 @@ type Decode<'a> = Box<dyn Fn(&[u8]) -> f64 + 'a>;
 
 /// One channel of samples from -1 to 1, from `count` frames of a recording's data starting at frame `from`, or None for a kind of data mx does not read.
 /// Several channels are averaged, and the kinds are those `Mx.Audio` names.
-pub fn samples(data: &[u8], kind: &str, bits: usize, channels: usize, from: usize, count: usize) -> Option<Vec<f64>> {
+pub fn samples(
+    data: &[u8],
+    kind: &str,
+    bits: usize,
+    channels: usize,
+    from: usize,
+    count: usize,
+) -> Option<Vec<f64>> {
     let integer = |bytes: &mut dyn Iterator<Item = u8>| {
         let raw = bytes.fold(0i64, |value, byte| value << 8 | byte as i64);
         let shift = 64 - bits;
@@ -30,18 +37,37 @@ pub fn samples(data: &[u8], kind: &str, bits: usize, channels: usize, from: usiz
         _ => return None,
     };
     let bytes = bits / 8;
-    let frames = data.chunks_exact(bytes * channels.max(1)).skip(from).take(count);
-    Some(frames.map(|frame| frame.chunks_exact(bytes).map(&value).sum::<f64>() / channels as f64).collect())
+    let frames = data
+        .chunks_exact(bytes * channels.max(1))
+        .skip(from)
+        .take(count);
+    Some(
+        frames
+            .map(|frame| frame.chunks_exact(bytes).map(&value).sum::<f64>() / channels as f64)
+            .collect(),
+    )
 }
 
 /// The spectrogram of a sound as 480 rows of `width` RGB pixels, from the top.
 /// Column `c` starts at sample `c * hop` and holds the spectrum of `size` samples; a column that covers more sound than that holds the loudest level each frequency reaches in the sound it covers.
 /// `per_second` is the columns a second takes, for a line at each second, or None for no such lines.
-pub fn draw(sound: &[f64], rate: f64, width: usize, hop: f64, size: usize, per_second: Option<f64>) -> Vec<u8> {
+pub fn draw(
+    sound: &[f64],
+    rate: f64,
+    width: usize,
+    hop: f64,
+    size: usize,
+    per_second: Option<f64>,
+) -> Vec<u8> {
     let size = size.clamp(1, FFT);
     let step = (size / 2).max(1);
-    let bins: Vec<f64> = (0..HEIGHT).rev().map(|row| LOW * 2f64.powf(row as f64 / PER_OCTAVE as f64) / (rate / FFT as f64)).collect();
-    let window: Vec<f64> = (0..size).map(|i| 0.5 - 0.5 * (2.0 * std::f64::consts::PI * i as f64 / size as f64).cos()).collect();
+    let bins: Vec<f64> = (0..HEIGHT)
+        .rev()
+        .map(|row| LOW * 2f64.powf(row as f64 / PER_OCTAVE as f64) / (rate / FFT as f64))
+        .collect();
+    let window: Vec<f64> = (0..size)
+        .map(|i| 0.5 - 0.5 * (2.0 * std::f64::consts::PI * i as f64 / size as f64).cos())
+        .collect();
     let fft = FftPlanner::<f64>::new().plan_fft_forward(FFT);
     let (bins, window, fft) = (&bins, &window, &fft);
 
@@ -57,11 +83,19 @@ pub fn draw(sound: &[f64], rate: f64, width: usize, hop: f64, size: usize, per_s
                 for (index, column) in columns.chunks_mut(HEIGHT).enumerate() {
                     let left = (chunk * each + index) as f64;
                     let from = (left * hop).round() as usize;
-                    let until = if hop > size as f64 { ((left + 1.0) * hop).round() as usize } else { from + 1 };
+                    let until = if hop > size as f64 {
+                        ((left + 1.0) * hop).round() as usize
+                    } else {
+                        from + 1
+                    };
                     loudest.fill(0.0);
                     for at in (from..until).step_by(step) {
                         for (i, slot) in buffer.iter_mut().enumerate() {
-                            let sample = if i < size { sound.get(at + i).copied().unwrap_or(0.0) * window[i] } else { 0.0 };
+                            let sample = if i < size {
+                                sound.get(at + i).copied().unwrap_or(0.0) * window[i]
+                            } else {
+                                0.0
+                            };
                             *slot = Complex::new(sample, 0.0);
                         }
                         fft.process_with_scratch(&mut buffer, &mut scratch);
@@ -71,7 +105,8 @@ pub fn draw(sound: &[f64], rate: f64, width: usize, hop: f64, size: usize, per_s
                     }
                     for (level, &position) in column.iter_mut().zip(bins) {
                         let below = (position.floor() as usize).min(FFT / 2 - 2);
-                        let magnitude = loudest[below] + (position - below as f64) * (loudest[below + 1] - loudest[below]);
+                        let magnitude = loudest[below]
+                            + (position - below as f64) * (loudest[below + 1] - loudest[below]);
                         *level = 20.0 * (magnitude.max(0.0) + 1.0e-12).log10();
                     }
                 }
@@ -82,7 +117,9 @@ pub fn draw(sound: &[f64], rate: f64, width: usize, hop: f64, size: usize, per_s
     let loudest = levels.iter().copied().fold(f64::MIN, f64::max);
     let mut pixels = vec![0u8; width * HEIGHT * 3];
     for (left, column) in levels.chunks(HEIGHT).enumerate() {
-        let second = per_second.is_some_and(|per| left == 0 || (left as f64 / per).floor() != ((left - 1) as f64 / per).floor());
+        let second = per_second.is_some_and(|per| {
+            left == 0 || (left as f64 / per).floor() != ((left - 1) as f64 / per).floor()
+        });
         for (top, &level) in column.iter().enumerate() {
             let line = (HEIGHT - 1 - top).is_multiple_of(PER_OCTAVE) || second;
             let at = (top * width + left) * 3;
@@ -95,8 +132,16 @@ pub fn draw(sound: &[f64], rate: f64, width: usize, hop: f64, size: usize, per_s
 // Black through purple and orange to pale yellow as the level rises.
 fn pixel(db: f64, line: bool) -> [u8; 3] {
     let loudness = ((db + RANGE) / RANGE).clamp(0.0, 1.0);
-    let blue = if loudness < 0.4 { loudness * 1.5 } else { (0.6 - (loudness - 0.4) * 1.5).max(0.0) + (loudness - 0.85).max(0.0) * 4.0 };
-    let rgb = [channel(loudness * 1.6), channel(loudness * 1.6 - 0.6), channel(blue)];
+    let blue = if loudness < 0.4 {
+        loudness * 1.5
+    } else {
+        (0.6 - (loudness - 0.4) * 1.5).max(0.0) + (loudness - 0.85).max(0.0) * 4.0
+    };
+    let rgb = [
+        channel(loudness * 1.6),
+        channel(loudness * 1.6 - 0.6),
+        channel(blue),
+    ];
     if line { rgb.map(|c| c.max(60)) } else { rgb }
 }
 

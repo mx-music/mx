@@ -59,11 +59,16 @@ pub fn spectra_from(sound: &[f64], rate: f64, f0: f64, seconds: f64, struck: usi
     let window = window(rate, f0);
     let size = (2 * window).next_power_of_two();
     let fft = FftPlanner::<f64>::new().plan_fft_forward(size);
-    let hann: Vec<f64> = (0..window).map(|i| 0.5 - 0.5 * (2.0 * std::f64::consts::PI * i as f64 / window as f64).cos()).collect();
+    let hann: Vec<f64> = (0..window)
+        .map(|i| 0.5 - 0.5 * (2.0 * std::f64::consts::PI * i as f64 / window as f64).cos())
+        .collect();
     let norm = hann.iter().sum::<f64>() / 2.0;
     let start = struck as f64 - LEAD * rate;
     // No window reaches past the seconds measured, where a recording may already be let go.
-    let count = (((seconds + LEAD - window as f64 / rate / 2.0) / HOP).floor().max(0.0) as usize).min(((sound.len() as f64 - start) / rate / HOP).max(0.0) as usize);
+    let count = (((seconds + LEAD - window as f64 / rate / 2.0) / HOP)
+        .floor()
+        .max(0.0) as usize)
+        .min(((sound.len() as f64 - start) / rate / HOP).max(0.0) as usize);
     let frames = super::parallel(&(0..count).collect::<Vec<_>>(), |&k| {
         let centre = start + k as f64 * HOP * rate;
         let mut buffer: Vec<Complex<f64>> = (0..size)
@@ -72,25 +77,48 @@ pub fn spectra_from(sound: &[f64], rate: f64, f0: f64, seconds: f64, struck: usi
                     return Complex::new(0.0, 0.0);
                 }
                 let at = (centre + i as f64 - (window / 2) as f64).round();
-                let sample = if at >= 0.0 && (at as usize) < sound.len() { sound[at as usize] } else { 0.0 };
+                let sample = if at >= 0.0 && (at as usize) < sound.len() {
+                    sound[at as usize]
+                } else {
+                    0.0
+                };
                 Complex::new(sample * hann[i], 0.0)
             })
             .collect();
         fft.process(&mut buffer);
-        buffer[..size / 2].iter().map(|c| (c.norm() / norm).max(1e-12)).collect()
+        buffer[..size / 2]
+            .iter()
+            .map(|c| (c.norm() / norm).max(1e-12))
+            .collect()
     });
-    Spectra { frames, bin: rate / size as f64, resolution: rate / window as f64, window: window as f64 / rate, start, rate }
+    Spectra {
+        frames,
+        bin: rate / size as f64,
+        resolution: rate / window as f64,
+        window: window as f64 / rate,
+        start,
+        rate,
+    }
 }
 
 /// A peak's frequency and level from a parabola through the log magnitudes around the largest bin within `width` Hz of `freq`.
 pub fn peak_near(frame: &[f64], bin: f64, freq: f64, width: f64) -> (f64, f64) {
     let low = ((freq - width) / bin).floor().max(1.0) as usize;
-    let high = (((freq + width) / bin).ceil() as usize).min(frame.len() - 2).max(low);
+    let high = (((freq + width) / bin).ceil() as usize)
+        .min(frame.len() - 2)
+        .max(low);
     let best = (low..=high).fold(low, |best, i| if frame[i] > frame[best] { i } else { best });
     let (left, top, right) = (db(frame[best - 1]), db(frame[best]), db(frame[best + 1]));
     let bend = left - 2.0 * top + right;
-    let shift = if bend < 0.0 { (0.5 * (left - right) / bend).clamp(-0.5, 0.5) } else { 0.0 };
-    ((best as f64 + shift) * bin, top - 0.25 * (left - right) * shift)
+    let shift = if bend < 0.0 {
+        (0.5 * (left - right) / bend).clamp(-0.5, 0.5)
+    } else {
+        0.0
+    };
+    (
+        (best as f64 + shift) * bin,
+        top - 0.25 * (left - right) * shift,
+    )
 }
 
 /// The level of each third of an octave from 25 Hz between the partials: the 75th percentile over the note of each frame's median there.
@@ -105,7 +133,9 @@ impl Floor {
         sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
         let distance = |freq: f64| {
             let at = sorted.partition_point(|p| *p < freq);
-            let below = at.checked_sub(1).map_or(f64::INFINITY, |i| freq - sorted[i]);
+            let below = at
+                .checked_sub(1)
+                .map_or(f64::INFINITY, |i| freq - sorted[i]);
             let above = sorted.get(at).map_or(f64::INFINITY, |p| p - freq);
             below.min(above)
         };
@@ -113,26 +143,47 @@ impl Floor {
         let levels = edges
             .windows(2)
             .map(|edge| {
-                let (low, high) = ((edge[0] / spectra.bin) as usize, (edge[1] / spectra.bin) as usize);
-                let bins: Vec<usize> = (low.max(1)..high.min(length)).filter(|&i| distance(i as f64 * spectra.bin) > 2.0 * spectra.resolution).collect();
+                let (low, high) = (
+                    (edge[0] / spectra.bin) as usize,
+                    (edge[1] / spectra.bin) as usize,
+                );
+                let bins: Vec<usize> = (low.max(1)..high.min(length))
+                    .filter(|&i| distance(i as f64 * spectra.bin) > 2.0 * spectra.resolution)
+                    .collect();
                 if bins.is_empty() {
                     return None;
                 }
-                let mut per_frame: Vec<f64> = spectra.frames.iter().step_by(8).map(|f| median(&bins.iter().map(|&i| db(f[i])).collect::<Vec<_>>())).collect();
+                let mut per_frame: Vec<f64> = spectra
+                    .frames
+                    .iter()
+                    .step_by(8)
+                    .map(|f| median(&bins.iter().map(|&i| db(f[i])).collect::<Vec<_>>()))
+                    .collect();
                 per_frame.sort_by(|a, b| a.partial_cmp(b).unwrap());
                 per_frame.get(per_frame.len() * 3 / 4).copied()
             })
             .collect::<Vec<Option<f64>>>();
         // A band the partials crowd so that no bin stands clear of them takes the floor of the nearest band that has one.
-        let known: Vec<(usize, f64)> = levels.iter().enumerate().filter_map(|(k, l)| l.map(|l| (k, l))).collect();
+        let known: Vec<(usize, f64)> = levels
+            .iter()
+            .enumerate()
+            .filter_map(|(k, l)| l.map(|l| (k, l)))
+            .collect();
         let levels = (0..levels.len())
-            .map(|k| known.iter().min_by_key(|(at, _)| (*at as i64 - k as i64).abs()).map_or(-240.0, |(_, l)| *l))
+            .map(|k| {
+                known
+                    .iter()
+                    .min_by_key(|(at, _)| (*at as i64 - k as i64).abs())
+                    .map_or(-240.0, |(_, l)| *l)
+            })
             .collect();
         Floor { levels }
     }
 
     pub fn at(&self, freq: f64) -> f64 {
-        let band = ((freq / 25.0).log2() * 3.0).floor().clamp(0.0, (self.levels.len() - 1) as f64) as usize;
+        let band = ((freq / 25.0).log2() * 3.0)
+            .floor()
+            .clamp(0.0, (self.levels.len() - 1) as f64) as usize;
         self.levels[band]
     }
 }
@@ -149,13 +200,21 @@ pub struct Track {
 impl Track {
     /// The frames it stands at least 10 dB above the floor in.
     pub fn clear(&self) -> impl Iterator<Item = (usize, f64)> + '_ {
-        self.levels.iter().cloned().enumerate().filter(|(_, l)| *l > self.floor + CLEAR)
+        self.levels
+            .iter()
+            .cloned()
+            .enumerate()
+            .filter(|(_, l)| *l > self.floor + CLEAR)
     }
 
     /// The loudest it is over the first `seconds`.
     pub fn strike(&self, seconds: f64) -> f64 {
         let frames = ((seconds / HOP).round() as usize).max(1);
-        self.levels.iter().take(frames).cloned().fold(f64::MIN, f64::max)
+        self.levels
+            .iter()
+            .take(frames)
+            .cloned()
+            .fold(f64::MIN, f64::max)
     }
 }
 
@@ -173,7 +232,9 @@ pub struct Note {
 pub fn follow(sound: &[f64], spectra: &Spectra, freqs: &[f64]) -> Vec<Vec<f64>> {
     let rate = spectra.rate;
     let size = (spectra.window * rate).round() as usize;
-    let hann: Vec<f64> = (0..size).map(|i| 0.5 - 0.5 * (2.0 * PI * i as f64 / size as f64).cos()).collect();
+    let hann: Vec<f64> = (0..size)
+        .map(|i| 0.5 - 0.5 * (2.0 * PI * i as f64 / size as f64).cos())
+        .collect();
     let centre = size as f64 / 2.0;
     let omegas: Vec<f64> = freqs.iter().map(|f| 2.0 * PI * f / rate).collect();
     let reach = 20.0 * 2.0 * PI / size as f64;
@@ -183,7 +244,11 @@ pub fn follow(sound: &[f64], spectra: &Spectra, freqs: &[f64]) -> Vec<Vec<f64>> 
         let heard: Vec<f64> = (0..size)
             .map(|i| {
                 let at = from + i as i64;
-                if at >= 0 && (at as usize) < sound.len() { sound[at as usize] * hann[i] } else { 0.0 }
+                if at >= 0 && (at as usize) < sound.len() {
+                    sound[at as usize] * hann[i]
+                } else {
+                    0.0
+                }
             })
             .collect();
         let mut read = Vec::with_capacity(2 * omegas.len());
@@ -201,9 +266,13 @@ pub fn follow(sound: &[f64], spectra: &Spectra, freqs: &[f64]) -> Vec<Vec<f64>> 
             read.push(change);
         }
         let solved = system.solve(read);
-        (0..omegas.len()).map(|j| db(solved[2 * j].norm())).collect::<Vec<f64>>()
+        (0..omegas.len())
+            .map(|j| db(solved[2 * j].norm()))
+            .collect::<Vec<f64>>()
     });
-    (0..freqs.len()).map(|j| rows.iter().map(|row| row[j]).collect()).collect()
+    (0..freqs.len())
+        .map(|j| rows.iter().map(|row| row[j]).collect())
+        .collect()
 }
 
 // The window's weighted sums of a sine and of a sine times the offset from the window's centre, once and twice, at an angle `theta` per sample.
@@ -237,7 +306,15 @@ impl Banded {
         order.sort_by(|a, b| omegas[*a].partial_cmp(&omegas[*b]).unwrap());
         let sorted: Vec<f64> = order.iter().map(|&i| omegas[i]).collect();
         let partials = sorted.len();
-        let near = (0..partials).map(|j| (j..partials).take_while(|&k| sorted[k] - sorted[j] < reach).count()).max().unwrap_or(1).max(1);
+        let near = (0..partials)
+            .map(|j| {
+                (j..partials)
+                    .take_while(|&k| sorted[k] - sorted[j] < reach)
+                    .count()
+            })
+            .max()
+            .unwrap_or(1)
+            .max(1);
         let count = 2 * partials;
         let band = 2 * near + 1;
         // Each row holds the columns from j - band to j + band.
@@ -265,14 +342,23 @@ impl Banded {
                 }
             }
         }
-        Banded { order, band, lower, upper: matrix }
+        Banded {
+            order,
+            band,
+            lower,
+            upper: matrix,
+        }
     }
 
     // The amplitude and change of each partial, from what the frame reads at each, as the pairs `read` gives them in the partials' own order.
     fn solve(&self, read: Vec<Complex<f64>>) -> Vec<Complex<f64>> {
         let count = 2 * self.order.len();
         let band = self.band;
-        let mut values: Vec<Complex<f64>> = self.order.iter().flat_map(|&i| [read[2 * i], read[2 * i + 1]]).collect();
+        let mut values: Vec<Complex<f64>> = self
+            .order
+            .iter()
+            .flat_map(|&i| [read[2 * i], read[2 * i + 1]])
+            .collect();
         for j in 0..count {
             for p in j.saturating_sub(band)..j {
                 let factor = self.lower[j][p + band - j];
@@ -304,15 +390,39 @@ pub fn measure(sound: &[f64], rate: f64, note: f64, seconds: f64, exact: bool, t
     let f0 = if exact {
         guess
     } else {
-        let rough = pitch(&spectra.frames[spectra.settled().start], spectra.bin, guess, spectra.resolution);
+        let rough = pitch(
+            &spectra.frames[spectra.settled().start],
+            spectra.bin,
+            guess,
+            spectra.resolution,
+        );
         // The grid's pitch can sit a few cents off where the bell's partials pull its score, so the first harmonics settle it.
-        median(&(1..=4).map(|n| settle(&spectra, n as f64 * rough, (n as f64 * rough * 0.03).max(spectra.resolution)) / n as f64).collect::<Vec<_>>())
+        median(
+            &(1..=4)
+                .map(|n| {
+                    settle(
+                        &spectra,
+                        n as f64 * rough,
+                        (n as f64 * rough * 0.03).max(spectra.resolution),
+                    ) / n as f64
+                })
+                .collect::<Vec<_>>(),
+        )
     };
     let top = top.min(0.45 * rate);
-    let harmonics: Vec<f64> = (1..).map(|n| n as f64 * f0).take_while(|f| *f <= top).collect();
+    let harmonics: Vec<f64> = (1..)
+        .map(|n| n as f64 * f0)
+        .take_while(|f| *f <= top)
+        .collect();
     let first_floor = Floor::new(&spectra, &harmonics);
     // A drum's partials are not harmonics, so with its pitch given they are looked for from just above it; a string's from halfway to its second harmonic, clear of the fundamental's skirt.
-    let others = others(&spectra, f0, top, &first_floor, if exact { 1.06 } else { 1.5 });
+    let others = others(
+        &spectra,
+        f0,
+        top,
+        &first_floor,
+        if exact { 1.06 } else { 1.5 },
+    );
     let mut every = harmonics.clone();
     every.extend(others.iter().cloned());
     let floor = Floor::new(&spectra, &every);
@@ -321,49 +431,89 @@ pub fn measure(sound: &[f64], rate: f64, note: f64, seconds: f64, exact: bool, t
     let mut freqs: Vec<(f64, u32)> = vec![];
     for (n, target) in harmonics.iter().enumerate() {
         // A pitch given exactly is the first partial's own, which a louder partial nearby could pull off it.
-        let freq = if exact && n == 0 { *target } else { settle(&spectra, *target, width(*target)) };
+        let freq = if exact && n == 0 {
+            *target
+        } else {
+            settle(&spectra, *target, width(*target))
+        };
         // A harmonic settling outside its window has followed another partial's skirt, and high up neighbouring harmonics may settle on the same peak, which is kept once.
-        if (freq - target).abs() <= width(*target) && freqs.iter().all(|(f, _)| (f - freq).abs() > spectra.resolution) {
+        if (freq - target).abs() <= width(*target)
+            && freqs
+                .iter()
+                .all(|(f, _)| (f - freq).abs() > spectra.resolution)
+        {
             freqs.push((freq, n as u32 + 1));
         }
     }
     for freq in &others {
         let freq = settle(&spectra, *freq, spectra.resolution);
         // Two partials closer than twice the window's resolution cannot be told apart reliably, so the weaker is dropped.
-        if freqs.iter().all(|(f, _)| (f - freq).abs() > 2.0 * spectra.resolution) {
+        if freqs
+            .iter()
+            .all(|(f, _)| (f - freq).abs() > 2.0 * spectra.resolution)
+        {
             freqs.push((freq, 0));
         }
     }
-    let levels = follow(sound, &spectra, &freqs.iter().map(|f| f.0).collect::<Vec<_>>());
+    let levels = follow(
+        sound,
+        &spectra,
+        &freqs.iter().map(|f| f.0).collect::<Vec<_>>(),
+    );
     let mut partials = vec![];
     let mut left_out = vec![];
     for ((freq, harmonic), levels) in freqs.into_iter().zip(levels) {
-        let track = Track { freq, harmonic, levels, floor: floor.at(freq) };
+        let track = Track {
+            freq,
+            harmonic,
+            levels,
+            floor: floor.at(freq),
+        };
         if harmonic > 0 {
             if track.strike(0.1) > track.floor + CLEAR {
                 partials.push(track);
             }
         } else if median(&track.levels[spectra.settled()]) <= track.floor + CLEAR {
             // A peak the solving leaves nothing of was a stronger partial's sidelobe.
-        } else if moves(&track, spectra.settled()) < 12.0 && track.strike(0.05) - median(&track.levels[spectra.settled()]) < 3.0 {
+        } else if moves(&track, spectra.settled()) < 12.0
+            && track.strike(0.05) - median(&track.levels[spectra.settled()]) < 3.0
+        {
             left_out.push(track);
         } else {
             partials.push(track);
         }
     }
-    Note { f0, spectra, floor, partials, left_out }
+    Note {
+        f0,
+        spectra,
+        floor,
+        partials,
+        left_out,
+    }
 }
 
 /// A partial's frequency near `freq`, as the median of its peak over the settled frames.
 pub fn settle(spectra: &Spectra, freq: f64, width: f64) -> f64 {
-    let found: Vec<f64> = spectra.frames[spectra.settled()].iter().map(|f| peak_near(f, spectra.bin, freq, width).0).collect();
-    if found.is_empty() { freq } else { median(&found) }
+    let found: Vec<f64> = spectra.frames[spectra.settled()]
+        .iter()
+        .map(|f| peak_near(f, spectra.bin, freq, width).0)
+        .collect();
+    if found.is_empty() {
+        freq
+    } else {
+        median(&found)
+    }
 }
 
 // The fundamental within 6% of the guess whose first six harmonics are loudest, in steps of a thousandth.
 fn pitch(frame: &[f64], bin: f64, guess: f64, _resolution: f64) -> f64 {
     let candidates = (0..=120).map(|step| guess * (0.94 + step as f64 * 0.001));
-    super::first_max(candidates, |f0| (1..=6).map(|n| super::magnitude_at(frame, f0 * n as f64 / bin)).sum()).unwrap()
+    super::first_max(candidates, |f0| {
+        (1..=6)
+            .map(|n| super::magnitude_at(frame, f0 * n as f64 / bin))
+            .sum()
+    })
+    .unwrap()
 }
 
 // Peaks over the first 20 ms of settled frames above `above` times the pitch that stand clear of the harmonics and of the floor, strongest first, so a sidelobe gives way to the peak it leans on.
@@ -372,10 +522,15 @@ fn others(spectra: &Spectra, f0: f64, top: f64, floor: &Floor, above: f64) -> Ve
     let last = ((top / spectra.bin) as usize).min(spectra.frames[0].len() - 3);
     let near = (0.06 * f0).max(2.0 * spectra.resolution);
     for step in [0, 4, 8] {
-        let Some(frame) = spectra.frames.get(spectra.settled().start + step) else { continue };
+        let Some(frame) = spectra.frames.get(spectra.settled().start + step) else {
+            continue;
+        };
         for i in 2..last {
             let freq = i as f64 * spectra.bin;
-            let local = frame[i] > frame[i - 1] && frame[i] >= frame[i + 1] && frame[i] > frame[i - 2] && frame[i] >= frame[i + 2];
+            let local = frame[i] > frame[i - 1]
+                && frame[i] >= frame[i + 1]
+                && frame[i] > frame[i - 2]
+                && frame[i] >= frame[i + 2];
             let off = ((freq / f0) - (freq / f0).round()).abs() * f0;
             if local && off > near && freq > above * f0 && db(frame[i]) > floor.at(freq) + CLEAR {
                 peaks.push(peak_near(frame, spectra.bin, freq, spectra.bin));
@@ -385,7 +540,10 @@ fn others(spectra: &Spectra, f0: f64, top: f64, floor: &Floor, above: f64) -> Ve
     peaks.sort_by(|a, b| b.1.total_cmp(&a.1));
     let mut found: Vec<f64> = vec![];
     for (freq, _) in peaks {
-        if found.iter().all(|f| (f - freq).abs() > 2.0 * spectra.resolution) {
+        if found
+            .iter()
+            .all(|f| (f - freq).abs() > 2.0 * spectra.resolution)
+        {
             found.push(freq);
         }
     }
@@ -396,7 +554,8 @@ fn others(spectra: &Spectra, f0: f64, top: f64, floor: &Floor, above: f64) -> Ve
 fn moves(track: &Track, settled: std::ops::Range<usize>) -> f64 {
     let tail = (0.5 / HOP) as usize;
     let last = &track.levels[track.levels.len().saturating_sub(tail)..];
-    let first = &track.levels[settled.start..(settled.start + (0.1 / HOP) as usize).min(track.levels.len())];
+    let first = &track.levels
+        [settled.start..(settled.start + (0.1 / HOP) as usize).min(track.levels.len())];
     (median(first) - median(last)).abs()
 }
 
@@ -408,8 +567,18 @@ pub struct Fall {
 }
 
 pub fn fall(track: &Track) -> Option<Fall> {
-    let peak = (0..((0.05 / HOP) as usize).min(track.levels.len())).fold(0, |best, i| if track.levels[i] > track.levels[best] { i } else { best });
-    let points: Vec<(f64, f64)> = track.clear().filter(|(i, _)| *i >= peak).map(|(i, l)| (i as f64 * HOP, l)).collect();
+    let peak = (0..((0.05 / HOP) as usize).min(track.levels.len())).fold(0, |best, i| {
+        if track.levels[i] > track.levels[best] {
+            i
+        } else {
+            best
+        }
+    });
+    let points: Vec<(f64, f64)> = track
+        .clear()
+        .filter(|(i, _)| *i >= peak)
+        .map(|(i, l)| (i as f64 * HOP, l))
+        .collect();
     if points.len() < 8 {
         return None;
     }
@@ -426,8 +595,18 @@ pub fn fall(track: &Track) -> Option<Fall> {
         }
     }
     match best {
-        Some((one, knee, two, error)) if error < 0.5 * single_error && one < two && two <= 0.0 => Some(Fall { first: one, knee: Some(knee), second: two }),
-        _ => Some(Fall { first: single, knee: None, second: single }),
+        Some((one, knee, two, error)) if error < 0.5 * single_error && one < two && two <= 0.0 => {
+            Some(Fall {
+                first: one,
+                knee: Some(knee),
+                second: two,
+            })
+        }
+        _ => Some(Fall {
+            first: single,
+            knee: None,
+            second: single,
+        }),
     }
 }
 
@@ -437,6 +616,9 @@ fn line(points: &[(f64, f64)]) -> (f64, f64) {
     let count = points.len() as f64;
     let mean_x = points.iter().map(|p| p.0).sum::<f64>() / count;
     let mean_y = points.iter().map(|p| p.1).sum::<f64>() / count;
-    let error = points.iter().map(|(x, y)| (y - mean_y - slope * (x - mean_x)).powi(2)).sum();
+    let error = points
+        .iter()
+        .map(|(x, y)| (y - mean_y - slope * (x - mean_x)).powi(2))
+        .sum();
     (slope, error)
 }

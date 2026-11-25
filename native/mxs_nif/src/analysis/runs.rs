@@ -41,7 +41,12 @@ pub fn split(sound: &[f64], rate: f64, notes: &[i64], held: bool) -> Vec<Piece> 
     } else {
         starts(&filtered(), rate)
     };
-    let ends: Vec<usize> = starts.iter().skip(1).cloned().chain([sound.len()]).collect();
+    let ends: Vec<usize> = starts
+        .iter()
+        .skip(1)
+        .cloned()
+        .chain([sound.len()])
+        .collect();
     let found: Vec<(Piece, f64)> = starts
         .iter()
         .zip(&ends)
@@ -55,7 +60,16 @@ pub fn split(sound: &[f64], rate: f64, notes: &[i64], held: bool) -> Vec<Piece> 
                 let cents = 1200.0 * (pitch / hz(note as f64)).log2();
                 (cents.abs() > 50.0).then(|| format!("sounds {cents:+.0} cents from it"))
             });
-            Some((Piece { from, to, note, pitch, left_out }, spectrum.iter().cloned().fold(0.0, f64::max)))
+            Some((
+                Piece {
+                    from,
+                    to,
+                    note,
+                    pitch,
+                    left_out,
+                },
+                spectrum.iter().cloned().fold(0.0, f64::max),
+            ))
         })
         .collect();
     let mut loudnesses: Vec<f64> = found.iter().map(|(_, loudness)| *loudness).collect();
@@ -73,7 +87,11 @@ pub fn split(sound: &[f64], rate: f64, notes: &[i64], held: bool) -> Vec<Piece> 
                 continue;
             }
             // A rise within a note as loud as its strike or quieter is the same bar still ringing, so it joins the note; a louder one strikes it again, and only that strike is kept.
-            Some((before, loud)) if before.note == piece.note && before.left_out.is_none() && piece.left_out.is_none() => {
+            Some((before, loud))
+                if before.note == piece.note
+                    && before.left_out.is_none()
+                    && piece.left_out.is_none() =>
+            {
                 if loudness <= *loud {
                     before.to = piece.to;
                     continue;
@@ -86,7 +104,12 @@ pub fn split(sound: &[f64], rate: f64, notes: &[i64], held: bool) -> Vec<Piece> 
     }
     // A note found twice keeps its louder sound, so a click or a second strike does not stand in for it.
     for i in 0..pieces.len() {
-        let again = pieces.iter().enumerate().any(|(j, (other, loudness))| j != i && other.note == pieces[i].0.note && other.left_out.is_none() && (*loudness > pieces[i].1 || (*loudness == pieces[i].1 && j < i)));
+        let again = pieces.iter().enumerate().any(|(j, (other, loudness))| {
+            j != i
+                && other.note == pieces[i].0.note
+                && other.left_out.is_none()
+                && (*loudness > pieces[i].1 || (*loudness == pieces[i].1 && j < i))
+        });
         if again && pieces[i].0.left_out.is_none() {
             pieces[i].0.left_out = Some("was found already, louder".to_string());
         }
@@ -98,18 +121,35 @@ pub fn split(sound: &[f64], rate: f64, notes: &[i64], held: bool) -> Vec<Piece> 
 // Before the recording counts as the quietest it holds, and a rise is a strike only where its first 50 ms come within 6 dB of the loudest of the gap after it, so a wobble of the room before a strike is not a note.
 fn starts(sound: &[f64], rate: f64) -> Vec<usize> {
     let hop = (rate * 0.005).round() as usize;
-    let levels: Vec<f64> = sound.chunks(hop).map(|chunk| db((chunk.iter().map(|x| x * x).sum::<f64>() / hop as f64).sqrt())).collect();
+    let levels: Vec<f64> = sound
+        .chunks(hop)
+        .map(|chunk| db((chunk.iter().map(|x| x * x).sum::<f64>() / hop as f64).sqrt()))
+        .collect();
     let loudest = levels.iter().cloned().fold(f64::MIN, f64::max);
     let quietest = levels.iter().cloned().fold(f64::MAX, f64::min);
     let before = 40;
     let mut found: Vec<usize> = vec![];
     // The filter's edge at the first sample reads as a click, so the first 10 ms are not looked at.
     for (frame, level) in levels.iter().enumerate().skip(2) {
-        let lowest = levels[frame.saturating_sub(before)..frame].iter().cloned().chain((frame < before).then_some(quietest)).fold(f64::MAX, f64::min);
+        let lowest = levels[frame.saturating_sub(before)..frame]
+            .iter()
+            .cloned()
+            .chain((frame < before).then_some(quietest))
+            .fold(f64::MAX, f64::min);
         let (soon, later) = (frame + 10, frame + (GAP / 0.005) as usize);
-        let top = |end: usize| levels[frame..end.min(levels.len())].iter().cloned().fold(f64::MIN, f64::max);
-        let rises = *level > loudest - WITHIN && level - lowest > RISE && top(soon) > top(later) - 6.0;
-        if rises && found.last().is_none_or(|last| (frame - last) as f64 * 0.005 > GAP) {
+        let top = |end: usize| {
+            levels[frame..end.min(levels.len())]
+                .iter()
+                .cloned()
+                .fold(f64::MIN, f64::max)
+        };
+        let rises =
+            *level > loudest - WITHIN && level - lowest > RISE && top(soon) > top(later) - 6.0;
+        if rises
+            && found
+                .last()
+                .is_none_or(|last| (frame - last) as f64 * 0.005 > GAP)
+        {
             found.push(frame);
         }
     }
@@ -120,7 +160,10 @@ fn starts(sound: &[f64], rate: f64) -> Vec<usize> {
 // The quiet is the tenth of the levels that are not digital silence, so the step from silence up to the room's noise is not a note.
 fn held_starts(sound: &[f64], rate: f64) -> Vec<usize> {
     let hop = (rate * 0.005).round() as usize;
-    let levels: Vec<f64> = sound.chunks(hop).map(|chunk| db((chunk.iter().map(|x| x * x).sum::<f64>() / hop as f64).sqrt())).collect();
+    let levels: Vec<f64> = sound
+        .chunks(hop)
+        .map(|chunk| db((chunk.iter().map(|x| x * x).sum::<f64>() / hop as f64).sqrt()))
+        .collect();
     let loudest = levels.iter().cloned().fold(f64::MIN, f64::max);
     let mut heard: Vec<f64> = levels.iter().cloned().filter(|l| *l > -150.0).collect();
     heard.sort_by(f64::total_cmp);
@@ -145,8 +188,18 @@ fn held_starts(sound: &[f64], rate: f64) -> Vec<usize> {
 // Why a note does not sound at `f0`: its odd harmonics all far under its even ones, so it sounds an octave above, or peaks halfway between its harmonics as loud as they are, so it sounds an octave below.
 fn octave(level: &impl Fn(f64) -> f64, f0: f64, rate: f64) -> Option<String> {
     // Below 25 Hz a recording holds rumble rather than a note.
-    let loudest = |ratios: &[f64]| ratios.iter().filter(|r| *r * f0 < 0.45 * rate && *r * f0 >= 25.0).map(|r| level(r * f0)).fold(f64::MIN, f64::max);
-    let (odd, even, half) = (loudest(&[1.0, 3.0, 5.0]), loudest(&[2.0, 4.0, 6.0]), loudest(&[0.5, 1.5, 2.5]));
+    let loudest = |ratios: &[f64]| {
+        ratios
+            .iter()
+            .filter(|r| *r * f0 < 0.45 * rate && *r * f0 >= 25.0)
+            .map(|r| level(r * f0))
+            .fold(f64::MIN, f64::max)
+    };
+    let (odd, even, half) = (
+        loudest(&[1.0, 3.0, 5.0]),
+        loudest(&[2.0, 4.0, 6.0]),
+        loudest(&[0.5, 1.5, 2.5]),
+    );
     if odd < even - 25.0 {
         Some("sounds an octave above it".to_string())
     } else if half > odd.max(even) - 12.0 {
@@ -168,7 +221,9 @@ fn pitch(spectrum: &[f64], bin: f64, f0: f64, rate: f64) -> f64 {
 // The level in dB of the loudest bin within 1.5 percent of `freq`.
 fn level_near(spectrum: &[f64], bin: f64, freq: f64) -> f64 {
     let low = ((freq * 0.985 / bin).floor() as usize).max(1);
-    let high = ((freq * 1.015 / bin).ceil() as usize).min(spectrum.len() - 1).max(low);
+    let high = ((freq * 1.015 / bin).ceil() as usize)
+        .min(spectrum.len() - 1)
+        .max(low);
     db(spectrum[low..=high].iter().cloned().fold(0.0, f64::max))
 }
 
@@ -184,12 +239,22 @@ fn spectrum(sound: &[f64], rate: f64) -> Option<(Vec<f64>, f64)> {
     let size = (4 * window).next_power_of_two();
     let mut buffer: Vec<Complex<f64>> = (0..size)
         .map(|i| {
-            let x = if i < window { sound[from + i] * (0.5 - 0.5 * (2.0 * std::f64::consts::PI * i as f64 / window as f64).cos()) } else { 0.0 };
+            let x = if i < window {
+                sound[from + i]
+                    * (0.5 - 0.5 * (2.0 * std::f64::consts::PI * i as f64 / window as f64).cos())
+            } else {
+                0.0
+            };
             Complex::new(x, 0.0)
         })
         .collect();
-    FftPlanner::<f64>::new().plan_fft_forward(size).process(&mut buffer);
-    Some((buffer[..size / 2].iter().map(|c| c.norm()).collect(), rate / size as f64))
+    FftPlanner::<f64>::new()
+        .plan_fft_forward(size)
+        .process(&mut buffer);
+    Some((
+        buffer[..size / 2].iter().map(|c| c.norm()).collect(),
+        rate / size as f64,
+    ))
 }
 
 #[cfg(test)]
@@ -201,7 +266,12 @@ mod tests {
             .map(|i| {
                 let t = i as f64 / rate;
                 let rise = (t / 0.002).min(1.0);
-                harmonics.iter().map(|(k, a)| a * (2.0 * std::f64::consts::PI * k * f0 * t).sin()).sum::<f64>() * rise * (-2.0 * t).exp()
+                harmonics
+                    .iter()
+                    .map(|(k, a)| a * (2.0 * std::f64::consts::PI * k * f0 * t).sin())
+                    .sum::<f64>()
+                    * rise
+                    * (-2.0 * t).exp()
             })
             .collect()
     }
@@ -222,7 +292,9 @@ mod tests {
         let mut room = |n: usize| -> Vec<f64> {
             (0..n)
                 .map(|_| {
-                    seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+                    seed = seed
+                        .wrapping_mul(6364136223846793005)
+                        .wrapping_add(1442695040888963407);
                     1.6e-3 * ((seed >> 11) as f64 / (1u64 << 53) as f64 * 2.0 - 1.0)
                 })
                 .collect()
@@ -233,7 +305,12 @@ mod tests {
             sound.extend(room((0.6 * rate) as usize));
             sound.extend((0..(1.5 * rate) as usize).map(|i| {
                 let t = i as f64 / rate;
-                STRING.iter().map(|(k, a)| a * (2.0 * std::f64::consts::PI * k * f0 * t).sin()).sum::<f64>() * (t / 0.3).min(1.0) * 0.3
+                STRING
+                    .iter()
+                    .map(|(k, a)| a * (2.0 * std::f64::consts::PI * k * f0 * t).sin())
+                    .sum::<f64>()
+                    * (t / 0.3).min(1.0)
+                    * 0.3
             }));
             sound.extend(room((0.6 * rate) as usize));
         }
@@ -241,23 +318,37 @@ mod tests {
     }
 
     #[test]
-    fn a_run_of_held_notes_starts_each_where_it_comes_out_of_the_quiet_not_where_the_room_comes_in() {
+    fn a_run_of_held_notes_starts_each_where_it_comes_out_of_the_quiet_not_where_the_room_comes_in()
+    {
         let rate = 48000.0;
         let sound = held_run(rate, &[hz(60.0), hz(62.0), hz(64.0)]);
         let pieces = split(&sound, rate, &(60..=64).collect::<Vec<_>>(), true);
-        let found: Vec<(i64, bool)> = pieces.iter().map(|p| (p.note, p.left_out.is_none())).collect();
-        assert_eq!(found, vec![(60, true), (62, true), (64, true)], "{pieces:?}");
+        let found: Vec<(i64, bool)> = pieces
+            .iter()
+            .map(|p| (p.note, p.left_out.is_none()))
+            .collect();
+        assert_eq!(
+            found,
+            vec![(60, true), (62, true), (64, true)],
+            "{pieces:?}"
+        );
         let each = (3.2 * rate) as usize;
         for (k, piece) in pieces.iter().enumerate() {
             let swell = k * each + (1.1 * rate) as usize;
-            assert!(piece.from < swell && swell - piece.from < (0.15 * rate) as usize, "{piece:?}");
+            assert!(
+                piece.from < swell && swell - piece.from < (0.15 * rate) as usize,
+                "{piece:?}"
+            );
         }
     }
 
     #[test]
     fn a_run_is_split_into_its_notes_by_their_harmonics_not_their_order() {
         let rate = 48000.0;
-        let sound = run(rate, &[(hz(60.0), STRING), (hz(62.0), STRING), (hz(61.0), STRING)]);
+        let sound = run(
+            rate,
+            &[(hz(60.0), STRING), (hz(62.0), STRING), (hz(61.0), STRING)],
+        );
         let pieces = split(&sound, rate, &(60..=71).collect::<Vec<_>>(), false);
         let found: Vec<i64> = pieces.iter().map(|p| p.note).collect();
         assert_eq!(found, vec![60, 62, 61]);
@@ -270,7 +361,10 @@ mod tests {
         let rate = 48000.0;
         let sound = tone(rate, 1.5, hz(60.0), &[(2.0, 0.5), (4.0, 0.3), (6.0, 0.2)]);
         let pieces = split(&sound, rate, &[48], false);
-        assert_eq!(pieces[0].left_out.as_deref(), Some("sounds an octave above it"));
+        assert_eq!(
+            pieces[0].left_out.as_deref(),
+            Some("sounds an octave above it")
+        );
         assert!(split(&sound, rate, &[72], false)[0].left_out.is_none());
     }
 
@@ -278,17 +372,30 @@ mod tests {
     fn a_note_named_an_octave_too_high_sounds_an_octave_below() {
         let rate = 48000.0;
         let sound = tone(rate, 1.5, hz(48.0), STRING);
-        assert_eq!(split(&sound, rate, &[60], false)[0].left_out.as_deref(), Some("sounds an octave below it"));
+        assert_eq!(
+            split(&sound, rate, &[60], false)[0].left_out.as_deref(),
+            Some("sounds an octave below it")
+        );
     }
 
     #[test]
     fn a_note_found_twice_keeps_its_louder_sound() {
         let rate = 48000.0;
         let soft: Vec<(f64, f64)> = STRING.iter().map(|(k, a)| (*k, a * 0.1)).collect();
-        let sound = run(rate, &[(hz(60.0), &soft), (hz(60.0), STRING), (hz(62.0), STRING)]);
+        let sound = run(
+            rate,
+            &[(hz(60.0), &soft), (hz(60.0), STRING), (hz(62.0), STRING)],
+        );
         let pieces = split(&sound, rate, &(60..=62).collect::<Vec<_>>(), false);
-        let kept: Vec<i64> = pieces.iter().filter(|p| p.left_out.is_none()).map(|p| p.note).collect();
+        let kept: Vec<i64> = pieces
+            .iter()
+            .filter(|p| p.left_out.is_none())
+            .map(|p| p.note)
+            .collect();
         assert_eq!(kept, vec![60, 62]);
-        assert_eq!(pieces[0].left_out.as_deref(), Some("was struck again, louder"));
+        assert_eq!(
+            pieces[0].left_out.as_deref(),
+            Some("was struck again, louder")
+        );
     }
 }

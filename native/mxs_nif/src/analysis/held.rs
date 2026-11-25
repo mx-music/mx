@@ -1,6 +1,9 @@
 //! Held notes, bowed, blown or played on an organ, for `Mx.Measure.Held`: the pitch, the attack, each harmonic's level while the note holds, the vibrato, and the noise between the harmonics.
 
-use super::{BANDS, Spectra, db, filter_loss, first_max, high_pass, hz, inferred, magnitude_at, median, onsets, refine, slope};
+use super::{
+    BANDS, Spectra, db, filter_loss, first_max, high_pass, hz, inferred, magnitude_at, median,
+    onsets, refine, slope,
+};
 use rustler::NifMap;
 
 const HOP: f64 = 0.01;
@@ -43,7 +46,12 @@ pub fn notes(samples: &[f64], rate: f64, first: i64) -> Vec<Note> {
     let cutoff = hz(first as f64) * 0.75;
     let sound = high_pass(samples, rate, cutoff);
     let starts = onsets(&sound, rate, 1.0);
-    let ends: Vec<usize> = starts.iter().skip(1).cloned().chain([sound.len()]).collect();
+    let ends: Vec<usize> = starts
+        .iter()
+        .skip(1)
+        .cloned()
+        .chain([sound.len()])
+        .collect();
     let lead = (LEAD * rate).round() as usize;
     let mut spectra = Spectra::default();
     starts
@@ -75,7 +83,13 @@ fn energy(spectrum: &[f64]) -> f64 {
     10.0 * (spectrum.iter().map(|m| m * m).sum::<f64>() + 1.0e-24).log10()
 }
 
-fn measure(sound: &[f64], rate: f64, guess: i64, cutoff: f64, spectra: &mut Spectra) -> Option<Note> {
+fn measure(
+    sound: &[f64],
+    rate: f64,
+    guess: i64,
+    cutoff: f64,
+    spectra: &mut Spectra,
+) -> Option<Note> {
     let small = window(rate, 0.043);
     let large = window(rate, 0.17);
     let hop = (HOP * rate).round() as usize;
@@ -87,14 +101,21 @@ fn measure(sound: &[f64], rate: f64, guess: i64, cutoff: f64, spectra: &mut Spec
         return None;
     }
     let offset = (large - small) / 2;
-    let energies: Vec<f64> = starts.iter().map(|from| energy(&spectra.take(sound, from + offset, small))).collect();
+    let energies: Vec<f64> = starts
+        .iter()
+        .map(|from| energy(&spectra.take(sound, from + offset, small)))
+        .collect();
     let held = held(&starts, &energies);
     // A single frame is a burst, such as an accent, with nothing held after it.
     if held.len() == 1 {
         return None;
     }
     let inside = inside(&held, offset);
-    let frames: Vec<Vec<f64>> = inside.iter().step_by(5).map(|from| spectra.take(sound, *from, large)).collect();
+    let frames: Vec<Vec<f64>> = inside
+        .iter()
+        .step_by(5)
+        .map(|from| spectra.take(sound, *from, large))
+        .collect();
     let bin = rate / large as f64;
     let f0 = pitch(&frames, hz(guess as f64), bin);
     let harmonics = harmonics(&frames, f0, bin, rate, cutoff);
@@ -125,14 +146,21 @@ fn held(starts: &[usize], energies: &[f64]) -> Vec<usize> {
             runs.last_mut().unwrap().push(*start);
         }
     }
-    first_max(runs.into_iter().filter(|run| !run.is_empty()), |run| run.len() as f64).unwrap_or_default()
+    first_max(runs.into_iter().filter(|run| !run.is_empty()), |run| {
+        run.len() as f64
+    })
+    .unwrap_or_default()
 }
 
 // The held frames whose large window lies wholly within the held part, so a sound cut off right after it leaks into no spectrum.
 fn inside(held: &[usize], trim: usize) -> Vec<usize> {
     let first = held[0] + trim;
     let last = held[held.len() - 1] as i64 - trim as i64;
-    let kept: Vec<usize> = held.iter().cloned().filter(|at| *at >= first && *at as i64 <= last).collect();
+    let kept: Vec<usize> = held
+        .iter()
+        .cloned()
+        .filter(|at| *at >= first && *at as i64 <= last)
+        .collect();
     if kept.is_empty() { held.to_vec() } else { kept }
 }
 
@@ -140,12 +168,22 @@ fn inside(held: &[usize], trim: usize) -> Vec<usize> {
 fn pitch(frames: &[Vec<f64>], guess: f64, bin: f64) -> f64 {
     let steps = (guess * 0.12 / 0.05).round() as i64;
     let candidates = (0..=steps).map(|step| guess * 0.94 + step as f64 * 0.05);
-    first_max(candidates, |freq| frames.iter().flat_map(|spectrum| (1..=6).map(move |n| magnitude_at(spectrum, freq * n as f64 / bin))).sum()).unwrap()
+    first_max(candidates, |freq| {
+        frames
+            .iter()
+            .flat_map(|spectrum| {
+                (1..=6).map(move |n| magnitude_at(spectrum, freq * n as f64 / bin))
+            })
+            .sum()
+    })
+    .unwrap()
 }
 
 fn mean_power(frames: &[Vec<f64>]) -> Vec<f64> {
     let count = frames.len() as f64;
-    (0..frames[0].len()).map(|at| frames.iter().map(|f| f[at] * f[at]).sum::<f64>() / count).collect()
+    (0..frames[0].len())
+        .map(|at| frames.iter().map(|f| f[at] * f[at]).sum::<f64>() / count)
+        .collect()
 }
 
 fn power_mean(levels: &[f64]) -> f64 {
@@ -156,29 +194,55 @@ fn power_mean(levels: &[f64]) -> f64 {
 fn peak(spectrum: &[f64], bins: &[usize]) -> (f64, f64) {
     let peak = first_max(bins.iter().cloned(), |at| spectrum[*at]).unwrap();
     let level = spectrum[peak];
-    if level > spectrum[peak - 1] && level >= spectrum[peak + 1] { refine(spectrum, peak) } else { (peak as f64, db(level)) }
+    if level > spectrum[peak - 1] && level >= spectrum[peak + 1] {
+        refine(spectrum, peak)
+    } else {
+        (peak as f64, db(level))
+    }
 }
 
 // Each harmonic's frequency and level, averaged in power over the held spectra; one less than 10 dB above the floor, or 80 dB below the loudest, is absent.
 fn harmonics(frames: &[Vec<f64>], f0: f64, bin: f64, rate: f64, cutoff: f64) -> Vec<Harmonic> {
-    let floor = median(&mean_power(frames).iter().map(|p| 10.0 * (p + 1.0e-24).log10()).collect::<Vec<_>>());
+    let floor = median(
+        &mean_power(frames)
+            .iter()
+            .map(|p| 10.0 * (p + 1.0e-24).log10())
+            .collect::<Vec<_>>(),
+    );
     let top = 18_000f64.min(rate / 2.0 - f0);
     let count = (top / f0).floor() as i64;
     let found: Vec<(Harmonic, f64)> = (1..=count)
         .map(|number| {
             let target = number as f64 * f0;
-            let bins: Vec<usize> = inferred((((target - f0 / 4.0) / bin).ceil() as i64).max(1), ((target + f0 / 4.0) / bin).floor() as i64)
-                .into_iter()
-                .map(|b| b as usize)
+            let bins: Vec<usize> = inferred(
+                (((target - f0 / 4.0) / bin).ceil() as i64).max(1),
+                ((target + f0 / 4.0) / bin).floor() as i64,
+            )
+            .into_iter()
+            .map(|b| b as usize)
+            .collect();
+            let peaks: Vec<(f64, f64)> = frames
+                .iter()
+                .map(|spectrum| peak(spectrum, &bins))
                 .collect();
-            let peaks: Vec<(f64, f64)> = frames.iter().map(|spectrum| peak(spectrum, &bins)).collect();
             let freq = peaks.iter().map(|p| p.0).sum::<f64>() / peaks.len() as f64 * bin;
             let level = power_mean(&peaks.iter().map(|p| p.1).collect::<Vec<_>>());
-            (Harmonic { number: number as u32, freq, level: level + filter_loss(freq, cutoff) }, level)
+            (
+                Harmonic {
+                    number: number as u32,
+                    freq,
+                    level: level + filter_loss(freq, cutoff),
+                },
+                level,
+            )
         })
         .collect();
     let loudest = found.iter().map(|(_, raw)| *raw).fold(f64::MIN, f64::max);
-    found.into_iter().filter(|(_, raw)| *raw > floor + 10.0 && *raw > loudest - 80.0).map(|(h, _)| h).collect()
+    found
+        .into_iter()
+        .filter(|(_, raw)| *raw > floor + 10.0 && *raw > loudest - 80.0)
+        .map(|(h, _)| h)
+        .collect()
 }
 
 // The power between the harmonics in each band above the high-pass, as the level in dB of a harmonic of the same power.
@@ -194,10 +258,17 @@ fn noise(frames: &[Vec<f64>], f0: f64, bin: f64, rate: f64, cutoff: f64) -> Vec<
             if between.is_empty() {
                 return None;
             }
-            let mean = between.iter().map(|&at| powers[at] * 10f64.powf(filter_loss(at as f64 * bin, cutoff) / 10.0)).sum::<f64>() / between.len() as f64;
+            let mean = between
+                .iter()
+                .map(|&at| powers[at] * 10f64.powf(filter_loss(at as f64 * bin, cutoff) / 10.0))
+                .sum::<f64>()
+                / between.len() as f64;
             let variance = mean / (3.0 * size as f64 / 8.0);
             let power = variance * (high - low) as f64 / (rate / 2.0);
-            Some(Noise { band: (low, high), level: 10.0 * (2.0 * power + 1.0e-24).log10() + db(size as f64 / 4.0) })
+            Some(Noise {
+                band: (low, high),
+                level: 10.0 * (2.0 * power + 1.0e-24).log10() + db(size as f64 / 4.0),
+            })
         })
         .collect()
 }
@@ -224,24 +295,55 @@ fn attack(sound: &[f64], rate: f64, held: &[usize], centre: usize) -> f64 {
         .step_by(step)
         .map(|from| {
             let sum: f64 = sound[from..from + window].iter().map(|x| x * x).sum();
-            ((from as f64 + window as f64 / 2.0) / rate, (sum / window as f64).sqrt())
+            (
+                (from as f64 + window as f64 / 2.0) / rate,
+                (sum / window as f64).sqrt(),
+            )
         })
         .collect();
     let first = (held[0] + centre) as f64 / rate;
     let last = (held[held.len() - 1] + centre) as f64 / rate;
-    let level = median(&envelope.iter().filter(|(t, _)| *t >= first && *t <= last).map(|(_, v)| *v).collect::<Vec<_>>());
-    let reached = envelope.iter().position(|(_, v)| *v >= level * 10f64.powf(-REACH / 20.0)).unwrap();
-    let start = envelope[..reached].iter().filter(|(_, v)| *v < level / 100.0).last().map_or(0.0, |(t, _)| *t);
+    let level = median(
+        &envelope
+            .iter()
+            .filter(|(t, _)| *t >= first && *t <= last)
+            .map(|(_, v)| *v)
+            .collect::<Vec<_>>(),
+    );
+    let reached = envelope
+        .iter()
+        .position(|(_, v)| *v >= level * 10f64.powf(-REACH / 20.0))
+        .unwrap();
+    let start = envelope[..reached]
+        .iter()
+        .filter(|(_, v)| *v < level / 100.0)
+        .last()
+        .map_or(0.0, |(t, _)| *t);
     envelope[reached].0 - start
 }
 
 // The pitch of the strongest of the first four harmonics in short frames across the held part, in cents; the frames average the swing over their length, so the depth is divided by what a Hann window keeps of a swing at that rate.
-fn vibrato(sound: &[f64], held: &[usize], f0: f64, harmonics: &[Harmonic], rate: f64, centre: usize, spectra: &mut Spectra) -> Option<Vibrato> {
+fn vibrato(
+    sound: &[f64],
+    held: &[usize],
+    f0: f64,
+    harmonics: &[Harmonic],
+    rate: f64,
+    centre: usize,
+    spectra: &mut Spectra,
+) -> Option<Vibrato> {
     let small = window(rate, 0.043);
     let bin = rate / small as f64;
-    let number = first_max(harmonics.iter().filter(|h| h.number <= 4), |h| h.level).map_or(1, |h| h.number);
+    let number =
+        first_max(harmonics.iter().filter(|h| h.number <= 4), |h| h.level).map_or(1, |h| h.number);
     let target = number as f64 * f0;
-    let bins: Vec<usize> = inferred(((target * 0.94 / bin).floor() as i64).max(1), (target * 1.06 / bin).ceil() as i64).into_iter().map(|b| b as usize).collect();
+    let bins: Vec<usize> = inferred(
+        ((target * 0.94 / bin).floor() as i64).max(1),
+        (target * 1.06 / bin).ceil() as i64,
+    )
+    .into_iter()
+    .map(|b| b as usize)
+    .collect();
     let track: Vec<f64> = held
         .iter()
         .map(|from| {
@@ -258,11 +360,25 @@ fn swing(track: &[f64], frame: f64) -> Option<Vibrato> {
         return None;
     }
     let times: Vec<f64> = (0..track.len()).map(|index| index as f64 * HOP).collect();
-    let slope = slope(&times.iter().cloned().zip(track.iter().cloned()).collect::<Vec<_>>());
+    let slope = slope(
+        &times
+            .iter()
+            .cloned()
+            .zip(track.iter().cloned())
+            .collect::<Vec<_>>(),
+    );
     let mean = track.iter().sum::<f64>() / track.len() as f64;
     let middle = times.iter().sum::<f64>() / times.len() as f64;
-    let deviations: Vec<f64> = times.iter().zip(track).map(|(time, cents)| cents - mean - slope * (time - middle)).collect();
-    let (lag, correlation) = first_max((10..=33).map(|lag| (lag, correlation(&deviations, lag))), |(_, c)| *c).unwrap();
+    let deviations: Vec<f64> = times
+        .iter()
+        .zip(track)
+        .map(|(time, cents)| cents - mean - slope * (time - middle))
+        .collect();
+    let (lag, correlation) = first_max(
+        (10..=33).map(|lag| (lag, correlation(&deviations, lag))),
+        |(_, c)| *c,
+    )
+    .unwrap();
     let rms = (deviations.iter().map(|d| d * d).sum::<f64>() / deviations.len() as f64).sqrt();
     let lag = refine_lag(&deviations, lag);
     let rate = 1.0 / (lag * HOP);
@@ -272,15 +388,31 @@ fn swing(track: &[f64], frame: f64) -> Option<Vibrato> {
 
 fn correlation(values: &[f64], lag: usize) -> f64 {
     let count = values.len();
-    let products: f64 = values.iter().zip(&values[lag.min(count)..]).map(|(a, b)| a * b).sum();
+    let products: f64 = values
+        .iter()
+        .zip(&values[lag.min(count)..])
+        .map(|(a, b)| a * b)
+        .sum();
     let power: f64 = values.iter().map(|v| v * v).sum();
-    if power > 0.0 { products / power * count as f64 / (count - lag) as f64 } else { 0.0 }
+    if power > 0.0 {
+        products / power * count as f64 / (count - lag) as f64
+    } else {
+        0.0
+    }
 }
 
 fn refine_lag(values: &[f64], lag: usize) -> f64 {
-    let (left, top, right) = (correlation(values, lag - 1), correlation(values, lag), correlation(values, lag + 1));
+    let (left, top, right) = (
+        correlation(values, lag - 1),
+        correlation(values, lag),
+        correlation(values, lag + 1),
+    );
     let curve = left - 2.0 * top + right;
-    if curve < 0.0 { lag as f64 + 0.5 * (left - right) / curve } else { lag as f64 }
+    if curve < 0.0 {
+        lag as f64 + 0.5 * (left - right) / curve
+    } else {
+        lag as f64
+    }
 }
 
 // What a Hann window of `frame` seconds keeps of a sine swing at `rate` times a second.

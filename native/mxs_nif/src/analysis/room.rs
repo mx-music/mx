@@ -28,7 +28,9 @@ impl Room {
         }
         let size = (2 * window).next_power_of_two();
         let fft = FftPlanner::<f64>::new().plan_fft_forward(size);
-        let hann: Vec<f64> = (0..window).map(|i| 0.5 - 0.5 * (2.0 * std::f64::consts::PI * i as f64 / window as f64).cos()).collect();
+        let hann: Vec<f64> = (0..window)
+            .map(|i| 0.5 - 0.5 * (2.0 * std::f64::consts::PI * i as f64 / window as f64).cos())
+            .collect();
         let norm = hann.iter().sum::<f64>() / 2.0;
         let bin = rate / size as f64;
         let grid = erb_bands_to(0.45 * rate);
@@ -37,7 +39,11 @@ impl Room {
         let mut scratch = vec![Complex::new(0.0, 0.0); fft.get_inplace_scratch_len()];
         for start in (0..=file.len() - window).step_by(window / 2) {
             for (i, slot) in buffer.iter_mut().enumerate() {
-                *slot = if i < window { Complex::new(file[start + i] * hann[i], 0.0) } else { Complex::new(0.0, 0.0) };
+                *slot = if i < window {
+                    Complex::new(file[start + i] * hann[i], 0.0)
+                } else {
+                    Complex::new(0.0, 0.0)
+                };
             }
             fft.process_with_scratch(&mut buffer, &mut scratch);
             let frame: Vec<f64> = buffer[..size / 2].iter().map(|c| c.norm() / norm).collect();
@@ -58,7 +64,11 @@ impl Room {
                 band.sort_by(f64::total_cmp);
                 let count = ((band.len() as f64 * QUIETEST).ceil() as usize).max(1);
                 let power = band[..count].iter().sum::<f64>() / count as f64;
-                (*low, *high, power / quietest_share(spread(high - low, window, rate)))
+                (
+                    *low,
+                    *high,
+                    power / quietest_share(spread(high - low, window, rate)),
+                )
             })
             .collect();
         Some(Room { bands, bin })
@@ -66,12 +76,21 @@ impl Room {
 
     /// The room's power over a band from `low` to `high` Hz, as the band's power reads in the measuring: each of the room's bands counting for the share of it inside.
     pub fn band(&self, low: f64, high: f64) -> f64 {
-        self.bands.iter().map(|(a, b, power)| power * ((b.min(high) - a.max(low)) / (b - a)).max(0.0)).sum()
+        self.bands
+            .iter()
+            .map(|(a, b, power)| power * ((b.min(high) - a.max(low)) / (b - a)).max(0.0))
+            .sum()
     }
 
     /// The room's power a partial at `freq` reads in: one bin's share of the room's band there.
     pub fn at(&self, freq: f64) -> f64 {
-        let (low, high, power) = self.bands.iter().find(|(_, high, _)| freq < *high).or(self.bands.last()).copied().unwrap_or((0.0, 1.0, 0.0));
+        let (low, high, power) = self
+            .bands
+            .iter()
+            .find(|(_, high, _)| freq < *high)
+            .or(self.bands.last())
+            .copied()
+            .unwrap_or((0.0, 1.0, 0.0));
         power * self.bin / (high - low)
     }
 }
@@ -84,14 +103,25 @@ fn spread(width: f64, window: usize, rate: f64) -> f64 {
     let reach = b.min(64.0);
     let steps = (reach / 0.005).ceil().max(1.0) as usize;
     let step = reach / steps as f64;
-    let integral: f64 = (0..steps).map(|i| (i as f64 + 0.5) * step).map(|u| 2.0 * (b - u) * correlation(u).powi(2) * step).sum();
+    let integral: f64 = (0..steps)
+        .map(|i| (i as f64 + 0.5) * step)
+        .map(|u| 2.0 * (b - u) * correlation(u).powi(2) * step)
+        .sum();
     (b * b / integral).max(1.0)
 }
 
 /// The correlation between a Hann window's transforms of a noise at two frequencies `u` bins apart: the transform of the squared window, from its three cosines.
 fn correlation(u: f64) -> f64 {
-    let sinc = |x: f64| if x.abs() < 1e-9 { 1.0 } else { (std::f64::consts::PI * x).sin() / (std::f64::consts::PI * x) };
-    (0.375 * sinc(u) - 0.25 * (sinc(u - 1.0) + sinc(u + 1.0)) + 0.0625 * (sinc(u - 2.0) + sinc(u + 2.0))) / 0.375
+    let sinc = |x: f64| {
+        if x.abs() < 1e-9 {
+            1.0
+        } else {
+            (std::f64::consts::PI * x).sin() / (std::f64::consts::PI * x)
+        }
+    };
+    (0.375 * sinc(u) - 0.25 * (sinc(u - 1.0) + sinc(u + 1.0))
+        + 0.0625 * (sinc(u - 2.0) + sinc(u + 2.0)))
+        / 0.375
 }
 
 /// The mean of the quietest share of a gamma distribution of shape `k` and mean 1.
@@ -103,7 +133,11 @@ fn quietest_share(k: f64) -> f64 {
     }
     for _ in 0..60 {
         let middle = 0.5 * (low + high);
-        if lower_gamma(k, k * middle) < QUIETEST { low = middle } else { high = middle }
+        if lower_gamma(k, k * middle) < QUIETEST {
+            low = middle
+        } else {
+            high = middle
+        }
     }
     lower_gamma(k + 1.0, k * low) / QUIETEST
 }
@@ -124,16 +158,34 @@ fn lower_gamma(a: f64, x: f64) -> f64 {
 
 /// The logarithm of the gamma function, by Lanczos's approximation.
 fn ln_gamma(x: f64) -> f64 {
-    const G: [f64; 9] = [0.999_999_999_999_809_9, 676.520_368_121_885_1, -1_259.139_216_722_402_8, 771.323_428_777_653_1, -176.615_029_162_140_6, 12.507_343_278_686_905, -0.138_571_095_265_720_1, 9.984_369_578_019_572e-6, 1.505_632_735_149_311_6e-7];
+    const G: [f64; 9] = [
+        0.999_999_999_999_809_9,
+        676.520_368_121_885_1,
+        -1_259.139_216_722_402_8,
+        771.323_428_777_653_1,
+        -176.615_029_162_140_6,
+        12.507_343_278_686_905,
+        -0.138_571_095_265_720_1,
+        9.984_369_578_019_572e-6,
+        1.505_632_735_149_311_6e-7,
+    ];
     let x = x - 1.0;
     let t = x + 7.5;
-    let sum = G[0] + G[1..].iter().enumerate().map(|(i, g)| g / (x + i as f64 + 1.0)).sum::<f64>();
+    let sum = G[0]
+        + G[1..]
+            .iter()
+            .enumerate()
+            .map(|(i, g)| g / (x + i as f64 + 1.0))
+            .sum::<f64>();
     0.5 * (2.0 * std::f64::consts::PI).ln() + (x + 0.5) * t.ln() - t + sum.ln()
 }
 
 /// The room's power over each band, or none where there is no room.
 pub fn over(room: Option<&Room>, bands: &[(f64, f64)]) -> Vec<f64> {
-    bands.iter().map(|(low, high)| room.map_or(0.0, |room| room.band(*low, *high))).collect()
+    bands
+        .iter()
+        .map(|(low, high)| room.map_or(0.0, |room| room.band(*low, *high)))
+        .collect()
 }
 
 /// The room's power at a partial's frequency, or none where there is no room.
@@ -143,7 +195,11 @@ pub fn at(room: Option<&Room>, freq: f64) -> f64 {
 
 /// A level in dB with a power added, as the room adds to what is heard; the level itself where the power is none.
 pub fn with(level: f64, power: f64) -> f64 {
-    if power > 0.0 { 10.0 * (10f64.powf(level / 10.0) + power).log10() } else { level }
+    if power > 0.0 {
+        10.0 * (10f64.powf(level / 10.0) + power).log10()
+    } else {
+        level
+    }
 }
 
 #[cfg(test)]
@@ -186,7 +242,10 @@ mod tests {
         let per_hz = 6.0 / window / 3.0 * 2.0 * window / rate;
         for (low, high, power) in &room.bands {
             let wanted = per_hz * (high - low);
-            assert!((10.0 * (power / wanted).log10()).abs() < 1.0, "{low:.0}-{high:.0} Hz: {power:e} for {wanted:e}");
+            assert!(
+                (10.0 * (power / wanted).log10()).abs() < 1.0,
+                "{low:.0}-{high:.0} Hz: {power:e} for {wanted:e}"
+            );
         }
     }
 }
