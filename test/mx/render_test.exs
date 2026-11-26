@@ -17,6 +17,43 @@ defmodule Mx.RenderTest do
 
   defp render(path, out, opts \\ []), do: with_io(fn -> Render.render(path, out, opts) end)
 
+  # What `fun` prints, as the millisecond each piece is printed at and its text.
+  defp stamped(fun) do
+    leader = Process.group_leader()
+    device = spawn_link(fn -> stamp([]) end)
+    Process.group_leader(self(), device)
+
+    result =
+      try do
+        fun.()
+      after
+        Process.group_leader(self(), leader)
+      end
+
+    send(device, {:printed, self()})
+
+    receive do
+      {:printed, printed} -> {result, printed}
+    end
+  end
+
+  defp stamp(printed) do
+    receive do
+      {:io_request, from, reply_as, {:put_chars, _encoding, chars}} ->
+        send(from, {:io_reply, reply_as, :ok})
+        now = System.monotonic_time(:millisecond)
+        text = IO.chardata_to_string(chars)
+        stamp([{now, text} | printed])
+
+      {:io_request, from, reply_as, _request} ->
+        send(from, {:io_reply, reply_as, {:error, :request}})
+        stamp(printed)
+
+      {:printed, to} ->
+        send(to, {:printed, Enum.reverse(printed)})
+    end
+  end
+
   # The seconds from the first sound of a recording to the start of its last.
   defp clicks(out) do
     {:ok, %{samples: samples, rate: rate}} = Mx.Audio.read(out)
@@ -169,8 +206,8 @@ defmodule Mx.RenderTest do
        %{tmp_dir: dir} do
     out = Path.join(dir, "choro.wav")
 
-    {micros, {result, output}} =
-      :timer.tc(fn -> render("examples/choro.exs", out, seconds: 148) end)
+    {result, printed} = stamped(fn -> Render.render("examples/choro.exs", out, seconds: 148) end)
+    output = Enum.map_join(printed, &elem(&1, 1))
 
     assert result == :ok
     lines = progress(output)
@@ -179,7 +216,10 @@ defmodule Mx.RenderTest do
     assert List.last(lines) == {148.0, 148.0}
     assert Enum.all?(lines, &(elem(&1, 1) == 148.0))
     assert rendered == Enum.sort(rendered)
-    assert_in_delta length(lines), micros / 250_000, micros / 1_000_000 + 2
+    # Loading the song before the first line and writing the file after the last are not timed.
+    stamps = for {ms, text} <- printed, text =~ ~r/^rendered /, do: ms
+    span = List.last(stamps) - hd(stamps)
+    assert_in_delta length(stamps) - 1, span / 250, span / 1000 + 2
 
     assert output =~
              ~r/^rendered 148\.0 of 148\.0 seconds\nthe render ends as the last notes fade, cutting short the reverb of part flute, which rings 1\.3 seconds on; --ring-out keeps it\nRecorded \d+\.\d seconds to /m
