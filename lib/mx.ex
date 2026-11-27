@@ -461,7 +461,7 @@ defmodule Mx do
       # One note of four steps that reaches G halfway, then D.
       steps(~MX"eb2:2 ~g2:2 d2:4", 0.25, slide: 0.3)
 
-      # One breath down a scale.
+      # One note that glides down a scale.
       ~MX"g5 ~f5 ~e5 ~d5 ~cs5 ~b4 ~a4 ~g4"
 
   A word after `>` is accented, and `steps/3` says what an accent is with `accent:`.
