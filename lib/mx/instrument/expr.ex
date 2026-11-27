@@ -71,7 +71,7 @@ defmodule Mx.Instrument.Vocabulary do
   @moduledoc """
   The nodes and functions a `defsynth` builds its sound from, named by what they do, with each argument named by its unit.
 
-  Numbers: `hz/1`, `db/1`, `log2/1`, `exp/1`, `sin/1`, `cos/1`, `clamp/3`, `mod/2`, `select/3` and `draw/2`, a number drawn as the note starts,, worked out at once on numbers and when the note starts on its options.
+  Numbers: `hz/1`, `db/1`, `log2/1`, `exp/1`, `sin/1`, `cos/1`, `clamp/3`, `mod/2`, `select/3` and `draw/2`, a number drawn as the note starts, worked out at once on numbers and when the note starts on its options.
   Sources: `impulse/1`, `follow/1`, `time/1`, `sine/1`, `vibrato/1`, `partials/2`, `bowed_string/1`, `air_jet/1`, `saw/1`, `square/1`, `triangle/1`, `pulse/1`, `noise/2` and `clicks/1`, clicks at random times at `rate:` a second.
   Filters: `lowpass/2`, `highpass/2` and `bandpass/2`, at `hz:` with `q:`, either of which may change as the note sounds, and `poles:`, `ladder/2`, a four-pole resonant lowpass at `hz:` with `resonance:` from 0 to 1, where it rings on at `hz:`, `lowshelf/2`, `highshelf/2` and `peak/2`, at `hz:` with `q:` and `db:`, `mode/2`, a resonator struck by its input at `hz:`, ringing at `level:` and fading 60 dB over `fade:` seconds, or given lists of the same length a resonator for each, all struck by the one input, `wind_bands/2`, `delay/2`, `struck/2`, a level that rises over `attack:` and falls over `fall:` at each click of its sound, and `dc_block/1` and `dc_block/2`, which take away any offset below `hz:`, 10 unless given.
   Distortion: `saturate/2` rounds a sound off towards `level:`, `clip/2` cuts it off at `level:`, and `fold/2` folds it back at `level:`, each after a `drive:` in dB, worked out at twice the engine's rate.
@@ -90,8 +90,14 @@ defmodule Mx.Instrument.Vocabulary do
   def db(decibels) when is_number(decibels), do: :math.pow(10, decibels / 20)
   def db(decibels), do: Expr.call(:db, [decibels])
 
-  for name <- [:log2, :exp, :sin, :cos] do
-    @doc false
+  for {name, gives} <- [
+        log2:
+          "The logarithm of `value` to the base 2, so the octaves a ratio of two frequencies spans",
+        exp: "The number e to the power `value`",
+        sin: "The sine of `value`, an angle in radians",
+        cos: "The cosine of `value`, an angle in radians"
+      ] do
+    @doc "#{gives}: a number at once given a number, and worked out as the note sounds given one of its options or a sound."
     def unquote(name)(value) when is_number(value), do: :math.unquote(name)(value)
     def unquote(name)(value), do: Expr.call(unquote(name), [value])
   end
@@ -120,8 +126,25 @@ defmodule Mx.Instrument.Vocabulary do
   @doc "A single sample at the start of the note, or at `at:` seconds, and again every `period:` seconds before `until:`."
   def impulse(opts \\ []), do: Expr.call(:impulse, [], opts)
 
-  for wave <- [:sine, :saw, :square, :triangle, :pulse] do
-    @doc false
+  for {wave, doc} <- [
+        sine:
+          "A sine wave at `hz:`, the one frequency with no overtones; `phase:` is where in its cycle it starts, in radians, and 0 unless given.",
+        saw:
+          "A sawtooth wave at `hz:`, which has every harmonic, each as loud as 1 over its number.",
+        square:
+          "A square wave at `hz:`, which has the odd harmonics only, each as loud as 1 over its number.",
+        triangle:
+          "A triangle wave at `hz:`, which has the odd harmonics only, each as loud as 1 over its number squared, so it is duller than a square.",
+        pulse:
+          "A pulse wave at `hz:`; `width:` is the part of each cycle it is up, from 0 to 1, a half unless given, which is a square, and may change as the note sounds."
+      ] do
+    @doc """
+    #{doc}
+
+    `hz:` may be a number, or a sound, which then changes the pitch as the note sounds:
+
+        sine(hz: hz(follow(played.note)))
+    """
     def unquote(wave)(opts), do: Expr.call(unquote(wave), [], opts)
   end
 
@@ -186,8 +209,23 @@ defmodule Mx.Instrument.Vocabulary do
   @doc "Noise, `:white` or `:pink`; `seed:`, if given, fixes its numbers instead of drawing a seed from the note, and `drawn:` seeds it from the note's seed that `draw/2` takes, with the same `mix:`, plus `drawn:`."
   def noise(colour, opts \\ []), do: Expr.call(:noise, [colour], opts)
 
-  for filter <- [:lowpass, :highpass, :bandpass, :lowshelf, :highshelf, :peak, :mode] do
-    @doc false
+  for {filter, doc} <- [
+        lowpass:
+          "A sound with what is above `hz:` taken away, 12 dB an octave; `q:` raises what is around `hz:`, and is 0.707 unless given, which raises nothing, and `poles: 1` takes away 6 dB an octave and takes no `q:`.\n\n`hz:` is held from 20 to 20000, and `hz:` and `q:` may change as the note sounds.",
+        highpass:
+          "A sound with what is below `hz:` taken away, 12 dB an octave; `q:` raises what is around `hz:`, and is 0.707 unless given, which raises nothing, and `poles: 1` takes away 6 dB an octave and takes no `q:`.\n\n`hz:` is held from 20 to 20000, and `hz:` and `q:` may change as the note sounds.",
+        bandpass:
+          "A sound with what is away from `hz:` taken away, below and above; `q:` is how narrow the band it keeps is, and 0.707 unless given.\n\n`hz:` is held from 20 to 20000, and `hz:` and `q:` may change as the note sounds.",
+        lowshelf:
+          "A sound with what is below `hz:` raised by `db:`, or lowered by a `db:` under 0; `q:` is how steeply it goes from one level to the other, and 0.707 unless given.",
+        highshelf:
+          "A sound with what is above `hz:` raised by `db:`, or lowered by a `db:` under 0; `q:` is how steeply it goes from one level to the other, and 0.707 unless given.",
+        peak:
+          "A sound with what is around `hz:` raised by `db:`, or lowered by a `db:` under 0; `q:` is how narrow the band it changes is, and 0.707 unless given.",
+        mode:
+          "A resonator at `hz:` set ringing by a sound, such as `impulse/1`, at `level:`, fading 60 dB over `fade:` seconds.\n\nGiven lists of the same length for the three, it is a resonator for each, all set ringing by the one sound and added together, as the partials of a bar or a drum's skin are.\nA sound as `hz:`, or in its list, glides the resonator's frequency as it changes; `level:` and `fade:` are numbers known when the note starts."
+      ] do
+    @doc doc
     def unquote(filter)(sound, opts), do: Expr.call(unquote(filter), [sound], opts)
   end
 

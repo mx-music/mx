@@ -122,6 +122,15 @@ defmodule Mx.InstrumentTest do
     assert Exception.message(error) =~ "select(condition, then, else)"
   end
 
+  test "the vocabulary documents every function it has" do
+    {:docs_v1, _, _, _, _, _, docs} = Code.fetch_docs(Vocabulary)
+
+    undocumented =
+      for {{:function, name, arity}, _, _, doc, _} <- docs, not is_map(doc), do: {name, arity}
+
+    assert undocumented == []
+  end
+
   test "mod gives the remainder from 0 up to its divisor, below 0 included, and records it on a value worked out from the note" do
     assert Vocabulary.mod(-0.25, 1) == 0.75
     assert Vocabulary.mod(2.5, 1) == 0.5
