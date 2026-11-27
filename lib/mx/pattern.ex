@@ -2,15 +2,7 @@ defmodule Mx.Pattern do
   @moduledoc """
   Music written as words, which `~MX` reads when the song compiles and `Mx.steps/3` gives its sounds.
 
-  Each word lasts one step, and the pattern says nothing of what a word sounds like.
-  `_` is silence, `-` holds the word before it one step longer, and a number after a colon is a word's length in steps, as in `g4:2`.
-  Words joined by a slash sound together, as in `g5/b4`, and the words in brackets share one step evenly, as in `[f f]`.
-  A word after `~` is not struck: the note before it glides to it and lasts through it, as in `eb2:2 ~g2:2`.
-  A word after `>` is accented, as in `>h`, and `Mx.steps/3` plays it with its `accent:`.
-  A length can be a fraction, as in `g4:1/3`.
-  A word after `^` is a grace note, as in `b5 ^d6 c6`: it takes no step, and `Mx.steps/3` plays it just before the word after it.
-  A bar line, `|`, is only for reading.
-  With the modifier `s`, as in `~MX"9..5 x..."s`, each character lasts one step instead: a dot is silence, and spaces and bar lines are left out.
+  `Mx.sigil_MX/2` documents what a pattern is written with: its words, lengths and marks.
 
   A pattern is a list of cells in order, each a map of its `tokens`, none for silence, and its length in `steps`, so two patterns join with `++`.
   A cell that glides has `glide: true` as well, an accented one `accent: true`, a grace note `grace: true` and no steps, and a cell read a character to a step `char: true`.

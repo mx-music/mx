@@ -401,31 +401,128 @@ defmodule Mx do
   defdelegate song(opts), to: Mx.Music
 
   @doc """
-  A pattern written as words, read when the song compiles, for `steps/3` to play.
-  Each word lasts one step: `_` is silence, `-` holds the word before it a step longer, and a number after a colon is a length in steps.
-  Words joined by a slash sound together, the words in brackets share one step, and a bar line is only for reading.
-  A word after `~` is not struck: the note before it glides to it and lasts through it.
-  Patterns join with `++`.
-  With the modifier `s` each character lasts one step instead, a dot is silence, and spaces and bar lines are left out.
+  A pattern: music written as text, read when the song compiles, for `steps/3` to play.
+  The pattern says how long each word lasts and which words are held, joined, glided to or accented.
+  What a word sounds like is for `steps/3` to say, with `strokes:`, `words:`, `notes:` and its other options.
+  A pattern mx cannot read is refused with its line when the song compiles, before anything plays.
 
-      ~MX"g5/b4:3 fs5/a4 | e5/g4:2 - _"
-      ~MX"T f h [f f]"
-      ~MX"9... 9..5 | x.x. x..."s
+      # A tune: G for two steps, a silence, G, B♭ for two steps, a silence, A.
+      part(:lead, steps(~MX"g4:2 _ g4 bb4:2 _ a4", 0.25))
 
-      iex> ~MX"9. x"s
-      [
-        %{tokens: ["9"], steps: 1, char: true},
-        %{tokens: [], steps: 1, char: true},
-        %{tokens: ["x"], steps: 1, char: true}
-      ]
+      # A kick drum, a character to a step, in four beats of four steps.
+      part(:kick, steps(~MX"9... 9... 9..5 9.7."s, 0.25), synth: :kick)
 
-      iex> ~MX"g4:2 _ [f f]"
-      [
-        %{tokens: ["g4"], steps: 2},
-        %{tokens: [], steps: 1},
-        %{tokens: ["f"], steps: 0.5},
-        %{tokens: ["f"], steps: 0.5}
-      ]
+  ## A word to a step
+
+  Without a modifier each word lasts one step, and spaces part the words.
+  A word is a note's name, such as `g4`, `fs5` or `bb3`, unless `steps/3` gives it a sound of its own.
+
+      ~MX"c4 d4 e4 g4"
+
+  `_` is silence for a step, and `-` holds the word before it one step longer.
+
+      # C for three steps, a silence, then E for two.
+      ~MX"c4 - - _ e4 -"
+
+  A number after a colon is the length of a word in steps: a whole number, a decimal or a fraction.
+  A silence and a hold take a length as well.
+  Three lengths of `1/3` fill a step exactly, where three of `0.333` do not.
+
+      ~MX"g4:2 a4:1.5 _:0.5 b4:4"
+      ~MX"c4:1/3 e4:1/3 g4:1/3 c5"
+
+  Words joined by a slash sound together, so a chord is its notes with slashes between them.
+
+      # A bass note, then a chord, twice in a bar.
+      ~MX"a2 a3/c4/e4 e3 a3/c4/e4"
+      ~MX"c4/e4/g4:2 f4/a4/c5:2"
+
+  The words in brackets share one step.
+  They share it evenly unless they have lengths, which are then shares of the step, and brackets can hold brackets.
+
+      # Two strokes in the time of one, then three.
+      ~MX"T f h [f f] T f h [f f f]"
+
+      # A third of a step, then two thirds.
+      ~MX"[c4 e4:2]"
+
+      # A half, a quarter and a quarter.
+      ~MX"[c4 [d4 e4]]"
+
+  A bar line, `|`, is only for reading, and stands apart from the words beside it.
+
+      ~MX"g4:2 _ g4 bb4:2 _ a4 | g4:4 - - - -"
+
+  ## Glides, accents and grace notes
+
+  A word after `~` is not struck: the note before it glides to that pitch and lasts through it.
+  `steps/3` takes the beats the glide takes as `slide:`.
+
+      # One note of four steps that reaches G halfway, then D.
+      steps(~MX"eb2:2 ~g2:2 d2:4", 0.25, slide: 0.3)
+
+      # One breath down a scale.
+      ~MX"g5 ~f5 ~e5 ~d5 ~cs5 ~b4 ~a4 ~g4"
+
+  A word after `>` is accented, and `steps/3` says what an accent is with `accent:`.
+  A silence, a hold and a word that glides take no accent.
+
+      # The second stroke louder than the others.
+      steps(~MX"f >f f f", 0.25, strokes: [f: [vel: 0.5]], accent: 0.3)
+
+  A word after `^` is a grace note: it takes no step, and plays just before the word after it.
+  That word has to be struck, so a grace note cannot come before a silence, a hold or a glide, or end a pattern, and it takes no length.
+
+      # D6 just before C6.
+      ~MX"b5 ^d6 c6 b5"
+
+      # A drummer's flam: a soft stroke just before a hard one.
+      steps(~MX"_ ^s S", 0.25, strokes: [s: [vel: 0.3], S: [vel: 0.9]])
+
+  ## A character to a step
+
+  With the modifier `s` each character lasts one step instead.
+  A dot is silence, and spaces and bar lines are left out, so they can group the steps by the beat.
+  Every other character is a word of one character: `x` and the digits are hits, and the letters are the strokes `steps/3` is given.
+  No character is a length, a hold or a mark here.
+
+      # Hits by their level, 9 the loudest.
+      ~MX"9... 9..5 | 9... 9.7."s
+
+      # A conga's strokes, each by its letter.
+      steps(~MX"HTS. .TOO | HTST HTOO"s, 0.25, strokes: [H: [vel: 0.5], T: [vel: 0.4], S: [vel: 0.9], O: [vel: 0.8]])
+
+  ## Joining patterns
+
+  A pattern is a list, so two patterns join with `++`, and `steps/3` plays a list of patterns one after another.
+  A pattern takes no interpolation; a longer one is built by joining shorter ones.
+
+      verse = ~MX"g4:2 _ g4" ++ ~MX"bb4:2 _ a4"
+      kick = [~MX"9...9...9..59.7."s, ~MX"9..59...9..59.7."s]
+      part(:kick, repeat(steps(kick, 0.25), 4), synth: :kick)
+
+  ## What is refused
+
+  - a bracket that is never closed, one that closes none, and brackets that hold no words
+  - a length that is not a number above 0, or a fraction of two whole numbers
+  - a length after a closing bracket, as in `[f f]:2`
+  - an accent on a silence, a hold or a word that glides
+  - a grace note with a length, one held by `-`, and one that comes before no word that is struck
+  - a modifier other than `s`
+
+  A pattern lasts its steps, whatever its words sound like:
+
+      iex> beats(steps(~MX"g4:2 _ g4 bb4:2 _ a4", 0.25))
+      2.0
+
+      iex> beats(steps(~MX"T f h [f f]", 0.25, strokes: [T: [vel: 0.9], f: [vel: 0.4], h: [vel: 0.6]]))
+      1.0
+
+      iex> beats(steps(~MX"9... 9..5 | 9... 9.7."s, 0.25))
+      4.0
+
+      iex> beats(steps(~MX"c4 d4" ++ ~MX"e4:2", 1))
+      4
   """
   defmacro sigil_MX({:<<>>, _meta, [text]}, modifiers) when is_binary(text) do
     case modifiers do
