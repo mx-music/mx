@@ -1432,6 +1432,13 @@ defmodule Mx.DesignsTest do
     end
   end
 
+  test "electric_guitar's A2 at vel 1 is within 1 dB of the alpha's -35.36 dB over the whole note",
+       ctx do
+    sound = render(ctx, :electric_guitar, [note: 45, vel: 1], 3.2)
+    level = 20 * :math.log10(rms(sound, 0, 3.2))
+    assert abs(level + 35.36) < 1, "A2 at vel 1 is #{level} dB"
+  end
+
   test "electric_guitar plays MIDI 40 and 86 at their pitch", ctx do
     for note <- [40, 86] do
       expected = 440 * :math.pow(2, (note - 69) / 12)
