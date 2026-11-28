@@ -32,6 +32,8 @@ defmodule Mx.Fit.Struck do
   the recording holds beyond the sines.
   A recording with `top:`, a frequency in Hz, is followed up to it instead of 8 kHz, its partials
   and its bands of noise.
+  A recording with `dry: true` is taken to have no room, for one made rather than recorded, so no
+  hiss of a room is added to a render before it is compared with the recording.
   After the last time a recording reaches, each partial falls on at its last slope.
   The figures keep every partial of every recording, each at its own level, for mxs to play: a
   note or velocity that was not recorded takes its figures from the recordings nearest it.
@@ -494,7 +496,7 @@ defmodule Mx.Fit.Struck do
   defp struck(recording, raws) do
     {raws[recording.path], recording.span,
      {recording.pitch, recording.velocity, recording.seconds / 1, recording.exact,
-      Map.get(recording, :top, @top) / 1}}
+      Map.get(recording, :top, @top) / 1, Map.get(recording, :dry, false)}}
   end
 
   defp render(synth, recording, options) do
@@ -530,7 +532,7 @@ defmodule Mx.Fit.Struck do
   defp own_path(recording, how) do
     built = :mx |> :code.priv_dir() |> Path.join("native/*mxs_nif*") |> Path.wildcard()
     files = Enum.map([recording.path | built], &{Path.expand(&1), Mx.Fit.stamp(&1)})
-    fitted = Map.take(recording, [:span, :pitch, :velocity, :seconds, :exact, :top])
+    fitted = Map.take(recording, [:span, :pitch, :velocity, :seconds, :exact, :top, :dry])
     key = :erlang.phash2({files, fitted, how}, 4_294_967_296)
     Path.join([System.tmp_dir!(), "mx-fit-struck", "#{key}.term"])
   end

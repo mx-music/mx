@@ -324,6 +324,35 @@ defmodule Mix.Tasks.Mx.FitTest do
       assert_in_delta power_mean(fit), power_mean(recorded), 1
     end
 
+    test "--dry leaves the room out of the check and the fit's own render, and goes with --struck only",
+         ctx do
+      run = [60, 64, 67] |> Enum.flat_map(&struck_note(&1, 3)) |> in_a_room()
+      write_wav(ctx.tmp_dir, "room.wav", run)
+      list = write_list(ctx, ["C4:G4 127 room.wav"])
+
+      output =
+        capture_io(fn ->
+          Mix.Tasks.Mx.Fit.run(~w(marimba --struck #{list} --check --own --dry))
+        end)
+
+      assert output =~ "the fit's own render against 3 recordings"
+      refute output =~ "the room of each file"
+
+      output =
+        capture_io(fn ->
+          Mix.Tasks.Mx.Fit.run(
+            ~w(marimba --struck #{list} --check --note C4 --vel 127 --own --until 2.5 --dry)
+          )
+        end)
+
+      fundamental = printed_rows(output, ~r/1\.000 harmonic 1/)
+      assert fundamental |> Map.keys() |> Enum.sort() == ~w(fit noise recording sines)
+
+      assert_raise Mix.Error, "--dry goes with --struck, not --held", fn ->
+        Mix.Tasks.Mx.Fit.run(~w(clarinet --held #{list} --check --dry))
+      end
+    end
+
     @tag timeout: 600_000
     test "a note is fitted over its whole ring, and falls on at its last slope after it", ctx do
       write_wav(ctx.tmp_dir, "long.wav", struck_note(60, 12, harmonics: [1], fade: 6))
@@ -836,7 +865,15 @@ defmodule Mix.Tasks.Mx.FitTest do
          %{dir: dir} do
       output =
         capture_io(fn ->
-          Mix.Tasks.Mx.Fit.run(["electric_piano", "--struck", dir, "--notes", "E1:E6", "--check"])
+          Mix.Tasks.Mx.Fit.run([
+            "electric_piano",
+            "--struck",
+            dir,
+            "--notes",
+            "E1:E6",
+            "--check",
+            "--dry"
+          ])
         end)
 
       assert output =~ "electric_piano against 75 recordings"
@@ -880,7 +917,8 @@ defmodule Mix.Tasks.Mx.FitTest do
             dir,
             "--notes",
             "E2:D6",
-            "--check"
+            "--check",
+            "--dry"
           ])
         end)
 
@@ -1039,7 +1077,9 @@ defmodule Mix.Tasks.Mx.FitTest do
           piece =
             binary_part(data, from * size, (min(to, div(byte_size(data), size)) - from) * size)
 
-          fitted = {recording.pitch, recording.velocity, recording.seconds / 1, recording.exact}
+          fitted =
+            {recording.pitch, recording.velocity, recording.seconds / 1, recording.exact, 8000.0,
+             false}
 
           check =
             Mxs.Native.check_struck(
@@ -1540,7 +1580,7 @@ defmodule Mix.Tasks.Mx.FitTest do
     {data, packing} = Mx.Signal.packed(samples)
 
     {{data, packing, Mxs.render_rate() / 1}, {0, length(samples)},
-     {60.0, 127, 2.9, false, 8000.0}}
+     {60.0, 127, 2.9, false, 8000.0, false}}
   end
 
   defp packed(samples) do

@@ -54,6 +54,9 @@ defmodule Mix.Tasks.Mx.Fit do
   `--top` with a frequency in Hz, such as `--top 16000`, follows the partials and fits the
   strike's noise up to it instead of 8 kHz, for an instrument that is bright above that, such as a
   drum with jingles.
+  `--dry` compares each render with its recording without adding the room the recording was made
+  in, for recordings made rather than recorded, such as NSynth's, whose quietest moments are the
+  notes themselves.
   `--option` with a synth's option and its value, such as `--option pedal=1`, renders the synth
   with it in `--check` and `--tour`; it can be given more than once.
 
@@ -146,6 +149,7 @@ defmodule Mix.Tasks.Mx.Fit do
           option: :keep,
           steady: :boolean,
           top: :float,
+          dry: :boolean,
           descent: :boolean,
           processor: :boolean
         ]
@@ -167,6 +171,7 @@ defmodule Mix.Tasks.Mx.Fit do
       |> Enum.flat_map(&struck_recordings!(&1, notes, kind))
       |> Enum.sort_by(&{&1.note, &1.velocity})
       |> topped(opts[:top])
+      |> dried(opts[:dry])
 
     if out = opts[:out] do
       figures = figures(kind, recordings, opts)
@@ -227,6 +232,9 @@ defmodule Mix.Tasks.Mx.Fit do
 
       opts[:top] && kind == :held ->
         Mx.Command.fail("--top goes with --struck, not --held")
+
+      opts[:dry] && kind == :held ->
+        Mx.Command.fail("--dry goes with --struck, not --held")
 
       opts[:top] && opts[:top] < 1000 ->
         top = opts[:top]
@@ -290,6 +298,9 @@ defmodule Mix.Tasks.Mx.Fit do
 
   defp topped(recordings, nil), do: recordings
   defp topped(recordings, top), do: Enum.map(recordings, &Map.put(&1, :top, top))
+
+  defp dried(recordings, nil), do: recordings
+  defp dried(recordings, dry), do: Enum.map(recordings, &Map.put(&1, :dry, dry))
 
   defp struck_recordings!(path, notes, kind) do
     found =

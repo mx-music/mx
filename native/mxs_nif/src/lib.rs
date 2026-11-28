@@ -805,7 +805,7 @@ fn spike_strike_modes(
     seconds_of_modes: f64,
     rising: bool,
 ) -> NifResult<analysis::modes::Strike> {
-    let ((data, format, rate), within, (note, _velocity, seconds, exact, _top)) = recording;
+    let ((data, format, rate), within, (note, _velocity, seconds, exact, _top, _dry)) = recording;
     Ok(analysis::modes::strike(
         &span(&data, &format, within)?,
         rate,
@@ -843,7 +843,7 @@ fn split_struck(
 /// A sound's data, format and rate.
 type Sound<'a> = (Binary<'a>, (String, usize, usize), f64);
 /// A recording of a struck note: its data, format and rate; the samples the note spans; and its note, a MIDI number or between them for a pitch given in Hz, its velocity, the seconds fitted, and whether the note's frequency is its pitch exactly.
-type Struck<'a> = (Sound<'a>, (usize, usize), (f64, u8, f64, bool, f64));
+type Struck<'a> = (Sound<'a>, (usize, usize), (f64, u8, f64, bool, f64, bool));
 
 /// The samples of a recording's data from `from` to `to`.
 fn span(
@@ -855,16 +855,20 @@ fn span(
     Ok(sound[from.min(sound.len())..to.min(sound.len())].to_vec())
 }
 
-/// The samples of a recording of a struck note from `from` to `to`, and the room its whole file was made in, as a note at `note` is measured.
+/// The samples of a recording of a struck note from `from` to `to`, and the room its whole file was made in, as a note at `note` is measured, or none for a `dry` one.
 fn span_in_room(
     data: &Binary,
     format: &(String, usize, usize),
     (from, to): (usize, usize),
     rate: f64,
-    note: f64,
+    (note, dry): (f64, bool),
 ) -> NifResult<(Vec<f64>, Option<analysis::room::Room>)> {
     let sound = sound(data, format)?;
-    let room = analysis::room::Room::measure(&sound, rate, analysis::hz(note));
+    let room = if dry {
+        None
+    } else {
+        analysis::room::Room::measure(&sound, rate, analysis::hz(note))
+    };
     Ok((
         sound[from.min(sound.len())..to.min(sound.len())].to_vec(),
         room,
@@ -928,9 +932,9 @@ fn fit_struck<'a>(env: Env<'a>, recordings: Vec<Struck<'a>>, how: String) -> Nif
     let sounds = recordings
         .iter()
         .map(
-            |((data, format, rate), within, (note, velocity, seconds, exact, top))| {
+            |((data, format, rate), within, (note, velocity, seconds, exact, top, dry))| {
                 Ok((
-                    span_in_room(data, format, *within, *rate, *note)?,
+                    span_in_room(data, format, *within, *rate, (*note, *dry))?,
                     *rate,
                     *note,
                     *velocity,
@@ -973,9 +977,9 @@ fn fit_struck<'a>(env: Env<'a>, recordings: Vec<Struck<'a>>, how: String) -> Nif
 /// How far a render of a struck note is from a recording of it, partial by partial and in ERB bands: the recording as a struck one is given to `fit_struck`, the render as its data, format and rate.
 #[rustler::nif(schedule = "DirtyCpu")]
 fn check_struck(recording: Struck, rendered: Sound) -> NifResult<analysis::fit::Check> {
-    let ((data, format, rate), within, (note, _velocity, seconds, exact, top)) = recording;
+    let ((data, format, rate), within, (note, _velocity, seconds, exact, top, dry)) = recording;
     let ((theirs, room), ours) = (
-        span_in_room(&data, &format, within, rate, note)?,
+        span_in_room(&data, &format, within, rate, (note, dry))?,
         sound(&rendered.0, &rendered.1)?,
     );
     Ok(analysis::fit::check(
@@ -994,8 +998,8 @@ fn check_struck(recording: Struck, rendered: Sound) -> NifResult<analysis::fit::
 /// How far the fit's own render of a struck note, its figures played with no synth, is from the recording, as `check_struck` compares them: the recording as a struck one is given to `fit_struck`.
 #[rustler::nif(schedule = "DirtyCpu")]
 fn check_fit_struck(recording: Struck, how: String) -> NifResult<analysis::fit::Check> {
-    let ((data, format, rate), within, (note, _velocity, seconds, exact, top)) = recording;
-    let (theirs, room) = span_in_room(&data, &format, within, rate, note)?;
+    let ((data, format, rate), within, (note, _velocity, seconds, exact, top, dry)) = recording;
+    let (theirs, room) = span_in_room(&data, &format, within, rate, (note, dry))?;
     let recording = analysis::fit::Recording {
         sound: &theirs,
         rate,
@@ -1017,8 +1021,8 @@ fn frames_struck(
     times: Vec<f64>,
     how: String,
 ) -> NifResult<analysis::fit::Frames> {
-    let ((data, format, rate), within, (note, _velocity, seconds, exact, top)) = recording;
-    let (theirs, room) = span_in_room(&data, &format, within, rate, note)?;
+    let ((data, format, rate), within, (note, _velocity, seconds, exact, top, dry)) = recording;
+    let (theirs, room) = span_in_room(&data, &format, within, rate, (note, dry))?;
     let synth = match &rendered {
         Some((data, packing, rate)) => Some((sound(data, packing)?, *rate)),
         None => None,
@@ -1047,7 +1051,7 @@ fn tour_struck<'a>(env: Env<'a>, pairs: Vec<(Struck<'a>, Sound<'a>)>) -> NifResu
         .iter()
         .map(
             |(
-                ((data, format, recording_rate), within, (_, _, seconds, _, _)),
+                ((data, format, recording_rate), within, (_, _, seconds, _, _, _)),
                 (rendered, packing, _),
             )| {
                 Ok((
@@ -1074,7 +1078,7 @@ fn fit_held<'a>(env: Env<'a>, recordings: Vec<Struck<'a>>, steady: bool) -> NifR
     let sounds = recordings
         .iter()
         .map(
-            |((data, format, rate), within, (note, velocity, seconds, _, _))| {
+            |((data, format, rate), within, (note, velocity, seconds, _, _, _))| {
                 Ok((
                     span(data, format, *within)?,
                     *rate,
@@ -1101,7 +1105,7 @@ fn fit_held<'a>(env: Env<'a>, recordings: Vec<Struck<'a>>, steady: bool) -> NifR
 /// How far a render of a held note is from a recording of it, as `check_struck` takes them.
 #[rustler::nif(schedule = "DirtyCpu")]
 fn check_held(recording: Struck, rendered: Sound) -> NifResult<analysis::fit::Check> {
-    let ((data, format, rate), within, (note, _velocity, seconds, _, _)) = recording;
+    let ((data, format, rate), within, (note, _velocity, seconds, _, _, _)) = recording;
     let (theirs, ours) = (
         span(&data, &format, within)?,
         sound(&rendered.0, &rendered.1)?,
@@ -1114,7 +1118,7 @@ fn check_held(recording: Struck, rendered: Sound) -> NifResult<analysis::fit::Ch
 /// How far the fit's own render of a held note is from the recording, as `check_held` compares them.
 #[rustler::nif(schedule = "DirtyCpu")]
 fn check_fit_held(recording: Struck, steady: bool) -> NifResult<analysis::fit::Check> {
-    let ((data, format, rate), within, (note, _velocity, seconds, _, _)) = recording;
+    let ((data, format, rate), within, (note, _velocity, seconds, _, _, _)) = recording;
     Ok(analysis::sustained::own(
         &span(&data, &format, within)?,
         rate,
@@ -1127,7 +1131,7 @@ fn check_fit_held(recording: Struck, steady: bool) -> NifResult<analysis::fit::C
 /// Where a recording of a held note holds from and is let go, in seconds after it starts, and the seconds into its span it starts at.
 #[rustler::nif(schedule = "DirtyCpu")]
 fn timing_held(recording: Struck) -> NifResult<(f64, f64, f64)> {
-    let ((data, format, rate), within, (note, _velocity, seconds, _, _)) = recording;
+    let ((data, format, rate), within, (note, _velocity, seconds, _, _, _)) = recording;
     Ok(analysis::sustained::timing(
         &span(&data, &format, within)?,
         rate,
@@ -1139,7 +1143,7 @@ fn timing_held(recording: Struck) -> NifResult<(f64, f64, f64)> {
 /// A held note partial by partial, as `mix mx.measure --held --partials` prints it, the recording given as to `fit_struck`.
 #[rustler::nif(schedule = "DirtyCpu")]
 fn measure_held_partials(recording: Struck) -> NifResult<analysis::sustained::Summary> {
-    let ((data, format, rate), within, (note, _velocity, seconds, _, _)) = recording;
+    let ((data, format, rate), within, (note, _velocity, seconds, _, _, _)) = recording;
     Ok(analysis::sustained::summary(
         &span(&data, &format, within)?,
         rate,
