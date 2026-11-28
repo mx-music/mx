@@ -6,7 +6,10 @@ defmodule Mx.Paired.TimbaleShell do
   use Mx.Instrument
   import Mx.Paired.Drums, only: [hit: 3]
 
-  @doc "The timbale's shell struck by the stick: the stick's crack ringing the shell's short modes, and the crack itself."
+  @doc """
+  The timbale's shell struck by the stick: the stick's crack ringing the shell's short modes, and
+  the crack itself.
+  """
   attr :note, :note, default: 93, doc: "The shell's pitch."
 
   defsynth timbale_shell(o) do

@@ -1,6 +1,7 @@
 defmodule Mx.Paired.Vibraphone do
   @moduledoc """
-  mxs's vibraphone written with defsynth, playing its table as mxs does, so the two can be compared and timed.
+  mxs's vibraphone written with defsynth, playing its table as mxs does, so the two can be
+  compared and timed.
   """
 
   use Mx.Instrument

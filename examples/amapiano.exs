@@ -3,7 +3,10 @@ defmodule Sgubhu.Synths do
 
   use Mx.Instrument
 
-  @doc "A log drum, amapiano's bass: a low note with the odd overtones of a struck slit drum, which die away as it rings."
+  @doc """
+  A log drum, amapiano's bass: a low note with the odd overtones of a struck slit drum, which die
+  away as it rings.
+  """
   attr :note, :note, default: 38, doc: "The pitch, which a change glides."
   attr :vel, :float, default: 0.8, range: 0..1, doc: "How hard it is struck; harder is brighter."
   attr :fade, :float, default: 0.6, range: 0.05..10, doc: "The seconds it takes to fade."

@@ -2,24 +2,38 @@ defmodule Mx.Engine.Mxs do
   @moduledoc """
   mx's engine on mxs, mx's sound engine in Rust, through a NIF.
 
-  mxs plays events stamped with seconds on its own clock, so a Unix time in microseconds becomes the second at which mxs renders it, following the sound card's clock as it drifts from the system's; an offline engine counts seconds from its start.
-  A note is a note of mxs's synth of the same name, with its pitch as its `note` option, and a sample plays from the number mxs loaded it as.
+  mxs plays events stamped with seconds on its own clock, so a Unix time in microseconds becomes
+  the second at which mxs renders it, following the sound card's clock as it drifts from the
+  system's; an offline engine counts seconds from its start.
+  A note is a note of mxs's synth of the same name, with its pitch as its `note` option, and a
+  sample plays from the number mxs loaded it as.
   An effect chain is mxs's chain, which notes name to play into.
   It renders offline through an engine of its own for each render, so renders never share a clock.
 
-  Live, it plays through the devices named by `devices:`, `output:` and `input:`, at its `rate:` in Hz and with its `buffer:` frames, each the device's default when not given, and stops with mxs's message when a device cannot take them.
-  It plays each live audio of the song from the sound card, with its effects, and reads the sound card's input only when given `input: true`.
-  When the input and output run at different rates mxs cannot start, and the message ends with `input_advice:`, by default the advice to name another input or rate, or to take live audio out of the song.
-  A changed live audio changes in place, unless its input, channels or effects change; a removed one stops at once.
+  Live, it plays through the devices named by `devices:`, `output:` and `input:`, at its `rate:`
+  in Hz and with its `buffer:` frames, each the device's default when not given, and stops with
+  mxs's message when a device cannot take them.
+  It plays each live audio of the song from the sound card, with its effects, and reads the sound
+  card's input only when given `input: true`.
+  When the input and output run at different rates mxs cannot start, and the message ends with
+  `input_advice:`, by default the advice to name another input or rate, or to take live audio out
+  of the song.
+  A changed live audio changes in place, unless its input, channels or effects change; a removed
+  one stops at once.
 
-  A part started with `start_part/2` is a part of mxs by its name, which `mute/2` and `solo/2` silence and bring back while it plays.
+  A part started with `start_part/2` is a part of mxs by its name, which `mute/2` and `solo/2`
+  silence and bring back while it plays.
 
-  `output/1` gives the device it plays to, its sample rate and its delay, and tells the caller when the engine reports another output.
-  `voices/1` has the number of notes that sound sent to the caller about once a second, until `stop_voices/1`.
-  `levels/1` has the levels of what it plays sent to the caller twenty times a second, the output's and each part's, until `stop_levels/1`.
+  `output/1` gives the device it plays to, its sample rate and its delay, and tells the caller
+  when the engine reports another output.
+  `voices/1` has the number of notes that sound sent to the caller about once a second, until
+  `stop_voices/1`.
+  `levels/1` has the levels of what it plays sent to the caller twenty times a second, the
+  output's and each part's, until `stop_levels/1`.
 
   Given `record:`, it writes the main output to that WAV file from when it starts.
-  On stop it then waits for the notes already playing to fade, for `fade_ms` at most, before it closes the file.
+  On stop it then waits for the notes already playing to fade, for `fade_ms` at most, before it
+  closes the file.
   """
 
   @behaviour Mx.Engine
@@ -41,7 +55,10 @@ defmodule Mx.Engine.Mxs do
   @impl Mx.Engine
   def start_link(opts), do: GenServer.start_link(__MODULE__, opts, name: __MODULE__)
 
-  @doc "The synths, players and effects mxs has, each with its options and their defaults, every name as a string."
+  @doc """
+  The synths, players and effects mxs has, each with its options and their defaults, every name as
+  a string.
+  """
   def catalog do
     Map.new(entries(), fn {name, specs} ->
       defaults = defaults(specs)
@@ -57,7 +74,10 @@ defmodule Mx.Engine.Mxs do
     end)
   end
 
-  @doc "Each synth's and effect's options declared in beats, which a song gives in beats and mxs takes in seconds."
+  @doc """
+  Each synth's and effect's options declared in beats, which a song gives in beats and mxs takes
+  in seconds.
+  """
   def beats do
     Map.new(entries(), fn {name, specs} ->
       {name, MapSet.new(for %{kind: "beats"} = spec <- specs, do: spec.name)}
@@ -80,7 +100,10 @@ defmodule Mx.Engine.Mxs do
       end
   end
 
-  @doc "Each synth's and effect's options that take a range or a set of names, as `{:range, low, high}`, with nil for an open end, or `{:names, names}`."
+  @doc """
+  Each synth's and effect's options that take a range or a set of names, as `{:range, low, high}`,
+  with nil for an open end, or `{:names, names}`.
+  """
   def limits do
     {_synths, _note, _sample, effects, _effect, _input} = Native.catalog()
     effects = for {name, specs} <- effects ++ effect_specs(), do: {"fx_" <> name, specs}
@@ -214,51 +237,80 @@ defmodule Mx.Engine.Mxs do
   @impl Mx.Engine
   def prepare(song), do: GenServer.call(__MODULE__, {:prepare, song}, 60_000)
 
-  @doc "The output's delay in microseconds, the time from the engine filling a frame to the sound card playing it; `pid` is then sent `{:mx_delay, delay_us}` whenever it has moved by more than 2 ms."
+  @doc """
+  The output's delay in microseconds, the time from the engine filling a frame to the sound card
+  playing it; `pid` is then sent `{:mx_delay, delay_us}` whenever it has moved by more than 2 ms.
+  """
   def delay(pid) when is_pid(pid), do: GenServer.call(__MODULE__, {:delay, pid})
 
   @doc """
-  The output the engine plays to, as `%{device: name, rate: hz, delay_ms: ms}`; `pid` is then sent `{:mx_output, output}` whenever the engine reports another output.
+  The output the engine plays to, as `%{device: name, rate: hz, delay_ms: ms}`; `pid` is then sent
+  `{:mx_output, output}` whenever the engine reports another output.
 
-  The delay is the time from the engine filling a frame to the sound card playing it, in milliseconds, as `delay/1` gives it in microseconds.
+  The delay is the time from the engine filling a frame to the sound card playing it, in
+  milliseconds, as `delay/1` gives it in microseconds.
   An engine that renders offline has no device and no delay, and gives nil for both.
   """
   def output(pid) when is_pid(pid), do: GenServer.call(__MODULE__, {:output, pid})
 
   @doc """
-  How filling audio went since the last call, as `%{buffers: n, mean_percent: p, worst_percent: p, late: n}`: how many buffers the engine filled, the time filling took as a share of the time they last, over all of them and at worst, and how many reached the sound card too late to be heard on time.
+  How filling audio went since the last call, as
+  `%{buffers: n, mean_percent: p, worst_percent: p, late: n}`: how many buffers the engine filled,
+  the time filling took as a share of the time they last, over all of them and at worst, and how
+  many reached the sound card too late to be heard on time.
   An engine that renders offline counts each stretch it renders as a buffer, and none late.
   """
   def buffer_load, do: GenServer.call(__MODULE__, :buffer_load)
 
-  @doc "Sends `pid` `{:mx_voices, count}`, the number of notes that sound, about once a second, until `stop_voices/1` or until `pid` is gone."
+  @doc """
+  Sends `pid` `{:mx_voices, count}`, the number of notes that sound, about once a second, until
+  `stop_voices/1` or until `pid` is gone.
+  """
   def voices(pid) when is_pid(pid), do: GenServer.call(__MODULE__, {:ask, "voices", pid})
 
-  @doc "Stops what `voices/1` started for `pid`; the engine counts no voices while no one is sent them."
+  @doc """
+  Stops what `voices/1` started for `pid`; the engine counts no voices while no one is sent them.
+  """
   def stop_voices(pid) when is_pid(pid), do: GenServer.call(__MODULE__, {:stop, "voices", pid})
 
   @doc """
-  Sends `pid` `{:mx_levels, levels}`, the levels of what the engine plays, twenty times a second, until `stop_levels/1` or until `pid` is gone.
+  Sends `pid` `{:mx_levels, levels}`, the levels of what the engine plays, twenty times a second,
+  until `stop_levels/1` or until `pid` is gone.
 
-  Each holds the twentieth of a second before it, of the sound as it reaches the output, so it matches a recording made at the same time:
+  Each holds the twentieth of a second before it, of the sound as it reaches the output, so it
+  matches a recording made at the same time:
 
-    * `peak:` the loudest sample of the left and the right channel, as `{left, right}`, where 1 is full scale;
+    * `peak:` the loudest sample of the left and the right channel, as `{left, right}`, where 1 is
+      full scale;
     * `rms:` the RMS level of each, as `{left, right}`;
     * `full_scale:` whether a sample of either channel reached full scale;
-    * `wave:` the wave of both channels mixed to one, as 64 points from -1 to 1, each the sample furthest from 0 in its stretch;
-    * `bands:` the level in dB of both channels mixed to one in each of the bands `bands/0` gives, over the last 8192 frames, where a band with no sound reads -120.0;
-    * `parts:` the `peak:` and `rms:` of each part started with `start_part/2`, after its effects, by its name as a string; a sound that plays into no part is in the output's levels alone;
+    * `wave:` the wave of both channels mixed to one, as 64 points from -1 to 1, each the sample
+      furthest from 0 in its stretch;
+    * `bands:` the level in dB of both channels mixed to one in each of the bands `bands/0` gives,
+      over the last 8192 frames, where a band with no sound reads -120.0;
+    * `parts:` the `peak:` and `rms:` of each part started with `start_part/2`, after its effects,
+      by its name as a string; a sound that plays into no part is in the output's levels alone;
     * `seconds:` the engine's seconds at its end.
   """
   def levels(pid) when is_pid(pid), do: GenServer.call(__MODULE__, {:ask, "levels", pid})
 
-  @doc "The bands a levels report holds, the lowest first, each as its lowest and highest frequency in Hz: 25 bands from 50 Hz to 16 kHz, each as wide as the last on a log scale, about a third of an octave."
+  @doc """
+  The bands a levels report holds, the lowest first, each as its lowest and highest frequency in
+  Hz: 25 bands from 50 Hz to 16 kHz, each as wide as the last on a log scale, about a third of an
+  octave.
+  """
   def bands, do: Native.level_bands()
 
-  @doc "Stops what `levels/1` started for `pid`; the engine measures no levels while no one is sent them."
+  @doc """
+  Stops what `levels/1` started for `pid`; the engine measures no levels while no one is sent
+  them.
+  """
   def stop_levels(pid) when is_pid(pid), do: GenServer.call(__MODULE__, {:stop, "levels", pid})
 
-  @doc "Renders an engine started with `live: false` on to the Unix time `at_us`, and returns whether a sound still plays."
+  @doc """
+  Renders an engine started with `live: false` on to the Unix time `at_us`, and returns whether a
+  sound still plays.
+  """
   def render_to(at_us) when is_integer(at_us) do
     GenServer.call(__MODULE__, {:render_to, at_us}, :infinity)
   end
@@ -266,13 +318,18 @@ defmodule Mx.Engine.Mxs do
   @impl Mx.Engine
   def load_sample(path, loop), do: GenServer.cast(__MODULE__, {:load_sample, path, loop})
 
-  @doc "Loads the sample at `path` now, unless it is loaded already, and returns it as a sample event takes it, `{:ok, sample}`, or `{:error, message}`."
+  @doc """
+  Loads the sample at `path` now, unless it is loaded already, and returns it as a sample event
+  takes it, `{:ok, sample}`, or `{:error, message}`.
+  """
   def sample(path) when is_binary(path), do: GenServer.call(__MODULE__, {:sample, path}, 60_000)
 
   @doc """
-  Plays a recording alone, beside any song and through no part, from 150 ms on, and returns `{:ok, id}`, the id `stop_sounds/1` takes.
+  Plays a recording alone, beside any song and through no part, from 150 ms on, and returns
+  `{:ok, id}`, the id `stop_sounds/1` takes.
 
-  It takes a sample's options, `from:` and `to:` in seconds among them, and refuses a file that cannot play or a range outside it with `{:error, message}`.
+  It takes a sample's options, `from:` and `to:` in seconds among them, and refuses a file that
+  cannot play or a range outside it with `{:error, message}`.
   """
   def play_recording(ref, opts \\ []) when is_list(opts) do
     with {:ok, path} <- Mx.Samples.check(ref, opts),
@@ -284,7 +341,9 @@ defmodule Mx.Engine.Mxs do
     end
   end
 
-  @doc "Stops the sounds of the ids given, such as a recording `play_recording/2` plays, within 150 ms."
+  @doc """
+  Stops the sounds of the ids given, such as a recording `play_recording/2` plays, within 150 ms.
+  """
   def stop_sounds(ids) when is_list(ids), do: play(Mx.Clock.now() + 150_000, [{:stop, ids}])
 
   @impl Mx.Engine
@@ -301,8 +360,10 @@ defmodule Mx.Engine.Mxs do
   end
 
   @doc """
-  Starts the song's effects, which every part and live audio plays through after its own, with their times in beats.
-  The same effects as those already started are left running, so a new version of a song that keeps them does not interrupt them.
+  Starts the song's effects, which every part and live audio plays through after its own, with
+  their times in beats.
+  The same effects as those already started are left running, so a new version of a song that
+  keeps them does not interrupt them.
   """
   def set_main(effects) when is_list(effects) do
     {engine, _} = :persistent_term.get(__MODULE__)
@@ -327,8 +388,10 @@ defmodule Mx.Engine.Mxs do
   end
 
   @doc """
-  Starts the song's buses, the chains its parts send into, and sets every send of its parts and buses.
-  A bus whose effects are those already started is left running, one whose effects changed is started again, and one the song no longer has is stopped.
+  Starts the song's buses, the chains its parts send into, and sets every send of its parts and
+  buses.
+  A bus whose effects are those already started is left running, one whose effects changed is
+  started again, and one the song no longer has is stopped.
   A part started later takes its sends as it starts.
   """
   def set_buses(%Mx.Song{} = song) do
@@ -426,7 +489,10 @@ defmodule Mx.Engine.Mxs do
     :ok
   end
 
-  @doc "The seconds each of a part's effects sounds on after its input stops, with the options declared in beats in beats at `bpm`, or `{:error, message}`; it needs no engine started."
+  @doc """
+  The seconds each of a part's effects sounds on after its input stops, with the options declared
+  in beats in beats at `bpm`, or `{:error, message}`; it needs no engine started.
+  """
   def effect_tails(effects, bpm) when is_list(effects) and is_number(bpm) do
     written =
       for module <- Mx.Instrument.modules(),
@@ -469,10 +535,13 @@ defmodule Mx.Engine.Mxs do
   end
 
   @doc """
-  Starts the part `name` with a part's effects, none for a part without any, and returns the chain its notes play into, as `start_fx/1` does.
+  Starts the part `name` with a part's effects, none for a part without any, and returns the chain
+  its notes play into, as `start_fx/1` does.
 
-  The part starts muted or soloed if `mute/2` or `solo/2` left its name so, and a part of that name already started is removed first.
-  With `beats: true`, the options the effects declare in beats are given in beats, and follow the tempo `set_tempo/2` gives the engine.
+  The part starts muted or soloed if `mute/2` or `solo/2` left its name so, and a part of that
+  name already started is removed first.
+  With `beats: true`, the options the effects declare in beats are given in beats, and follow the
+  tempo `set_tempo/2` gives the engine.
   The calling process is the one `pass/5` has told when the part's last pass ends.
   """
   def start_part(name, effects, opts \\ []) when is_atom(name) and is_list(opts) do
@@ -497,7 +566,10 @@ defmodule Mx.Engine.Mxs do
     end
   end
 
-  @doc "Mutes the part `name` at once, the notes already handed over included, or lets it be heard again; a part started later by that name starts as it was left."
+  @doc """
+  Mutes the part `name` at once, the notes already handed over included, or lets it be heard
+  again; a part started later by that name starts as it was left.
+  """
   def mute(name, muted) when is_boolean(muted) do
     {engine, _} = :persistent_term.get(__MODULE__)
     part = to_string(name)
@@ -507,7 +579,10 @@ defmodule Mx.Engine.Mxs do
     :ok
   end
 
-  @doc "Solos the part `name` at once, or ends its solo: while any part is soloed, only the soloed parts are heard; a part started later by that name starts as it was left."
+  @doc """
+  Solos the part `name` at once, or ends its solo: while any part is soloed, only the soloed parts
+  are heard; a part started later by that name starts as it was left.
+  """
   def solo(name, soloed) when is_boolean(soloed) do
     {engine, _} = :persistent_term.get(__MODULE__)
     part = to_string(name)
@@ -517,13 +592,20 @@ defmodule Mx.Engine.Mxs do
     :ok
   end
 
-  @doc "Places beat 0 of the engine's tempo map at the Unix time `at_us` in microseconds; it is at the engine's start until placed."
+  @doc """
+  Places beat 0 of the engine's tempo map at the Unix time `at_us` in microseconds; it is at the
+  engine's start until placed.
+  """
   def place_beats(at_us) when is_integer(at_us) do
     {engine, origin} = :persistent_term.get(__MODULE__)
     Native.place_beats(engine, at_us, origin)
   end
 
-  @doc "Changes the engine's tempo from `beat` on, to beats a minute or to `{:ramp, from, to, beats}`, as a timeline of `Mx.Tempo` holds them; the tempo is 120 until changed, and the events handed over in beats move with it."
+  @doc """
+  Changes the engine's tempo from `beat` on, to beats a minute or to `{:ramp, from, to, beats}`,
+  as a timeline of `Mx.Tempo` holds them; the tempo is 120 until changed, and the events handed
+  over in beats move with it.
+  """
   def set_tempo(beat, {:ramp, from, to, over}) when is_number(beat) do
     {engine, _} = :persistent_term.get(__MODULE__)
     Native.set_tempo(engine, beat / 1, to / 1, {from / 1, over / 1})
@@ -535,12 +617,16 @@ defmodule Mx.Engine.Mxs do
   end
 
   @doc """
-  Hands the part `name`, started with `start_part/3`, a pass over the beats `{from, to}`: each event as `play/2` takes it, with its beat, as `{beat, event}`.
+  Hands the part `name`, started with `start_part/3`, a pass over the beats `{from, to}`: each
+  event as `play/2` takes it, with its beat, as `{beat, event}`.
 
-  The engine places every event from its beat by its tempo map, so an event moves with a tempo change made before it sounds.
+  The engine places every event from its beat by its tempo map, so an event moves with a tempo
+  change made before it sounds.
   An option a synth declares in beats, and every slide, is given in beats.
   `label` is a number of the caller's, such as the pass's number.
-  With `notice:`, a number of beats, the process that started the part is sent `{:mx_pass_ending, name, to}` that many beats before the pass ends, unless another pass was handed to the part by then.
+  With `notice:`, a number of beats, the process that started the part is sent
+  `{:mx_pass_ending, name, to}` that many beats before the pass ends, unless another pass was
+  handed to the part by then.
   """
   def pass(name, {from, to}, label, events, opts \\ []) when is_atom(name) and is_list(events) do
     {engine, _} = :persistent_term.get(__MODULE__)
@@ -552,7 +638,10 @@ defmodule Mx.Engine.Mxs do
     Enum.each(warnings, &IO.puts(:stderr, &1))
   end
 
-  @doc "Drops every event handed to the part `name` in a pass for `beat` or after that has not started, so another pass can take its place."
+  @doc """
+  Drops every event handed to the part `name` in a pass for `beat` or after that has not started,
+  so another pass can take its place.
+  """
   def cut(name, beat) when is_atom(name) and is_number(beat) do
     {engine, _} = :persistent_term.get(__MODULE__)
     Native.cut(engine, Atom.to_string(name), beat / 1)

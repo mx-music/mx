@@ -1,13 +1,20 @@
 defmodule Mx.Voice do
   @moduledoc """
-  A made-up humming voice for testing `mx.hum`, since no recording of a person humming ships with mx.
+  A made-up humming voice for testing `mx.hum`, since no recording of a person humming ships with
+  mx.
 
-  Each note is harmonics falling 7 dB an octave, as a closed-mouth hum's do, with the faults a voice has: it scoops up into the note, wanders slowly around it, and grows vibrato once it settles.
-  It also makes breaths, which are noise, and clicks, which are 3 ms bursts of noise, and a faint hiss under everything.
+  Each note is harmonics falling 7 dB an octave, as a closed-mouth hum's do, with the faults a
+  voice has: it scoops up into the note, wanders slowly around it, and grows vibrato once it
+  settles.
+  It also makes breaths, which are noise, and clicks, which are 3 ms bursts of noise, and a faint
+  hiss under everything.
   The wandering and the noise are seeded, so a voice rendered twice is the same.
 
-  Events are `{:note, at, seconds, note, opts}`, `{:breath, at, seconds}` and `{:click, at}`, with times in seconds.
-  A note takes `vibrato:` in semitones either side (0.3 by default), `scoop:` in semitones below (0.6 by default), `cents:` off its pitch, and `slide_to:` with `slide_at:` and `slide:` in seconds, to glide to another note, and `slide_back_at:` to glide back from it.
+  Events are `{:note, at, seconds, note, opts}`, `{:breath, at, seconds}` and `{:click, at}`, with
+  times in seconds.
+  A note takes `vibrato:` in semitones either side (0.3 by default), `scoop:` in semitones below
+  (0.6 by default), `cents:` off its pitch, and `slide_to:` with `slide_at:` and `slide:` in
+  seconds, to glide to another note, and `slide_back_at:` to glide back from it.
   """
 
   @doc "Renders the events over some seconds at a sample rate, as samples from -1 to 1."

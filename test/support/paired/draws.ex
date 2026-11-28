@@ -1,6 +1,7 @@
 defmodule Mx.Paired.Draws do
   @moduledoc """
-  mxs's numbers drawn from a seed, SplitMix64, so a twin draws the same numbers as the Rust voice it is written from.
+  mxs's numbers drawn from a seed, SplitMix64, so a twin draws the same numbers as the Rust voice
+  it is written from.
   """
 
   import Bitwise
@@ -20,7 +21,10 @@ defmodule Mx.Paired.Draws do
     numbers
   end
 
-  @doc "The frequencies of a cymbal's plate as mxs draws them: `count` from `low` to `high` Hz, as likely in each octave, sorted and in groups of 20."
+  @doc """
+  The frequencies of a cymbal's plate as mxs draws them: `count` from `low` to `high` Hz, as
+  likely in each octave, sorted and in groups of 20.
+  """
   def plate(count, low, high) do
     1956
     |> draws(count)

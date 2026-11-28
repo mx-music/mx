@@ -1,6 +1,7 @@
 defmodule Mx.Paired.Reeds do
   @moduledoc """
-  mxs's reed and brass winds written with defsynth node for node: `use Mx.Paired.Reeds` with a synth's name, its vibrato's rate, its bore and its fit.
+  mxs's reed and brass winds written with defsynth node for node: `use Mx.Paired.Reeds` with a
+  synth's name, its vibrato's rate, its bore and its fit.
   """
 
   use Mx.Instrument
@@ -102,7 +103,10 @@ defmodule Mx.Paired.Reeds do
     end
   end
 
-  @doc "A reed wind's sound for the note `o`, its vibrato at `rate`, with `bore` and `fit` as mxs's tables give them."
+  @doc """
+  A reed wind's sound for the note `o`, its vibrato at `rate`, with `bore` and `fit` as mxs's
+  tables give them.
+  """
   defsound reed_wind(o, rate, bore, fit) do
     vel = clamp(o.vel, 0, 1)
     effort = clamp(vel + (1 - vel) * o.pressure, 0, 1)

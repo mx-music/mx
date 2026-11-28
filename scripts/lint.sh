@@ -326,9 +326,8 @@ run_check "Describe every example module in a @moduledoc \"...\", not in comment
           -PU '(?m)^defmodule\b(?:(?!^defmodule\b)[\s\S])*?^\s*@moduledoc\s+"(*SKIP)(*FAIL)|^defmodule\b'
 
 # A line of one word, such as a URL, may run past.
-run_check "Wrap example moduledocs at 98 columns, the formatter's line length" \
-          -g 'examples/**/*.exs' \
-          -PU '(?m)^[ \t]*@moduledoc """\n(?:(?![ \t]*""")[^\n]*\n)*?\K(?=[^\n]{99,}$)[ \t]*\S+[ \t]+\S[^\n]*$|^(?=[^\n]{99,}$)[ \t]*@moduledoc "'
+run_check "Wrap docs at 98 columns, the formatter's line length" \
+          -PU '(?m)^[ \t]*@(?:moduledoc|doc|typedoc) (?:~[sS])?"""\n(?:(?![ \t]*""")[^\n]*\n)*?\K(?=[^\n]{99,}$)[ \t]*\S+[ \t]+\S[^\n]*$|^(?=[^\n]{99,}$)[ \t]*@(?:moduledoc|doc|typedoc|shortdoc) "'
 
 # Env vars
 run_check "Use Application config instead of reading/writing env vars directly in lib" \

@@ -1,17 +1,28 @@
 defmodule Mx.Render do
   @moduledoc """
-  Renders a song file offline to a stereo WAV file, as fast as the machine renders it and with no sound card, for `--render`.
+  Renders a song file offline to a stereo WAV file, as fast as the machine renders it and with no
+  sound card, for `--render`.
 
-  The band, its loops and an offline engine work out the song as they do when it plays, against `Mx.Clock`'s time, which the render moves on to the next time a loop needs to work something out, 10 ms at least.
-  At each step every loop is ticked in turn by name and waited for, so its passes reach the engine in the same order on every run, and the engine renders up to that time.
-  The render starts at the song's first beat, and ends once its music has ended or `seconds:` have passed, and the notes still sounding have faded, for four seconds at most.
+  The band, its loops and an offline engine work out the song as they do when it plays, against
+  `Mx.Clock`'s time, which the render moves on to the next time a loop needs to work something
+  out, 10 ms at least.
+  At each step every loop is ticked in turn by name and waited for, so its passes reach the engine
+  in the same order on every run, and the engine renders up to that time.
+  The render starts at the song's first beat, and ends once its music has ended or `seconds:` have
+  passed, and the notes still sounding have faded, for four seconds at most.
   With `ring_out: false` it leaves that ring out, so the file ends where the music ends.
-  With `mute:` it leaves out the parts named, and with `solo:` it hears only those parts, as `Mx.Session.mute/3` and `Mx.Session.solo/2` do while a song plays.
-  With `ring_out: true` it keeps the ring for as long as the effects ring after those notes have faded, as `ring_out/2` gives it.
-  Without `ring_out:` the render ends as those notes fade, and says which part's effect it cuts short and how long it would ring.
-  MIDI and OSC are not sent, and a loop that waits for input plays nothing; each part left out is named once, a part that sends MIDI or OSC the first time it does.
+  With `mute:` it leaves out the parts named, and with `solo:` it hears only those parts, as
+  `Mx.Session.mute/3` and `Mx.Session.solo/2` do while a song plays.
+  With `ring_out: true` it keeps the ring for as long as the effects ring after those notes have
+  faded, as `ring_out/2` gives it.
+  Without `ring_out:` the render ends as those notes fade, and says which part's effect it cuts
+  short and how long it would ring.
+  MIDI and OSC are not sent, and a loop that waits for input plays nothing; each part left out is
+  named once, a part that sends MIDI or OSC the first time it does.
 
-  While it renders it prints a line such as `rendered 37.5 of 148.2 seconds` about four times a second, and once more when the music has rendered, giving the seconds of music rendered and the seconds it renders in all, until the music ends or for `seconds:`, the fade after it left out.
+  While it renders it prints a line such as `rendered 37.5 of 148.2 seconds` about four times a
+  second, and once more when the music has rendered, giving the seconds of music rendered and the
+  seconds it renders in all, until the music ends or for `seconds:`, the fade after it left out.
   """
 
   alias Mx.{Band, Clock, Inputs, Loudness, Pass, Recording, Song, Tempo}
@@ -22,7 +33,13 @@ defmodule Mx.Render do
   @fade_us 4_000_000
   @progress_ms 250
 
-  @doc "Renders the song at `path` to the WAV file `out`, with `seconds:`, `force:`, `ring_out:`, `mute:`, `solo:`, `loudness:`, the loudness in LUFS to scale the finished file to, no further than a peak of -1 dB, and `share:`, the share of its tempo to play it at, 1 unless given, and returns `:ok` once written, or `{:error, message}`; the process given as `follow:` is sent where the beat is, as `Mx.Beat` describes, in the render's own time."
+  @doc """
+  Renders the song at `path` to the WAV file `out`, with `seconds:`, `force:`, `ring_out:`,
+  `mute:`, `solo:`, `loudness:`, the loudness in LUFS to scale the finished file to, no further
+  than a peak of -1 dB, and `share:`, the share of its tempo to play it at, 1 unless given, and
+  returns `:ok` once written, or `{:error, message}`; the process given as `follow:` is sent where
+  the beat is, as `Mx.Beat` describes, in the render's own time.
+  """
   def render(path, out, opts) when is_binary(path) and is_binary(out) and is_list(opts) do
     seconds = opts[:seconds]
     share = Keyword.get(opts, :share, 1)
@@ -79,9 +96,16 @@ defmodule Mx.Render do
   end
 
   @doc """
-  How long a song's effects ring once its notes have faded, rendered for `seconds:` and at `share:` of its tempo as `render/3` takes them, as `{:ok, %{seconds: seconds, part: part, effect: effect}}` naming the effect that rings longest among those that ring longest together and its part, a bus's name for an effect of a bus and `:song` for one of the song's own effects, `{:ok, nil}` when no effect rings, or `{:error, message}`.
+  How long a song's effects ring once its notes have faded, rendered for `seconds:` and at
+  `share:` of its tempo as `render/3` takes them, as
+  `{:ok, %{seconds: seconds, part: part, effect: effect}}` naming the effect that rings longest
+  among those that ring longest together and its part, a bus's name for an effect of a bus and
+  `:song` for one of the song's own effects, `{:ok, nil}` when no effect rings, or
+  `{:error, message}`.
 
-  A part's effects ring for as long as each of them rings in turn, then those of the buses it sends into, and then each of the song's own, from its options, and an option given in beats lasts those beats at the tempo the music ends at.
+  A part's effects ring for as long as each of them rings in turn, then those of the buses it
+  sends into, and then each of the song's own, from its options, and an option given in beats
+  lasts those beats at the tempo the music ends at.
   """
   def ring_out(%Song{} = song, opts \\ []) when is_list(opts) do
     playing = %{song | loops: Enum.filter(song.loops, &(&1.on == nil))}

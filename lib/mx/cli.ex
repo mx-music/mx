@@ -1,9 +1,13 @@
 defmodule Mx.CLI do
   @moduledoc """
-  The mx command: runs each mix mx task as `mx` and the task's name, with a space for each dot, such as `mx export` for `mix mx.export` and `mx samples download` for `mix mx.samples.download`.
-  `mx song.exs` plays a song, as `mx play song.exs` does, and `mx help NAME` prints a command's documentation.
-  A command runs its task's own code, through `Mx.Command`, so it takes the same arguments, prints the same output and fails with the same messages.
-  An escript keeps its apps in one archive, where no NIF can be loaded, so it first unpacks the archive into a cache folder named by its contents and runs its apps from there.
+  The mx command: runs each mix mx task as `mx` and the task's name, with a space for each dot,
+  such as `mx export` for `mix mx.export` and `mx samples download` for `mix mx.samples.download`.
+  `mx song.exs` plays a song, as `mx play song.exs` does, and `mx help NAME` prints a command's
+  documentation.
+  A command runs its task's own code, through `Mx.Command`, so it takes the same arguments, prints
+  the same output and fails with the same messages.
+  An escript keeps its apps in one archive, where no NIF can be loaded, so it first unpacks the
+  archive into a cache folder named by its contents and runs its apps from there.
   """
 
   @doc "Runs the command, and exits with status 1 when it fails."

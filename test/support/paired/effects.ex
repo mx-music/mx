@@ -1,6 +1,7 @@
 defmodule Mx.Paired.Effects do
   @moduledoc """
-  mxs's pan, tremolo and slicer written with defeffect, node for node, so the two forms can be compared.
+  mxs's pan, tremolo and slicer written with defeffect, node for node, so the two forms can be
+  compared.
   """
 
   use Mx.Instrument

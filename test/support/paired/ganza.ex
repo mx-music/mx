@@ -16,7 +16,10 @@ defmodule Mx.Paired.Ganza do
     darken: 1.0
   }
 
-  @doc "A ganzá, a small shaker, with a down and an up stroke, fitted to the small shaker of the Versilian Community Sample Library."
+  @doc """
+  A ganzá, a small shaker, with a down and an up stroke, fitted to the small shaker of the
+  Versilian Community Sample Library.
+  """
   attr :note, :note, default: 111, doc: "The drum's pitch."
   attr :vel, :float, default: 0.6, range: 0..1, doc: "How hard it is struck."
   attr :up, :float, default: 0, range: 0..1, doc: "1 shakes upward instead of down."

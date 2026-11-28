@@ -1,10 +1,15 @@
 defmodule Mx.Video do
   @moduledoc """
-  Makes an MP4 video of a recording that plays its sound over a picture of it, with a playhead that crosses the picture once as the recording plays.
+  Makes an MP4 video of a recording that plays its sound over a picture of it, with a playhead
+  that crosses the picture once as the recording plays.
 
-  The picture is the recording's waveform, as `Mx.Waveform` draws it, or with `picture: :spectrogram` its spectrogram, as `Mx.Spectrogram` draws it 1500 pixels wide with no line at each second.
-  Over the waveform the playhead is the boundary between the bars in amber, which have played, and the bars in grey; over the spectrogram it is a thin white line.
-  The sound is the recording at one gain, which brings its loudest sample to 1.5 dB below full scale, with no compression, encoded as AAC at 256 kbit/s unless `bitrate:` gives another count.
+  The picture is the recording's waveform, as `Mx.Waveform` draws it, or with
+  `picture: :spectrogram` its spectrogram, as `Mx.Spectrogram` draws it 1500 pixels wide with no
+  line at each second.
+  Over the waveform the playhead is the boundary between the bars in amber, which have played, and
+  the bars in grey; over the spectrogram it is a thin white line.
+  The sound is the recording at one gain, which brings its loudest sample to 1.5 dB below full
+  scale, with no compression, encoded as AAC at 256 kbit/s unless `bitrate:` gives another count.
   ffmpeg joins the picture and the sound, so it has to be installed.
   """
 
@@ -16,7 +21,10 @@ defmodule Mx.Video do
   @width 1500
   @limit 10_000_000
 
-  @doc "Writes the video of the recording at `path` to `out`, with `picture:`, `bitrate:` and `force:`, and returns `{:ok, seconds, bytes}`, the video's length and size, or `{:error, message}`."
+  @doc """
+  Writes the video of the recording at `path` to `out`, with `picture:`, `bitrate:` and `force:`,
+  and returns `{:ok, seconds, bytes}`, the video's length and size, or `{:error, message}`.
+  """
   def write(path, out, opts \\ []) when is_binary(path) and is_binary(out) and is_list(opts) do
     id = System.unique_integer([:positive])
     tmp = System.tmp_dir!()
@@ -39,7 +47,10 @@ defmodule Mx.Video do
     end
   end
 
-  @doc "The line that reports a video's length and size, and a warning when the video is over the 10 MB GitHub allows for a video on its free plan, or nil."
+  @doc """
+  The line that reports a video's length and size, and a warning when the video is over the 10 MB
+  GitHub allows for a video on its free plan, or nil.
+  """
   def report(out, seconds, bytes)
       when is_binary(out) and is_number(seconds) and is_integer(bytes) do
     length = :erlang.float_to_binary(seconds / 1, decimals: 1)

@@ -2,40 +2,70 @@ defmodule Mx.Loop do
   @moduledoc """
   Plays one loop of a song, pass after pass.
 
-  A pass is worked out `ahead_ms` before it starts, and each of its notes is sent `ahead_ms` before it plays, stamped with the real time of its beat on the band's timeline.
-  Notes are stamped from the timeline rather than from the previous note, so nothing adds up to a drift.
-  A pass worked out later than its start is late: its notes more than a quarter of a beat late are dropped, and the rest play as soon as the engine gets them.
+  A pass is worked out `ahead_ms` before it starts, and each of its notes is sent `ahead_ms`
+  before it plays, stamped with the real time of its beat on the band's timeline.
+  Notes are stamped from the timeline rather than from the previous note, so nothing adds up to a
+  drift.
+  A pass worked out later than its start is late: its notes more than a quarter of a beat late are
+  dropped, and the rest play as soon as the engine gets them.
 
-  A new version takes over when the next pass is worked out, and a stopped loop ends with its current pass.
-  A loop with a number of passes ends once its last pass has played to its end, exiting with `{:shutdown, :ended}`.
-  A loop started with `pass` and `skip` plays that pass first, leaving out its notes before beat `skip` of it.
-  A loop started with `start: :join` waits for the band to send `{:join, beat, pass}`, and plays that pass from that beat.
+  A new version takes over when the next pass is worked out, and a stopped loop ends with its
+  current pass.
+  A loop with a number of passes ends once its last pass has played to its end, exiting with
+  `{:shutdown, :ended}`.
+  A loop started with `pass` and `skip` plays that pass first, leaving out its notes before beat
+  `skip` of it.
+  A loop started with `start: :join` waits for the band to send `{:join, beat, pass}`, and plays
+  that pass from that beat.
 
-  The loop sends the band `{:part_waits, name, wait}` when it is handed a new version or told to stop: the beat its next pass starts on, `:never` when it has no pass left, `:input` when it waits for input, or `{:stops, beat}`.
+  The loop sends the band `{:part_waits, name, wait}` when it is handed a new version or told to
+  stop: the beat its next pass starts on, `:never` when it has no pass left, `:input` when it
+  waits for input, or `{:stops, beat}`.
   It sends `{:part_chain, name, chain}` when it starts its effects, the chain its notes play into.
-  It sends `{:part_took_over, name, beat}` when the new version's first pass starts, when it stops, and, started with `announce: true`, when its own first pass starts.
-  `take_over_now/2` ends the pass that sounds at a beat, and plays the new version's pass from that beat, or stops there; given `hand`, `cut` is given that beat first, to drop what the engine holds from there on.
-  `try_out/3` plays the loop's notes with another synth or other options from a beat, working the pass that sounds then out again from that beat, as `take_over_now/2` does, and keeps them through new versions.
+  It sends `{:part_took_over, name, beat}` when the new version's first pass starts, when it
+  stops, and, started with `announce: true`, when its own first pass starts.
+  `take_over_now/2` ends the pass that sounds at a beat, and plays the new version's pass from
+  that beat, or stops there; given `hand`, `cut` is given that beat first, to drop what the engine
+  holds from there on.
+  `try_out/3` plays the loop's notes with another synth or other options from a beat, working the
+  pass that sounds then out again from that beat, as `take_over_now/2` does, and keeps them
+  through new versions.
 
   A sample plays from the buffer the song loaded for it.
-  A sample named while the pass runs has no buffer yet, so the loop asks for it with `load_sample`, leaves it out, and plays it from the next pass once it is loaded.
+  A sample named while the pass runs has no buffer yet, so the loop asks for it with
+  `load_sample`, leaves it out, and plays it from the next pass once it is loaded.
 
-  A loop with effects starts its chain with `start_fx` before its first pass, and plays its notes into the chain.
-  The chain lasts from pass to pass, and is replaced at the start of a pass whose effects or tempo give it other options.
-  A replaced chain, or the chain of a stopped loop, is handed to `stop_fx` with the end of its last pass, so its sounds finish through it.
-  Given `start_part`, every loop has a chain, started by the loop's name with its effects, so the engine can mute and solo it by that name.
+  A loop with effects starts its chain with `start_fx` before its first pass, and plays its notes
+  into the chain.
+  The chain lasts from pass to pass, and is replaced at the start of a pass whose effects or tempo
+  give it other options.
+  A replaced chain, or the chain of a stopped loop, is handed to `stop_fx` with the end of its
+  last pass, so its sounds finish through it.
+  Given `start_part`, every loop has a chain, started by the loop's name with its effects, so the
+  engine can mute and solo it by that name.
 
-  Given `hand`, the loop hands the engine each pass whole as it is worked out, every sound and change at its beat with its times in beats, and the engine places them by the tempo the band gives it.
-  The loop is then sent `{:mx_pass_ending, name, beat}` two beats before the pass ends, and works out the next pass at once; without that word it works it out `ahead_ms` before the pass starts, as it does the first.
-  The effects' options stay in beats too, so a tempo change leaves the chain as it is, and only MIDI and OSC are still sent step by step.
+  Given `hand`, the loop hands the engine each pass whole as it is worked out, every sound and
+  change at its beat with its times in beats, and the engine places them by the tempo the band
+  gives it.
+  The loop is then sent `{:mx_pass_ending, name, beat}` two beats before the pass ends, and works
+  out the next pass at once; without that word it works it out `ahead_ms` before the pass starts,
+  as it does the first.
+  The effects' options stay in beats too, so a tempo change leaves the chain as it is, and only
+  MIDI and OSC are still sent step by step.
 
-  MIDI and OSC steps go to `out` with the real time of their beat, as the loop's notes go to the engine through `play`; a MIDI note is a note on and a note off after its length.
+  MIDI and OSC steps go to `out` with the real time of their beat, as the loop's notes go to the
+  engine through `play`; a MIDI note is a note on and a note off after its length.
 
-  A pass reads the inputs as `inputs` returns them for its first beat, waiting at most until its start, and a set step hands its value to `set` with its beat and that beat's real time as soon as its pass is worked out.
-  Each pass then tells `worked_out` the beat it has worked out up to, so the other loops' passes wait for its set steps, and nil once it works out no more passes on its own.
-  A loop with `on:` plays no pass on its own: the band sends it each input it waits for, and it plays a pass at once, 10 ms ahead so its first notes are on time.
+  A pass reads the inputs as `inputs` returns them for its first beat, waiting at most until its
+  start, and a set step hands its value to `set` with its beat and that beat's real time as soon
+  as its pass is worked out.
+  Each pass then tells `worked_out` the beat it has worked out up to, so the other loops' passes
+  wait for its set steps, and nil once it works out no more passes on its own.
+  A loop with `on:` plays no pass on its own: the band sends it each input it waits for, and it
+  plays a pass at once, 10 ms ahead so its first notes are on time.
 
-  A sound a control step changes starts with an id of its own from `new_id`, and the step sets its options at its beat; other sounds have none.
+  A sound a control step changes starts with an id of its own from `new_id`, and the step sets its
+  options at its beat; other sounds have none.
   """
 
   use GenServer
@@ -49,7 +79,9 @@ defmodule Mx.Loop do
   @doc "Starts playing a loop from the version, band and functions in `opts`."
   def start_link(opts) when is_list(opts), do: GenServer.start_link(__MODULE__, opts)
 
-  @doc "Hands the loop a new version of itself, which takes over when its next pass is worked out."
+  @doc """
+  Hands the loop a new version of itself, which takes over when its next pass is worked out.
+  """
   def switch(loop, %Song.Loop{} = version) when is_pid(loop) do
     GenServer.cast(loop, {:switch, version})
   end
@@ -57,12 +89,19 @@ defmodule Mx.Loop do
   @doc "Stops the loop once its current pass ends."
   def stop(loop) when is_pid(loop), do: GenServer.cast(loop, :stop)
 
-  @doc "Plays the loop's notes from `beat`, a beat not yet worked out, with the synth and options of `trial`, a map of `:synth` and `:opts` as `{name, value}`, and as the song gives them again with an empty map."
+  @doc """
+  Plays the loop's notes from `beat`, a beat not yet worked out, with the synth and options of
+  `trial`, a map of `:synth` and `:opts` as `{name, value}`, and as the song gives them again with
+  an empty map.
+  """
   def try_out(loop, trial, beat) when is_pid(loop) and is_map(trial) and is_number(beat) do
     GenServer.cast(loop, {:try_out, trial, beat})
   end
 
-  @doc "Ends the pass that sounds at `beat`, a beat not yet worked out, and plays the new version's pass from that beat, or stops there when stopping; a loop with neither carries on."
+  @doc """
+  Ends the pass that sounds at `beat`, a beat not yet worked out, and plays the new version's pass
+  from that beat, or stops there when stopping; a loop with neither carries on.
+  """
   def take_over_now(loop, beat) when is_pid(loop) and is_number(beat) do
     GenServer.cast(loop, {:take_over_now, beat})
   end

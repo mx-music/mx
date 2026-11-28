@@ -1,12 +1,19 @@
 defmodule Mx.Sampled do
   @moduledoc """
-  A sampled instrument: recordings of an instrument one key at a time, often at several strengths and in several takes, played as a part plays a synth.
+  A sampled instrument: recordings of an instrument one key at a time, often at several strengths
+  and in several takes, played as a part plays a synth.
 
-  A folder's files give their note, strength and take in their names, as VCSL names them: "MBira4_pluck_Main_C#3_2_50_100_rr5.wav" is C#3, "BDrumNew_hit_v5_rr1_Sum.wav" strength 5, take 1.
-  The name is split at underscores, spaces and hyphens, and a word such as C#3 or Bb2 is the note, v or vl and a number the strength, and rr and a number the take.
-  Files of one note and strength are the takes of one key, in the order of their take and then their name.
+  A folder's files give their note, strength and take in their names, as VCSL names them:
+  "MBira4_pluck_Main_C#3_2_50_100_rr5.wav" is C#3, "BDrumNew_hit_v5_rr1_Sum.wav" strength 5,
+  take 1.
+  The name is split at underscores, spaces and hyphens, and a word such as C#3 or Bb2 is the note,
+  v or vl and a number the strength, and rr and a number the take.
+  Files of one note and strength are the takes of one key, in the order of their take and then
+  their name.
 
-  A note plays the key nearest to it, the lower one on a tie, at the rate that brings it to the note's pitch; vel picks a strength, the softest at 0 and the hardest at 1, spread evenly over the key's strengths.
+  A note plays the key nearest to it, the lower one on a tie, at the rate that brings it to the
+  note's pitch; vel picks a strength, the softest at 0 and the hardest at 1, spread evenly over
+  the key's strengths.
   """
 
   alias Mx.Notes
@@ -18,8 +25,11 @@ defmodule Mx.Sampled do
   @not_options [:rate, :rate_slide, :start, :finish]
 
   @doc """
-  The instrument whose recordings are in the files of `folder`, a folder of a collection as `{collection, folder}` or of a GitHub repository as `{:github, repo, ref, folder}`, or listed as `{file, note: note, strength: strength, take: take}`; its files are read by `load/1`.
-  A listed file is a path, `{collection, path}` or `{:github, repo, ref, path}`, and what it does not give is read from its name.
+  The instrument whose recordings are in the files of `folder`, a folder of a collection as
+  `{collection, folder}` or of a GitHub repository as `{:github, repo, ref, folder}`, or listed as
+  `{file, note: note, strength: strength, take: take}`; its files are read by `load/1`.
+  A listed file is a path, `{collection, path}` or `{:github, repo, ref, path}`, and what it does
+  not give is read from its name.
   """
   def new(folder) when is_binary(folder), do: %__MODULE__{source: folder}
 
@@ -64,7 +74,10 @@ defmodule Mx.Sampled do
     raise ArgumentError, "sampled takes a folder or a list of files, not #{other}"
   end
 
-  @doc "Reads the instrument's files into its keys, or returns `{:error, message}` naming the folder or the file."
+  @doc """
+  Reads the instrument's files into its keys, or returns `{:error, message}` naming the folder or
+  the file.
+  """
   def load(%__MODULE__{source: {:github, repo, ref, folder}} = sampled) do
     dir = Mx.GitHub.local(repo, ref, folder)
 
@@ -207,7 +220,10 @@ defmodule Mx.Sampled do
     option == :vel or player_option
   end
 
-  @doc "The takes of the key and strength a note or `:own_note` at `vel` plays, with the rate it plays them at, or `{:error, message}`."
+  @doc """
+  The takes of the key and strength a note or `:own_note` at `vel` plays, with the rate it plays
+  them at, or `{:error, message}`.
+  """
   def pick(%__MODULE__{keys: keys} = sampled, note, vel) do
     case nearest(keys, note) do
       nil when note == :own_note ->

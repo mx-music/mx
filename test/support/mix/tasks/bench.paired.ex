@@ -2,29 +2,40 @@ defmodule Mix.Tasks.Bench.Paired do
   @shortdoc "Times each paired instrument's defsynth form against its Rust form"
 
   @moduledoc """
-  Times each instrument of `Mx.Paired.Twins` in its Rust form and its defsynth form, on an offline engine, and prints a row for each, the slowest defsynth form relative to Rust first.
+  Times each instrument of `Mx.Paired.Twins` in its Rust form and its defsynth form, on an offline
+  engine, and prints a row for each, the slowest defsynth form relative to Rust first.
 
       mix bench.paired
       mix bench.paired piano violin --runs 9
       mix bench.paired --write tmp/paired.txt
       mix bench.paired --compare tmp/paired.txt
 
-  It lives in `test/support`, beside the twins, so it runs in the test environment and never ships.
+  It lives in `test/support`, beside the twins, so it runs in the test environment and never
+  ships.
 
-  Each note of a twin's cases is played on a fresh engine, `--runs` times, 5 unless given, the two forms taking turns, and each figure is the median of the runs.
-  The columns are the microseconds handing a note to the engine takes, which builds its voice, the milliseconds the engine's own meter says rendering a second of the note takes less what an engine without notes takes, the defsynth form's render time as a multiple of the Rust form's, and the milliseconds registering the defsynth form takes.
+  Each note of a twin's cases is played on a fresh engine, `--runs` times, 5 unless given, the two
+  forms taking turns, and each figure is the median of the runs.
+  The columns are the microseconds handing a note to the engine takes, which builds its voice, the
+  milliseconds the engine's own meter says rendering a second of the note takes less what an
+  engine without notes takes, the defsynth form's render time as a multiple of the Rust form's,
+  and the milliseconds registering the defsynth form takes.
   The last line gives the geometric mean of the multiples.
 
-  A sleeping scheduler of the VM can take 10 ms to wake for a call into the engine, more than building a voice takes, so the task refuses to run unless `ERL_FLAGS` asks for schedulers that wait busy:
+  A sleeping scheduler of the VM can take 10 ms to wake for a call into the engine, more than
+  building a voice takes, so the task refuses to run unless `ERL_FLAGS` asks for schedulers that
+  wait busy:
 
       ERL_FLAGS="+sbwt very_long +sbwtdcpu very_long +sbwtdio very_long" mix bench.paired
 
   The figures mean something only on a machine doing nothing else.
 
-  The last column is how far apart the runs' render times are, as a percentage of their median, for the case of the twin where they are furthest apart; a large one means the machine was busy.
+  The last column is how far apart the runs' render times are, as a percentage of their median,
+  for the case of the twin where they are furthest apart; a large one means the machine was busy.
 
-  `--report FILE` writes the figures, each case's included, as an HTML page to read, with the machine, the commit and mxs's version they were measured on.
-  `--write FILE` writes the figures to a file, and `--compare FILE` prints each figure that is worse than in such a file by more than a tenth, and nothing when none is.
+  `--report FILE` writes the figures, each case's included, as an HTML page to read, with the
+  machine, the commit and mxs's version they were measured on.
+  `--write FILE` writes the figures to a file, and `--compare FILE` prints each figure that is
+  worse than in such a file by more than a tenth, and nothing when none is.
   """
 
   use Mix.Task

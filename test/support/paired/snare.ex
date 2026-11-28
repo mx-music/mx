@@ -1,8 +1,10 @@
 defmodule Mx.Paired.Snare do
   @moduledoc """
-  mxs's snare written with defsynth, node for node, at its plain stroke, so the two can be compared and timed.
+  mxs's snare written with defsynth, node for node, at its plain stroke, so the two can be
+  compared and timed.
 
-  It takes only note and vel: mxs builds its bounces, its snares-off body and its rimshot only for the options that ask for them, and a defsynth's nodes cannot depend on the note's options.
+  It takes only note and vel: mxs builds its bounces, its snares-off body and its rimshot only for
+  the options that ask for them, and a defsynth's nodes cannot depend on the note's options.
   """
 
   use Mx.Instrument
@@ -15,7 +17,9 @@ defmodule Mx.Paired.Snare do
   # mxs draws the burst's noise for the snares-off and rimshot bodies even when it builds neither.
   @unused 0
 
-  @doc "A snare drum at its plain stroke: the stick ringing the head's modes, and the wires' noise."
+  @doc """
+  A snare drum at its plain stroke: the stick ringing the head's modes, and the wires' noise.
+  """
   attr :note, :note, default: 55, doc: "The drum's pitch."
   attr :vel, :float, default: 0.6, range: 0..1, doc: "How hard it is struck."
 

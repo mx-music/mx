@@ -1,6 +1,7 @@
 defmodule Mx.Paired.Bowed do
   @moduledoc """
-  mxs's bowed strings without a violin's air, the viola and the double bass, written with defsynth node for node: `use Mx.Paired.Bowed` with a synth's name, its pluck and its fit.
+  mxs's bowed strings without a violin's air, the viola and the double bass, written with defsynth
+  node for node: `use Mx.Paired.Bowed` with a synth's name, its pluck and its fit.
   """
 
   use Mx.Instrument
@@ -148,7 +149,9 @@ defmodule Mx.Paired.Bowed do
     tilted * rising * (vel ** 0.6 * db(by_vel.(fit.levels)))
   end
 
-  @doc "The string plucked by `pizz`, as `pluck` sets it for the note `bowed`, and the seconds it rings."
+  @doc """
+  The string plucked by `pizz`, as `pluck` sets it for the note `bowed`, and the seconds it rings.
+  """
   defsound plucked(bowed, pizz, pluck) do
     vel = clamp(bowed.vel, 0, 1)
     freq = hz(bowed.note)

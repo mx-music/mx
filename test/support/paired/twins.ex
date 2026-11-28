@@ -1,6 +1,7 @@
 defmodule Mx.Paired.Twins do
   @moduledoc """
-  Each paired instrument, with the options its two forms are compared and timed at and the seconds rendered.
+  Each paired instrument, with the options its two forms are compared and timed at and the seconds
+  rendered.
   """
 
   @doc "Each twin as `{module, synth, cases, seconds}`, where each case is a note's options."

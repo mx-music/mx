@@ -1,42 +1,73 @@
 defmodule Mix.Tasks.Mx.Fit do
-  @shortdoc "Fits a synth to recordings of held or struck notes partial by partial, or of held notes by its controls"
+  @shortdoc "Fits a synth to recordings of notes, partial by partial or by its controls"
 
   @moduledoc """
-  Searches for the values of a synth's controls that bring its held notes closest to recordings of them, as `Mx.Fit` describes.
+  Searches for the values of a synth's controls that bring its held notes closest to recordings of
+  them, as `Mx.Fit` describes.
 
-      mx fit clarinet --vel 0.3 BbClar.pp.D3B3.aiff:D3 BbClar.pp.C4B4.aiff:C4 --vel 1 BbClar.ff.D3B3.aiff:D3 --from 160 --control k_odd=-2:2 --control k_att=0.15:x1.15
+      mx fit clarinet \\
+        --vel 0.3 BbClar.pp.D3B3.aiff:D3 BbClar.pp.C4B4.aiff:C4 --vel 1 BbClar.ff.D3B3.aiff:D3 \\
+        --from 160 --control k_odd=-2:2 --control k_att=0.15:x1.15
 
-  The synth comes first, then each dynamic as `--vel` and the files played at it, each with the note it starts on, as `mx measure` takes them.
-  `--control` gives a control the synth takes, its starting value and its step, such as `k_odd=-2:2`; a step written with an x, such as `x1.15`, multiplies and divides instead of adding and subtracting.
-  `--from` gives the lowest frequency in Hz of the bands compared, all of them below 4 kHz unless given.
-  It prints how many notes it kept at each dynamic and how many it left out, the score it starts from, each change it keeps, and the best values at the end.
-  `--drone` measures each file as one note held from its first sample to its last, for a drone plucked again and again, which would otherwise read as a note at each pluck, and leaves out the attack.
-  `--check` scores the starting values instead of searching, and needs no control; it prints each dynamic's attack difference, and each band's level of harmonics and of noise in the recordings and how far the synth is off, marking those beyond 30 percent or 6 dB.
-  The recordings' figures are kept in the system's temporary folder and reused until a file changes.
+  The synth comes first, then each dynamic as `--vel` and the files played at it, each with the
+  note it starts on, as `mx measure` takes them.
+  `--control` gives a control the synth takes, its starting value and its step, such as
+  `k_odd=-2:2`; a step written with an x, such as `x1.15`, multiplies and divides instead of
+  adding and subtracting.
+  `--from` gives the lowest frequency in Hz of the bands compared, all of them below 4 kHz unless
+  given.
+  It prints how many notes it kept at each dynamic and how many it left out, the score it starts
+  from, each change it keeps, and the best values at the end.
+  `--drone` measures each file as one note held from its first sample to its last, for a drone
+  plucked again and again, which would otherwise read as a note at each pluck, and leaves out the
+  attack.
+  `--check` scores the starting values instead of searching, and needs no control; it prints each
+  dynamic's attack difference, and each band's level of harmonics and of noise in the recordings
+  and how far the synth is off, marking those beyond 30 percent or 6 dB.
+  The recordings' figures are kept in the system's temporary folder and reused until a file
+  changes.
 
       mx fit electric_piano --struck keyboard_electronic_098 --out electric_piano.mxf
       mx fit marimba --struck marimba.txt --check
       mx fit marimba --struck marimba.txt --tour marimba_tour.wav --count 8
 
-  `--struck` with a folder of NSynth recordings, or a list of recordings with their notes and velocities, fits recordings of struck notes partial by partial instead, as `Mx.Fit.Struck` describes; it can be given more than once.
+  `--struck` with a folder of NSynth recordings, or a list of recordings with their notes and
+  velocities, fits recordings of struck notes partial by partial instead, as `Mx.Fit.Struck`
+  describes; it can be given more than once.
   `--out` writes the figures to a file, for mxs to play.
   `--notes` with two notes, such as `E1:E6`, keeps the recordings from the first to the second.
-  `--check` renders the synth at each recording's note and velocity and prints how far it is from the recordings, each figure followed by the same figure for the fit's own render, the figures played with no synth, which is the closest the synth can come.
-  The check also names the 50 ms furthest off in ERB bands, the note it is in and where it starts, as a sound can match on average over a note and still be far off for a moment of it.
-  `--own` with `--check` prints the fit's figures alone and renders no synth, so it runs before the synth plays the figures.
-  `--note` and `--vel` with `--check`, such as `--note C2 --vel 80`, print that one recording beside the synth and the fit's own render instead, frame by frame: each partial within 60 dB of the loudest and each ERB band, every 5 ms from 5 ms before the strike to 100 ms after, with the fit's sines and noise apart.
-  `--until` with seconds carries the rows on to that time in 24 steps, and `--csv` with a file name also writes the figures as a table.
-  `--tour` writes a WAV file of twelve recordings, or as many as `--count` gives, each followed by the synth.
-  `--top` with a frequency in Hz, such as `--top 16000`, follows the partials and fits the strike's noise up to it instead of 8 kHz, for an instrument that is bright above that, such as a drum with jingles.
-  `--option` with a synth's option and its value, such as `--option pedal=1`, renders the synth with it in `--check` and `--tour`; it can be given more than once.
+  `--check` renders the synth at each recording's note and velocity and prints how far it is from
+  the recordings, each figure followed by the same figure for the fit's own render, the figures
+  played with no synth, which is the closest the synth can come.
+  The check also names the 50 ms furthest off in ERB bands, the note it is in and where it starts,
+  as a sound can match on average over a note and still be far off for a moment of it.
+  `--own` with `--check` prints the fit's figures alone and renders no synth, so it runs before
+  the synth plays the figures.
+  `--note` and `--vel` with `--check`, such as `--note C2 --vel 80`, print that one recording
+  beside the synth and the fit's own render instead, frame by frame: each partial within 60 dB of
+  the loudest and each ERB band, every 5 ms from 5 ms before the strike to 100 ms after, with the
+  fit's sines and noise apart.
+  `--until` with seconds carries the rows on to that time in 24 steps, and `--csv` with a file
+  name also writes the figures as a table.
+  `--tour` writes a WAV file of twelve recordings, or as many as `--count` gives, each followed by
+  the synth.
+  `--top` with a frequency in Hz, such as `--top 16000`, follows the partials and fits the
+  strike's noise up to it instead of 8 kHz, for an instrument that is bright above that, such as a
+  drum with jingles.
+  `--option` with a synth's option and its value, such as `--option pedal=1`, renders the synth
+  with it in `--check` and `--tour`; it can be given more than once.
 
       mx fit clarinet --held clarinet.txt --out clarinet.mxh
       mx fit clarinet --held clarinet.txt --check
 
-  `--held` with a list fits recordings of held notes partial by partial, bowed or blown, as `Mx.Fit.Held` describes, and takes the same options except `--note` and `--vel`.
-  `--steady` with `--held` holds each note at one level from where it starts holding, for recordings that ease off before they are let go, as the University of Iowa's flute does.
-  Its check compares each partial over the attack and on average where the note holds, and the ERB bands until a second after the note is let go, with the synth held as long as the recording.
-  The guide on instruments, under "Fitting a struck instrument", describes the list and what the check prints.
+  `--held` with a list fits recordings of held notes partial by partial, bowed or blown, as
+  `Mx.Fit.Held` describes, and takes the same options except `--note` and `--vel`.
+  `--steady` with `--held` holds each note at one level from where it starts holding, for
+  recordings that ease off before they are let go, as the University of Iowa's flute does.
+  Its check compares each partial over the attack and on average where the note holds, and the ERB
+  bands until a second after the note is let go, with the synth held as long as the recording.
+  The guide on instruments, under "Fitting a struck instrument", describes the list and what the
+  check prints.
   """
 
   use Mix.Task

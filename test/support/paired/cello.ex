@@ -1,8 +1,10 @@
 defmodule Mx.Paired.Cello do
   @moduledoc """
-  mxs's cello written with defsynth, playing its table as mxs does, so the two can be compared and timed.
+  mxs's cello written with defsynth, playing its table as mxs does, so the two can be compared and
+  timed.
 
-  It is bowed only: mxs mixes a pluck into a note given pizz, built in a context of its own, which a defsynth cannot build.
+  It is bowed only: mxs mixes a pluck into a note given pizz, built in a context of its own, which
+  a defsynth cannot build.
   """
 
   use Mx.Instrument

@@ -22,13 +22,23 @@ defmodule Mx.Watcher do
 
   alias Mx.Song
 
-  @doc "Starts watching the song file at `:path`, handing each version that loads to `:on_song`; `:song` is the version already loaded from it, if any, and `:source` its text; with `watch: false` it never reads the file, and only describes `:song`."
+  @doc """
+  Starts watching the song file at `:path`, handing each version that loads to `:on_song`; `:song`
+  is the version already loaded from it, if any, and `:source` its text; with `watch: false` it
+  never reads the file, and only describes `:song`.
+  """
   def start_link(opts) when is_list(opts), do: GenServer.start_link(__MODULE__, opts)
 
-  @doc "Subscribes the calling process to the saves the watcher loads, and returns the version loaded now, as `description/1` does."
+  @doc """
+  Subscribes the calling process to the saves the watcher loads, and returns the version loaded
+  now, as `description/1` does.
+  """
   def subscribe(watcher) when is_pid(watcher), do: GenServer.call(watcher, :subscribe, 30_000)
 
-  @doc "The version loaded now, as `{number, description}`, without reading the file; the description is nil when the watcher was started without `:song`."
+  @doc """
+  The version loaded now, as `{number, description}`, without reading the file; the description is
+  nil when the watcher was started without `:song`.
+  """
   def description(watcher) when is_pid(watcher), do: GenServer.call(watcher, :description, 30_000)
 
   @impl true

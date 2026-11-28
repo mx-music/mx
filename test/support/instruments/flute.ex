@@ -1,9 +1,13 @@
 defmodule Mx.Instruments.Flute do
   @moduledoc """
-  A flute, measured from the University of Iowa's flute, from B3 to Db7, played without vibrato, and its vibrato played with it.
+  A flute, measured from the University of Iowa's flute, from B3 to Db7, played without vibrato,
+  and its vibrato played with it.
 
-  A note's fundamental is louder the higher it is, by more the harder it is played, up to F6; its second and third harmonics stand about as loud, and the rest fall away fast, far faster the softer the note.
-  Breath hisses around 2 kHz under the tone, quieter the softer the note, which speaks over a quarter of a second; its vibrato grows as it holds, shallower the softer it is played.
+  A note's fundamental is louder the higher it is, by more the harder it is played, up to F6; its
+  second and third harmonics stand about as loud, and the rest fall away fast, far faster the
+  softer the note.
+  Breath hisses around 2 kHz under the tone, quieter the softer the note, which speaks over a
+  quarter of a second; its vibrato grows as it holds, shallower the softer it is played.
   """
 
   use Mx.Instrument

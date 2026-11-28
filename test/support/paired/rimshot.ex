@@ -6,7 +6,9 @@ defmodule Mx.Paired.Rimshot do
   use Mx.Instrument
   import Mx.Paired.Drums, only: [hit: 3, bpf: 3]
 
-  @doc "A rimshot: three short modes of the rim struck at once, and a band of noise from the head."
+  @doc """
+  A rimshot: three short modes of the rim struck at once, and a band of noise from the head.
+  """
   attr :note, :note, default: 74, doc: "The rim's pitch."
 
   defsynth rimshot(o) do

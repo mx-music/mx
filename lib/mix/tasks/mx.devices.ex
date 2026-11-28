@@ -2,7 +2,8 @@ defmodule Mix.Tasks.Mx.Devices do
   @shortdoc "Lists the sound devices mx can play through and read from"
 
   @moduledoc """
-  Lists each output and input device by the name `mix mx.play --output` and `--input` take, with the channel counts, sample rates and buffer sizes it supports, and marks the defaults.
+  Lists each output and input device by the name `mix mx.play --output` and `--input` take, with
+  the channel counts, sample rates and buffer sizes it supports, and marks the defaults.
 
       mx devices
   """

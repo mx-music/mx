@@ -1,11 +1,15 @@
 defmodule Mx.Timeline do
   @moduledoc """
-  Every step a song sends in a span, each loop's or part's steps at their beats from the start of the song, with each note's options as the engine gets them, so a song written two ways can be compared note for note.
+  Every step a song sends in a span, each loop's or part's steps at their beats from the start of
+  the song, with each note's options as the engine gets them, so a song written two ways can be
+  compared note for note.
   """
 
   alias Mx.{Pass, Song, Synths}
 
-  @doc "Each loop's steps over its first passes, and the beats those passes last, by the loop's name."
+  @doc """
+  Each loop's steps over its first passes, and the beats those passes last, by the loop's name.
+  """
   def by_passes(path, passes) when is_integer(passes) do
     with_song(path, fn song ->
       for loop <- song.loops, loop.on == nil, into: %{} do

@@ -2,11 +2,16 @@ defmodule Mx.MusicXML do
   @moduledoc """
   Writes a song as a MusicXML score, for `mix mx.export`.
 
-  The score holds the whole of the song's music once, each part that plays notes as one part of the score, with the notes `Mx.Pass` records as written.
-  Starts and lengths snap to a 24th of a beat, a beat being a quarter note, and a note between semitones is written at the nearest one.
-  Notes of a part that start together and last as long are a chord, and notes that overlap otherwise go to as few voices as the overlaps need.
-  The first voice fills every bar with notes and rests, and every other voice fills only the bars it has a note in.
-  A note that crosses a bar line, or whose length no single note value writes, is written as tied notes.
+  The score holds the whole of the song's music once, each part that plays notes as one part of
+  the score, with the notes `Mx.Pass` records as written.
+  Starts and lengths snap to a 24th of a beat, a beat being a quarter note, and a note between
+  semitones is written at the nearest one.
+  Notes of a part that start together and last as long are a chord, and notes that overlap
+  otherwise go to as few voices as the overlaps need.
+  The first voice fills every bar with notes and rests, and every other voice fills only the bars
+  it has a note in.
+  A note that crosses a bar line, or whose length no single note value writes, is written as tied
+  notes.
   """
 
   alias Mx.{Page, Pass, Render, Song}
@@ -38,8 +43,11 @@ defmodule Mx.MusicXML do
   @minor ~w(ab eb bb f c g d a e b fs cs gs ds as)
 
   @doc """
-  Writes the song at `path` as a score to `out`, compressed when `out` ends in .mxl, with `time:`, the song's meter over 4 unless given, `key:`, `pickup:`, `title:` and `force:`.
-  Returns `{:ok, %{parts: parts, left_out: left_out}}`, each part as its name, how many notes it holds and its lowest and highest note, and each part left out as its name and why; or `{:error, message}`.
+  Writes the song at `path` as a score to `out`, compressed when `out` ends in .mxl, with `time:`,
+  the song's meter over 4 unless given, `key:`, `pickup:`, `title:` and `force:`.
+  Returns `{:ok, %{parts: parts, left_out: left_out}}`, each part as its name, how many notes it
+  holds and its lowest and highest note, and each part left out as its name and why; or
+  `{:error, message}`.
   """
   def write(path, out, opts \\ []) when is_binary(path) and is_binary(out) and is_list(opts) do
     with :ok <- Page.check(out, Keyword.get(opts, :force, false)),
@@ -73,7 +81,10 @@ defmodule Mx.MusicXML do
     end
   end
 
-  @doc "The time signature given as `time:` in `opts`, or else the song's meter over 4, as `time/1` gives it."
+  @doc """
+  The time signature given as `time:` in `opts`, or else the song's meter over 4, as `time/1`
+  gives it.
+  """
   def song_time(song, opts) do
     meter = song.meter
     opts |> Keyword.get(:time, "#{meter}/4") |> time()
@@ -90,7 +101,10 @@ defmodule Mx.MusicXML do
     end
   end
 
-  @doc "A pickup's length in beats, such as `0.5`, as `{:ok, beats}` when it is shorter than a bar of `time`, `{:ok, 0}` when there is none, or `{:error, message}`."
+  @doc """
+  A pickup's length in beats, such as `0.5`, as `{:ok, beats}` when it is shorter than a bar of
+  `time`, `{:ok, 0}` when there is none, or `{:error, message}`.
+  """
   def pickup(nil, _time), do: {:ok, 0}
 
   def pickup(text, {beats, type}) when is_binary(text) do
@@ -108,12 +122,18 @@ defmodule Mx.MusicXML do
     end
   end
 
-  @doc "The key given as `key:` in `opts`, or else the key the song states, or else C major, as text such as `em`."
+  @doc """
+  The key given as `key:` in `opts`, or else the key the song states, or else C major, as text
+  such as `em`.
+  """
   def song_key(song, opts) do
     Keyword.get_lazy(opts, :key, fn -> if song.key, do: Atom.to_string(song.key), else: "c" end)
   end
 
-  @doc "A key such as `d`, `bm` or `fsm` as `{:ok, {fifths, mode}}`, sharps counting up and flats down, or `{:error, message}`."
+  @doc """
+  A key such as `d`, `bm` or `fsm` as `{:ok, {fifths, mode}}`, sharps counting up and flats down,
+  or `{:error, message}`.
+  """
   def key(text) when is_binary(text) do
     name = String.downcase(text)
 
@@ -131,7 +151,9 @@ defmodule Mx.MusicXML do
   end
 
   @doc """
-  The MusicXML text of parts given as `{name, notes}`, each note `{beat, note, beats}`, with `tempo:`, `time:`, `key:`, `title:`, `beats:`, the song's length, and `pickup:`, the beats of a pickup bar, none unless given.
+  The MusicXML text of parts given as `{name, notes}`, each note `{beat, note, beats}`, with
+  `tempo:`, `time:`, `key:`, `title:`, `beats:`, the song's length, and `pickup:`, the beats of a
+  pickup bar, none unless given.
   """
   def score(parts, opts) when is_list(parts) and is_list(opts) do
     {beats, type} = Keyword.fetch!(opts, :time)
@@ -437,7 +459,10 @@ defmodule Mx.MusicXML do
     "<pitch><step>#{step}</step>#{alter}<octave>#{octave}</octave></pitch>"
   end
 
-  @doc "A note number spelled in a key of `fifths` sharps, or flats when negative, as `{step, alter, octave}`."
+  @doc """
+  A note number spelled in a key of `fifths` sharps, or flats when negative, as
+  `{step, alter, octave}`.
+  """
   def spell(note, fifths) when is_integer(note) and is_integer(fifths) do
     class = Integer.mod(note, 12)
 

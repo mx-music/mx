@@ -355,7 +355,9 @@ defmodule Mx.Paired.Marimba do
   @fall 6.907755278982137
   @vels [40 / 127, 80 / 127, 1]
 
-  @doc "A marimba note, which rings until it fades by itself unless `sustain` and `release` damp it."
+  @doc """
+  A marimba note, which rings until it fades by itself unless `sustain` and `release` damp it.
+  """
   attr :note, :note, default: 52, doc: "The pitch."
   attr :vel, :float, default: 0.6, range: 0.05..1, doc: "How hard the bar is struck."
   envelope_attrs sustain: 1000, release: 0.3

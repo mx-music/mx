@@ -13,33 +13,46 @@ defmodule Mx.Session do
   alias Mx.Engine.Mxs
 
   @doc """
-  Starts playing the song in `opts` through the engine, from the beat `:from` if given, watching its file for changes.
+  Starts playing the song in `opts` through the engine, from the beat `:from` if given, watching
+  its file for changes.
 
-  With `watch: false` and `source:` the song's text, it plays a song that has no file, such as one `Mx.Import.load/2` gives, and reads and watches no file.
+  With `watch: false` and `source:` the song's text, it plays a song that has no file, such as one
+  `Mx.Import.load/2` gives, and reads and watches no file.
   """
   def start_link(opts) when is_list(opts), do: Supervisor.start_link(__MODULE__, opts)
 
   @doc """
-  Subscribes the calling process to the saves of the session's song, and returns the version loaded now.
+  Subscribes the calling process to the saves of the session's song, and returns the version
+  loaded now.
 
-  It is sent each save that loads and each that does not, as `Mx.Watcher.subscribe/1` describes, and when each part takes a version over, as `Mx.Band.subscribe/1` describes.
+  It is sent each save that loads and each that does not, as `Mx.Watcher.subscribe/1` describes,
+  and when each part takes a version over, as `Mx.Band.subscribe/1` describes.
   """
   def subscribe(session) when is_pid(session) do
     :ok = Band.subscribe(band(session))
     Watcher.subscribe(watcher(session))
   end
 
-  @doc "The version of the session's song loaded now, as `{number, description}`, without reading its file, as `Mx.Watcher.description/1` gives it."
+  @doc """
+  The version of the session's song loaded now, as `{number, description}`, without reading its
+  file, as `Mx.Watcher.description/1` gives it.
+  """
   def description(session) when is_pid(session), do: Watcher.description(watcher(session))
 
-  @doc "Sends the calling process where the beat of the session's song is, as `{:mx_beat, message}`, now and whenever the tempo or the output's delay changes; `Mx.Beat` says what a message holds and how to work out the beat from it."
+  @doc """
+  Sends the calling process where the beat of the session's song is, as `{:mx_beat, message}`, now
+  and whenever the tempo or the output's delay changes; `Mx.Beat` says what a message holds and
+  how to work out the beat from it.
+  """
   def follow_beat(session) when is_pid(session), do: Band.follow(band(session))
 
   @doc """
   Mutes the part `name` of the session's song, or lets it be heard again with `muted` false.
 
-  The part goes silent at once, the notes it has already sent included, and plays on unheard, so it comes back in time.
-  It stays muted while the session plays, through every save of the song's file, and nothing is written to the file.
+  The part goes silent at once, the notes it has already sent included, and plays on unheard, so
+  it comes back in time.
+  It stays muted while the session plays, through every save of the song's file, and nothing is
+  written to the file.
   A name the song has no part of is refused with `{:error, message}`.
   """
   def mute(session, name, muted \\ true) when is_pid(session) and is_boolean(muted) do
@@ -47,19 +60,24 @@ defmodule Mx.Session do
   end
 
   @doc """
-  Solos the parts named, so only they are heard, in place of the parts soloed before; with none named every part is heard again.
+  Solos the parts named, so only they are heard, in place of the parts soloed before; with none
+  named every part is heard again.
 
   A soloed part that is also muted stays silent.
-  Solo lasts as `mute/3` does, and a name the song has no part of is refused with `{:error, message}`.
+  Solo lasts as `mute/3` does, and a name the song has no part of is refused with
+  `{:error, message}`.
   """
   def solo(session, names) when is_pid(session) and is_list(names) do
     Band.solo(band(session), names)
   end
 
   @doc """
-  Plays the session's song at `share` of its own tempo, heard within 200 ms on every part at once, or moving there evenly over `over` beats.
+  Plays the session's song at `share` of its own tempo, heard within 200 ms on every part at once,
+  or moving there evenly over `over` beats.
 
-  Every tempo the song gives is played times the share, its own and those its music writes, through every save of the song's file, and nothing is written to the file; 1 plays the song's own tempo.
+  Every tempo the song gives is played times the share, its own and those its music writes,
+  through every save of the song's file, and nothing is written to the file; 1 plays the song's
+  own tempo.
   A share outside 0.25 to 4 is refused with `{:error, message}`.
   """
   def scale_tempo(session, share, over \\ 0) when is_pid(session) do
@@ -67,17 +85,22 @@ defmodule Mx.Session do
   end
 
   @doc """
-  Takes the version of the song saved last over now, from the first whole beat 150 ms away, and returns `{:ok, beat}`.
+  Takes the version of the song saved last over now, from the first whole beat 150 ms away, and
+  returns `{:ok, beat}`.
 
-  Each part the version changes ends the pass that sounds then and plays the version's pass from that beat of its music, so the parts stay together, and each part it removes stops there.
+  Each part the version changes ends the pass that sounds then and plays the version's pass from
+  that beat of its music, so the parts stay together, and each part it removes stops there.
   """
   def take_over_now(session) when is_pid(session), do: Band.take_over_now(band(session))
 
   @doc """
-  Plays the part `name` with another synth, `synth: :clarinet`, or other options of its synth, such as `vel: 0.8`, heard from its next note within a bar, while the file stays as it is.
+  Plays the part `name` with another synth, `synth: :clarinet`, or other options of its synth,
+  such as `vel: 0.8`, heard from its next note within a bar, while the file stays as it is.
 
-  What is tried adds to what was tried on the part before, and lasts while the session plays, through every save of the song's file, until `stop_trying/2`.
-  The part keeps its notes, its other options and its effects; an option the song gives that the tried synth does not take is left out, and named on standard error.
+  What is tried adds to what was tried on the part before, and lasts while the session plays,
+  through every save of the song's file, until `stop_trying/2`.
+  The part keeps its notes, its other options and its effects; an option the song gives that the
+  tried synth does not take is left out, and named on standard error.
   A part, synth or option that does not exist is refused with `{:error, message}`.
   """
   def try_part(session, name, tried) when is_pid(session) and is_list(tried) do
@@ -85,11 +108,16 @@ defmodule Mx.Session do
   end
 
   @doc """
-  Plays the recording `ref`, a path or a sample's name, on the part `name` from the first whole beat more than 150 ms away, through the part's effects and at its place in the mix, while the part plays on, and returns `{:ok, beat}`.
+  Plays the recording `ref`, a path or a sample's name, on the part `name` from the first whole
+  beat more than 150 ms away, through the part's effects and at its place in the mix, while the
+  part plays on, and returns `{:ok, beat}`.
 
-  It takes a sample's options, `from:` and `to:` in seconds and `amp:` among them, and nothing is written to the song's file.
-  It plays through saves of the file, mutes with the part, and stops when another recording plays on the part or `stop_recording/2` stops it.
-  A part the song does not have, a file that cannot play and a range outside the recording are refused with `{:error, message}`.
+  It takes a sample's options, `from:` and `to:` in seconds and `amp:` among them, and nothing is
+  written to the song's file.
+  It plays through saves of the file, mutes with the part, and stops when another recording plays
+  on the part or `stop_recording/2` stops it.
+  A part the song does not have, a file that cannot play and a range outside the recording are
+  refused with `{:error, message}`.
   `Mx.Engine.Mxs.play_recording/2` plays one with no song.
   """
   def play_recording(session, name, ref, opts \\ []) when is_pid(session) and is_list(opts) do
@@ -99,7 +127,10 @@ defmodule Mx.Session do
     end
   end
 
-  @doc "Stops the recording `play_recording/4` plays on the part `name`, within 150 ms, while the part and the song go on."
+  @doc """
+  Stops the recording `play_recording/4` plays on the part `name`, within 150 ms, while the part
+  and the song go on.
+  """
   def stop_recording(session, name) when is_pid(session) do
     Band.stop_recording(band(session), name)
   end

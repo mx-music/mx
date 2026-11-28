@@ -19,7 +19,10 @@ defmodule Mx.Paired.Crash do
   @early_ring 2
   @plate Mx.Paired.Draws.plate(160, 300, 15_000)
 
-  @doc "A crash cymbal: a stick ringing 160 modes of the plate, noise in each band, a crack and a thud, choked after it rings."
+  @doc """
+  A crash cymbal: a stick ringing 160 modes of the plate, noise in each band, a crack and a thud,
+  choked after it rings.
+  """
   attr :note, :note, default: 60, doc: "The drum's pitch."
   attr :vel, :float, default: 0.6, range: 0..1, doc: "How hard it is struck."
   attr :sustain, :beats, default: 9, doc: "How long it rings before it is choked."

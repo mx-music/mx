@@ -1,18 +1,35 @@
 defmodule Mx.Fit.Held do
   @moduledoc """
-  Fits a synth of held notes, bowed, blown or played on an organ, to recordings partial by partial, and checks it against them.
+  Fits a synth of held notes, bowed, blown or played on an organ, to recordings partial by
+  partial, and checks it against them.
 
-  The recordings are a list, as `Mx.Fit.Struck` takes it: one line a file, with the notes it holds, the velocity it was played at from 1 to 127, `kept` when the recordings keep their levels from one velocity to the next, and the file.
-  A run is split into its notes where each comes out of the quiet between them, since a held note swells rather than strikes, and a stretch that is not one of its notes, such as a breath or a key's click, is named and left out.
-  Each line names every note its file holds, since a stretch is named among them, and a note two lines give at one velocity is taken from the first, as one string is chosen over another.
+  The recordings are a list, as `Mx.Fit.Struck` takes it: one line a file, with the notes it
+  holds, the velocity it was played at from 1 to 127, `kept` when the recordings keep their levels
+  from one velocity to the next, and the file.
+  A run is split into its notes where each comes out of the quiet between them, since a held note
+  swells rather than strikes, and a stretch that is not one of its notes, such as a breath or a
+  key's click, is named and left out.
+  Each line names every note its file holds, since a stretch is named among them, and a note two
+  lines give at one velocity is taken from the first, as one string is chosen over another.
 
-  Each note's pitch is followed every 5 ms, and the note resampled along it to one steady pitch, so its vibrato and drift do not smear its partials.
-  Its harmonics are then followed every 2.5 ms as a struck note's partials are: through the attack, where the note holds, within 3 dB of its held level, and once the player lets it go.
-  Fitting gives each harmonic its level at the struck notes' times until the recording lets the note go, held at the last after that so a longer note holds as the recording last did, and its slope once let go; the noise between the harmonics the same, in each band one ERB wide, from the median of each stretch so a burst does not lift it; and the vibrato's rate and depth, with how far each harmonic's level swings with it.
-  The levels and slopes are corrected against renders of the figures, measured the same way, until they match the recording.
+  Each note's pitch is followed every 5 ms, and the note resampled along it to one steady pitch,
+  so its vibrato and drift do not smear its partials.
+  Its harmonics are then followed every 2.5 ms as a struck note's partials are: through the
+  attack, where the note holds, within 3 dB of its held level, and once the player lets it go.
+  Fitting gives each harmonic its level at the struck notes' times until the recording lets the
+  note go, held at the last after that so a longer note holds as the recording last did, and its
+  slope once let go; the noise between the harmonics the same, in each band one ERB wide, from the
+  median of each stretch so a burst does not lift it; and the vibrato's rate and depth, with how
+  far each harmonic's level swings with it.
+  The levels and slopes are corrected against renders of the figures, measured the same way, until
+  they match the recording.
 
-  Checking renders the synth at each recording's note and velocity, held as long as the recording holds, measures it the same way, and brings it to the recording's total where the recording holds:
-  partial by partial, the mean gap over the attack and over the held part while either stands 10 dB above the floor; and in ERB bands, the mean gap from the start until a second after the note is let go while either stands clear of the floor.
+  Checking renders the synth at each recording's note and velocity, held as long as the recording
+  holds, measures it the same way, and brings it to the recording's total where the recording
+  holds:
+  partial by partial, the mean gap over the attack and over the held part while either stands 10
+  dB above the floor; and in ERB bands, the mean gap from the start until a second after the note
+  is let go while either stands clear of the floor.
   """
 
   alias Mx.Engine.Mxs
@@ -20,7 +37,10 @@ defmodule Mx.Fit.Held do
   alias Mx.Fit.Struck
   alias Mx.Signal
 
-  @doc "The recordings a list gives, as `Mx.Fit.Struck.listed/3` gives them, split into held notes, each note and velocity from the first line that gives it."
+  @doc """
+  The recordings a list gives, as `Mx.Fit.Struck.listed/3` gives them, split into held notes, each
+  note and velocity from the first line that gives it.
+  """
   def listed(list, notes \\ nil) do
     with {:ok, recordings, lines} <- Struck.listed(list, notes, held: true) do
       order = lines |> Enum.with_index() |> Map.new(fn {line, index} -> {line.path, index} end)
@@ -36,13 +56,17 @@ defmodule Mx.Fit.Held do
 
   @doc """
   The figures fitted to the recordings, as mxs reads them.
-  `steady: true` holds each note at one level from where it starts holding, for recordings that ease off before they are let go.
+  `steady: true` holds each note at one level from where it starts holding, for recordings that
+  ease off before they are let go.
   """
   def figures(recordings, options \\ []) when is_list(recordings) do
     recordings |> Struck.native() |> Native.fit_held(Keyword.get(options, :steady, false))
   end
 
-  @doc "Each recording measured partial by partial: its pitch, where it holds from and is let go, its fall after, its vibrato, and each partial's levels."
+  @doc """
+  Each recording measured partial by partial: its pitch, where it holds from and is let go, its
+  fall after, its vibrato, and each partial's levels.
+  """
   def measure(recordings) when is_list(recordings) do
     recordings
     |> Struck.native()
@@ -53,7 +77,8 @@ defmodule Mx.Fit.Held do
   end
 
   @doc """
-  Renders `synth` at each recording's note and velocity, held as long as the recording holds, with `options`, and compares it with the recording.
+  Renders `synth` at each recording's note and velocity, held as long as the recording holds, with
+  `options`, and compares it with the recording.
   Returns one check a recording, as `Mx.Fit.Struck.check/3` does, its `strike` gap the attack's.
   """
   def check(synth, recordings, options \\ []) when is_list(recordings) do
@@ -70,7 +95,11 @@ defmodule Mx.Fit.Held do
     |> Enum.map(fn {:ok, check} -> check end)
   end
 
-  @doc "Checks the fit's own render of each recording against it, as `check/3` checks a synth: the figures fitted to the recording played as sines and noise with their vibrato, with no synth, fitted with `options` as `figures/2` takes them."
+  @doc """
+  Checks the fit's own render of each recording against it, as `check/3` checks a synth: the
+  figures fitted to the recording played as sines and noise with their vibrato, with no synth,
+  fitted with `options` as `figures/2` takes them.
+  """
   def own(recordings, options \\ []) when is_list(recordings) do
     steady = Keyword.get(options, :steady, false)
 
@@ -82,7 +111,10 @@ defmodule Mx.Fit.Held do
     end)
   end
 
-  @doc "A tour for listening of `count` recordings spread over the notes and velocities, each followed by `synth` held as long, as `{samples, rate}`."
+  @doc """
+  A tour for listening of `count` recordings spread over the notes and velocities, each followed
+  by `synth` held as long, as `{samples, rate}`.
+  """
   def tour(synth, recordings, count, options \\ []) when is_list(recordings) and count > 0 do
     picked = Struck.spread(recordings, count)
 

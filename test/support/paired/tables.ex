@@ -1,6 +1,8 @@
 defmodule Mx.Paired.Tables do
   @moduledoc """
-  mxs's struck voices that play a table fitted to recordings, written with defsynth: `use Mx.Paired.Tables` with a synth's name, how it plays its table, its level, its default note and its release.
+  mxs's struck voices that play a table fitted to recordings, written with defsynth:
+  `use Mx.Paired.Tables` with a synth's name, how it plays its table, its level, its default note
+  and its release.
   """
 
   defmacro __using__(opts) do

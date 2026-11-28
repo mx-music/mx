@@ -5,7 +5,10 @@ defmodule Mx.Paired.Kick do
 
   use Mx.Instrument
 
-  @doc "A kick drum: a sine swept down from 26 semitones above the note, a beater's click and a shell mode, driven."
+  @doc """
+  A kick drum: a sine swept down from 26 semitones above the note, a beater's click and a shell
+  mode, driven.
+  """
   attr :note, :note, default: 34, doc: "The drum's pitch."
   attr :vel, :float, default: 0.6, range: 0..1, doc: "How hard it is struck."
 

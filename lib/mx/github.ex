@@ -1,13 +1,21 @@
 defmodule Mx.GitHub do
   @moduledoc """
-  Files of public GitHub repositories, downloaded into the user's cache, for samples a song names as `{collection, path}` or `{:github, repo, ref, path}` and collections downloaded ahead of time.
+  Files of public GitHub repositories, downloaded into the user's cache, for samples a song names
+  as `{collection, path}` or `{:github, repo, ref, path}` and collections downloaded ahead of
+  time.
 
-  Each repository and ref has its own folder in the cache, so two refs of one repository never share a file.
-  A file is written under a temporary name and renamed once complete, so an interrupted download never leaves a file that looks downloaded.
-  Files come from GitHub's raw file server, and a folder's files are listed with GitHub's API, which limits requests without a login.
+  Each repository and ref has its own folder in the cache, so two refs of one repository never
+  share a file.
+  A file is written under a temporary name and renamed once complete, so an interrupted download
+  never leaves a file that looks downloaded.
+  Files come from GitHub's raw file server, and a folder's files are listed with GitHub's API,
+  which limits requests without a login.
   """
 
-  @doc "The folder GitHub files are cached in: the `:github_dir` setting, or a folder in the user's cache."
+  @doc """
+  The folder GitHub files are cached in: the `:github_dir` setting, or a folder in the user's
+  cache.
+  """
   def dir do
     Application.get_env(
       :mx,
@@ -19,7 +27,10 @@ defmodule Mx.GitHub do
   @doc "Where a file of a repository at a ref is kept in the cache."
   def local(repo, ref, path), do: Path.join([dir(), repo, URI.encode_www_form(ref), path])
 
-  @doc "Downloads a file of a repository at a ref into the cache, and returns `:ok` or `{:error, reason}`."
+  @doc """
+  Downloads a file of a repository at a ref into the cache, and returns `:ok` or
+  `{:error, reason}`.
+  """
   def fetch(repo, ref, path) do
     local = local(repo, ref, path)
     local |> Path.dirname() |> File.mkdir_p!()
@@ -44,7 +55,10 @@ defmodule Mx.GitHub do
     result
   end
 
-  @doc "The paths of the files in a folder of a repository at a ref, or in the whole repository for nil, as `{:ok, paths}` or `{:error, message}`."
+  @doc """
+  The paths of the files in a folder of a repository at a ref, or in the whole repository for nil,
+  as `{:ok, paths}` or `{:error, message}`.
+  """
   def list(repo, ref, folder) do
     case api("/repos/#{repo}/git/trees/#{encode(ref)}?recursive=1") do
       {:ok, %{"tree" => tree}} ->

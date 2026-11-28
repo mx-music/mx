@@ -1,6 +1,7 @@
 defmodule Mx.Player do
   @moduledoc """
-  Plays a song file until Enter is pressed or its music ends, and plays each saved version of it, for `mix mx.play` and the `mx` command.
+  Plays a song file until Enter is pressed or its music ends, and plays each saved version of it,
+  for `mix mx.play` and the `mx` command.
   """
 
   alias Mx.{Session, Song}
@@ -32,7 +33,11 @@ defmodule Mx.Player do
   @doc "The options `play/2` takes, parsed from command line arguments, and the arguments left."
   def parse(args) when is_list(args), do: OptionParser.parse!(args, strict: @switches)
 
-  @doc "Plays a song file with `record:` and `force:`, or renders it offline with `render:`, `seconds:`, `ring_out:`, `loudness:` and `force:`, either at `share:` of its tempo, and returns `:ok` once it stops, or `{:error, message}`."
+  @doc """
+  Plays a song file with `record:` and `force:`, or renders it offline with `render:`, `seconds:`,
+  `ring_out:`, `loudness:` and `force:`, either at `share:` of its tempo, and returns `:ok` once
+  it stops, or `{:error, message}`.
+  """
   def play(path, opts) when is_binary(path) and is_list(opts) do
     with :ok <- opts |> Keyword.get(:share, 1) |> Mx.Band.check_share(),
          :ok <- check_import(path, opts) do

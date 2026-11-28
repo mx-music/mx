@@ -6,7 +6,9 @@ defmodule Mx.Paired.Cabasa do
   use Mx.Instrument
   import Mx.Paired.Drums, only: [bpf: 3]
 
-  @doc "A cabasa: beads struck against the cylinder, or turned against it for the sustain with rub."
+  @doc """
+  A cabasa: beads struck against the cylinder, or turned against it for the sustain with rub.
+  """
   attr :note, :note, default: 96, doc: "The drum's pitch."
   attr :vel, :float, default: 0.6, range: 0..1, doc: "How hard it is struck."
 

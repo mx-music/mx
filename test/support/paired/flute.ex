@@ -8,7 +8,10 @@ defmodule Mx.Paired.Flute do
   @breath [0.38, 0.45, 0.56]
   @even [0.3, 1.0, 2.0]
 
-  @doc "A flute note, an air jet swung across the edge by the bore's sound, with its vibrato in the breath."
+  @doc """
+  A flute note, an air jet swung across the edge by the bore's sound, with its vibrato in the
+  breath.
+  """
   attr :note, :note,
     default: 52,
     doc: "The pitch; a change while the note holds slurs to the new one."

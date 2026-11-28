@@ -2,15 +2,20 @@ defmodule Mix.Tasks.Mx.Video do
   @shortdoc "Makes a video of a recording over its waveform or spectrogram"
 
   @moduledoc """
-  Makes an MP4 video of a WAV or AIFF recording that plays its sound over its waveform, with a playhead that crosses the picture once as the recording plays.
+  Makes an MP4 video of a WAV or AIFF recording that plays its sound over its waveform, with a
+  playhead that crosses the picture once as the recording plays.
 
       mx video song.wav
       mx video song.wav --picture spectrogram --out song.mp4 --force
 
-  The video is written beside the recording with the extension .mp4 unless `--out` names it, and `--force` writes over a file that exists.
-  `--picture spectrogram` plays the recording over its spectrogram instead, drawn with no line at each second.
-  The sound is the recording at one gain, which brings its loudest sample to 1.5 dB below full scale, as AAC at 256 kbit/s unless `--bitrate` gives another count.
-  The task prints the video's length and size, and warns when it is over the 10 MB GitHub allows for a video on its free plan.
+  The video is written beside the recording with the extension .mp4 unless `--out` names it, and
+  `--force` writes over a file that exists.
+  `--picture spectrogram` plays the recording over its spectrogram instead, drawn with no line at
+  each second.
+  The sound is the recording at one gain, which brings its loudest sample to 1.5 dB below full
+  scale, as AAC at 256 kbit/s unless `--bitrate` gives another count.
+  The task prints the video's length and size, and warns when it is over the 10 MB GitHub allows
+  for a video on its free plan.
   ffmpeg joins the picture and the sound, so it has to be installed.
   """
 

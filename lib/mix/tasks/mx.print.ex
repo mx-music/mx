@@ -2,17 +2,23 @@ defmodule Mix.Tasks.Mx.Print do
   @shortdoc "Prints the notes of a song without playing it"
 
   @moduledoc """
-  Prints each part's notes with their beats from the start of the song, through the whole of its music once, and makes no sound.
-  Given `--pass`, it prints that pass of each part, a pass being a section, or the length of the longest loop in music that plays until mx stops.
+  Prints each part's notes with their beats from the start of the song, through the whole of its
+  music once, and makes no sound.
+  Given `--pass`, it prints that pass of each part, a pass being a section, or the length of the
+  longest loop in music that plays until mx stops.
 
       mx print song.exs
       mx print song.exs --pass 4
 
-  `--cc 74=64`, `--note 60=100`, `--osc /trigger=1,a` and `--get root=40` print the pass as if those inputs had arrived or that value had been set, and each can be given more than once.
+  `--cc 74=64`, `--note 60=100`, `--osc /trigger=1,a` and `--get root=40` print the pass as if
+  those inputs had arrived or that value had been set, and each can be given more than once.
   A loop started by input prints only what starts it.
-  Each part's tempo is the tempo it starts at, and the tempo changes in what it prints, with their beats.
-  A part with effects names them after its tempo, in the order its notes go through them, and then the buses it sends to, each with its level.
-  The song's own effects and its buses come first, each bus with its effects and the parts and buses that send to it.
+  Each part's tempo is the tempo it starts at, and the tempo changes in what it prints, with their
+  beats.
+  A part with effects names them after its tempo, in the order its notes go through them, and then
+  the buses it sends to, each with its level.
+  The song's own effects and its buses come first, each bus with its effects and the parts and
+  buses that send to it.
   """
 
   use Mix.Task

@@ -1,7 +1,9 @@
 defmodule Mx.Song do
   @moduledoc """
-  A song loaded from a file: its tempo, its `meter` in beats to a bar, its `key`, nil when it states none, and its parts, each played as a loop, in the order of the song.
-  `tempos` holds the tempo changes its music writes, each section's as `Mx.Tempo` takes them, or nil when it writes none.
+  A song loaded from a file: its tempo, its `meter` in beats to a bar, its `key`, nil when it
+  states none, and its parts, each played as a loop, in the order of the song.
+  `tempos` holds the tempo changes its music writes, each section's as `Mx.Tempo` takes them, or
+  nil when it writes none.
 
   A song file is either a script that ends with `Mx.song/1`, or a module that uses `Mx.Song`:
 
@@ -16,17 +18,23 @@ defmodule Mx.Song do
         def song, do: together([part(:kick, steps("x...", 1)), part(:bass, note(:g1, 4))])
       end
 
-  `use Mx.Song` imports `Mx` and takes the options of `Mx.song/1` but `music:`, which is what the module's `song/0` returns.
-  `part/2` written in the module's body declares a part with its options, once, and written in a function it is that part playing some music, with those options.
+  `use Mx.Song` imports `Mx` and takes the options of `Mx.song/1` but `music:`, which is what the
+  module's `song/0` returns.
+  `part/2` written in the module's body declares a part with its options, once, and written in a
+  function it is that part playing some music, with those options.
   A part that is not declared does not compile.
-  `together/1` in a function takes declared parts by name, as `together(kick: steps("x...", 1), bass: note(:g1, 4))`.
-  `kit/2` in the body declares a kit of strokes, each played by a declared part, and `kit/3` in a function plays one pattern on all of them.
+  `together/1` in a function takes declared parts by name, as
+  `together(kick: steps("x...", 1), bass: note(:g1, 4))`.
+  `kit/2` in the body declares a kit of strokes, each played by a declared part, and `kit/3` in a
+  function plays one pattern on all of them.
   """
 
   alias Mx.{Samples, Synths}
 
   defmodule Loop do
-    @moduledoc "A part of the song played as a loop, with the music it replays and the samples it uses."
+    @moduledoc """
+    A part of the song played as a loop, with the music it replays and the samples it uses.
+    """
     defstruct [
       :name,
       :synth,
@@ -48,12 +56,18 @@ defmodule Mx.Song do
   end
 
   defmodule Live do
-    @moduledoc "A live audio input the song declares: the sound card input it plays, in mono or stereo, with its options and effects."
+    @moduledoc """
+    A live audio input the song declares: the sound card input it plays, in mono or stereo, with
+    its options and effects.
+    """
     defstruct [:name, input: 1, stereo: false, opts: [], fx: [], send: []]
   end
 
   defmodule Bus do
-    @moduledoc "A chain of effects the song's parts send a share of their sound into, which can send into other buses in turn."
+    @moduledoc """
+    A chain of effects the song's parts send a share of their sound into, which can send into
+    other buses in turn.
+    """
     defstruct [:name, fx: [], send: []]
   end
 
@@ -95,7 +109,10 @@ defmodule Mx.Song do
     end
   end
 
-  @doc "In a module's body, declares a part with its options; in a function, that part playing music with the options it was declared with."
+  @doc """
+  In a module's body, declares a part with its options; in a function, that part playing music
+  with the options it was declared with.
+  """
   defmacro part(name, given) do
     if __CALLER__.function do
       declared = Module.get_attribute(__CALLER__.module, :mx_parts)
@@ -117,14 +134,21 @@ defmodule Mx.Song do
     end
   end
 
-  @doc "Declares a bus of the song, a chain of effects its parts send into with `send:`: `bus :room, fx: [reverb: [decay_seconds: 2.3]]`, which can send into other buses with its own `send:`."
+  @doc """
+  Declares a bus of the song, a chain of effects its parts send into with `send:`:
+  `bus :room, fx: [reverb: [decay_seconds: 2.3]]`, which can send into other buses with its own
+  `send:`.
+  """
   defmacro bus(name, given) do
     quote do
       @mx_buses {unquote(name), unquote(given)}
     end
   end
 
-  @doc "Music whose items all start at once, as `Mx.together/1`, where an item given as `{name, music}` is that declared part playing the music."
+  @doc """
+  Music whose items all start at once, as `Mx.together/1`, where an item given as `{name, music}`
+  is that declared part playing the music.
+  """
   defmacro together(items) do
     location = [file: String.to_charlist(__CALLER__.file), line: __CALLER__.line]
 
@@ -154,7 +178,10 @@ defmodule Mx.Song do
 
   def together_parts(_declared, items, _location), do: Mx.together(items)
 
-  @doc "In a module's body, declares a kit: its strokes, each with the declared part that plays it and its options, or as a list of other strokes it plays together."
+  @doc """
+  In a module's body, declares a kit: its strokes, each with the declared part that plays it and
+  its options, or as a list of other strokes it plays together.
+  """
   defmacro kit(name, strokes) do
     if __CALLER__.function do
       refuse(
@@ -170,7 +197,10 @@ defmodule Mx.Song do
     end
   end
 
-  @doc "In a function, the kit playing a pattern: each of its parts plays the strokes that name it, at the beats `Mx.steps/3` gives them, and the options are those of steps but `strokes:`."
+  @doc """
+  In a function, the kit playing a pattern: each of its parts plays the strokes that name it, at
+  the beats `Mx.steps/3` gives them, and the options are those of steps but `strokes:`.
+  """
   defmacro kit(name, pattern, step, opts \\ []) do
     declared = Module.get_attribute(__CALLER__.module, :mx_kits)
 
@@ -322,7 +352,10 @@ defmodule Mx.Song do
 
   @chain_error "fx: takes an effect or a list of effects, such as fx: [echo: [phase: 0.5], reverb: []]"
 
-  @doc "Loads a song file, or with `source:` that text as though it were the file at `path`, which need not exist, and returns `{:ok, song}` or `{:error, message}` naming the file and line."
+  @doc """
+  Loads a song file, or with `source:` that text as though it were the file at `path`, which need
+  not exist, and returns `{:ok, song}` or `{:error, message}` naming the file and line.
+  """
   def load(path, opts \\ []) when is_binary(path) and is_list(opts) do
     case read(path, opts) do
       :module -> {:error, "#{path} does not end with a song"}
@@ -330,7 +363,10 @@ defmodule Mx.Song do
     end
   end
 
-  @doc "Reads a song file as `load/2` does, but returns `:module` for a file that compiles, ends with a module and describes no song, as a file of modules other songs use does."
+  @doc """
+  Reads a song file as `load/2` does, but returns `:module` for a file that compiles, ends with a
+  module and describes no song, as a file of modules other songs use does.
+  """
   def read(path, opts \\ []) when is_binary(path) and is_list(opts) do
     Process.put(@key, %__MODULE__{})
 
@@ -476,7 +512,10 @@ defmodule Mx.Song do
     end)
   end
 
-  @doc "Records a part of the song being loaded as a loop that replays its music, ending after a number of passes, or never with nil."
+  @doc """
+  Records a part of the song being loaded as a loop that replays its music, ending after a number
+  of passes, or never with nil.
+  """
   def put_music_loop(%Mx.Music.Part{} = part, music, passes, on \\ nil)
       when is_map(music) and (is_integer(passes) or is_nil(passes)) do
     loop = %Loop{
@@ -496,7 +535,10 @@ defmodule Mx.Song do
     update(&%{&1 | loops: [loop | &1.loops]})
   end
 
-  @doc "Records a sample the song being loaded plays, and whether it plays normalized, so a silent or quiet file is named once it has loaded."
+  @doc """
+  Records a sample the song being loaded plays, and whether it plays normalized, so a silent or
+  quiet file is named once it has loaded.
+  """
   def put_played(ref, path, normalized?) do
     if Process.get(@key), do: update(&%{&1 | played: [{ref, path, normalized?} | &1.played]})
     :ok
@@ -529,7 +571,9 @@ defmodule Mx.Song do
   @doc "Records the effects the whole song being loaded plays through, as `fx:` gives them."
   def put_fx(fx), do: update(&%{&1 | fx: fx})
 
-  @doc "The song's own effects as a chain with each effect's bands written out, or `{:error, message}`."
+  @doc """
+  The song's own effects as a chain with each effect's bands written out, or `{:error, message}`.
+  """
   def song_effects(fx) do
     with {:ok, chain} <- chain(fx),
          {:ok, chain} <- check_effects(chain),
@@ -548,8 +592,10 @@ defmodule Mx.Song do
 
   @doc """
   The song's buses from what `buses:` gives, as `{:ok, buses}` or `{:error, message}`.
-  Each bus is given by its name with its effects, as `room: [reverb: [decay_seconds: 2.3]]`, or with `fx:` and `send:`, as `tape: [fx: [echo: []], send: [room: 0.3]]`.
-  An effect of a bus has a `mix` of 1 unless given, a bus that sends into a bus the song does not have is refused, and so is one that sends into itself, directly or through others.
+  Each bus is given by its name with its effects, as `room: [reverb: [decay_seconds: 2.3]]`, or
+  with `fx:` and `send:`, as `tape: [fx: [echo: []], send: [room: 0.3]]`.
+  An effect of a bus has a `mix` of 1 unless given, a bus that sends into a bus the song does not
+  have is refused, and so is one that sends into itself, directly or through others.
   """
   def buses(given) do
     with true <- Keyword.keyword?(given) || {:error, @buses_error},
@@ -596,7 +642,10 @@ defmodule Mx.Song do
     end
   end
 
-  @doc "What is wrong with the sends of `owner`, such as `\"part snare\"`, given the names of the song's buses, or nil."
+  @doc """
+  What is wrong with the sends of `owner`, such as `"part snare"`, given the names of the song's
+  buses, or nil.
+  """
   def sends_error(owner, sends, buses) do
     cond do
       not valid_sends?(sends) ->
@@ -771,7 +820,10 @@ defmodule Mx.Song do
     end
   end
 
-  @doc "Checks an fx: option, an effect or a list of effects with their options, as `:ok` or `{:error, message}`."
+  @doc """
+  Checks an fx: option, an effect or a list of effects with their options, as `:ok` or
+  `{:error, message}`.
+  """
   def check_fx(fx) do
     with {:ok, chain} <- chain(fx), {:ok, _chain} <- check_effects(chain), do: :ok
   end
@@ -846,7 +898,10 @@ defmodule Mx.Song do
 
   defp pop_key(_effect, opts), do: {:ok, [], opts}
 
-  @doc "What is wrong with the key: of a compressor among the effects of `owner`, such as `\"part pad\"`, given the names of the song's parts and buses, or nil."
+  @doc """
+  What is wrong with the key: of a compressor among the effects of `owner`, such as `"part pad"`,
+  given the names of the song's parts and buses, or nil.
+  """
   def keys_error(owner, fx, names) do
     fx
     |> List.wrap()

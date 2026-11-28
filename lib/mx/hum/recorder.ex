@@ -2,11 +2,17 @@ defmodule Mx.Hum.Recorder do
   @moduledoc """
   Records a hum against a click and turns it into a song, for `mix mx.hum --record`.
 
-  The click is mx's closed hi-hat, a tick without a pitch, louder on the first beat of each bar: a bar of 4 beats as a count-in, then every beat until `wait` returns, which is when Enter is pressed.
-  The sound card's input is recorded from the first click, apart from the main output, so the click is not in the recording, and a click the microphone picks up from the speakers has no pitch to be a note.
+  The click is mx's closed hi-hat, a tick without a pitch, louder on the first beat of each bar: a
+  bar of 4 beats as a count-in, then every beat until `wait` returns, which is when Enter is
+  pressed.
+  The sound card's input is recorded from the first click, apart from the main output, so the
+  click is not in the recording, and a click the microphone picks up from the speakers has no
+  pitch to be a note.
   Beat 0 is the first beat after the count-in, and a note hummed during the count-in is left out.
 
-  Whatever can be refused is refused before the first click: a recording or song that exists without `force:`, a folder that cannot be written, and an input that runs at another sample rate than the output.
+  Whatever can be refused is refused before the first click: a recording or song that exists
+  without `force:`, a folder that cannot be written, and an input that runs at another sample rate
+  than the output.
   """
 
   alias Mx.{Audio, Hum, Recording}
@@ -17,8 +23,11 @@ defmodule Mx.Hum.Recorder do
   @ahead_us 200_000
 
   @doc """
-  Records a hum to a WAV file at `tempo:` and writes its song, printing what it did; returns `:ok` or `{:error, message}`.
-  It takes `out:` for the song, `force:`, `input:`, the sound card's input to record (1 unless given), `synth:`, options for the engine, `source:` to play a mono WAV file in place of the input, and `wait:`, a function that returns once recording should stop.
+  Records a hum to a WAV file at `tempo:` and writes its song, printing what it did; returns `:ok`
+  or `{:error, message}`.
+  It takes `out:` for the song, `force:`, `input:`, the sound card's input to record (1 unless
+  given), `synth:`, options for the engine, `source:` to play a mono WAV file in place of the
+  input, and `wait:`, a function that returns once recording should stop.
   """
   def record(wav, opts) when is_binary(wav) and is_list(opts) do
     tempo = Keyword.fetch!(opts, :tempo)

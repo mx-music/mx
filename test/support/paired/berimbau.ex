@@ -64,7 +64,10 @@ defmodule Mx.Paired.Berimbau do
            {band, 0.2 * :math.pow(30, rnd1(2 * index + @seed + 1)), rem(index, 4) == 0}
          end)
 
-  @doc "The berimbau: the string's partials struck by the stick, swung by the gourd, over the wire's close modes and the stick's thud."
+  @doc """
+  The berimbau: the string's partials struck by the stick, swung by the gourd, over the wire's
+  close modes and the stick's thud.
+  """
   attr :note, :note, default: 39.11, doc: "The open string's pitch."
   attr :vel, :float, default: 0.6, range: 0..1, doc: "How hard the stick strikes."
 

@@ -1,11 +1,15 @@
 defmodule Mx.Paired.Plucked do
   @moduledoc """
-  mxs's plucked strings, the cavaquinho and the bandolim, written with defsound so their twins can share them as the Rust voices do.
+  mxs's plucked strings, the cavaquinho and the bandolim, written with defsound so their twins can
+  share them as the Rust voices do.
   """
 
   use Mx.Instrument
 
-  @doc "A plucked string at the note `o`: harmonics shaped by where `p` plucks it, the higher ones dying sooner, through the body's resonances; tremolo picks it again that many times a second."
+  @doc """
+  A plucked string at the note `o`: harmonics shaped by where `p` plucks it, the higher ones dying
+  sooner, through the body's resonances; tremolo picks it again that many times a second.
+  """
   defsound plucked(o, p) do
     vel = clamp(o.vel, 0, 1)
     freq = hz(o.note)

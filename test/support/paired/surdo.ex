@@ -23,7 +23,10 @@ defmodule Mx.Paired.Surdo do
     [1.2, 2.4, 2.4, 2.4, 2.5, 3.4]
   ]
 
-  @doc "A surdo: a mallet ringing the head's modes, open or muted, and its higher modes with their tails."
+  @doc """
+  A surdo: a mallet ringing the head's modes, open or muted, and its higher modes with their
+  tails.
+  """
   attr :note, :note, default: 36.31, doc: "The drum's pitch."
   attr :vel, :float, default: 0.6, range: 0..1, doc: "How hard it is struck."
 

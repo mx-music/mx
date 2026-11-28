@@ -2,9 +2,13 @@ defmodule Mx.Loudness do
   @moduledoc """
   Measures how loud a recording is heard, and scales a recording to a loudness.
 
-  The measure is the integrated loudness of ITU-R BS.1770-4, in LUFS, the one streaming services turn each track by.
-  Each channel goes through the recommendation's two filters, a shelf that raises the highs by 4 dB and a high-pass at 38 Hz.
-  The recording is then cut into blocks of 400 ms, each starting 100 ms after the one before, and the loudness is that of the mean power of the blocks left by two gates: one drops the blocks under -70 LUFS, and one the blocks more than 10 LU under the loudness of the rest.
+  The measure is the integrated loudness of ITU-R BS.1770-4, in LUFS, the one streaming services
+  turn each track by.
+  Each channel goes through the recommendation's two filters, a shelf that raises the highs by 4
+  dB and a high-pass at 38 Hz.
+  The recording is then cut into blocks of 400 ms, each starting 100 ms after the one before, and
+  the loudness is that of the mean power of the blocks left by two gates: one drops the blocks
+  under -70 LUFS, and one the blocks more than 10 LU under the loudness of the rest.
   Every channel counts alike, so it is right for mono and stereo.
   """
 
@@ -14,7 +18,10 @@ defmodule Mx.Loudness do
   @absolute_gate -70.0
   @relative_gate -10.0
 
-  @doc "The integrated loudness of a recording in LUFS, or nil when it cannot be read, is shorter than 0.4 seconds, or has no block over -70 LUFS."
+  @doc """
+  The integrated loudness of a recording in LUFS, or nil when it cannot be read, is shorter than
+  0.4 seconds, or has no block over -70 LUFS.
+  """
   def measure(path) when is_binary(path) do
     with {:ok, %{rate: rate, channels: channels} = format, data} <- Audio.raw(path),
          {:ok, size, decode} <- decoder(format) do

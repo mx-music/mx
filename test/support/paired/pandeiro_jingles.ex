@@ -1,6 +1,7 @@
 defmodule Mx.Paired.PandeiroJingles do
   @moduledoc """
-  mxs's pandeiro_jingles written with defsynth, node for node, so the two can be compared and timed.
+  mxs's pandeiro_jingles written with defsynth, node for node, so the two can be compared and
+  timed.
   """
 
   use Mx.Instrument

@@ -58,7 +58,9 @@ defmodule Mx.Paired.Pandeiro do
   @doc false
   def strokes, do: @strokes
 
-  @doc "A pandeiro stroke: the thumb, the heel of the hand, a slap or the fingertips on the jingles."
+  @doc """
+  A pandeiro stroke: the thumb, the heel of the hand, a slap or the fingertips on the jingles.
+  """
   attr :note, :note, default: 49, doc: "The drum's pitch."
   attr :vel, :float, default: 0.6, range: 0..1, doc: "How hard it is struck."
 

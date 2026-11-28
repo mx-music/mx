@@ -3,15 +3,24 @@ defmodule Mx.ABC do
   Reads a tune written in ABC notation as a score for `mix mx.import`.
 
   A file holds one tune or several, each starting at its `X:` field.
-  The tune's meter, unit note length, key and tempo come from its `M:`, `L:`, `K:` and `Q:` fields, and change where the tune changes them.
-  Without `L:` the unit is an eighth note, or a sixteenth in a meter under 3/4, as ABC has it, and without `Q:` the tempo is 120 quarter notes a minute.
-  Each voice a `V:` field names is a part named after the voice, and a tune without voices is one part named after its title.
-  Repeats, first and second endings, ties, chords, broken rhythms and tuplets play as written, and grace notes are kept with the note they lead into.
-  Chord symbols, decorations, lyrics and other text are left out, and the score counts them in `left_out` and `left_out_counts` as `:chords`, `:decorations`, `:lyrics` and `:text`.
+  The tune's meter, unit note length, key and tempo come from its `M:`, `L:`, `K:` and `Q:`
+  fields, and change where the tune changes them.
+  Without `L:` the unit is an eighth note, or a sixteenth in a meter under 3/4, as ABC has it, and
+  without `Q:` the tempo is 120 quarter notes a minute.
+  Each voice a `V:` field names is a part named after the voice, and a tune without voices is one
+  part named after its title.
+  Repeats, first and second endings, ties, chords, broken rhythms and tuplets play as written, and
+  grace notes are kept with the note they lead into.
+  Chord symbols, decorations, lyrics and other text are left out, and the score counts them in
+  `left_out` and `left_out_counts` as `:chords`, `:decorations`, `:lyrics` and `:text`.
 
-  A song written as ABC is one tune, each part that plays notes with a pitch a voice named after the part, and a part whose notes overlap without forming chords a further voice for each overlap, named after the part and numbered.
-  Lengths are written as plain and dotted note values, tied where one value does not write a note, and triplets as fractions of the unit note.
-  Velocity, the pedal, each part's synth and its effects are left out, as ABC has no place for them.
+  A song written as ABC is one tune, each part that plays notes with a pitch a voice named after
+  the part, and a part whose notes overlap without forming chords a further voice for each
+  overlap, named after the part and numbered.
+  Lengths are written as plain and dotted note values, tied where one value does not write a note,
+  and triplets as fractions of the unit note.
+  Velocity, the pedal, each part's synth and its effects are left out, as ABC has no place for
+  them.
   """
 
   alias Mx.{MusicXML, Page, Score, Song}
@@ -79,7 +88,9 @@ defmodule Mx.ABC do
 
   @note ~r/^(\^\^|\^|__|_|=)?([A-Ga-g])([,']*)([\d\/]*)(-?)$/
 
-  @doc "The tunes in the ABC file at `path`, as `{:ok, [{number, title}]}` or `{:error, message}`."
+  @doc """
+  The tunes in the ABC file at `path`, as `{:ok, [{number, title}]}` or `{:error, message}`.
+  """
   def tunes(path) when is_binary(path) do
     with {:ok, text} <- read_file(path) do
       {:ok, Enum.map(split(text), fn {number, lines} -> {number, title(lines)} end)}
@@ -87,7 +98,8 @@ defmodule Mx.ABC do
   end
 
   @doc """
-  Reads the tune numbered `tune` in the ABC file at `path`, or its first tune when `tune` is nil, as a score.
+  Reads the tune numbered `tune` in the ABC file at `path`, or its first tune when `tune` is nil,
+  as a score.
   Returns `{:ok, score}` or `{:error, message}`.
   """
   def score(path, tune) when is_binary(path) do
@@ -780,8 +792,10 @@ defmodule Mx.ABC do
   end
 
   @doc """
-  Writes the song at `path` as an ABC tune to `out`, with `time:`, `key:`, `pickup:`, `title:` and `force:` as `Mx.MusicXML.write/3` takes them.
-  Returns `{:ok, %{parts: parts, left_out: left_out, notes: notes}}`, as `Mx.MusicXML.write/3` returns and with `notes` saying what ABC leaves out, or `{:error, message}`.
+  Writes the song at `path` as an ABC tune to `out`, with `time:`, `key:`, `pickup:`, `title:` and
+  `force:` as `Mx.MusicXML.write/3` takes them.
+  Returns `{:ok, %{parts: parts, left_out: left_out, notes: notes}}`, as `Mx.MusicXML.write/3`
+  returns and with `notes` saying what ABC leaves out, or `{:error, message}`.
   """
   def write(path, out, opts \\ []) when is_binary(path) and is_binary(out) and is_list(opts) do
     with :ok <- Page.check(out, Keyword.get(opts, :force, false)),

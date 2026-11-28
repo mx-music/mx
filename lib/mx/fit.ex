@@ -1,12 +1,21 @@
 defmodule Mx.Fit do
   @moduledoc """
-  Searches for the values of a synth's controls that bring its held notes closest to recordings of them, as `mix mx.fit` does.
+  Searches for the values of a synth's controls that bring its held notes closest to recordings of
+  them, as `mix mx.fit` does.
 
-  The recordings come in dynamics, each a vel and the files played at it, and each dynamic is measured as `Mx.Measure.Held` measures held notes.
-  Notes found below the lowest note given are spurious onsets, and stretches whose fundamental stands more than 25 dB below the median fundamental of their dynamic are breaths or key clicks between notes, so both are left out.
-  The synth renders at every semitone from the lowest note given to the highest found, at each dynamic's vel, without vibrato, held as long as the recordings' notes at that dynamic hold, the median of those kept.
-  A setting scores how far each band's harmonics and the noise between them, from the lowest frequency given up to 4 kHz, fall more than 4 dB from the recordings', and how far the attack falls more than 20 percent from theirs, at each dynamic.
-  The search tries each control a step up and a step down, keeps whichever lowers the score, and goes through the controls three times.
+  The recordings come in dynamics, each a vel and the files played at it, and each dynamic is
+  measured as `Mx.Measure.Held` measures held notes.
+  Notes found below the lowest note given are spurious onsets, and stretches whose fundamental
+  stands more than 25 dB below the median fundamental of their dynamic are breaths or key clicks
+  between notes, so both are left out.
+  The synth renders at every semitone from the lowest note given to the highest found, at each
+  dynamic's vel, without vibrato, held as long as the recordings' notes at that dynamic hold, the
+  median of those kept.
+  A setting scores how far each band's harmonics and the noise between them, from the lowest
+  frequency given up to 4 kHz, fall more than 4 dB from the recordings', and how far the attack
+  falls more than 20 percent from theirs, at each dynamic.
+  The search tries each control a step up and a step down, keeps whichever lowers the score, and
+  goes through the controls three times.
   """
 
   alias Mx.Engine.Mxs
@@ -22,10 +31,13 @@ defmodule Mx.Fit do
   @version :drone
 
   @doc """
-  Measures each `{vel, [{path, note}]}` dynamic, and returns `{:ok, dynamics, cached?}` or `{:error, message}` naming the file.
+  Measures each `{vel, [{path, note}]}` dynamic, and returns `{:ok, dynamics, cached?}` or
+  `{:error, message}` naming the file.
 
-  Each dynamic has its vel, attack and band levels, and how many notes it kept, found below the lowest note, and found too quiet.
-  With `drone` true, each file is measured as one note held from its first sample to its last, and the attack is nil, since a drone's recording starts wherever it was cut.
+  Each dynamic has its vel, attack and band levels, and how many notes it kept, found below the
+  lowest note, and found too quiet.
+  With `drone` true, each file is measured as one note held from its first sample to its last, and
+  the attack is nil, since a drone's recording starts wherever it was cut.
   The figures are kept in the system's temporary folder and reused until a file changes.
   """
   def recordings(dynamics, drone \\ false) when is_list(dynamics) and is_boolean(drone) do
@@ -41,7 +53,9 @@ defmodule Mx.Fit do
   end
 
   @doc """
-  Each dynamic's attack ratio less one, or nil when the recordings have no attack, and for each band the level of its harmonics, then of its noise, in the recordings and the difference in dB, the synth's against the recordings', with the given controls.
+  Each dynamic's attack ratio less one, or nil when the recordings have no attack, and for each
+  band the level of its harmonics, then of its noise, in the recordings and the difference in dB,
+  the synth's against the recordings', with the given controls.
   A band is left out of either list where the recordings or the synth have no figure for it.
   """
   def misses(synth, recorded, notes, from, controls) do
@@ -67,7 +81,10 @@ defmodule Mx.Fit do
         do: {band, level, other - level}
   end
 
-  @doc "The score of misses: 0 when every band's harmonics and noise are within 4 dB and every attack within 20 percent."
+  @doc """
+  The score of misses: 0 when every band's harmonics and noise are within 4 dB and every attack
+  within 20 percent.
+  """
   def score(misses) do
     Enum.sum(
       for %{attack: attack, bands: bands, noise: noise} <- misses do
@@ -84,9 +101,11 @@ defmodule Mx.Fit do
   defp attack(attack), do: max(abs(:math.log(1 + attack)) - @attack_slack, 0) * @attack_weight
 
   @doc """
-  Searches from the controls' starting values, each a map of name, value, step and whether the step is a ratio.
+  Searches from the controls' starting values, each a map of name, value, step and whether the
+  step is a ratio.
 
-  `report` is called with `{:start, score}`, `{:round, number}` and `{:kept, name, value, score}`, and the best values and their score are returned.
+  `report` is called with `{:start, score}`, `{:round, number}` and `{:kept, name, value, score}`,
+  and the best values and their score are returned.
   """
   def search(synth, recorded, notes, from, controls, report) do
     score_of = fn values -> score(misses(synth, recorded, notes, from, values)) end
@@ -223,7 +242,10 @@ defmodule Mx.Fit do
     Path.join([System.tmp_dir!(), "mx-fit", "#{:erlang.phash2(key, 4_294_967_296)}.term"])
   end
 
-  @doc "A file's size and time of change, which name what was fitted to it, or nil when it cannot be read."
+  @doc """
+  A file's size and time of change, which name what was fitted to it, or nil when it cannot be
+  read.
+  """
   def stamp(path) do
     case File.stat(path, time: :posix) do
       {:ok, %{size: size, mtime: mtime}} -> {size, mtime}

@@ -17,7 +17,9 @@ defmodule Mx.Pictures do
     {red, green, blue}
   end
 
-  @doc "The frames of a video of a width and height, each as rows of RGB pixels, decoded by ffmpeg."
+  @doc """
+  The frames of a video of a width and height, each as rows of RGB pixels, decoded by ffmpeg.
+  """
   def frames(path, width, height) when is_binary(path) do
     args = ~w(-v error -i #{path} -f rawvideo -pix_fmt rgb24 -)
     {raw, 0} = System.cmd("ffmpeg", args)

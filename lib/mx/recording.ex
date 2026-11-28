@@ -2,8 +2,10 @@ defmodule Mx.Recording do
   @moduledoc """
   Checks where a session can be recorded, and reads the length, peak and clips of a recording.
 
-  The engine writes the recording itself, so a path it cannot write is refused before playing starts.
-  mxs records 32-bit floats, which keep a sound louder than full scale, and a sample at or beyond full scale counts as at full scale.
+  The engine writes the recording itself, so a path it cannot write is refused before playing
+  starts.
+  mxs records 32-bit floats, which keep a sound louder than full scale, and a sample at or beyond
+  full scale counts as at full scale.
   Each stretch of frames with a sample at full scale in either channel counts as one clip.
   """
 
@@ -52,7 +54,10 @@ defmodule Mx.Recording do
     %{channels: channels, rate: rate, frames: div(byte_size(data), block_align)}
   end
 
-  @doc "The peak of a 24-bit or 32-bit float WAV recording in dB below full scale, or nil when it is silent, with how many times it clipped and the seconds of the first clip."
+  @doc """
+  The peak of a 24-bit or 32-bit float WAV recording in dB below full scale, or nil when it is
+  silent, with how many times it clipped and the seconds of the first clip.
+  """
   def level(path) when is_binary(path) do
     %{channels: channels, rate: rate, bits: bits, data: data} = wav(path)
     kind = if bits == 32, do: :float, else: :int24
@@ -62,7 +67,10 @@ defmodule Mx.Recording do
     %{peak: peak, clips: clips, first_clip: first_clip}
   end
 
-  @doc "The lines mx prints after recording: the length and peak, the loudness in LUFS when one is given, and a warning when the recording clipped."
+  @doc """
+  The lines mx prints after recording: the length and peak, the loudness in LUFS when one is
+  given, and a warning when the recording clipped.
+  """
   def report(path, loudness \\ nil) when is_binary(path) do
     seconds = Float.round(seconds(path), 1)
     %{peak: peak, clips: clips, first_clip: first_clip} = level(path)

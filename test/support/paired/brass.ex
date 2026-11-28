@@ -5,7 +5,10 @@ defmodule Mx.Paired.Brass do
 
   use Mx.Instrument
 
-  @doc "A saw and a pulse under a low-pass that opens with the breath, with breath noise and a late vibrato."
+  @doc """
+  A saw and a pulse under a low-pass that opens with the breath, with breath noise and a late
+  vibrato.
+  """
   attr :note, :note, default: 52, doc: "The pitch."
   attr :vel, :float, default: 0.6, range: 0..1, doc: "How hard it is blown."
   attr :bend, :float, default: 0, doc: "Semitones the pitch is bent by."

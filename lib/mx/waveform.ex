@@ -1,11 +1,15 @@
 defmodule Mx.Waveform do
   @moduledoc """
-  Draws a recording's waveform into a PNG image: a row of bars on a dark background, one for each slice of the recording.
+  Draws a recording's waveform into a PNG image: a row of bars on a dark background, one for each
+  slice of the recording.
 
-  The bars are 2 pixels wide and 1 pixel apart, with rounded ends, and stand 40 pixels in from each side.
-  A bar is as tall as its slice is loud, against the loudest slice: the level is the slice's RMS, raised to the power 0.8 so that quiet passages stay visible, and a silent slice is a dot.
+  The bars are 2 pixels wide and 1 pixel apart, with rounded ends, and stand 40 pixels in from
+  each side.
+  A bar is as tall as its slice is loud, against the loudest slice: the level is the slice's RMS,
+  raised to the power 0.8 so that quiet passages stay visible, and a silent slice is a dot.
   The image is 1500 pixels wide and 150 high unless `width:` and `height:` give another size.
-  The bars are grey, or amber with `colour: :amber`, the two colours `Mx.Video` shows before and after its playhead.
+  The bars are grey, or amber with `colour: :amber`, the two colours `Mx.Video` shows before and
+  after its playhead.
   """
 
   alias Mx.{Audio, PNG}
@@ -21,7 +25,10 @@ defmodule Mx.Waveform do
   @background {17, 19, 24}
   @colours %{grey: {74, 80, 96}, amber: {242, 184, 75}}
 
-  @doc "Writes the waveform of the recording at `path` to the PNG file `out`, and returns `:ok`, or `{:error, \"cannot read PATH\"}`."
+  @doc """
+  Writes the waveform of the recording at `path` to the PNG file `out`, and returns `:ok`, or
+  `{:error, "cannot read PATH"}`.
+  """
   def write(path, out, opts \\ []) when is_binary(path) and is_binary(out) and is_list(opts) do
     with {:ok, %{channels: channels, bits: bits, kind: kind}, data} <- Audio.raw(path) do
       width = Keyword.get(opts, :width, @width)

@@ -1,6 +1,7 @@
 defmodule Mx.Paired.DeepBass do
   @moduledoc """
-  mxs's deep bass written with defsynth, playing its table as mxs does, so the two can be compared and timed.
+  mxs's deep bass written with defsynth, playing its table as mxs does, so the two can be compared
+  and timed.
   """
 
   use Mx.Paired.Tables,

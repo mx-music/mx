@@ -1,17 +1,28 @@
 defmodule Mx.Instrument do
   @moduledoc """
-  Synths written in Elixir, as `defsynth`, which mxs builds when a note starts; the guide "Instruments" introduces them.
+  Synths written in Elixir, as `defsynth`, which mxs builds when a note starts; the guide
+  "Instruments" introduces them.
 
-  A module that uses `Mx.Instrument` declares each synth's options with `attr` lines, as a Phoenix function component declares its assigns, and `envelope_attrs/1` for the seven options of the note's envelope.
-  `defsynth` defines a synth as a function of one map, the note's options, with clauses that match on it; `defsound` and `defsoundp` define pieces a synth calls.
-  `defeffect` defines an effect as a function of the sound coming in, one channel or both sides as `{left, right}`, and a map of its options, and a song applies it by name with `fx:`.
+  A module that uses `Mx.Instrument` declares each synth's options with `attr` lines, as a Phoenix
+  function component declares its assigns, and `envelope_attrs/1` for the seven options of the
+  note's envelope.
+  `defsynth` defines a synth as a function of one map, the note's options, with clauses that match
+  on it; `defsound` and `defsoundp` define pieces a synth calls.
+  `defeffect` defines an effect as a function of the sound coming in, one channel or both sides as
+  `{left, right}`, and a map of its options, and a song applies it by name with `fx:`.
 
-  When the module compiles, each clause runs once with the note's options as placeholders, and what its body does with them is recorded as a graph.
-  Data written in the module takes any Elixir, while a placeholder takes only arithmetic, comparisons, `select/3` and the vocabulary of `Mx.Instrument.Vocabulary`.
-  An `if` on a placeholder fails then, with its file and line, and so does a synth that ends with none of `note_envelope/2`, `rings/2` and `figures/2`.
-  A module compiled outside mix's own compilation, such as one a song file defines, becomes known to mx as it compiles: songs play its synths by name, and mxs builds them from then on, so a `defsynth` saved in a song plays without restarting mx.
+  When the module compiles, each clause runs once with the note's options as placeholders, and
+  what its body does with them is recorded as a graph.
+  Data written in the module takes any Elixir, while a placeholder takes only arithmetic,
+  comparisons, `select/3` and the vocabulary of `Mx.Instrument.Vocabulary`.
+  An `if` on a placeholder fails then, with its file and line, and so does a synth that ends with
+  none of `note_envelope/2`, `rings/2` and `figures/2`.
+  A module compiled outside mix's own compilation, such as one a song file defines, becomes known
+  to mx as it compiles: songs play its synths by name, and mxs builds them from then on, so a
+  `defsynth` saved in a song plays without restarting mx.
 
-  An option is read once, when the note starts, unless the synth reads it with `follow/1`, which glides with each change the song makes while the note sounds.
+  An option is read once, when the note starts, unless the synth reads it with `follow/1`, which
+  glides with each change the song makes while the note sounds.
   """
 
   alias Mx.Engine.Mxs.Native
@@ -70,8 +81,10 @@ defmodule Mx.Instrument do
   end
 
   @doc """
-  The nodes whose names a module already imports from elsewhere, as Mx's `delay/2` where music is written.
-  Outside a `defsynth`, `defeffect` or `defsound` such a name keeps the meaning it had, and inside one it is the node.
+  The nodes whose names a module already imports from elsewhere, as Mx's `delay/2` where music is
+  written.
+  Outside a `defsynth`, `defeffect` or `defsound` such a name keeps the meaning it had, and inside
+  one it is the node.
   """
   def taken(env) do
     nodes = Vocabulary.__info__(:functions)
@@ -90,10 +103,13 @@ defmodule Mx.Instrument do
 
   An `attr` line applies to the next `defsynth` after it, and only that one.
   Declare the options again before each synth.
-  The synth's documentation lists them under "Options", so a `@doc` written above the first `attr` line gains that section.
+  The synth's documentation lists them under "Options", so a `@doc` written above the first `attr`
+  line gains that section.
 
   `name` is an atom, the key the synth reads from its map: `played.vel` reads the option `:vel`.
-  `type` says what the value means: `:float`, `:note` for a MIDI note number, `:beats` for a length in beats, `:ms` or `:seconds` for a time that does not follow the tempo, whose name ends in `_ms` or `_seconds`, or `:atom` for a choice among names.
+  `type` says what the value means: `:float`, `:note` for a MIDI note number, `:beats` for a
+  length in beats, `:ms` or `:seconds` for a time that does not follow the tempo, whose name ends
+  in `_ms` or `_seconds`, or `:atom` for a choice among names.
 
   ## Options
 
@@ -103,7 +119,8 @@ defmodule Mx.Instrument do
     * `:values` - for an `:atom` option, the names it takes, as a list.
     * `:required` - when `true`, the option is marked as one a note has to set.
       Defaults to `false`.
-    * `:doc` - one sentence saying what the option does, for the synth's documentation and catalog.
+    * `:doc` - one sentence saying what the option does, for the synth's documentation and
+      catalog.
 
   ## Examples
 
@@ -128,7 +145,8 @@ defmodule Mx.Instrument do
   end
 
   @doc """
-  Declares the seven options of the note's envelope: `attack`, `decay`, `sustain`, `release`, `attack_level`, `decay_level` and `sustain_level`.
+  Declares the seven options of the note's envelope: `attack`, `decay`, `sustain`, `release`,
+  `attack_level`, `decay_level` and `sustain_level`.
 
   Each has the usual default and documentation, as the module's `@envelope` lists them.
   Pass a keyword list to give some of them another default; the others keep the usual one.
@@ -156,7 +174,8 @@ defmodule Mx.Instrument do
   end
 
   @doc """
-  Declares a table fitted to recordings outside mxs, such as one `mix mx.fit` writes, at `path` from the module's own file, for the module's synths to play with `figures/2` by `name`.
+  Declares a table fitted to recordings outside mxs, such as one `mix mx.fit` writes, at `path`
+  from the module's own file, for the module's synths to play with `figures/2` by `name`.
 
   The table is read and sent to the engine once, when the module registers, never with a note.
 
@@ -186,7 +205,8 @@ defmodule Mx.Instrument do
   Clauses of one synth sit next to each other, and the one whose pattern matches the note plays.
   Mx records a match only on atoms and numbers, such as `%{bol: :na}`.
 
-  The body takes the arithmetic, comparisons and `select/3` described in the moduledoc, and ends with `note_envelope/2`, `rings/2` or `figures/2`.
+  The body takes the arithmetic, comparisons and `select/3` described in the moduledoc, and ends
+  with `note_envelope/2`, `rings/2` or `figures/2`.
   Use `select/3` where you would write an `if` on an option.
 
   ## Examples
@@ -218,11 +238,14 @@ defmodule Mx.Instrument do
   end
 
   @doc """
-  Defines an effect, a function of the sound coming in and a map of its options, which returns the sound going out.
+  Defines an effect, a function of the sound coming in and a map of its options, which returns the
+  sound going out.
 
   `attr` lines before it declare its options, as for a synth.
-  An effect whose first argument is one sound shapes each channel on its own, and one whose first argument is a pair, `{left, right}`, takes both sides and returns both as a pair.
-  A song applies it by name with `fx:`, and it sounds on for one second after its input stops unless `tail/1` says otherwise.
+  An effect whose first argument is one sound shapes each channel on its own, and one whose first
+  argument is a pair, `{left, right}`, takes both sides and returns both as a pair.
+  A song applies it by name with `fx:`, and it sounds on for one second after its input stops
+  unless `tail/1` says otherwise.
 
   ## Examples
 
@@ -253,7 +276,8 @@ defmodule Mx.Instrument do
   end
 
   @doc """
-  Says how long the next `defeffect` sounds on after its input stops: a number of seconds, or the name of one of its options, for as long as that option says in its own unit.
+  Says how long the next `defeffect` sounds on after its input stops: a number of seconds, or the
+  name of one of its options, for as long as that option says in its own unit.
 
   It goes beside the `attr` lines, and an effect without it sounds on for one second.
 
@@ -406,7 +430,8 @@ defmodule Mx.Instrument do
   @doc """
   Makes a module's synths known to mx: songs can play them, and a running mxs engine builds them.
 
-  A module compiled outside mix's own compilation becomes known on its own, so call this only for a module compiled some other way.
+  A module compiled outside mix's own compilation becomes known on its own, so call this only for
+  a module compiled some other way.
   Calling it again for the same module is harmless.
 
   ## Examples
@@ -585,10 +610,12 @@ defmodule Mx.Instrument do
   end
 
   @doc """
-  Registers each synth and effect of `module` with the mxs engine `engine`, as mx's NIF module, Mx.Engine.Mxs.Native, starts it.
+  Registers each synth and effect of `module` with the mxs engine `engine`, as mx's NIF module,
+  Mx.Engine.Mxs.Native, starts it.
   It first loads each table the module declares with `table/2`.
 
-  Returns `:ok` once every one is registered, or `{:error, reason}` at the first the engine refuses; the ones after it are not registered.
+  Returns `:ok` once every one is registered, or `{:error, reason}` at the first the engine
+  refuses; the ones after it are not registered.
   `known/1` calls it for a running engine, so call it yourself only with an engine you started.
   """
   def register(engine, module) do
@@ -677,7 +704,8 @@ defmodule Mx.Instrument do
   A synth's options as mxs declares them, for its catalog.
 
   `synth` is one entry of a module's `__synths__/0`.
-  Each option becomes a map with its `name`, `kind`, `values`, `default`, `default_name`, `low`, `high`, `required` and `doc`.
+  Each option becomes a map with its `name`, `kind`, `values`, `default`, `default_name`, `low`,
+  `high`, `required` and `doc`.
   Numbers are floats, and a missing default, low or high is `nil`.
   """
   def specs(synth), do: Enum.map(synth.attrs, &spec/1)

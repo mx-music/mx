@@ -2,7 +2,8 @@ defmodule Mx.Paired.Pluck do
   @moduledoc """
   mxs's pluck written with defsynth, node for node, so the two can be compared and timed.
 
-  Its string's one-pole low-pass is given in Hz where mxs gives its coefficient, so a negative coef, which mxs takes, has no twin here.
+  Its string's one-pole low-pass is given in Hz where mxs gives its coefficient, so a negative
+  coef, which mxs takes, has no twin here.
   """
 
   use Mx.Instrument

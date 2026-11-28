@@ -12,7 +12,10 @@ defmodule Mx.Paired.Triangle do
   @rings [10, 10, 9, 5, 3, 1.5]
   @plate Mx.Paired.Draws.plate(120, 1000, 18_000)
 
-  @doc "A triangle: a beater ringing 120 modes of the bar, each group damped by the hand as the note ends, higher ones sooner."
+  @doc """
+  A triangle: a beater ringing 120 modes of the bar, each group damped by the hand as the note
+  ends, higher ones sooner.
+  """
   attr :note, :note, default: 69, doc: "The drum's pitch."
   attr :vel, :float, default: 0.6, range: 0..1, doc: "How hard it is struck."
   attr :sustain, :beats, default: 30, doc: "How long the bar rings before the hand damps it."

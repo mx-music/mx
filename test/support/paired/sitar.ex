@@ -2,7 +2,8 @@ defmodule Mx.Paired.Sitar do
   @moduledoc """
   mxs's sitar written with defsynth, node for node, so the two can be compared and timed.
 
-  mxs also ends the note once its strings fall silent, six seconds after they reach 80 dB below full scale; a defsynth has no such end, so its note ends with the envelope alone.
+  mxs also ends the note once its strings fall silent, six seconds after they reach 80 dB below
+  full scale; a defsynth has no such end, so its note ends with the envelope alone.
   """
 
   use Mx.Instrument
@@ -15,7 +16,10 @@ defmodule Mx.Paired.Sitar do
   @sympathetic [1, 2, 3, 4, 5, 6, 2, 4, 6, 8]
   @sympathetic_levels [1, 0.5, 0.35, 0.25, 0.2, 0.15, 0.7, 0.35, 0.25, 0.15]
 
-  @doc "A sitar: a plucked string whose harmonics glide with meend, over sympathetic strings tuned to sa."
+  @doc """
+  A sitar: a plucked string whose harmonics glide with meend, over sympathetic strings tuned to
+  sa.
+  """
   attr :note, :note, default: 52, doc: "The pitch."
   attr :vel, :float, default: 0.6, range: 0..1, doc: "How hard it is struck."
   envelope_attrs sustain: 1000, release: 2

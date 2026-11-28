@@ -2,7 +2,8 @@ defmodule Mx.Paired.Tabla do
   @moduledoc """
   mxs's tabla written with defsynth, node for node, so the two can be compared and timed.
 
-  Ghe given a note does not glide with it, as mxs's does, since a defsynth reads its options once, when the note starts.
+  Ghe given a note does not glide with it, as mxs's does, since a defsynth reads its options once,
+  when the note starts.
   """
 
   use Mx.Instrument

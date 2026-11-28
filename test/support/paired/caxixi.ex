@@ -13,7 +13,10 @@ defmodule Mx.Paired.Caxixi do
   # How mxs moves the caxixi's seed with each shake.
   @mix 0x9E37_79B9_7F4A_7C15
 
-  @doc "The woven basket shaker a berimbau player shakes, fitted to \"Caxixi.ogg\" by Freddythehat on Wikimedia Commons."
+  @doc """
+  The woven basket shaker a berimbau player shakes, fitted to "Caxixi.ogg" by Freddythehat on
+  Wikimedia Commons.
+  """
   attr :vel, :float, default: 0.6, range: 0..1, doc: "How hard it is shaken."
 
   defsynth caxixi(o) do

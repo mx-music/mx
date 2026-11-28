@@ -31,7 +31,10 @@ defmodule Mx.Paired.CrossStick do
     gain: -32
   }
 
-  @doc "A cross stick: the stick laid across the snare's head and struck on its rim, as fitted to recordings."
+  @doc """
+  A cross stick: the stick laid across the snare's head and struck on its rim, as fitted to
+  recordings.
+  """
   attr :note, :note, default: 53.6, doc: "The drum's pitch."
   attr :vel, :float, default: 0.6, range: 0..1, doc: "How hard it is struck."
 

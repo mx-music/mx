@@ -1,6 +1,7 @@
 defmodule Mx.Paired.Violin do
   @moduledoc """
-  mxs's violin written with defsynth, node for node, so the two can be compared and timed; it was modelled here first, fitted to the University of Iowa's arco violin, then ported.
+  mxs's violin written with defsynth, node for node, so the two can be compared and timed; it was
+  modelled here first, fitted to the University of Iowa's arco violin, then ported.
   """
 
   use Mx.Instrument

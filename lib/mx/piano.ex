@@ -2,11 +2,19 @@ defmodule Mx.Piano do
   @moduledoc """
   What a note of mx's piano is made of, worked out from its options without playing it.
 
-  The piano builds every note from these parts and nothing else: its strings' harmonics, each a resonator struck once, the partners that ring beside them, the thump of the hammer and its knock through the soundboard.
-  Each harmonic has its `number`, 1 for the fundamental, its frequency in Hz as `hz`, its `level` in dB under the loudest harmonic of the note, and its `fade`, the seconds it takes to fall 60 dB.
-  Each partner has the `harmonic` it rings beside, its `kind`, `:slow` for the slow stage of that harmonic's fade or `:twin` for a string tuned a hair apart that beats against it, and its `hz`, `level` and `fade` as a harmonic's.
-  The `thump` has its `level` against the loudest harmonic, the frequency its noise is filtered under as `below_hz`, and the `seconds` it lasts.
-  The `knock` has its `level` against the loudest harmonic and the frequencies of the soundboard's `resonances`, or is nil when `knock` is 0.
+  The piano builds every note from these parts and nothing else: its strings' harmonics, each a
+  resonator struck once, the partners that ring beside them, the thump of the hammer and its knock
+  through the soundboard.
+  Each harmonic has its `number`, 1 for the fundamental, its frequency in Hz as `hz`, its `level`
+  in dB under the loudest harmonic of the note, and its `fade`, the seconds it takes to fall 60
+  dB.
+  Each partner has the `harmonic` it rings beside, its `kind`, `:slow` for the slow stage of that
+  harmonic's fade or `:twin` for a string tuned a hair apart that beats against it, and its `hz`,
+  `level` and `fade` as a harmonic's.
+  The `thump` has its `level` against the loudest harmonic, the frequency its noise is filtered
+  under as `below_hz`, and the `seconds` it lasts.
+  The `knock` has its `level` against the loudest harmonic and the frequencies of the soundboard's
+  `resonances`, or is nil when `knock` is 0.
   """
 
   alias Mx.Engine.Mxs.Native
@@ -17,8 +25,10 @@ defmodule Mx.Piano do
   @doc """
   The parts of a piano note, as `{:ok, parts}` or `{:error, message}`.
 
-  It takes the piano's options: `note`, `vel` and `pedal`, and `aftersound`, `uneven`, `instrument` and `knock`, each at the piano's default unless given.
-  A value outside an option's range is held to it, as when the note is played, and the parts carry a warning for it in `warnings`.
+  It takes the piano's options: `note`, `vel` and `pedal`, and `aftersound`, `uneven`,
+  `instrument` and `knock`, each at the piano's default unless given.
+  A value outside an option's range is held to it, as when the note is played, and the parts carry
+  a warning for it in `warnings`.
   A note outside the piano's keys, from A0 to C8, is refused.
   """
   def parts(options) when is_list(options) do

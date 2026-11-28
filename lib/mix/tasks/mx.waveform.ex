@@ -2,7 +2,8 @@ defmodule Mix.Tasks.Mx.Waveform do
   @shortdoc "Draws the waveform of a recording into an image"
 
   @moduledoc """
-  Draws the waveform of a WAV or AIFF recording into a PNG image: a row of bars, each as tall as its slice of the recording is loud.
+  Draws the waveform of a WAV or AIFF recording into a PNG image: a row of bars, each as tall as
+  its slice of the recording is loud.
 
       mx waveform song.wav
       mx waveform song.wav --out bars.png --width 900 --height 120

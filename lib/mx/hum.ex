@@ -1,19 +1,36 @@
 defmodule Mx.Hum do
   @moduledoc """
-  Turns a recording of one voice humming, singing or whistling a melody into notes on beats, and writes them as a song.
+  Turns a recording of one voice humming, singing or whistling a melody into notes on beats, and
+  writes them as a song.
 
-  The recording is filtered below 7 kHz and resampled to 16 kHz, and its pitch is followed every 10 ms over 64 ms frames, from 60 Hz to 2500 Hz, which takes in a low hum and a high whistle, with pYIN, from Mauch and Dixon's paper of 2014, as the pyin crate implements it.
-  A frame has a pitch when pYIN finds it voiced and the 10 ms at its middle are no more than 35 dB below the loudest frame and 20 dB below the loudest within 200 ms, so breath, clicks and noise have none, and neither does a dip between two notes sung at one pitch.
+  The recording is filtered below 7 kHz and resampled to 16 kHz, and its pitch is followed every
+  10 ms over 64 ms frames, from 60 Hz to 2500 Hz, which takes in a low hum and a high whistle,
+  with pYIN, from Mauch and Dixon's paper of 2014, as the pyin crate implements it.
+  A frame has a pitch when pYIN finds it voiced and the 10 ms at its middle are no more than 35 dB
+  below the loudest frame and 20 dB below the loudest within 200 ms, so breath, clicks and noise
+  have none, and neither does a dip between two notes sung at one pitch.
 
-  The pitch curve is cut into notes by the cheapest path through silence and the semitones, frame by frame, as Tony's note model does.
-  A frame costs the square of its distance from the semitone, up to a cap, and moving to another note, directly or through silence, costs more than a vibrato, a quick slide or a drift of about 100 ms spends away from it, so a note held with vibrato or a drifting voice stays one note, at the semitone it centres on, and a slide is the note it starts on and the note it lands on.
-  A frame without pitch costs a note more than it costs silence, so a break of 30 ms or more in the voice ends a note, and two notes at one pitch with a break between them are two notes.
-  A note starts with the pitched frames just before it that are on their way to it, as when a voice scoops up into a note.
+  The pitch curve is cut into notes by the cheapest path through silence and the semitones, frame
+  by frame, as Tony's note model does.
+  A frame costs the square of its distance from the semitone, up to a cap, and moving to another
+  note, directly or through silence, costs more than a vibrato, a quick slide or a drift of about
+  100 ms spends away from it, so a note held with vibrato or a drifting voice stays one note, at
+  the semitone it centres on, and a slide is the note it starts on and the note it lands on.
+  A frame without pitch costs a note more than it costs silence, so a break of 30 ms or more in
+  the voice ends a note, and two notes at one pitch with a break between them are two notes.
+  A note starts with the pitched frames just before it that are on their way to it, as when a
+  voice scoops up into a note.
 
-  Notes are placed on quarter beats from the first, which starts on beat 0, or from `beat_0:`, the seconds into the recording beat 0 falls on, when the recording was made against a click; a note that starts before beat 0 is then left out.
-  A voice or a player lets go of a note before its length is up, so a note's end is taken a tenth of a beat later before it is placed.
-  A sound shorter than an eighth of a beat is left out, a silence of a quarter beat or less between two notes is the breath between them, so the first note lasts until the second, and the melody lasts until the end of the bar of 4 beats its last note ends in.
-  The melody plays again from there, so the last note lasts until the end of the bar too when a quarter beat or less is left.
+  Notes are placed on quarter beats from the first, which starts on beat 0, or from `beat_0:`, the
+  seconds into the recording beat 0 falls on, when the recording was made against a click; a note
+  that starts before beat 0 is then left out.
+  A voice or a player lets go of a note before its length is up, so a note's end is taken a tenth
+  of a beat later before it is placed.
+  A sound shorter than an eighth of a beat is left out, a silence of a quarter beat or less
+  between two notes is the breath between them, so the first note lasts until the second, and the
+  melody lasts until the end of the bar of 4 beats its last note ends in.
+  The melody plays again from there, so the last note lasts until the end of the bar too when a
+  quarter beat or less is left.
   """
 
   alias Mx.Engine.Mxs.Native
@@ -33,7 +50,8 @@ defmodule Mx.Hum do
 
   @doc """
   The notes of a recording at a tempo, as `%{notes: notes, beats: beats, left_out: count}`.
-  Each note is `{beat, note, beats}`, `beats` is how long the melody lasts, and `left_out` counts the notes that started before `beat_0:`.
+  Each note is `{beat, note, beats}`, `beats` is how long the melody lasts, and `left_out` counts
+  the notes that started before `beat_0:`.
   """
   def transcribe(samples, rate, tempo, opts \\ [])
       when is_list(samples) and is_integer(rate) and is_number(tempo) and tempo > 0 and
@@ -86,7 +104,10 @@ defmodule Mx.Hum do
 
   defp note(_before, first, frames, note), do: {first, frames, note}
 
-  @doc "Checks a song can be written to a path: `:ok`, or `{:error, message}` naming it when it exists without `force`."
+  @doc """
+  Checks a song can be written to a path: `:ok`, or `{:error, message}` naming it when it exists
+  without `force`.
+  """
   def check(out, force) when is_binary(out) and is_boolean(force) do
     if File.exists?(out) and not force do
       {:error, "#{out} already exists; give --force to write over it"}
@@ -95,7 +116,10 @@ defmodule Mx.Hum do
     end
   end
 
-  @doc "Writes notes to a song file, and returns the line saying where, how many notes, and their lowest and highest."
+  @doc """
+  Writes notes to a song file, and returns the line saying where, how many notes, and their lowest
+  and highest.
+  """
   def write(out, notes, beats, tempo) when is_binary(out) and is_list(notes) do
     File.write!(out, song(notes, beats, tempo))
     {lowest, highest} = notes |> Enum.map(&elem(&1, 1)) |> Enum.min_max()
@@ -106,7 +130,9 @@ defmodule Mx.Hum do
     "Wrote #{out}: #{count} #{unit}, from #{lowest} to #{highest}."
   end
 
-  @doc "Writes notes as a song file's text: the tempo, and one part, hum, playing them again and again."
+  @doc """
+  Writes notes as a song file's text: the tempo, and one part, hum, playing them again and again.
+  """
   def song(notes, beats, tempo) when is_list(notes) and is_number(beats) and is_number(tempo) do
     {items, last} =
       Enum.flat_map_reduce(notes, 0, fn {beat, note, held}, at ->

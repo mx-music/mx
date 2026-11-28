@@ -1,12 +1,18 @@
 defmodule Mx.Spectrogram do
   @moduledoc """
-  Draws a spectrogram of a recording into a PNG image: seconds across, at 100 pixels a second unless `per_second:` gives another count, and frequency up the side on a scale of octaves.
+  Draws a spectrogram of a recording into a PNG image: seconds across, at 100 pixels a second
+  unless `per_second:` gives another count, and frequency up the side on a scale of octaves.
 
-  The side spans the ten octaves from 20 Hz to 20,480 Hz, 48 pixels each, with a faint line at every octave from 20 Hz and every second.
+  The side spans the ten octaves from 20 Hz to 20,480 Hz, 48 pixels each, with a faint line at
+  every octave from 20 Hz and every second.
   Brightness follows the level in dB, from 100 dB below the recording's loudest point up to it.
-  Each column is the spectrum of 4096 samples, or of the seconds `window:` gives when that is fewer: a long window tells harmonics apart and a short one, such as 0.004, shows how the level moves within a note.
-  A column that covers more sound than its window shows the loudest level each frequency reaches anywhere in the sound it covers, so a narrow picture of a long recording skips no note.
-  The columns are worked out by `Mx.Engine.Mxs.Native`, from the recording's data as it is in the file.
+  Each column is the spectrum of 4096 samples, or of the seconds `window:` gives when that is
+  fewer: a long window tells harmonics apart and a short one, such as 0.004, shows how the level
+  moves within a note.
+  A column that covers more sound than its window shows the loudest level each frequency reaches
+  anywhere in the sound it covers, so a narrow picture of a long recording skips no note.
+  The columns are worked out by `Mx.Engine.Mxs.Native`, from the recording's data as it is in the
+  file.
   """
 
   alias Mx.{Audio, PNG}
@@ -23,13 +29,16 @@ defmodule Mx.Spectrogram do
   end
 
   @doc """
-  Writes the spectrograms of several sounds to one PNG file, one above another from the first, so they can be compared moment by moment.
+  Writes the spectrograms of several sounds to one PNG file, one above another from the first, so
+  they can be compared moment by moment.
 
   A sound is the path of a WAV or AIFF recording, or `{samples, rate}`.
   It returns `:ok`, or `{:error, "cannot read PATH"}` for a recording it cannot read.
 
-  - `from:` and `seconds:` draw only a stretch of each sound, from a second and for so many seconds.
-  - `per_second:` is the pixels a second takes across, and `width:` instead gives the picture's width in pixels, which the stretch fills.
+  - `from:` and `seconds:` draw only a stretch of each sound, from a second and for so many
+    seconds.
+  - `per_second:` is the pixels a second takes across, and `width:` instead gives the picture's
+    width in pixels, which the stretch fills.
   - `window:` is the seconds of sound in each column.
   - `second_lines: false` leaves out the line at each second.
   """

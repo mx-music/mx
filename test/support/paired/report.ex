@@ -1,9 +1,13 @@
 defmodule Mx.Paired.Report do
   @moduledoc """
-  The page `mix bench.paired --report` writes: each paired instrument's defsynth form timed against its Rust form, for a person to read.
+  The page `mix bench.paired --report` writes: each paired instrument's defsynth form timed
+  against its Rust form, for a person to read.
   """
 
-  @doc "The page for `rows`, as `Mix.Tasks.Bench.Paired` measures them, and `context`, the machine, commit and mxs version they were measured on."
+  @doc """
+  The page for `rows`, as `Mix.Tasks.Bench.Paired` measures them, and `context`, the machine,
+  commit and mxs version they were measured on.
+  """
   def html(rows, context) do
     [head(), body(rows, context)]
   end

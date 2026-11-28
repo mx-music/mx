@@ -1,6 +1,7 @@
 defmodule Mx.ScoreNotes do
   @moduledoc """
-  Each part's notes as `{beat, note, beats}` from the start, sorted, so a score and a song made from it can be compared note for note.
+  Each part's notes as `{beat, note, beats}` from the start, sorted, so a score and a song made
+  from it can be compared note for note.
   Beats are rounded to six decimals.
   """
 
@@ -23,7 +24,10 @@ defmodule Mx.ScoreNotes do
     end
   end
 
-  @doc "Each part's notes as the score read by `Mx.Score` writes them, in the order it plays its bars, a tied note as one note lasting the whole tie."
+  @doc """
+  Each part's notes as the score read by `Mx.Score` writes them, in the order it plays its bars, a
+  tied note as one note lasting the whole tie.
+  """
   def written(%Mx.Score{} = score) do
     for part <- score.parts do
       bars = Map.new(part.bars, &{&1.number, &1})

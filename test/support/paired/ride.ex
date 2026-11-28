@@ -40,7 +40,10 @@ defmodule Mx.Paired.Ride do
   @bell_tick 0
   @plate Mx.Paired.Draws.plate(160, 150, 16_000)
 
-  @doc "A ride cymbal: a stick ringing the plate's modes as a long wash and a short ping, noise in the high bands, a tick, and the bell's cup."
+  @doc """
+  A ride cymbal: a stick ringing the plate's modes as a long wash and a short ping, noise in the
+  high bands, a tick, and the bell's cup.
+  """
   attr :note, :note, default: 60, doc: "The drum's pitch."
   attr :vel, :float, default: 0.6, range: 0..1, doc: "How hard it is struck."
   attr :sustain, :beats, default: 8, doc: "How long it rings before it is damped."

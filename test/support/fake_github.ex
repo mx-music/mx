@@ -1,10 +1,14 @@
 defmodule Mx.FakeGitHub do
   @moduledoc """
-  A local server answering as GitHub's raw file server and API do, for testing downloads without the network.
+  A local server answering as GitHub's raw file server and API do, for testing downloads without
+  the network.
 
-  `start/1` takes each repository's refs, each a map of paths to contents, where `:fail` answers 500 for that file.
-  The `:limited` option answers every API request as GitHub does once its limit of requests without a login is reached.
-  It sets mx's GitHub settings to the server and a cache folder, and puts them back when the test exits.
+  `start/1` takes each repository's refs, each a map of paths to contents, where `:fail` answers
+  500 for that file.
+  The `:limited` option answers every API request as GitHub does once its limit of requests
+  without a login is reached.
+  It sets mx's GitHub settings to the server and a cache folder, and puts them back when the test
+  exits.
   """
 
   import ExUnit.Callbacks, only: [on_exit: 1]

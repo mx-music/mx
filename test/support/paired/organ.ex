@@ -6,7 +6,9 @@ defmodule Mx.Paired.Organ do
   use Mx.Instrument
   import Mx.Paired.Sounds, only: [pitch: 1, tilted: 2]
 
-  @doc "A pipe organ: a quiet stopped flute, or a loud principal chorus with a bourdon an octave down."
+  @doc """
+  A pipe organ: a quiet stopped flute, or a loud principal chorus with a bourdon an octave down.
+  """
   attr :note, :note, default: 52, doc: "The pitch."
 
   attr :loud, :float,

@@ -1,6 +1,7 @@
 defmodule Mx.Paired.Sounds do
   @moduledoc """
-  The helpers mxs's voices share, written with defsound so the twins can share them as the voices do.
+  The helpers mxs's voices share, written with defsound so the twins can share them as the voices
+  do.
   """
 
   use Mx.Instrument
@@ -10,7 +11,10 @@ defmodule Mx.Paired.Sounds do
     hz(follow(o.note) + follow(o.bend))
   end
 
-  @doc "`sound` tilted by brightness 3 dB an octave either way of 0.5, from the pitch up, by four high shelves two octaves apart; at 0.5 their 0 dB leaves it as it is, where mxs passes it untouched."
+  @doc """
+  `sound` tilted by brightness 3 dB an octave either way of 0.5, from the pitch up, by four high
+  shelves two octaves apart; at 0.5 their 0 dB leaves it as it is, where mxs passes it untouched.
+  """
   defsound tilted(o, sound) do
     tilt = (follow(o.brightness) - 0.5) * 12
     pitch = pitch(o)
@@ -25,7 +29,10 @@ defmodule Mx.Paired.Sounds do
     envelope([{max(min(seconds, o.sustain * 0.4), 1.0e-4), 1, -2}])
   end
 
-  @doc "The value at `f` Hz of `values` at `centres`, straight between them on a scale of octaves, going on below the first for two bands."
+  @doc """
+  The value at `f` Hz of `values` at `centres`, straight between them on a scale of octaves, going
+  on below the first for two bands.
+  """
   defsound along(centres, values, f) do
     octave = log2(f)
 

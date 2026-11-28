@@ -1,13 +1,20 @@
 defmodule Mx.Tempo do
   @moduledoc """
-  The tempo over a song's beats: the timeline the band plays against, and the tempo changes a song's music writes in its sections.
+  The tempo over a song's beats: the timeline the band plays against, and the tempo changes a
+  song's music writes in its sections.
 
   A timeline is a list of entries, the latest first, each `{beat, microseconds, tempo}`.
-  The tempo is the beats per minute held from that beat, or `{:ramp, from, to, beats}`, which moves evenly in beats per minute from `from` to `to` over that many beats, and is followed by `to` held where it ends.
-  A change put on the timeline replaces whatever it held from the change's beat on, so the latest change wins.
+  The tempo is the beats per minute held from that beat, or `{:ramp, from, to, beats}`, which
+  moves evenly in beats per minute from `from` to `to` over that many beats, and is followed by
+  `to` held where it ends.
+  A change put on the timeline replaces whatever it held from the change's beat on, so the latest
+  change wins.
 
-  A song's changes are `%{sections: sections, lengths: lengths, forever: forever}`: each section's changes as `{beat, bpm, over}`, each section's length in beats, and whether the music repeats until mx stops.
-  Pass `n` plays section `n`, going round again in music that repeats, and a section that plays until mx stops writes its changes in its first pass only.
+  A song's changes are `%{sections: sections, lengths: lengths, forever: forever}`: each section's
+  changes as `{beat, bpm, over}`, each section's length in beats, and whether the music repeats
+  until mx stops.
+  Pass `n` plays section `n`, going round again in music that repeats, and a section that plays
+  until mx stops writes its changes in its first pass only.
   """
 
   @doc "A timeline holding one tempo from beat 0, which plays at a real time in microseconds."
@@ -33,7 +40,10 @@ defmodule Mx.Tempo do
     start + beats(tempo, us - start_us)
   end
 
-  @doc "The timeline with the tempo changed at a beat to `bpm`, at once when `over` is 0, or else evenly over `over` beats."
+  @doc """
+  The timeline with the tempo changed at a beat to `bpm`, at once when `over` is 0, or else evenly
+  over `over` beats.
+  """
   def put(timeline, beat, bpm, over)
       when is_list(timeline) and is_number(beat) and is_number(bpm) and is_number(over) do
     before =
@@ -54,7 +64,10 @@ defmodule Mx.Tempo do
     end
   end
 
-  @doc "The tempo changes a song writes in a pass, as `{beat, bpm, over}` with beats from the start of the pass."
+  @doc """
+  The tempo changes a song writes in a pass, as `{beat, bpm, over}` with beats from the start of
+  the pass.
+  """
   def changes(nil, _pass), do: []
 
   def changes(%{sections: sections, forever: forever}, pass) when is_integer(pass) do
@@ -63,7 +76,11 @@ defmodule Mx.Tempo do
     if index < count, do: elem(sections, index), else: []
   end
 
-  @doc "The timeline over beats from 0, at 0 microseconds, with the changes of every pass up to `pass` put on it, and the beat `pass` starts on; `window` is the length of each pass of a section that plays until mx stops."
+  @doc """
+  The timeline over beats from 0, at 0 microseconds, with the changes of every pass up to `pass`
+  put on it, and the beat `pass` starts on; `window` is the length of each pass of a section that
+  plays until mx stops.
+  """
   def through(tempos, bpm, pass, window \\ 0) when is_integer(pass) do
     Enum.reduce(0..pass//1, {new(bpm), 0}, fn played, {timeline, start} ->
       timeline =
@@ -88,7 +105,10 @@ defmodule Mx.Tempo do
     end
   end
 
-  @doc "The tempos the timeline plays at from beat `from` until beat `until`, as text with beats counted from `from`, such as \"100 bpm, rising to 130 bpm from beat 0 to 16\"."
+  @doc """
+  The tempos the timeline plays at from beat `from` until beat `until`, as text with beats counted
+  from `from`, such as "100 bpm, rising to 130 bpm from beat 0 to 16".
+  """
   def describe(timeline, from, until) when is_list(timeline) and is_number(from) do
     {ramping, ramp_end} =
       case Enum.find(timeline, List.last(timeline), fn {b, _, _} -> b <= from end) do

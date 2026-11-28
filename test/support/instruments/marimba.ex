@@ -2,13 +2,17 @@ defmodule Mx.Instruments.Marimba do
   @moduledoc """
   A marimba, measured from the University of Iowa's marimba struck with yarn mallets.
 
-  Each partial is a resonator struck once: the bar's note, its overtones two octaves, a little over three octaves and higher above it, and the odd harmonics of the tube under it.
-  The harder the bar is struck, the louder and higher its overtones sound, and a short tap of the mallet sounds above them.
+  Each partial is a resonator struck once: the bar's note, its overtones two octaves, a little
+  over three octaves and higher above it, and the odd harmonics of the tube under it.
+  The harder the bar is struck, the louder and higher its overtones sound, and a short tap of the
+  mallet sounds above them.
   """
 
   use Mx.Instrument
 
-  @doc "A marimba note, which rings until it fades by itself unless `sustain` and `release` damp it."
+  @doc """
+  A marimba note, which rings until it fades by itself unless `sustain` and `release` damp it.
+  """
   attr :note, :note, default: 52, doc: "The pitch."
   attr :vel, :float, default: 0.6, range: 0.05..1, doc: "How hard the bar is struck."
   envelope_attrs sustain: 1000, release: 0.3

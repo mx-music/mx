@@ -3,24 +3,42 @@ defmodule Mx.Band do
   Plays a song's loops together, each in its own process, against one shared beat.
 
   The band keeps the tempo timeline, as `Mx.Tempo` describes it.
-  Every loop works out the real time of its notes from that timeline, so loops of any length keep their place against the same beat.
-  A saved version with a new tempo starts it on the first whole beat after the notes already sent, so every loop changes on that beat.
-  The tempo changes a song's music writes go on the timeline when the first loop cues the pass they are in, before any loop sends a note of that pass.
+  Every loop works out the real time of its notes from that timeline, so loops of any length keep
+  their place against the same beat.
+  A saved version with a new tempo starts it on the first whole beat after the notes already sent,
+  so every loop changes on that beat.
+  The tempo changes a song's music writes go on the timeline when the first loop cues the pass
+  they are in, before any loop sends a note of that pass.
 
-  When the song changes, a changed loop takes over at the end of its own pass, a new loop starts on the next beat, and a removed loop stops at the end of its pass, unless it is added back before then, when it takes over at that end as a changed loop does.
+  When the song changes, a changed loop takes over at the end of its own pass, a new loop starts
+  on the next beat, and a removed loop stops at the end of its pass, unless it is added back
+  before then, when it takes over at that end as a changed loop does.
   The band starts a loop again when its process fails.
-  Given `subscribe`, it subscribes to the inputs, and passes each one to the loops whose `on:` waits for it.
+  Given `subscribe`, it subscribes to the inputs, and passes each one to the loops whose `on:`
+  waits for it.
   Each version's live audio goes to `live`, which starts, changes and stops it.
-  Given `hand`, each loop hands the engine its passes whole, in beats, as `Mx.Loop` describes; `place_beats` is then given the real time of beat 0 as the band starts, and `set_tempo` each tempo that goes on the timeline with its beat, so the engine places the passes on the band's timeline.
+  Given `hand`, each loop hands the engine its passes whole, in beats, as `Mx.Loop` describes;
+  `place_beats` is then given the real time of beat 0 as the band starts, and `set_tempo` each
+  tempo that goes on the timeline with its beat, so the engine places the passes on the band's
+  timeline.
   A saved version with a new tempo then starts it on the first whole beat more than 150 ms away.
-  Given `share`, or once `scale_tempo/3` is called, the band plays every tempo of the song, the song's own and those its music writes, times that share; `check_share/1` says which shares it takes.
-  Given `start_part`, each loop plays into a part of the engine by its name, which `mute/3` and `solo/2` silence through the `mute` and `solo` functions; a muted part plays on in its place, and stays muted through new versions of the song.
-  Each version of the song goes through `prepare` first, which loads its samples, so playing starts only once they are ready.
+  Given `share`, or once `scale_tempo/3` is called, the band plays every tempo of the song, the
+  song's own and those its music writes, times that share; `check_share/1` says which shares it
+  takes.
+  Given `start_part`, each loop plays into a part of the engine by its name, which `mute/3` and
+  `solo/2` silence through the `mute` and `solo` functions; a muted part plays on in its place,
+  and stays muted through new versions of the song.
+  Each version of the song goes through `prepare` first, which loads its samples, so playing
+  starts only once they are ready.
   When every loop has played its last pass, the band calls `on_end`.
-  Given `from`, a beat of the song, each loop starts in the pass that holds that beat and plays it from there, so that beat sounds first; a loop whose passes end before it does not start.
-  A part a new version of a song written as music adds joins at the next section, with the pass number the other parts play there.
-  Every loop with a start beat is handed to `worked_out` with that beat before any loop works out a pass, so no loop's pass reads the shared values before the other loops' set steps are in.
-  `play_recording/4` plays a sample into a part's effects beside its notes, from the part's chain each loop sends the band as `{:part_chain, name, chain}` when it starts one.
+  Given `from`, a beat of the song, each loop starts in the pass that holds that beat and plays it
+  from there, so that beat sounds first; a loop whose passes end before it does not start.
+  A part a new version of a song written as music adds joins at the next section, with the pass
+  number the other parts play there.
+  Every loop with a start beat is handed to `worked_out` with that beat before any loop works out
+  a pass, so no loop's pass reads the shared values before the other loops' set steps are in.
+  `play_recording/4` plays a sample into a part's effects beside its notes, from the part's chain
+  each loop sends the band as `{:part_chain, name, chain}` when it starts one.
   """
 
   use GenServer
@@ -30,12 +48,19 @@ defmodule Mx.Band do
   # How far ahead of its sound the engine places an event it holds in beats.
   @tempo_lead_us 150_000
 
-  @doc "Starts the band with the `:song` in `opts`, the `:play` function its notes go to the engine through, as `c:Mx.Engine.play/2` takes them, an optional `:new_id` as `c:Mx.Engine.new_id/0`, optional functions for samples, effects, inputs and live audio, and an optional `:name`."
+  @doc """
+  Starts the band with the `:song` in `opts`, the `:play` function its notes go to the engine
+  through, as `c:Mx.Engine.play/2` takes them, an optional `:new_id` as `c:Mx.Engine.new_id/0`,
+  optional functions for samples, effects, inputs and live audio, and an optional `:name`.
+  """
   def start_link(opts) when is_list(opts) do
     GenServer.start_link(__MODULE__, opts, Keyword.take(opts, [:name]))
   end
 
-  @doc "Hands the band a new version of the song, which takes over loop by loop at the end of each one's pass."
+  @doc """
+  Hands the band a new version of the song, which takes over loop by loop at the end of each one's
+  pass.
+  """
   def switch(band, %Mx.Song{} = song) when is_pid(band) or is_atom(band) do
     GenServer.cast(band, {:switch, song})
   end
@@ -43,24 +68,36 @@ defmodule Mx.Band do
   @doc "The processes of the loops playing, stopping or waiting to join."
   def loops(band) when is_pid(band) or is_atom(band), do: GenServer.call(band, :loops)
 
-  @doc "Sends the calling process where the beat is, as `{:mx_beat, message}`, now and whenever it changes, and `{:mx_beat, :stopped}` when the band stops; `Mx.Beat` says what a message holds."
+  @doc """
+  Sends the calling process where the beat is, as `{:mx_beat, message}`, now and whenever it
+  changes, and `{:mx_beat, :stopped}` when the band stops; `Mx.Beat` says what a message holds.
+  """
   def follow(band) when is_pid(band) or is_atom(band), do: GenServer.call(band, :follow)
 
-  @doc "Mutes the part `name` of the song, or lets it be heard again with `muted` false, through the band's `:mute` function; refused with `{:error, message}` for a part the song does not have."
+  @doc """
+  Mutes the part `name` of the song, or lets it be heard again with `muted` false, through the
+  band's `:mute` function; refused with `{:error, message}` for a part the song does not have.
+  """
   def mute(band, name, muted \\ true)
       when (is_pid(band) or is_atom(band)) and is_boolean(muted) do
     GenServer.call(band, {:mute, name, muted})
   end
 
-  @doc "Solos the parts named and no others, through the band's `:solo` function, so only they are heard, and every part is with none named; refused with `{:error, message}` for a part the song does not have."
+  @doc """
+  Solos the parts named and no others, through the band's `:solo` function, so only they are
+  heard, and every part is with none named; refused with `{:error, message}` for a part the song
+  does not have.
+  """
   def solo(band, names) when (is_pid(band) or is_atom(band)) and is_list(names) do
     GenServer.call(band, {:solo, names})
   end
 
   @doc """
-  Plays the song at `share` of its own tempo from the band's next 150 ms on, or ahead of every note already sent without `hand`, moving there evenly over `over` beats when `over` is above 0.
+  Plays the song at `share` of its own tempo from the band's next 150 ms on, or ahead of every
+  note already sent without `hand`, moving there evenly over `over` beats when `over` is above 0.
 
-  Every tempo the song gives, its own and those its music writes, is played times the share, until another share is given; 1 plays the song's own tempo.
+  Every tempo the song gives, its own and those its music writes, is played times the share, until
+  another share is given; 1 plays the song's own tempo.
   A share `check_share/1` refuses is refused with `{:error, message}`.
   """
   def scale_tempo(band, share, over \\ 0)
@@ -68,7 +105,10 @@ defmodule Mx.Band do
     with :ok <- check_share(share), do: GenServer.call(band, {:scale_tempo, share, over})
   end
 
-  @doc "Whether the band plays a song at `share` of its tempo, which takes 0.25 to 4, as `:ok` or `{:error, message}`."
+  @doc """
+  Whether the band plays a song at `share` of its tempo, which takes 0.25 to 4, as `:ok` or
+  `{:error, message}`.
+  """
   def check_share(share) when is_number(share) and share >= 0.25 and share <= 4, do: :ok
 
   def check_share(share) do
@@ -79,25 +119,36 @@ defmodule Mx.Band do
   @doc """
   Sends the calling process what becomes of each version the band is handed, until it is gone.
 
-  For each part, `{:mx_waits, name, wait}` says when it takes the version over: the beat its next pass starts on, `{:stops, beat}` for a part the version removes, `{:joins, beat}` for one it adds, `:input` for a loop that waits for input, or `:never` when the part has no pass left.
-  `{:mx_took_over, name, beat}` says that a part has, at that beat, and `:mx_version_plays` that every part has.
-  A version handed over before the last one has taken over replaces it, and its parts are reported again.
+  For each part, `{:mx_waits, name, wait}` says when it takes the version over: the beat its next
+  pass starts on, `{:stops, beat}` for a part the version removes, `{:joins, beat}` for one it
+  adds, `:input` for a loop that waits for input, or `:never` when the part has no pass left.
+  `{:mx_took_over, name, beat}` says that a part has, at that beat, and `:mx_version_plays` that
+  every part has.
+  A version handed over before the last one has taken over replaces it, and its parts are reported
+  again.
   """
   def subscribe(band) when is_pid(band) or is_atom(band), do: GenServer.call(band, :subscribe)
 
   @doc """
-  Takes the version the band was last handed over now, from the first whole beat 150 ms away, or after every note already sent without `hand`, and returns `{:ok, beat}`.
+  Takes the version the band was last handed over now, from the first whole beat 150 ms away, or
+  after every note already sent without `hand`, and returns `{:ok, beat}`.
 
-  Each part the version changes ends the pass that sounds then and plays the version's pass from that beat of its music, so the band keeps its place, and each part it removes stops there; a part it adds joins as it would have.
+  Each part the version changes ends the pass that sounds then and plays the version's pass from
+  that beat of its music, so the band keeps its place, and each part it removes stops there; a
+  part it adds joins as it would have.
   """
   def take_over_now(band) when is_pid(band) or is_atom(band) do
     GenServer.call(band, :take_over_now)
   end
 
   @doc """
-  Plays the part `name` with another synth, given as `synth:`, or with options of its synth other than the song's, from the first whole beat 150 ms away, or after every note already sent without `hand`.
+  Plays the part `name` with another synth, given as `synth:`, or with options of its synth other
+  than the song's, from the first whole beat 150 ms away, or after every note already sent without
+  `hand`.
 
-  What is tried adds to what was tried on the part before, holds through new versions of the song, and keeps the part's notes, its other options and its effects; an option the song gives that the tried synth does not take is left out, and named.
+  What is tried adds to what was tried on the part before, holds through new versions of the song,
+  and keeps the part's notes, its other options and its effects; an option the song gives that the
+  tried synth does not take is left out, and named.
   A part, synth or option that does not exist is refused with `{:error, message}`.
   """
   def try_part(band, name, tried) when (is_pid(band) or is_atom(band)) and is_list(tried) do
@@ -105,7 +156,8 @@ defmodule Mx.Band do
   end
 
   @doc """
-  Plays a loaded sample, as a sample event takes it, into the part `name`'s effects from the first whole beat more than 150 ms away, and returns `{:ok, beat}`.
+  Plays a loaded sample, as a sample event takes it, into the part `name`'s effects from the first
+  whole beat more than 150 ms away, and returns `{:ok, beat}`.
 
   `opts` are a sample's, `from:` and `to:` in seconds among them, and the part plays on beside it.
   A recording the part is already playing this way stops as the new one starts.
@@ -116,12 +168,17 @@ defmodule Mx.Band do
     GenServer.call(band, {:play_recording, name, sample, opts})
   end
 
-  @doc "Stops the recording `play_recording/4` plays on the part `name`, if one plays, within 150 ms."
+  @doc """
+  Stops the recording `play_recording/4` plays on the part `name`, if one plays, within 150 ms.
+  """
   def stop_recording(band, name) when is_pid(band) or is_atom(band) do
     GenServer.call(band, {:stop_recording, name})
   end
 
-  @doc "Plays the part `name` as the song gives it again, from the first whole beat 150 ms away, or after every note already sent without `hand`."
+  @doc """
+  Plays the part `name` as the song gives it again, from the first whole beat 150 ms away, or
+  after every note already sent without `hand`.
+  """
   def stop_trying(band, name) when is_pid(band) or is_atom(band) do
     GenServer.call(band, {:stop_trying, name})
   end
@@ -129,20 +186,29 @@ defmodule Mx.Band do
   @doc "The tempo timeline, the latest entry first."
   def timeline(band) when is_pid(band) or is_atom(band), do: GenServer.call(band, :timeline)
 
-  @doc "Tells the band that the loop `name` starts a pass at `beat`, so the parts waiting to join start with it and the pass's tempo changes go on the timeline; returns the timeline."
+  @doc """
+  Tells the band that the loop `name` starts a pass at `beat`, so the parts waiting to join start
+  with it and the pass's tempo changes go on the timeline; returns the timeline.
+  """
   def cue(band, name, beat, pass \\ 0)
       when (is_pid(band) or is_atom(band)) and is_atom(name) and is_number(beat) and
              is_integer(pass) do
     GenServer.call(band, {:cue, name, beat, pass})
   end
 
-  @doc "The real time, in microseconds, of a beat on a timeline, as `Mx.Tempo.time_at/2` works it out."
+  @doc """
+  The real time, in microseconds, of a beat on a timeline, as `Mx.Tempo.time_at/2` works it out.
+  """
   defdelegate time_at(timeline, beat), to: Mx.Tempo
 
-  @doc "The tempo in beats per minute at a beat on a timeline, as `Mx.Tempo.tempo_at/2` works it out."
+  @doc """
+  The tempo in beats per minute at a beat on a timeline, as `Mx.Tempo.tempo_at/2` works it out.
+  """
   defdelegate tempo_at(timeline, beat), to: Mx.Tempo
 
-  @doc "The beat at a real time, in microseconds, on a timeline, as `Mx.Tempo.beat_at/2` works it out."
+  @doc """
+  The beat at a real time, in microseconds, on a timeline, as `Mx.Tempo.beat_at/2` works it out.
+  """
   defdelegate beat_at(timeline, us), to: Mx.Tempo
 
   @impl true

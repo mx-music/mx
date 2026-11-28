@@ -2,29 +2,47 @@ defmodule Mx.Fit.Struck do
   @moduledoc """
   Fits a synth of struck notes to recordings partial by partial, and checks it against them.
 
-  The recordings are a folder of single notes named as NSynth names them, ending in the MIDI note and velocity, such as `keyboard_electronic_098-064-025.wav`, each measured over its first 2.9 seconds, before NSynth lets its notes go.
-  Or they are a list, a text file with one line a file: the notes it holds, the velocity it was played at from 1 to 127, `kept` when the recordings keep their levels from one velocity to the next, and the file, relative to the list.
+  The recordings are a folder of single notes named as NSynth names them, ending in the MIDI note
+  and velocity, such as `keyboard_electronic_098-064-025.wav`, each measured over its first 2.9
+  seconds, before NSynth lets its notes go.
+  Or they are a list, a text file with one line a file: the notes it holds, the velocity it was
+  played at from 1 to 127, `kept` when the recordings keep their levels from one velocity to the
+  next, and the file, relative to the list.
 
       C4:B4 40 kept Marimba.yarn.pp.C4B4.aif
       C4 127 kept EWHarp_Normal_C3_v3_RR1.wav
       C4,D4,E4 80 Some.run.aif
       125.6Hz 127 kept Timpani3_Hit_v4_rr1_Sum.wav
 
-  The notes are one note, a run from the first to the last a semitone apart, the notes a run holds, or for a drum with no pitch, the frequency of its lowest partial.
-  A run is split into its notes, each named by the loudest fundamental among the notes the line gives.
-  A note that sounds an octave away from its name or more than a quarter tone from it, or that was found already, is left out and says why, and each note the line gives that was not found is named.
-  A note is measured until the next note of its file starts, or its file ends, for at most 30 seconds.
-  A drum given in Hz is measured with that frequency as its pitch, and its figures go under the nearest MIDI note.
+  The notes are one note, a run from the first to the last a semitone apart, the notes a run
+  holds, or for a drum with no pitch, the frequency of its lowest partial.
+  A run is split into its notes, each named by the loudest fundamental among the notes the line
+  gives.
+  A note that sounds an octave away from its name or more than a quarter tone from it, or that was
+  found already, is left out and says why, and each note the line gives that was not found is
+  named.
+  A note is measured until the next note of its file starts, or its file ends, for at most 30
+  seconds.
+  A drum given in Hz is measured with that frequency as its pitch, and its figures go under the
+  nearest MIDI note.
 
-  Fitting renders each note's partials as sines, measures the render the same way, and corrects each partial's level at 37 times from the strike to 28 seconds until the render matches the recording, then fits the strike's noise in each band one ERB wide from 50 Hz to 8 kHz to what the recording holds beyond the sines.
-  A recording with `top:`, a frequency in Hz, is followed up to it instead of 8 kHz, its partials and its bands of noise.
+  Fitting renders each note's partials as sines, measures the render the same way, and corrects
+  each partial's level at 37 times from the strike to 28 seconds until the render matches the
+  recording, then fits the strike's noise in each band one ERB wide from 50 Hz to 8 kHz to what
+  the recording holds beyond the sines.
+  A recording with `top:`, a frequency in Hz, is followed up to it instead of 8 kHz, its partials
+  and its bands of noise.
   After the last time a recording reaches, each partial falls on at its last slope.
-  The figures keep every partial of every recording, each at its own level, for mxs to play: a note or velocity that was not recorded takes its figures from the recordings nearest it.
+  The figures keep every partial of every recording, each at its own level, for mxs to play: a
+  note or velocity that was not recorded takes its figures from the recordings nearest it.
 
-  Checking renders the synth at each recording's note and velocity and compares the two in the same way, each brought to the same total over its first half second:
-  partial by partial, the gap over the first 20 ms and the mean gap over the note while either stands 10 dB above the recording's noise floor;
+  Checking renders the synth at each recording's note and velocity and compares the two in the
+  same way, each brought to the same total over its first half second:
+  partial by partial, the gap over the first 20 ms and the mean gap over the note while either
+  stands 10 dB above the recording's noise floor;
   and in ERB bands, the mean gap over the note while either stands clear of the floor.
-  The fit's own render, each recording's figures played as sines and noise with no synth, is checked in the same way, as the closest a synth playing those figures can come.
+  The fit's own render, each recording's figures played as sines and noise with no synth, is
+  checked in the same way, as the closest a synth playing those figures can come.
   """
 
   alias Mx.{Audio, Measure, Notes, Signal}
@@ -36,7 +54,10 @@ defmodule Mx.Fit.Struck do
   @longest 30.0
   @whole 0xFFFF_FFFF_FFFF
 
-  @doc "The recordings in a folder named as NSynth names them, in order of note and velocity, those whose note is in `notes` when given."
+  @doc """
+  The recordings in a folder named as NSynth names them, in order of note and velocity, those
+  whose note is in `notes` when given.
+  """
   def recordings(folder, notes \\ nil) when is_binary(folder) do
     case File.ls(folder) do
       {:ok, names} ->
@@ -62,8 +83,11 @@ defmodule Mx.Fit.Struck do
   end
 
   @doc """
-  The recordings a list gives, those whose note is in `notes` when given, and what each line found.
-  Returns `{:ok, recordings, lines}`, each line with its `path`, the `notes` it gives, the notes it `found`, those it `left_out` as `{note, seconds, why}`, and those `missing`; or `{:error, message}`.
+  The recordings a list gives, those whose note is in `notes` when given, and what each line
+  found.
+  Returns `{:ok, recordings, lines}`, each line with its `path`, the `notes` it gives, the notes
+  it `found`, those it `left_out` as `{note, seconds, why}`, and those `missing`; or
+  `{:error, message}`.
   With `held: true`, a run is split into held notes, which swell rather than strike.
   """
   def listed(list, notes \\ nil, options \\ []) when is_binary(list) do
@@ -90,7 +114,10 @@ defmodule Mx.Fit.Struck do
     end
   end
 
-  @doc "The recordings of a file that holds `notes`, MIDI note numbers, or a run of them, at `velocity`, split as a list's line is, into held notes with `held: true`."
+  @doc """
+  The recordings of a file that holds `notes`, MIDI note numbers, or a run of them, at `velocity`,
+  split as a list's line is, into held notes with `held: true`.
+  """
   def in_file(path, notes, velocity \\ 127, options \\ []) do
     case split(
            %{path: path, notes: notes, velocity: velocity, kept: false},
@@ -108,8 +135,12 @@ defmodule Mx.Fit.Struck do
   end
 
   @doc """
-  Renders `synth` at each recording's note and velocity, with `options` such as `[pedal: 1]`, and compares it with the recording.
-  Returns one check a recording, with its `note`, `velocity`, `kept`, `erb` gap, `stretch` as the mean gap in ERB bands over the 50 ms furthest off and the seconds after the strike it starts at, `levels` of the recording and the render over their first half second, and `partials`, each partial with its `ratio`, `harmonic`, `below` the loudest in dB, `strike` gap and `mean` gap.
+  Renders `synth` at each recording's note and velocity, with `options` such as `[pedal: 1]`, and
+  compares it with the recording.
+  Returns one check a recording, with its `note`, `velocity`, `kept`, `erb` gap, `stretch` as the
+  mean gap in ERB bands over the 50 ms furthest off and the seconds after the strike it starts at,
+  `levels` of the recording and the render over their first half second, and `partials`, each
+  partial with its `ratio`, `harmonic`, `below` the loudest in dB, `strike` gap and `mean` gap.
   """
   def check(synth, recordings, options \\ []) when is_list(recordings) do
     recordings
@@ -125,8 +156,10 @@ defmodule Mx.Fit.Struck do
   end
 
   @doc """
-  Checks the fit's own render of each recording against it, as `check/2` checks a synth: the figures fitted to the recording played as sines and noise, with no synth.
-  Each check is kept in the system's temporary folder and reused until the recording or mxs changes.
+  Checks the fit's own render of each recording against it, as `check/2` checks a synth: the
+  figures fitted to the recording played as sines and noise, with no synth.
+  Each check is kept in the system's temporary folder and reused until the recording or mxs
+  changes.
   """
   def own(recordings, how \\ "partials") when is_list(recordings) do
     recordings
@@ -135,9 +168,14 @@ defmodule Mx.Fit.Struck do
   end
 
   @doc """
-  One recording beside `synth`, or with `nil` the fit's own render alone, frame by frame at `times` seconds after the strike.
-  Returns its `pitch` in Hz, the second of its file the `strike` was found at, and `partials`, each within 60 dB of the loudest, lowest first, and ERB `bands`, each with its `at`, `floor` and `rows`: the recording, the synth, the fit's own render, and that render's sines and noise apart, in dB against the loudest partial.
-  A partial's `at` is its ratio to the pitch and its harmonic, 0 between harmonics; a band's is its edges in Hz.
+  One recording beside `synth`, or with `nil` the fit's own render alone, frame by frame at
+  `times` seconds after the strike.
+  Returns its `pitch` in Hz, the second of its file the `strike` was found at, and `partials`,
+  each within 60 dB of the loudest, lowest first, and ERB `bands`, each with its `at`, `floor` and
+  `rows`: the recording, the synth, the fit's own render, and that render's sines and noise apart,
+  in dB against the loudest partial.
+  A partial's `at` is its ratio to the pitch and its harmonic, 0 between harmonics; a band's is
+  its edges in Hz.
   The fit is made as `figures/2` makes it with `:how` in `options`, "partials" unless given.
   """
   def frames(synth, recording, times, options \\ []) when is_list(times) do
@@ -148,7 +186,10 @@ defmodule Mx.Fit.Struck do
     %{frames | strike: from / rate + frames.strike}
   end
 
-  @doc "Each synth check with the fit's own check of the same recording under `own`, and each of its partials with the fit's own partial under `own`."
+  @doc """
+  Each synth check with the fit's own check of the same recording under `own`, and each of its
+  partials with the fit's own partial under `own`.
+  """
   def beside(checks, owns) do
     for {check, own} <- Enum.zip(checks, owns) do
       partials =
@@ -159,7 +200,10 @@ defmodule Mx.Fit.Struck do
     end
   end
 
-  @doc "A tour for listening of `count` recordings spread over the notes and velocities, each followed by `synth` at its note and velocity, as `{samples, rate}`, the samples as 32-bit floats."
+  @doc """
+  A tour for listening of `count` recordings spread over the notes and velocities, each followed
+  by `synth` at its note and velocity, as `{samples, rate}`, the samples as 32-bit floats.
+  """
   def tour(synth, recordings, count, options \\ []) when is_list(recordings) and count > 0 do
     picked = spread(recordings, count)
     raws = raws(picked)
@@ -172,7 +216,9 @@ defmodule Mx.Fit.Struck do
     {Native.tour_struck(pairs), Mxs.render_rate()}
   end
 
-  @doc "`count` recordings in order of note and velocity, spread evenly from the first to the last."
+  @doc """
+  `count` recordings in order of note and velocity, spread evenly from the first to the last.
+  """
   def spread(recordings, count) do
     sorted = Enum.sort_by(recordings, &{&1.note, &1.velocity})
     last = length(sorted) - 1
@@ -188,7 +234,10 @@ defmodule Mx.Fit.Struck do
   end
 
   @doc """
-  The checks summed up: the partials within 30 dB of each note's loudest, `strong`, and those 30 to 60 dB down, `weaker`, each as a count and the share within 2 dB over the first 20 ms (`strike`), within 2 dB on average for the strong (`mean`), or within 4 dB on average for the weaker; and the ERB gap at the median note and the worst.
+  The checks summed up: the partials within 30 dB of each note's loudest, `strong`, and those 30
+  to 60 dB down, `weaker`, each as a count and the share within 2 dB over the first 20 ms
+  (`strike`), within 2 dB on average for the strong (`mean`), or within 4 dB on average for the
+  weaker; and the ERB gap at the median note and the worst.
   """
   def summary(checks) when is_list(checks) do
     partials = Enum.flat_map(checks, & &1.partials)
@@ -208,7 +257,9 @@ defmodule Mx.Fit.Struck do
   end
 
   @doc """
-  The pitch over the checks, apart from their levels: the median cents from each note's name of the recordings and of the render, the check whose render is furthest from its name, and those whose render is more than 5 cents from it.
+  The pitch over the checks, apart from their levels: the median cents from each note's name of
+  the recordings and of the render, the check whose render is furthest from its name, and those
+  whose render is more than 5 cents from it.
   """
   def pitch(checks) when is_list(checks) do
     median = fn values -> values |> Enum.sort() |> Enum.at(div(length(values), 2)) end
@@ -222,7 +273,9 @@ defmodule Mx.Fit.Struck do
   end
 
   @doc """
-  For the checks of recordings that keep their levels, each note recorded at more than one velocity: each velocity below the note's loudest, with how far under it the recording and the render are over their first half second, in dB.
+  For the checks of recordings that keep their levels, each note recorded at more than one
+  velocity: each velocity below the note's loudest, with how far under it the recording and the
+  render are over their first half second, in dB.
   """
   def loudness(checks) when is_list(checks) do
     checks
@@ -245,7 +298,10 @@ defmodule Mx.Fit.Struck do
     end)
   end
 
-  @doc "The `count` partials within 60 dB of their note's loudest furthest off on average, each with its note and velocity, furthest first."
+  @doc """
+  The `count` partials within 60 dB of their note's loudest furthest off on average, each with its
+  note and velocity, furthest first.
+  """
   def furthest_partials(checks, count) do
     checks
     |> Enum.flat_map(fn check ->

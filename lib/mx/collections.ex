@@ -1,10 +1,14 @@
 defmodule Mx.Collections do
   @moduledoc """
-  The collections of recordings mx knows by name, so a song names a recording as `{collection, name}`.
+  The collections of recordings mx knows by name, so a song names a recording as
+  `{collection, name}`.
 
-  `:sonic_pi` is Sonic Pi's sample pack, whose samples are named by atoms: `{:sonic_pi, :loop_amen}`.
-  Every other collection is a public GitHub repository pinned to a commit, whose files and folders are named by their path in it: `{:vcsl, "Idiophones/Struck Idiophones/Agogo Bells"}`.
-  Karoryfer's and FreePats' instruments are a repository each, so each is a collection of its own, named after its family.
+  `:sonic_pi` is Sonic Pi's sample pack, whose samples are named by atoms:
+  `{:sonic_pi, :loop_amen}`.
+  Every other collection is a public GitHub repository pinned to a commit, whose files and folders
+  are named by their path in it: `{:vcsl, "Idiophones/Struck Idiophones/Agogo Bells"}`.
+  Karoryfer's and FreePats' instruments are a repository each, so each is a collection of its own,
+  named after its family.
   """
 
   @github [
@@ -71,7 +75,10 @@ defmodule Mx.Collections do
   @doc "The names of the collections, in alphabetical order."
   def names, do: Enum.sort([:sonic_pi | Keyword.keys(@github)])
 
-  @doc "The repository and commit of a collection kept on GitHub, as `{repo, commit}`, or nil for Sonic Pi's pack and for a name that is no collection."
+  @doc """
+  The repository and commit of a collection kept on GitHub, as `{repo, commit}`, or nil for Sonic
+  Pi's pack and for a name that is no collection.
+  """
   def github(name) when is_atom(name), do: @github[name]
 
   @doc "Whether a reference is written as `{collection, name}`, whatever the collection."
@@ -81,7 +88,11 @@ defmodule Mx.Collections do
 
   def ref?(_ref), do: false
 
-  @doc "A reference to a file or folder of a collection kept on GitHub as `{:ok, {:github, repo, commit, path}}`, or `{:error, message}` for a collection mx does not have or a path that is no text."
+  @doc """
+  A reference to a file or folder of a collection kept on GitHub as
+  `{:ok, {:github, repo, commit, path}}`, or `{:error, message}` for a collection mx does not have
+  or a path that is no text.
+  """
   def expand({:sonic_pi, _name}) do
     {:error, "Sonic Pi's pack has no files or folders; its samples are {:sonic_pi, name}"}
   end

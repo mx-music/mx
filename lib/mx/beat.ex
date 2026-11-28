@@ -2,25 +2,32 @@ defmodule Mx.Beat do
   @moduledoc """
   Where the beat is, as a session or a render tells whoever asks to follow it.
 
-  A message is `%{beat: beat, tempo: tempo, heard_us: heard_us}`: from `beat` on the song plays at `tempo`, and `beat` is heard at `heard_us`, a Unix time in microseconds.
-  The time is when the beat leaves the output, the output's delay included; in a render it is the render's own time, which starts at 0.
-  The tempo is the beats per minute held from that beat, or `{:ramp, from, to, beats}`, which moves evenly from `from` to `to` over that many beats and then holds `to`.
+  A message is `%{beat: beat, tempo: tempo, heard_us: heard_us}`: from `beat` on the song plays at
+  `tempo`, and `beat` is heard at `heard_us`, a Unix time in microseconds.
+  The time is when the beat leaves the output, the output's delay included; in a render it is the
+  render's own time, which starts at 0.
+  The tempo is the beats per minute held from that beat, or `{:ramp, from, to, beats}`, which
+  moves evenly from `from` to `to` over that many beats and then holds `to`.
 
-  `Mx.Session.follow_beat/1` sends the calling process `{:mx_beat, message}` for the tempo that holds now and for each change already known, the earliest first.
-  It then sends one for each tempo change as the session learns of it, which is before its beat is heard, and for every message again whenever the output's delay moves by more than 2 ms.
+  `Mx.Session.follow_beat/1` sends the calling process `{:mx_beat, message}` for the tempo that
+  holds now and for each change already known, the earliest first.
+  It then sends one for each tempo change as the session learns of it, which is before its beat is
+  heard, and for every message again whenever the output's delay moves by more than 2 ms.
   While the tempo holds and the delay is steady it sends nothing.
   When the song stops it sends `{:mx_beat, :stopped}`.
   A render sends the same messages to the process given as `follow:`.
 
   A message holds from its `heard_us` on, until the `heard_us` of the next one.
   A message replaces every message received before it whose beat is the same or later.
-  `at/2` works out the beat at any time from the message that holds then, with no further question to mx:
+  `at/2` works out the beat at any time from the message that holds then, with no further question
+  to mx:
 
       receive do
         {:mx_beat, %{} = message} -> Mx.Beat.at(message, System.os_time(:microsecond))
       end
 
-  The beats count from where the session started playing, as the beat `Mx.Band.beat_at/2` answers with does.
+  The beats count from where the session started playing, as the beat `Mx.Band.beat_at/2` answers
+  with does.
   """
 
   @minute_us 60_000_000
@@ -35,7 +42,10 @@ defmodule Mx.Beat do
     heard_us + round(elapsed_us(tempo, beat - start))
   end
 
-  @doc "The messages of a timeline, as `Mx.Tempo` keeps it, from the one that holds at `now_us` on, the earliest first, each heard `delay_us` after its time on the timeline."
+  @doc """
+  The messages of a timeline, as `Mx.Tempo` keeps it, from the one that holds at `now_us` on, the
+  earliest first, each heard `delay_us` after its time on the timeline.
+  """
   def messages(timeline, delay_us, now_us)
       when is_list(timeline) and is_integer(delay_us) and is_integer(now_us) do
     {messages, _ramp_end} =

@@ -1,18 +1,25 @@
 defmodule Mx.Music do
   @moduledoc """
-  Music as values: notes and rests joined one after another or at once, repeated, moved and placed, and played by parts.
+  Music as values: notes and rests joined one after another or at once, repeated, moved and
+  placed, and played by parts.
 
-  Every function returns a value and records nothing on the side, and raises `ArgumentError` as soon as what it is given cannot play: `note` refuses an unknown name, `part` a note its synth cannot play, `together` two parts of one name, and `song` a note outside any part.
+  Every function returns a value and records nothing on the side, and raises `ArgumentError` as
+  soon as what it is given cannot play: `note` refuses an unknown name, `part` a note its synth
+  cannot play, `together` two parts of one name, and `song` a note outside any part.
   The song file's loader finds the line in the stacktrace of that error.
 
   A song's music is split into sections, the items of its outermost seq, looking through repeat.
-  Each part becomes a loop whose pass `n` plays that part's notes in section `n`, so every part's pass ends where a section ends, and a saved version takes over there.
+  Each part becomes a loop whose pass `n` plays that part's notes in section `n`, so every part's
+  pass ends where a section ends, and a saved version takes over there.
   """
 
   alias Mx.{Notes, Pass, Synths}
 
   defmodule Note do
-    @moduledoc "A note: its pitch, a number, a list of numbers or `:own_note` for a drum, its length in beats and its options."
+    @moduledoc """
+    A note: its pitch, a number, a list of numbers or `:own_note` for a drum, its length in beats
+    and its options.
+    """
     defstruct [:pitch, :beats, opts: []]
   end
 
@@ -32,7 +39,9 @@ defmodule Mx.Music do
   end
 
   defmodule Repeat do
-    @moduledoc "Music played a number of times in a row, or until mx stops with `times: :forever`."
+    @moduledoc """
+    Music played a number of times in a row, or until mx stops with `times: :forever`.
+    """
     defstruct [:music, :times]
   end
 
@@ -42,17 +51,25 @@ defmodule Mx.Music do
   end
 
   defmodule Swing do
-    @moduledoc "Music whose notes start at the beat a function returns for the beat they were written on."
+    @moduledoc """
+    Music whose notes start at the beat a function returns for the beat they were written on.
+    """
     defstruct [:music, :fun]
   end
 
   defmodule Feel do
-    @moduledoc "Music whose notes on each step come early or late and louder or softer by tables, and a little at random."
+    @moduledoc """
+    Music whose notes on each step come early or late and louder or softer by tables, and a little
+    at random.
+    """
     defstruct [:music, :step, push: nil, lean: nil, loose: nil, touch: nil]
   end
 
   defmodule Each do
-    @moduledoc "Music whose notes take the options given, or those a function of their beat returns, where they give none of their own."
+    @moduledoc """
+    Music whose notes take the options given, or those a function of their beat returns, where
+    they give none of their own.
+    """
     defstruct [:music, :opts]
   end
 
@@ -67,12 +84,18 @@ defmodule Mx.Music do
   end
 
   defmodule Message do
-    @moduledoc "A step that takes no time: a MIDI controller change, an OSC message, or a value shared with the other loops."
+    @moduledoc """
+    A step that takes no time: a MIDI controller change, an OSC message, or a value shared with
+    the other loops.
+    """
     defstruct [:kind, :args]
   end
 
   defmodule Change do
-    @moduledoc "A change to every sound of a part still playing, or to one of its effects, with `target` being the part's name or `{name, effect}`."
+    @moduledoc """
+    A change to every sound of a part still playing, or to one of its effects, with `target` being
+    the part's name or `{name, effect}`.
+    """
     defstruct [:target, :opts]
   end
 
@@ -87,17 +110,27 @@ defmodule Mx.Music do
   end
 
   defmodule Loop do
-    @moduledoc "Music that runs a function for each pass of some beats and plays the music it returns, a number of times or as long as the music beside it; or, with `on:`, a pass for each input it waits for."
+    @moduledoc """
+    Music that runs a function for each pass of some beats and plays the music it returns, a
+    number of times or as long as the music beside it; or, with `on:`, a pass for each input it
+    waits for.
+    """
     defstruct [:beats, :fun, :times, :on, :grid, :line]
   end
 
   defmodule LoopError do
-    @moduledoc "A pass of a loop refused after its function returned, with the line of the song that wrote the loop."
+    @moduledoc """
+    A pass of a loop refused after its function returned, with the line of the song that wrote the
+    loop.
+    """
     defexception [:message, :line]
   end
 
   defmodule Song do
-    @moduledoc "The value a song file ends with: its settings, and its music split into sections, each part's notes in each."
+    @moduledoc """
+    The value a song file ends with: its settings, and its music split into sections, each part's
+    notes in each.
+    """
     defstruct [
       :music,
       :sections,
@@ -119,7 +152,10 @@ defmodule Mx.Music do
   @song_options [:tempo, :meter, :key, :music, :live_audio, :fx, :buses, :osc_to, :osc_from]
   @forever "repeat without a count plays until mx stops, so it can only hold the whole of a song's music"
 
-  @doc "A note of a pitch, given as a name, a number or a list of them, lasting some beats, with options for the part's synth."
+  @doc """
+  A note of a pitch, given as a name, a number or a list of them, lasting some beats, with options
+  for the part's synth.
+  """
   def note(pitch, beats, opts \\ []) do
     check_beats("note", beats)
 
@@ -156,7 +192,11 @@ defmodule Mx.Music do
     end
   end
 
-  @doc "A WAV, AIFF or FLAC file by path, a file of a collection as `{collection, name}`, or a file of a GitHub repository as `{:github, repo, ref, path}`, lasting some beats, refusing a sample mx cannot find and an option samples do not take."
+  @doc """
+  A WAV, AIFF or FLAC file by path, a file of a collection as `{collection, name}`, or a file of a
+  GitHub repository as `{:github, repo, ref, path}`, lasting some beats, refusing a sample mx
+  cannot find and an option samples do not take.
+  """
   def sample(ref, beats, opts \\ []) when is_atom(ref) or is_binary(ref) or is_tuple(ref) do
     check_beats("sample", beats)
     check_keyword("sample", opts)
@@ -244,7 +284,10 @@ defmodule Mx.Music do
   @doc "A value shared with every loop from its next pass, taking no time."
   def set(name, value) when is_atom(name), do: %Message{kind: :set, args: [name, value]}
 
-  @doc "A change to every sound of a part still playing, or with `{part, effect}` to one of its effects, taking no time."
+  @doc """
+  A change to every sound of a part still playing, or with `{part, effect}` to one of its effects,
+  taking no time.
+  """
   def change(target, opts) do
     check_keyword("change", opts)
 
@@ -278,7 +321,10 @@ defmodule Mx.Music do
     end
   end
 
-  @doc "A change of every part's tempo to some beats per minute, at once, or with `over:` evenly over that many beats, taking no time."
+  @doc """
+  A change of every part's tempo to some beats per minute, at once, or with `over:` evenly over
+  that many beats, taking no time.
+  """
   def tempo(bpm, opts \\ []) do
     if not (is_number(bpm) and bpm > 0) do
       bpm = inspect(bpm)
@@ -314,13 +360,22 @@ defmodule Mx.Music do
     %Rest{beats: beats}
   end
 
-  @doc "Music played one item after another; an item given as `{name, beats}` is a note, and as `{:r, beats}` a rest."
+  @doc """
+  Music played one item after another; an item given as `{name, beats}` is a note, and as
+  `{:r, beats}` a rest.
+  """
   def seq(items) when is_list(items), do: %Seq{items: Enum.map(items, &item/1)}
 
-  @doc "Music played one item after another, each the music the function returns for an item of the collection."
+  @doc """
+  Music played one item after another, each the music the function returns for an item of the
+  collection.
+  """
   def seq(collection, fun), do: seq(collected("seq", collection, fun))
 
-  @doc "Music whose items all start at once, as long as the longest, refusing two parts of one name among them."
+  @doc """
+  Music whose items all start at once, as long as the longest, refusing two parts of one name
+  among them.
+  """
   def together(items) when is_list(items) do
     case Enum.find(items, &match?({name, music} when is_atom(name) and not is_number(music), &1)) do
       nil ->
@@ -345,7 +400,11 @@ defmodule Mx.Music do
     end
   end
 
-  @doc "Music played one section after another, each the music the function returns for a section's name, or for its name and a map of its `pass`, `time` and `coming`; `round: true` gives the last section the first one's name as `coming`."
+  @doc """
+  Music played one section after another, each the music the function returns for a section's
+  name, or for its name and a map of its `pass`, `time` and `coming`; `round: true` gives the last
+  section the first one's name as `coming`.
+  """
   def form(sections, fun, opts \\ [])
 
   def form([_ | _] = sections, fun, opts) when is_function(fun, 1) or is_function(fun, 2) do
@@ -404,7 +463,10 @@ defmodule Mx.Music do
     raise ArgumentError, "form takes section names, or names with counts from 1 up, not #{entry}"
   end
 
-  @doc "Music whose items all start at once, each the music the function returns for an item of the collection."
+  @doc """
+  Music whose items all start at once, each the music the function returns for an item of the
+  collection.
+  """
   def together(collection, fun), do: together(collected("together", collection, fun))
 
   defp collected(_name, collection, fun) when is_function(fun, 1), do: Enum.map(collection, fun)
@@ -449,10 +511,16 @@ defmodule Mx.Music do
     end)
   end
 
-  @doc "The music with the parts named left out, one name or a list, each as long a silence as it played, its tempo changes kept."
+  @doc """
+  The music with the parts named left out, one name or a list, each as long a silence as it
+  played, its tempo changes kept.
+  """
   def without(music, names), do: leave_out("without", music, List.wrap(names), &(&1 in &2))
 
-  @doc "The music with every part but those named left out, one name or a list, each as long a silence as it played, its tempo changes kept."
+  @doc """
+  The music with every part but those named left out, one name or a list, each as long a silence
+  as it played, its tempo changes kept.
+  """
   def only(music, names), do: leave_out("only", music, List.wrap(names), &(&1 not in &2))
 
   defp leave_out(word, music, names, out?) do
@@ -527,10 +595,17 @@ defmodule Mx.Music do
   defp kept_in(_container, nil), do: nil
   defp kept_in(container, music), do: %{container | music: music}
 
-  @doc "Music lasting some beats whose items start at their beats from its start, given as `{beat, music}`, or as `{beat, pitch, length}` and `{beat, pitch, length, options}` for a note."
+  @doc """
+  Music lasting some beats whose items start at their beats from its start, given as
+  `{beat, music}`, or as `{beat, pitch, length}` and `{beat, pitch, length, options}` for a note.
+  """
   def at(entries, beats) when is_list(entries), do: at(entries, beats, [])
 
-  @doc "Music lasting some beats with, at each beat of the entries given as `{beat, value}`, the music the function returns for the value, or with the options given to each note written as `{beat, pitch, length}`, its own options kept over them."
+  @doc """
+  Music lasting some beats with, at each beat of the entries given as `{beat, value}`, the music
+  the function returns for the value, or with the options given to each note written as
+  `{beat, pitch, length}`, its own options kept over them.
+  """
   def at(entries, beats, opts) when is_list(entries) and is_list(opts) do
     check_beats("at", beats)
     check_keyword("at", opts)
@@ -598,10 +673,17 @@ defmodule Mx.Music do
     end
   end
 
-  @doc "The music with each note started at the beat the function returns for the beat it was written on, its length unchanged."
+  @doc """
+  The music with each note started at the beat the function returns for the beat it was written
+  on, its length unchanged.
+  """
   def swing(music, fun) when is_function(fun, 1), do: %Swing{music: item(music), fun: fun}
 
-  @doc "Notes one after another as one note, of the first note's pitch and options, lasting them all and changing to each later note's pitch at its beat, gliding over slide: beats; a rest, or a note tongue: returns true for, starts a new one."
+  @doc """
+  Notes one after another as one note, of the first note's pitch and options, lasting them all and
+  changing to each later note's pitch at its beat, gliding over slide: beats; a rest, or a note
+  tongue: returns true for, starts a new one.
+  """
   def slur(music, opts \\ []) do
     check_keyword("slur", opts)
     {tongue, opts} = Keyword.pop(opts, :tongue)
@@ -713,7 +795,10 @@ defmodule Mx.Music do
 
   @feel_options [:step, :push, :lean, :loose, :touch]
 
-  @doc "The music with each note on a step pushed and leaned by the tables given, and moved a little at random by loose: and touch:."
+  @doc """
+  The music with each note on a step pushed and leaned by the tables given, and moved a little at
+  random by loose: and touch:.
+  """
   def feel(music, opts) do
     check_keyword("feel", opts)
 
@@ -762,7 +847,10 @@ defmodule Mx.Music do
     struct!(Feel, [music: item(music)] ++ opts)
   end
 
-  @doc "The music with each of its notes and hits taking the options given, or those the function returns for the beat it starts on, where the note gives none of its own."
+  @doc """
+  The music with each of its notes and hits taking the options given, or those the function
+  returns for the beat it starts on, where the note gives none of its own.
+  """
   def each(music, opts) when is_list(opts) or is_function(opts, 1) do
     if is_list(opts), do: check_keyword("each", opts)
     %Each{music: each_loop(item(music), opts), opts: opts}
@@ -797,7 +885,10 @@ defmodule Mx.Music do
 
   @steps_options [:sample, :digit, :strokes, :notes, :words, :each, :slide, :accent, :grace]
 
-  @doc "The sounds of a pattern, each character of a string or each word of `~MX` lasting a step of beats; a list of strings is one bar after another."
+  @doc """
+  The sounds of a pattern, each character of a string or each word of `~MX` lasting a step of
+  beats; a list of strings is one bar after another.
+  """
   def steps(pattern, step, opts \\ [])
       when (is_binary(pattern) or is_list(pattern)) and is_list(opts) do
     check_beats("steps", step)
@@ -1053,7 +1144,12 @@ defmodule Mx.Music do
               __STACKTRACE__
   end
 
-  @doc "Music that runs the function with the pass number and the inputs every `beats` beats, and plays the music it returns; `times:` plays a number of passes, and `on:`, given instead of beats, plays a pass on each input it waits for, on the next beat that is a multiple of `grid:` beats when given."
+  @doc """
+  Music that runs the function with the pass number and the inputs every `beats` beats, and plays
+  the music it returns; `times:` plays a number of passes, and `on:`, given instead of beats,
+  plays a pass on each input it waits for, on the next beat that is a multiple of `grid:` beats
+  when given.
+  """
   def loop(beats, fun, opts \\ [])
 
   def loop(beats, fun, opts) when is_number(beats) and is_function(fun, 2) and is_list(opts) do
@@ -1105,7 +1201,9 @@ defmodule Mx.Music do
     end
   end
 
-  @doc "Music played by one player, refusing a synth mx does not have and a note the synth cannot play."
+  @doc """
+  Music played by one player, refusing a synth mx does not have and a note the synth cannot play.
+  """
   def part(name, music, opts \\ []) when is_atom(name) and is_list(opts) do
     if name == :song do
       raise ArgumentError,
@@ -1184,7 +1282,10 @@ defmodule Mx.Music do
     end)
   end
 
-  @doc "The song, refusing a note outside any part, a part of one name played with other options, and repeat with no count anywhere but around the whole music."
+  @doc """
+  The song, refusing a note outside any part, a part of one name played with other options, and
+  repeat with no count anywhere but around the whole music.
+  """
   def song(opts) when is_list(opts) do
     check_options(opts)
     music = item(opts[:music])
@@ -1626,7 +1727,9 @@ defmodule Mx.Music do
   defp plus(_beats, :infinity), do: :infinity
   defp plus(beats, sum), do: beats + sum
 
-  @doc "Records a song into the song being loaded: its settings, and a loop for each of its parts."
+  @doc """
+  Records a song into the song being loaded: its settings, and a loop for each of its parts.
+  """
   def load(%Song{} = song) do
     Mx.Song.put_tempo(song.tempo)
     Mx.Song.put_meter(song.meter)
@@ -1660,7 +1763,10 @@ defmodule Mx.Music do
     :ok
   end
 
-  @doc "Records pass `n` of a part's music: its notes in section `n`, and the passes its loops play there, going round again after the last section of music that repeats until mx stops."
+  @doc """
+  Records pass `n` of a part's music: its notes in section `n`, and the passes its loops play
+  there, going round again after the last section of music that repeats until mx stops.
+  """
   def replay(%{triggered: fun} = music, pass) when is_integer(pass) do
     :rand.seed(:exsss, {:erlang.phash2(music.name), pass, 1})
     played = run_loop(music, music.line, fun, Pass.trigger())

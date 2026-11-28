@@ -2,9 +2,13 @@ defmodule Mx.Performance do
   @moduledoc """
   Takes the timing and loudness of a recording of a score, for `mix mx.import --recording`.
 
-  The recording is lined up against the score by the energy in each of the 12 pitch classes, frame by frame, so each moment of the score finds the moment of the recording that plays it.
-  The song's tempo is the recording's average, rounded to a whole number of beats a minute, and each note starts and lasts as long as it does in the recording, in beats at that tempo, to the nearest 1/48 of a beat.
-  A note's vel is the recording's loudness where it starts, the softest note start at 0.3 and the loudest at 1, in proportion to their loudness in decibels.
+  The recording is lined up against the score by the energy in each of the 12 pitch classes, frame
+  by frame, so each moment of the score finds the moment of the recording that plays it.
+  The song's tempo is the recording's average, rounded to a whole number of beats a minute, and
+  each note starts and lasts as long as it does in the recording, in beats at that tempo, to the
+  nearest 1/48 of a beat.
+  A note's vel is the recording's loudness where it starts, the softest note start at 0.3 and the
+  loudest at 1, in proportion to their loudness in decibels.
   """
 
   alias Mx.{Audio, Engine.Mxs.Native, Score}
@@ -25,8 +29,11 @@ defmodule Mx.Performance do
   @grid 48
 
   @doc """
-  The score retimed to `recording`, a WAV file, as `{:ok, %{score: score, tempo: tempo, bars: bars}}`, `bars` being each bar's number and the second it starts at in the recording, or `{:error, message}`.
-  `bars:` a range of bar numbers lines the recording up with those bars only, and the score keeps those alone.
+  The score retimed to `recording`, a WAV file, as
+  `{:ok, %{score: score, tempo: tempo, bars: bars}}`, `bars` being each bar's number and the
+  second it starts at in the recording, or `{:error, message}`.
+  `bars:` a range of bar numbers lines the recording up with those bars only, and the score keeps
+  those alone.
   """
   def retime(%Score{} = score, recording, opts \\ [])
       when is_binary(recording) and is_list(opts) do

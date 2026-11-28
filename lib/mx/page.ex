@@ -1,22 +1,37 @@
 defmodule Mx.Page do
   @moduledoc """
-  Writes a song as one HTML page that plays it and shows each part's notes on a timeline, for `mix mx.page`.
+  Writes a song as one HTML page that plays it and shows each part's notes on a timeline, for
+  `mix mx.page`.
 
-  The page holds the song's offline render, which ffmpeg encodes as MP3, so a browser plays what mx plays and works out no sound itself.
-  Each part's notes are the ones `Mx.Pass` works out, pass by pass, at the seconds `Mx.Tempo` gives their beats.
-  A note with no `sustain:` shows half a beat long, and a note a control step moves to another pitch shows as one mark for each pitch.
-  A sample shows as a hit, and so does a note of a sampled instrument, as its pass names the file it plays and not the key.
-  A hit lasts as long as its sample file plays at its rate, cut short by a sustain it is given, or as long as the attack, decay, sustain and release given to its synth; a synth hit given none of them lasts 0 seconds, as its synth alone knows how long it rings.
+  The page holds the song's offline render, which ffmpeg encodes as MP3, so a browser plays what
+  mx plays and works out no sound itself.
+  Each part's notes are the ones `Mx.Pass` works out, pass by pass, at the seconds `Mx.Tempo`
+  gives their beats.
+  A note with no `sustain:` shows half a beat long, and a note a control step moves to another
+  pitch shows as one mark for each pitch.
+  A sample shows as a hit, and so does a note of a sampled instrument, as its pass names the file
+  it plays and not the key.
+  A hit lasts as long as its sample file plays at its rate, cut short by a sustain it is given, or
+  as long as the attack, decay, sustain and release given to its synth; a synth hit given none of
+  them lasts 0 seconds, as its synth alone knows how long it rings.
   A part that waits for input is left out, as a render leaves it out.
 
-  Each part's `synth` names its sound: the synth it plays notes on, such as `flute`; a sampled instrument by its folder and collection, such as `sampled instrument Samples/kickmic/kick of virtuosity_drums`, a list of files by the folder they share or else by the first file and the count of the others; and a part that plays only samples by its sample, such as `vinyl_hiss`, or by the first it plays and the count of the others, such as `kick and 1 other`.
+  Each part's `synth` names its sound: the synth it plays notes on, such as `flute`; a sampled
+  instrument by its folder and collection, such as
+  `sampled instrument Samples/kickmic/kick of virtuosity_drums`, a list of files by the folder
+  they share or else by the first file and the count of the others; and a part that plays only
+  samples by its sample, such as `vinyl_hiss`, or by the first it plays and the count of the
+  others, such as `kick and 1 other`.
   """
 
   alias Mx.{Pass, Recording, Render, Samples, Song, Synths, Tempo}
 
   @unheld_beats 0.5
 
-  @doc "Writes the song at `path` to the HTML file `out`, with `seconds:`, `force:` and `title:`, and returns `:ok` once written, or `{:error, message}`."
+  @doc """
+  Writes the song at `path` to the HTML file `out`, with `seconds:`, `force:` and `title:`, and
+  returns `:ok` once written, or `{:error, message}`.
+  """
   def write(path, out, opts \\ []) when is_binary(path) and is_binary(out) and is_list(opts) do
     id = System.unique_integer([:positive])
     tmp = System.tmp_dir!()
@@ -41,7 +56,11 @@ defmodule Mx.Page do
     end
   end
 
-  @doc "What the page shows of a loaded song that renders to `seconds` of sound: its sections, the seconds of each beat, and each part's notes and hits in seconds; `source` is the file's text, read from `path` when not given."
+  @doc """
+  What the page shows of a loaded song that renders to `seconds` of sound: its sections, the
+  seconds of each beat, and each part's notes and hits in seconds; `source` is the file's text,
+  read from `path` when not given.
+  """
   def data(%Song{} = song, path, seconds, source \\ nil)
       when is_binary(path) and is_number(seconds) do
     loops = Enum.filter(song.loops, &(&1.on == nil))
@@ -71,7 +90,11 @@ defmodule Mx.Page do
 
   @whole_seconds 36_000
 
-  @doc "What `data/4` gives of a loaded song without a render to measure: all of a song that ends, and one time through its sections of a song that plays until stopped, with `:ends` saying which; `source` is the file's text, read from `path` when nil."
+  @doc """
+  What `data/4` gives of a loaded song without a render to measure: all of a song that ends, and
+  one time through its sections of a song that plays until stopped, with `:ends` saying which;
+  `source` is the file's text, read from `path` when nil.
+  """
   def whole(%Song{} = song, path, source \\ nil) when is_binary(path) do
     ends? = Enum.all?(song.loops, &(&1.passes != nil or &1.on != nil))
     first = if ends?, do: @whole_seconds, else: 0.001
@@ -265,7 +288,10 @@ defmodule Mx.Page do
     Float.round(micros / 1_000_000, 3)
   end
 
-  @doc "Checks a file can be written to `out`: `:ok`, or `{:error, message}` when it exists without `force` or its folder does not."
+  @doc """
+  Checks a file can be written to `out`: `:ok`, or `{:error, message}` when it exists without
+  `force` or its folder does not.
+  """
   def check(out, force) when is_binary(out) and is_boolean(force) do
     folder = Path.dirname(out)
 

@@ -1,6 +1,7 @@
 defmodule Mx.Paired.Piano do
   @moduledoc """
-  mxs's piano written with defsynth, playing its two tables as mxs does, so the two can be compared and timed.
+  mxs's piano written with defsynth, playing its two tables as mxs does, so the two can be
+  compared and timed.
   """
 
   use Mx.Instrument

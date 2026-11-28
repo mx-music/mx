@@ -2,7 +2,8 @@ defmodule Mx.Paired.Tanpura do
   @moduledoc """
   mxs's tanpura written with defsynth, node for node, so the two can be compared and timed.
 
-  Each string's high partials go up to the 500th, where mxs's go as far as 16 kHz, so the two agree from note 36 up.
+  Each string's high partials go up to the 500th, where mxs's go as far as 16 kHz, so the two
+  agree from note 36 up.
   """
 
   use Mx.Instrument
@@ -16,7 +17,10 @@ defmodule Mx.Paired.Tanpura do
           [-12, 9, 26, -7, 16, 4, -4, 0, -6, -11]
         )
 
-  @doc "A tanpura: four strings plucked in turn, each blooming with its own harmonics, over the bridge's buzz."
+  @doc """
+  A tanpura: four strings plucked in turn, each blooming with its own harmonics, over the bridge's
+  buzz.
+  """
   attr :note, :note, default: 52, doc: "Sa, the note the drone is tuned to."
   attr :vel, :float, default: 0.6, range: 0..1, doc: "How hard the strings are plucked."
 

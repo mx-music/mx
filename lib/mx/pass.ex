@@ -5,16 +5,23 @@ defmodule Mx.Pass do
 
   Random numbers are seeded from the loop name and the pass number, so the
   same pass always plays the same notes.
-  Inputs and shared values come from the snapshot given in `:inputs`, and `trigger` from `:trigger`, so a pass given the same ones plays the same notes too.
+  Inputs and shared values come from the snapshot given in `:inputs`, and `trigger` from
+  `:trigger`, so a pass given the same ones plays the same notes too.
 
-  `record_play` and `record_sample` return a handle naming the events they recorded, and `effect` a handle naming one of the loop's effects.
-  A control step is recorded as `{beat, {:control, target, synth}, opts}`, where the target is `{:sounds, indexes}` or `{:effect, index}`, and the synth is the one whose options it changes, or `{:effect, effect}` for an effect's.
+  `record_play` and `record_sample` return a handle naming the events they recorded, and `effect`
+  a handle naming one of the loop's effects.
+  A control step is recorded as `{beat, {:control, target, synth}, opts}`, where the target is
+  `{:sounds, indexes}` or `{:effect, index}`, and the synth is the one whose options it changes,
+  or `{:effect, effect}` for an effect's.
   """
 
   alias Mx.{Notes, Samples, Synths}
 
   defmodule Handle do
-    @moduledoc "What record_play, record_sample and effect return: the events or effect a later control step changes, and the synth whose options they are."
+    @moduledoc """
+    What record_play, record_sample and effect return: the events or effect a later control step
+    changes, and the synth whose options they are.
+    """
     defstruct [:target, :synth]
   end
 
@@ -23,7 +30,9 @@ defmodule Mx.Pass do
   @key :mx_pass
 
   @doc """
-  Runs a pass of a loop, and returns `{:ok, %{events: events, beats: beats, notes: notes, vels: vels}}` or `{:error, message}` naming the line.
+  Runs a pass of a loop, and returns
+  `{:ok, %{events: events, beats: beats, notes: notes, vels: vels}}` or `{:error, message}` naming
+  the line.
   `vels` holds the vel each of `notes` is played at, in the same order, nil for a note given none.
   """
   def events(%Mx.Song.Loop{} = loop, pass, opts \\ []) when is_integer(pass) and is_list(opts) do
@@ -83,7 +92,10 @@ defmodule Mx.Pass do
     events
   end
 
-  @doc "Whether notes with these options would play on a synth with these defaults, as `:ok` or `{:error, message}`, checked as a play step checks them."
+  @doc """
+  Whether notes with these options would play on a synth with these defaults, as `:ok` or
+  `{:error, message}`, checked as a play step checks them.
+  """
   def check_play(synth, defaults, notes, opts) when is_list(opts) do
     previous = Process.get(@key)
 
@@ -108,7 +120,8 @@ defmodule Mx.Pass do
 
   @doc """
   Records the notes of a play step at the current beat, and returns a handle to them.
-  Given the beats the notes are written to last, one for all or a list of one per note, it also records each note as written, as `{beat, note, beats}`, which `events/3` returns as `notes`.
+  Given the beats the notes are written to last, one for all or a list of one per note, it also
+  records each note as written, as `{beat, note, beats}`, which `events/3` returns as `notes`.
   """
   def record_play(notes, opts, written \\ nil)
 
@@ -217,7 +230,10 @@ defmodule Mx.Pass do
   @doc "Moves the current beat forward."
   def record_wait(beats) when is_number(beats), do: update(&%{&1 | beat: &1.beat + beats})
 
-  @doc "Runs the function for each entry at its beat from the current beat, in the order of the beats, and leaves the current beat where it was."
+  @doc """
+  Runs the function for each entry at its beat from the current beat, in the order of the beats,
+  and leaves the current beat where it was.
+  """
   def record_at(entries, fun) when is_list(entries) and is_function(fun, 1) do
     start = Process.get(@key).beat
 
@@ -269,7 +285,10 @@ defmodule Mx.Pass do
     :ok
   end
 
-  @doc "Records a MIDI controller change at the current beat, refusing an option or value MIDI does not take."
+  @doc """
+  Records a MIDI controller change at the current beat, refusing an option or value MIDI does not
+  take.
+  """
   def record_midi_cc(number, value, opts)
       when is_integer(number) and is_integer(value) and is_list(opts) do
     opts = Keyword.merge([channel: 1], opts)
@@ -335,7 +354,10 @@ defmodule Mx.Pass do
     end
   end
 
-  @doc "A handle to one of the effects the whole song plays through, refusing an effect the song does not have."
+  @doc """
+  A handle to one of the effects the whole song plays through, refusing an effect the song does
+  not have.
+  """
   def song_effect(effect) when is_atom(effect) do
     song_fx = Process.get(@key).song_fx
 
@@ -345,7 +367,10 @@ defmodule Mx.Pass do
     end
   end
 
-  @doc "A handle to an effect of one of the song's buses, or nil when the song has no such bus or the bus no such effect."
+  @doc """
+  A handle to an effect of one of the song's buses, or nil when the song has no such bus or the
+  bus no such effect.
+  """
   def bus_effect(bus, effect) when is_atom(bus) and is_atom(effect) do
     with %{fx: fx} <- @key |> Process.get() |> Map.get(:buses, []) |> Enum.find(&(&1.name == bus)),
          index when index != nil <- Enum.find_index(fx, fn {name, _} -> name == effect end) do
@@ -355,13 +380,19 @@ defmodule Mx.Pass do
     end
   end
 
-  @doc "Records a control step that changes the level of the loop's send into a bus, as `[level: level]`, gliding over `level_slide:` beats when given."
+  @doc """
+  Records a control step that changes the level of the loop's send into a bus, as
+  `[level: level]`, gliding over `level_slide:` beats when given.
+  """
   def record_send(bus, opts) when is_atom(bus) and is_list(opts) do
     record({{:control, {:send, bus}, :send}, opts})
     :ok
   end
 
-  @doc "Records a control step that changes the sounds or effect a handle names, refusing an option they do not take."
+  @doc """
+  Records a control step that changes the sounds or effect a handle names, refusing an option they
+  do not take.
+  """
   def record_control(%Handle{target: {:bus, _, _} = target, synth: effect}, opts)
       when is_list(opts) do
     check_change({:effect, effect}, opts)
@@ -390,7 +421,10 @@ defmodule Mx.Pass do
     raise ArgumentError, "control takes a handle from play, sample or fx, not #{other}"
   end
 
-  @doc "Refuses a change to a sound of a synth, or with `{:effect, effect}` to an effect, that it cannot take."
+  @doc """
+  Refuses a change to a sound of a synth, or with `{:effect, effect}` to an effect, that it cannot
+  take.
+  """
   def check_change({:effect, effect}, opts) when is_list(opts) do
     check_control(
       bands(effect, opts),

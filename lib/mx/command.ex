@@ -1,8 +1,10 @@
 defmodule Mx.Command do
   @moduledoc """
   What a command does differently when it runs as a Mix task and when the mx command runs it.
-  The mx command carries no Mix, so each mix task reports, fails and starts mx through this module, and both run the same task code.
-  Under Mix a failure is a `Mix.Error`, so `mix` prints it and exits with status 1; under the mx command it is an `Mx.Command.Error`, which the mx command prints the same way.
+  The mx command carries no Mix, so each mix task reports, fails and starts mx through this
+  module, and both run the same task code.
+  Under Mix a failure is a `Mix.Error`, so `mix` prints it and exits with status 1; under the mx
+  command it is an `Mx.Command.Error`, which the mx command prints the same way.
   """
 
   defmodule Error do

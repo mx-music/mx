@@ -1,20 +1,28 @@
 defmodule Mx.Audio do
   @moduledoc """
-  Reads WAV and AIFF recordings, in mono or stereo, at any sample rate, as one channel of samples from -1 to 1.
+  Reads WAV and AIFF recordings, in mono or stereo, at any sample rate, as one channel of samples
+  from -1 to 1.
 
   A recording with several channels is read as their average.
   It also writes mono WAV files of 32-bit floats.
-  WAV may hold integers of 8 to 32 bits or floats of 32 or 64 bits; AIFF holds big-endian integers, and AIFF-C also little-endian integers and floats.
+  WAV may hold integers of 8 to 32 bits or floats of 32 or 64 bits; AIFF holds big-endian
+  integers, and AIFF-C also little-endian integers and floats.
   """
 
-  @doc "Reads a recording, and returns `{:ok, %{rate: rate, samples: samples}}` or `{:error, \"cannot read PATH\"}`."
+  @doc """
+  Reads a recording, and returns `{:ok, %{rate: rate, samples: samples}}` or
+  `{:error, "cannot read PATH"}`.
+  """
   def read(path) when is_binary(path) do
     with {:ok, format, data} <- raw(path) do
       {:ok, %{rate: format.rate, samples: samples(data, format)}}
     end
   end
 
-  @doc "Reads a recording without decoding its samples, and returns `{:ok, format, data}`, the format as its `rate`, `channels`, `bits` and `kind` of sample, or `{:error, \"cannot read PATH\"}`."
+  @doc """
+  Reads a recording without decoding its samples, and returns `{:ok, format, data}`, the format as
+  its `rate`, `channels`, `bits` and `kind` of sample, or `{:error, "cannot read PATH"}`.
+  """
   def raw(path) when is_binary(path) do
     with {:ok, binary} <- File.read(path),
          {:ok, format, data} <- parse(binary) do
@@ -30,7 +38,10 @@ defmodule Mx.Audio do
     write_floats(path, data, rate)
   end
 
-  @doc "Writes samples already packed as little-endian 32-bit floats to a mono WAV file at a sample rate."
+  @doc """
+  Writes samples already packed as little-endian 32-bit floats to a mono WAV file at a sample
+  rate.
+  """
   def write_floats(path, data, rate)
       when is_binary(path) and is_binary(data) and is_integer(rate) do
     fmt =

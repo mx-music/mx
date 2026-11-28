@@ -1,6 +1,7 @@
 defmodule Mx.Paired.TambourineShake do
   @moduledoc """
-  mxs's tambourine_shake written with defsynth, node for node, so the two can be compared and timed.
+  mxs's tambourine_shake written with defsynth, node for node, so the two can be compared and
+  timed.
   """
 
   use Mx.Instrument

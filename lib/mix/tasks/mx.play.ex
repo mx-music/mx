@@ -12,18 +12,32 @@ defmodule Mix.Tasks.Mx.Play do
   pass. A version that does not load prints its error, and the previous
   version keeps playing.
 
-  `--record` writes everything mx plays to a stereo WAV file, and `--force` records over a file that exists.
+  `--record` writes everything mx plays to a stereo WAV file, and `--force` records over a file
+  that exists.
   After recording it prints the recording's length and peak, and warns when the recording clipped.
-  `--render` writes the song to a stereo WAV file offline instead of playing it, for `--seconds` when its music does not end, printing its progress as it goes, such as `rendered 37.5 of 148.0 seconds`, and then the same report.
-  `--no-ring-out` with `--render` leaves out the notes still sounding when the music ends, which a render otherwise lets fade for up to four seconds, so the file ends where the music ends.
-  A render ends as those notes fade and says which part's effect it cuts short, such as `cutting short the reverb of part flute, which rings 5.5 seconds on`; `--ring-out` keeps that ring, as `Mx.Render.ring_out/2` gives it.
-  A MusicXML score, a MIDI file or an ABC tune plays as the song `mx import` would write from it, without writing it, taking `--part`, `--tempo`, `--grid` and `--tune` as `mx import` does.
-  `--mute` with `--render` leaves a part out of the render and `--solo` renders only the parts it names, each given once for each part, such as `--mute bass --mute keys`.
-  `--loudness` with `--render` scales the finished file to that loudness in LUFS, such as `--loudness -14`, no further than a peak of -1 dB; the report after a render gives the file's loudness beside its peak.
-  `--share` plays or renders the song at that share of its tempo, from 0.25 to 4, so `--share 0.5` plays it at half speed.
+  `--render` writes the song to a stereo WAV file offline instead of playing it, for `--seconds`
+  when its music does not end, printing its progress as it goes, such as
+  `rendered 37.5 of 148.0 seconds`, and then the same report.
+  `--no-ring-out` with `--render` leaves out the notes still sounding when the music ends, which a
+  render otherwise lets fade for up to four seconds, so the file ends where the music ends.
+  A render ends as those notes fade and says which part's effect it cuts short, such as
+  `cutting short the reverb of part flute, which rings 5.5 seconds on`; `--ring-out` keeps that
+  ring, as `Mx.Render.ring_out/2` gives it.
+  A MusicXML score, a MIDI file or an ABC tune plays as the song `mx import` would write from it,
+  without writing it, taking `--part`, `--tempo`, `--grid` and `--tune` as `mx import` does.
+  `--mute` with `--render` leaves a part out of the render and `--solo` renders only the parts it
+  names, each given once for each part, such as `--mute bass --mute keys`.
+  `--loudness` with `--render` scales the finished file to that loudness in LUFS, such as
+  `--loudness -14`, no further than a peak of -1 dB; the report after a render gives the file's
+  loudness beside its peak.
+  `--share` plays or renders the song at that share of its tempo, from 0.25 to 4, so `--share 0.5`
+  plays it at half speed.
 
-  `--output` and `--input` name the devices to play through and to read live audio from, `--rate` the sample rate in Hz, and `--buffer` the frames the device asks for at a time; each is the device's default when not given, and `mix mx.devices` lists what each device takes.
-  `config :mx, output: "Scarlett 2i2"` sets any of the four for the project, and an option given here overrides it.
+  `--output` and `--input` name the devices to play through and to read live audio from, `--rate`
+  the sample rate in Hz, and `--buffer` the frames the device asks for at a time; each is the
+  device's default when not given, and `mix mx.devices` lists what each device takes.
+  `config :mx, output: "Scarlett 2i2"` sets any of the four for the project, and an option given
+  here overrides it.
   A render runs at 48000 Hz, so `--rate` and `--buffer` do not apply to it.
   """
 

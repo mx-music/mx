@@ -1,14 +1,23 @@
 defmodule Mx.Score do
   @moduledoc """
-  A MusicXML score read into parts of bars, each bar a list of voices and each voice a list of notes and rests in order.
+  A MusicXML score read into parts of bars, each bar a list of voices and each voice a list of
+  notes and rests in order.
 
-  Lengths are in quarter notes, pitches are as they sound, and each note carries the `staff` it is written on, 1 for the uppermost, and a tied note that of the note its tie starts on.
-  A note led into by grace notes keeps them in order as `graces`, each with its `midi`, its `name` and whether it is `slash`ed, taking no time of its own.
-  `order` lists the bars by number in the order the score plays them, its repeats and endings taken.
-  `runs` is the same order cut wherever the score jumps or crosses a repeat or an ending, so it can be written as ranges.
-  A score read from a MIDI file by `Mx.MIDI` gives each note the `vel` it was struck with, and holds the file's tempo changes after its first tempo in `tempos`, each as `{beat, bpm}` from the start.
-  `left_out` names, a line each, what a song written from the score leaves out, and `left_out_counts` gives the same as `{part, kind, count}`, `part` being nil for the whole score.
-  A MusicXML score counts its `:syllables` of text, `:slurs`, `:trills`, `:ornaments` besides trills, `:fermatas`, `:grace_notes` and `:articulations`, such as staccato.
+  Lengths are in quarter notes, pitches are as they sound, and each note carries the `staff` it is
+  written on, 1 for the uppermost, and a tied note that of the note its tie starts on.
+  A note led into by grace notes keeps them in order as `graces`, each with its `midi`, its `name`
+  and whether it is `slash`ed, taking no time of its own.
+  `order` lists the bars by number in the order the score plays them, its repeats and endings
+  taken.
+  `runs` is the same order cut wherever the score jumps or crosses a repeat or an ending, so it
+  can be written as ranges.
+  A score read from a MIDI file by `Mx.MIDI` gives each note the `vel` it was struck with, and
+  holds the file's tempo changes after its first tempo in `tempos`, each as `{beat, bpm}` from the
+  start.
+  `left_out` names, a line each, what a song written from the score leaves out, and
+  `left_out_counts` gives the same as `{part, kind, count}`, `part` being nil for the whole score.
+  A MusicXML score counts its `:syllables` of text, `:slurs`, `:trills`, `:ornaments` besides
+  trills, `:fermatas`, `:grace_notes` and `:articulations`, such as staccato.
   """
 
   require Record
@@ -56,7 +65,8 @@ defmodule Mx.Score do
             left_out_counts: []
 
   @doc """
-  Reads a compressed .mxl or an uncompressed MusicXML file, a MIDI file ending in .mid or .midi, or an ABC file, and returns `{:ok, score}` or `{:error, message}`.
+  Reads a compressed .mxl or an uncompressed MusicXML file, a MIDI file ending in .mid or .midi,
+  or an ABC file, and returns `{:ok, score}` or `{:error, message}`.
   A MIDI file's notes move to the nearest `grid:`, a fraction of a whole note, 1/16 unless given.
   An ABC file, ending in .abc, gives the tune `tune:` numbers by its X: field, or its first tune.
   """
@@ -74,10 +84,17 @@ defmodule Mx.Score do
   end
 
   @doc """
-  What the file at `path` holds besides its notes, as `{:ok, about}` or `{:error, message}`, leaving `read/2` and every song an import writes as they are.
+  What the file at `path` holds besides its notes, as `{:ok, about}` or `{:error, message}`,
+  leaving `read/2` and every song an import writes as they are.
 
-  A MusicXML score gives its `meter` as written, such as "12/8", its key as `fifths`, sharps above 0 and flats below, its `tempo` and the words it is `marking`ed with, such as "Grave", whether it starts with an `upbeat`, its count of `bars` after the upbeat, each part's `staves` as `{name, count}`, and the `marks` written on its bars as `{bar, mark}`: "segno", "coda", and the words Fine, D.C. and D.S. as the score spells them.
-  A MIDI file gives its `tracks`, its `tracks_with_notes`, its `ticks` to a quarter note, its `meter`, its `fifths`, and its `tempos`, each as `%{bar: bar, beat: beat, tempo: tempo}` from the start.
+  A MusicXML score gives its `meter` as written, such as "12/8", its key as `fifths`, sharps above
+  0 and flats below, its `tempo` and the words it is `marking`ed with, such as "Grave", whether it
+  starts with an `upbeat`, its count of `bars` after the upbeat, each part's `staves` as
+  `{name, count}`, and the `marks` written on its bars as `{bar, mark}`: "segno", "coda", and the
+  words Fine, D.C. and D.S. as the score spells them.
+  A MIDI file gives its `tracks`, its `tracks_with_notes`, its `ticks` to a quarter note, its
+  `meter`, its `fifths`, and its `tempos`, each as `%{bar: bar, beat: beat, tempo: tempo}` from
+  the start.
   """
   def about(path) when is_binary(path) do
     case path |> Path.extname() |> String.downcase() do
@@ -213,7 +230,9 @@ defmodule Mx.Score do
     end
   end
 
-  @doc "The MusicXML text of a compressed or uncompressed score, as `{:ok, xml}` or `{:error, message}`."
+  @doc """
+  The MusicXML text of a compressed or uncompressed score, as `{:ok, xml}` or `{:error, message}`.
+  """
   def xml(path) when is_binary(path) do
     with {:ok, data} <- read_file(path), do: unpack(data, path)
   end

@@ -2,15 +2,26 @@ defmodule Mx.Inputs do
   @moduledoc """
   Keeps the latest value of every input from outside mx, and the values loops share.
 
-  It listens to every MIDI input port connected when it starts, and for OSC on the port the song names with `osc_from`.
-  It keeps the value of each MIDI controller by number, the velocity of each MIDI note by number, 0 once the note is off, and the arguments of each OSC address, whatever port or channel they came from.
-  A loop's pass reads a snapshot of them all, so a pass reads one moment of the inputs from start to end.
-  Each input is also sent to subscribers as `{:input, event}`, so the band can start the loops it triggers.
+  It listens to every MIDI input port connected when it starts, and for OSC on the port the song
+  names with `osc_from`.
+  It keeps the value of each MIDI controller by number, the velocity of each MIDI note by number,
+  0 once the note is off, and the arguments of each OSC address, whatever port or channel they
+  came from.
+  A loop's pass reads a snapshot of them all, so a pass reads one moment of the inputs from start
+  to end.
+  Each input is also sent to subscribers as `{:input, event}`, so the band can start the loops it
+  triggers.
 
-  A shared value is kept with the beat of the set step that set it, and the real time of that beat.
-  A pass starting on a beat reads, for each name, the value the last set step before that beat left, so a set step on that beat reaches it only from its next pass on.
-  Loops work out their passes ahead of time and in no fixed order, so each loop the band follows says how far it has worked out, and a pass's snapshot waits until every other followed loop has worked out up to its beat.
-  The loop furthest behind never waits, so no two loops wait for each other; a snapshot waits no later than the time it is given, so a loop that hangs makes the others read without its values instead of stopping them.
+  A shared value is kept with the beat of the set step that set it, and the real time of that
+  beat.
+  A pass starting on a beat reads, for each name, the value the last set step before that beat
+  left, so a set step on that beat reaches it only from its next pass on.
+  Loops work out their passes ahead of time and in no fixed order, so each loop the band follows
+  says how far it has worked out, and a pass's snapshot waits until every other followed loop has
+  worked out up to its beat.
+  The loop furthest behind never waits, so no two loops wait for each other; a snapshot waits no
+  later than the time it is given, so a loop that hangs makes the others read without its values
+  instead of stopping them.
   """
 
   use GenServer
@@ -19,20 +30,28 @@ defmodule Mx.Inputs do
 
   alias Mx.OSC
 
-  @doc "Starts listening to the MIDI inputs, unless `midi: false`, under the name in `opts`, or `Mx.Inputs` unless `name: nil`."
+  @doc """
+  Starts listening to the MIDI inputs, unless `midi: false`, under the name in `opts`, or
+  `Mx.Inputs` unless `name: nil`.
+  """
   def start_link(opts) when is_list(opts) do
     name = Keyword.get(opts, :name, __MODULE__)
     GenServer.start_link(__MODULE__, opts, if(name, do: [name: name], else: []))
   end
 
-  @doc "The latest value of every input, and each shared value as the set steps whose beat has come left it."
+  @doc """
+  The latest value of every input, and each shared value as the set steps whose beat has come left
+  it.
+  """
   def snapshot(inputs \\ __MODULE__) when is_pid(inputs) or is_atom(inputs) do
     GenServer.call(inputs, :snapshot)
   end
 
   @doc """
-  Every input and shared value as a pass starting at `beat` reads them, as a map it reads from start to end.
-  It waits until every other loop followed has worked out up to `beat`, or until the Unix time `until_us` in microseconds.
+  Every input and shared value as a pass starting at `beat` reads them, as a map it reads from
+  start to end.
+  It waits until every other loop followed has worked out up to `beat`, or until the Unix time
+  `until_us` in microseconds.
   """
   def snapshot_at(inputs \\ __MODULE__, beat, until_us)
       when (is_pid(inputs) or is_atom(inputs)) and is_number(beat) and is_integer(until_us) do
@@ -40,14 +59,20 @@ defmodule Mx.Inputs do
     GenServer.call(inputs, {:snapshot_at, beat, until_us}, wait_ms + 5000)
   end
 
-  @doc "Shares a value under `name` with every loop from `beat` on, a set step's beat, which plays at the Unix time `at_us`."
+  @doc """
+  Shares a value under `name` with every loop from `beat` on, a set step's beat, which plays at
+  the Unix time `at_us`.
+  """
   def put(inputs \\ __MODULE__, name, value, beat, at_us)
       when (is_pid(inputs) or is_atom(inputs)) and is_atom(name) and is_number(beat) and
              is_integer(at_us) do
     GenServer.cast(inputs, {:put, name, value, beat, at_us})
   end
 
-  @doc "Follows the loop `pid`, which has handed over every set step before `beat`; nil stops following it, as does its exit."
+  @doc """
+  Follows the loop `pid`, which has handed over every set step before `beat`; nil stops following
+  it, as does its exit.
+  """
   def worked_out(inputs \\ __MODULE__, pid, beat)
       when (is_pid(inputs) or is_atom(inputs)) and is_pid(pid) and
              (is_number(beat) or is_nil(beat)) do

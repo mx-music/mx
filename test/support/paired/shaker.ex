@@ -16,7 +16,10 @@ defmodule Mx.Paired.Shaker do
     darken: 0.45
   }
 
-  @doc "A large shaker, with a down and an up stroke, fitted to the large shaker of the Versilian Community Sample Library."
+  @doc """
+  A large shaker, with a down and an up stroke, fitted to the large shaker of the Versilian
+  Community Sample Library.
+  """
   attr :note, :note, default: 103, doc: "The drum's pitch."
   attr :vel, :float, default: 0.6, range: 0..1, doc: "How hard it is struck."
   attr :up, :float, default: 0, range: 0..1, doc: "1 shakes upward instead of down."

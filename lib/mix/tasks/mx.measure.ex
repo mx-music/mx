@@ -2,57 +2,105 @@ defmodule Mix.Tasks.Mx.Measure do
   @shortdoc "Measures recordings of notes and hits, and compares a synth with them"
 
   @moduledoc """
-  Measures recordings of single notes, plucked or struck, and prints the median fade time and level of their harmonics in each frequency band.
+  Measures recordings of single notes, plucked or struck, and prints the median fade time and
+  level of their harmonics in each frequency band.
 
       mx measure Guitar.mf.sulA.A2B2.aif:A2 Guitar.mf.sulE.E2B2.aif:E2
       mx measure Guitar.mf.sulA.A2B2.aif:A2 --synth guitar --vel 0.6
 
-  Each file is followed by a colon and the note it starts on, as a name such as A2 or Bb3, or a MIDI number.
-  A file holds one note or several, one after another a semitone apart, each starting from silence, in WAV or AIFF, mono or stereo, at any sample rate.
-  It prints the notes it found in each file with their pitch and how far their harmonics are stretched sharp, then for each band the seconds a harmonic takes to fade 60 dB and its level in dB against the fundamental of the lowest note.
-  `--synth` renders one of mx's synths offline at each note found, at `--vel` (0.6 unless given), and prints its figures beside the recordings', with the difference.
-  `--option` gives the synth another option as a name and a number, such as `--option up=1`, and may be given more than once.
+  Each file is followed by a colon and the note it starts on, as a name such as A2 or Bb3, or a
+  MIDI number.
+  A file holds one note or several, one after another a semitone apart, each starting from
+  silence, in WAV or AIFF, mono or stereo, at any sample rate.
+  It prints the notes it found in each file with their pitch and how far their harmonics are
+  stretched sharp, then for each band the seconds a harmonic takes to fade 60 dB and its level in
+  dB against the fundamental of the lowest note.
+  `--synth` renders one of mx's synths offline at each note found, at `--vel` (0.6 unless given),
+  and prints its figures beside the recordings', with the difference.
+  `--option` gives the synth another option as a name and a number, such as `--option up=1`, and
+  may be given more than once.
 
       mx measure --held Flute.vib.mf.B3B4.aiff:B3 --synth flute
       mx measure --hits Cowbell1_Hit_v1_rr1_Sum.wav Marimba.C4.wav:C4
 
-  `--held` measures held notes, bowed, blown or played on an organ, as `Mx.Measure.Held` describes.
-  `--drone` with `--held` measures each file as one note held from its first sample to its last, for a drone plucked again and again, which would otherwise read as a note at each pluck.
-  It prints each note's pitch, attack and vibrato, then their median attack and vibrato, and for each band the level of the harmonics and of the noise between them, in dB against the fundamental of the lowest note.
-  `--hits` measures hits, as `Mx.Measure.Hits` describes, and a file with no pitch needs no note after its name.
-  A file of several hits named with its first note, such as `Vibraphone.sustain.ff.C3B3.aif:C3`, is a run, split into its notes as `mix mx.fit` splits one, and each hit is named by its note.
-  It prints the strongest peaks of each hit as ratios to the lowest, then for each band the seconds it takes to fade 60 dB and its level as the hit starts, against the loudest band.
-  `--partials` with a count, such as `--partials 12`, also prints under each hit up to that many of its strongest partials, lowest first: the frequency in Hz, the ratio to the lowest, the level against the loudest, and the seconds it takes to fade 60 dB.
-  With `--held`, it prints for each note where it holds from, where it is let go, how fast it falls then and its vibrato, and under it up to that many of its strongest partials: the level at each moment of the attack before it holds, the level it holds at, its slope once let go and how far it swings with the vibrato, as `Mx.Fit.Held` measures them.
-  Without `--hits` or `--held`, it prints under each file up to that many of the strongest partials of the note it starts with, as `Mx.Measure.partials/2` measures them, lowest first: the frequency in Hz, the ratio to the pitch, the harmonic or between, the level against the loudest as the note starts, and how it falls, or rises, in dB a second, with the second slope and where it starts when it slows; then each line left out as not the instrument's.
+  `--held` measures held notes, bowed, blown or played on an organ, as `Mx.Measure.Held`
+  describes.
+  `--drone` with `--held` measures each file as one note held from its first sample to its last,
+  for a drone plucked again and again, which would otherwise read as a note at each pluck.
+  It prints each note's pitch, attack and vibrato, then their median attack and vibrato, and for
+  each band the level of the harmonics and of the noise between them, in dB against the
+  fundamental of the lowest note.
+  `--hits` measures hits, as `Mx.Measure.Hits` describes, and a file with no pitch needs no note
+  after its name.
+  A file of several hits named with its first note, such as `Vibraphone.sustain.ff.C3B3.aif:C3`,
+  is a run, split into its notes as `mix mx.fit` splits one, and each hit is named by its note.
+  It prints the strongest peaks of each hit as ratios to the lowest, then for each band the
+  seconds it takes to fade 60 dB and its level as the hit starts, against the loudest band.
+  `--partials` with a count, such as `--partials 12`, also prints under each hit up to that many
+  of its strongest partials, lowest first: the frequency in Hz, the ratio to the lowest, the level
+  against the loudest, and the seconds it takes to fade 60 dB.
+  With `--held`, it prints for each note where it holds from, where it is let go, how fast it
+  falls then and its vibrato, and under it up to that many of its strongest partials: the level at
+  each moment of the attack before it holds, the level it holds at, its slope once let go and how
+  far it swings with the vibrato, as `Mx.Fit.Held` measures them.
+  Without `--hits` or `--held`, it prints under each file up to that many of the strongest
+  partials of the note it starts with, as `Mx.Measure.partials/2` measures them, lowest first: the
+  frequency in Hz, the ratio to the pitch, the harmonic or between, the level against the loudest
+  as the note starts, and how it falls, or rises, in dB a second, with the second slope and where
+  it starts when it slows; then each line left out as not the instrument's.
 
       mx measure keyboard_electronic_098-064-025.wav:E4 --partials 20
 
       mx measure --hits Agogo_Low_v1_rr1_Mid.wav --partials 12 --synth low_agogo
 
-  `--hits` then prints each band's level at 0, 50, 100 and 200 ms after the hit's loudest moment, against the loudest band then, as medians over the hits; a moment past a hit's end prints as -, and a level more than 40 dB down as -40.
-  Under them it prints how bright the hits are over time: the sound above 1, 2, 4 and 8 kHz in dB under the whole sound, from 0 to 20, 20 to 80 and 80 to 200 ms after the hit starts, and the milliseconds after the hit starts at which the sound above 4 kHz is loudest, then that sound's level at 5, 10, 20, 40, 80, 160 and 320 ms after the hit starts, in dB under its loudest, beside the synth's with `--synth`.
-  `--compare` with a file name, with `--hits` and `--synth`, writes a WAV file of up to three recorded hits whose bands are nearest the median, then the synth's hit at each of their notes, each 0.6 seconds at the same peak, for listening or for `mx spectrogram`.
+  `--hits` then prints each band's level at 0, 50, 100 and 200 ms after the hit's loudest moment,
+  against the loudest band then, as medians over the hits; a moment past a hit's end prints as -,
+  and a level more than 40 dB down as -40.
+  Under them it prints how bright the hits are over time: the sound above 1, 2, 4 and 8 kHz in dB
+  under the whole sound, from 0 to 20, 20 to 80 and 80 to 200 ms after the hit starts, and the
+  milliseconds after the hit starts at which the sound above 4 kHz is loudest, then that sound's
+  level at 5, 10, 20, 40, 80, 160 and 320 ms after the hit starts, in dB under its loudest, beside
+  the synth's with `--synth`.
+  `--compare` with a file name, with `--hits` and `--synth`, writes a WAV file of up to three
+  recorded hits whose bands are nearest the median, then the synth's hit at each of their notes,
+  each 0.6 seconds at the same peak, for listening or for `mx spectrogram`.
 
       mx measure --hits "pandeiro A.wav" --synth pandeiro_thumb --compare thumb.wav
-  With `--synth`, a held note renders for as long as the recordings hold it, and a hit renders once at the note of each hit found, with only the options the synth takes.
+  With `--synth`, a held note renders for as long as the recordings hold it, and a hit renders
+  once at the note of each hit found, with only the options the synth takes.
 
       mx measure --strokes "cuica (2).wav"
       mx measure --strokes "cuica (2).wav" --tracks 17,19 --ignore 8500-9100
 
-  `--strokes` measures an instrument played in strokes that run into one another, as `Mx.Measure.Strokes` describes, and a file needs no note after its name.
-  It prints each stroke with its number, the second it starts at, its length in ms, the note it settles at, the cents it starts from that note, and its level in dB under the loudest.
-  `--tracks` with the numbers of strokes of one file prints each one's tracks instead: its note, the semitones it starts under it, then its pitch in cents at every step of 8 ms, and a row for each step of the levels of its 16 harmonics and of its noise, in dB under its loudest step, with -127 for silence.
-  `--alone` with `--tracks` carries on past each stroke into the ring it leaves, for a stroke played by itself.
-  `--ignore` with `--tracks` and two frequencies, such as `--ignore 8500-9100`, leaves out the harmonics between them, for a steady tone that is not the instrument's.
+  `--strokes` measures an instrument played in strokes that run into one another, as
+  `Mx.Measure.Strokes` describes, and a file needs no note after its name.
+  It prints each stroke with its number, the second it starts at, its length in ms, the note it
+  settles at, the cents it starts from that note, and its level in dB under the loudest.
+  `--tracks` with the numbers of strokes of one file prints each one's tracks instead: its note,
+  the semitones it starts under it, then its pitch in cents at every step of 8 ms, and a row for
+  each step of the levels of its 16 harmonics and of its noise, in dB under its loudest step, with
+  -127 for silence.
+  `--alone` with `--tracks` carries on past each stroke into the ring it leaves, for a stroke
+  played by itself.
+  `--ignore` with `--tracks` and two frequencies, such as `--ignore 8500-9100`, leaves out the
+  harmonics between them, for a steady tone that is not the instrument's.
 
       mx measure --known
 
-  `--known` measures notes it makes itself, whose partials are known exactly, in the same way `mx fit --struck` measures a recording, and needs no recordings.
-  There are six kinds of note, each at C2, C4 and C7: a partial falling 60 dB over 3 seconds, a partial falling 30 dB in 25 ms, two partials 20 Hz apart that beat, a fundamental rising 40 dB over 40 ms under a partial that starts at once, a partial 30 dB under a burst of white noise 50 ms long, and a short partial at once while the fundamental comes within 20 dB of its peak 30 ms later.
-  For each note it prints how far the measured strike is from the true one in ms, and for each partial how far its measured level is from the true one, as the peak over the first 20 ms and on average over the note in dB, and its frequency in cents.
-  A figure beyond 2 dB, the limit refit tickets use, is marked, and the last lines say at which pitches each kind is followed within it.
-  Read these figures before setting a refit's criteria: no fit can be closer to a recording than the measuring is to the truth.
+  `--known` measures notes it makes itself, whose partials are known exactly, in the same way
+  `mx fit --struck` measures a recording, and needs no recordings.
+  There are six kinds of note, each at C2, C4 and C7: a partial falling 60 dB over 3 seconds, a
+  partial falling 30 dB in 25 ms, two partials 20 Hz apart that beat, a fundamental rising 40 dB
+  over 40 ms under a partial that starts at once, a partial 30 dB under a burst of white noise 50
+  ms long, and a short partial at once while the fundamental comes within 20 dB of its peak 30 ms
+  later.
+  For each note it prints how far the measured strike is from the true one in ms, and for each
+  partial how far its measured level is from the true one, as the peak over the first 20 ms and on
+  average over the note in dB, and its frequency in cents.
+  A figure beyond 2 dB, the limit refit tickets use, is marked, and the last lines say at which
+  pitches each kind is followed within it.
+  Read these figures before setting a refit's criteria: no fit can be closer to a recording than
+  the measuring is to the truth.
   """
 
   use Mix.Task

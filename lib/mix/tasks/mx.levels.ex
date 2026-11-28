@@ -2,15 +2,21 @@ defmodule Mix.Tasks.Mx.Levels do
   @shortdoc "Prints a recording's levels over time as comma-separated values"
 
   @moduledoc """
-  Prints the levels of a WAV or AIFF recording over time as comma-separated values, as `Mx.Levels` works them out, for a picture that reacts to what was played.
+  Prints the levels of a WAV or AIFF recording over time as comma-separated values, as `Mx.Levels`
+  works them out, for a picture that reacts to what was played.
 
       mx levels performance.wav
       mx levels performance.wav --per-second 60 > levels.csv
       mx levels performance.wav --strokes
 
-  The first line names the columns, and each line after it is a row: the second it starts at, the level of the whole sound, the level of each octave from 20 Hz to 20,480 Hz, all in dB under the recording's loudest row, and the brightness, the frequency in Hz that half the sound's energy lies under.
-  `--per-second` is the rows a second, 30 unless given, and each row covers all the sound from its second to the next row's.
-  `--strokes` prints the strokes in place of the rows: the second each sound starts, and its level in dB under the loudest stroke's.
+  The first line names the columns, and each line after it is a row: the second it starts at, the
+  level of the whole sound, the level of each octave from 20 Hz to 20,480 Hz, all in dB under the
+  recording's loudest row, and the brightness, the frequency in Hz that half the sound's energy
+  lies under.
+  `--per-second` is the rows a second, 30 unless given, and each row covers all the sound from its
+  second to the next row's.
+  `--strokes` prints the strokes in place of the rows: the second each sound starts, and its level
+  in dB under the loudest stroke's.
   """
 
   use Mix.Task

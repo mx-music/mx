@@ -1,6 +1,7 @@
 defmodule Mx.Signal do
   @moduledoc """
-  The pieces the measuring of plucked notes, held notes and hits share in Elixir: reading a recording for the native measuring, spectra, the bands and a high-pass.
+  The pieces the measuring of plucked notes, held notes and hits share in Elixir: reading a
+  recording for the native measuring, spectra, the bands and a high-pass.
 
   Levels are in dB, and a spectrum is a tuple of the magnitudes of its frequency bins.
   """
@@ -22,10 +23,17 @@ defmodule Mx.Signal do
     {10_000, 16_000}
   ]
 
-  @doc "The frequency bands measurements are given in, each a third of an octave or wider, as `{low, high}` in Hz."
+  @doc """
+  The frequency bands measurements are given in, each a third of an octave or wider, as
+  `{low, high}` in Hz.
+  """
   def bands, do: @bands
 
-  @doc "Reads a recording without decoding it and measures it with `measure`, given its data, its `{kind, bits, channels}` and its rate, and returns `{:ok, found}`, or `{:error, message}` naming the file when it is refused or `measure` finds nothing."
+  @doc """
+  Reads a recording without decoding it and measures it with `measure`, given its data, its
+  `{kind, bits, channels}` and its rate, and returns `{:ok, found}`, or `{:error, message}` naming
+  the file when it is refused or `measure` finds nothing.
+  """
   def measure_data(path, what, measure)
       when is_binary(path) and is_binary(what) and is_function(measure, 3) do
     with {:ok, %{rate: rate} = format, data} <- Audio.raw(path) do
@@ -36,13 +44,18 @@ defmodule Mx.Signal do
     end
   end
 
-  @doc "Samples from -1 to 1 as data the native measuring reads, with its `{kind, bits, channels}`."
+  @doc """
+  Samples from -1 to 1 as data the native measuring reads, with its `{kind, bits, channels}`.
+  """
   def packed(samples) when is_list(samples) do
     data = for sample <- samples, into: <<>>, do: <<sample / 1::float-little-64>>
     {data, {"float_little", 64, 1}}
   end
 
-  @doc "The format of `Mx.Audio.raw/1`'s data as the native measuring takes it, `{kind, bits, channels}`."
+  @doc """
+  The format of `Mx.Audio.raw/1`'s data as the native measuring takes it,
+  `{kind, bits, channels}`.
+  """
   def native(%{kind: kind, bits: bits, channels: channels}) do
     {Atom.to_string(kind), bits, channels}
   end
@@ -75,7 +88,10 @@ defmodule Mx.Signal do
     data |> Native.spectrum(format, 0, size) |> List.to_tuple()
   end
 
-  @doc "A peak's position between bins and its level in dB, from a parabola through the log magnitudes around it."
+  @doc """
+  A peak's position between bins and its level in dB, from a parabola through the log magnitudes
+  around it.
+  """
   def refine(spectrum, peak) when is_tuple(spectrum) and is_integer(peak) do
     [left, top, right] = for at <- (peak - 1)..(peak + 1), do: db(elem(spectrum, at))
     curve = left - 2 * top + right
@@ -88,13 +104,19 @@ defmodule Mx.Signal do
     end
   end
 
-  @doc "A fourth-order Butterworth high-pass at `hz`, run forward and then backward so it shifts nothing in time."
+  @doc """
+  A fourth-order Butterworth high-pass at `hz`, run forward and then backward so it shifts nothing
+  in time.
+  """
   def high_pass(samples, rate, hz) when is_list(samples) and is_integer(rate) and is_number(hz) do
     pass = fn samples -> samples |> biquad(rate, hz, 0.5412) |> biquad(rate, hz, 1.3066) end
     samples |> pass.() |> Enum.reverse() |> pass.() |> Enum.reverse()
   end
 
-  @doc "What the high-pass, run forward and backward, takes from a frequency, in dB: each run multiplies the amplitude by 1 / √(1 + (cutoff / freq)⁸)."
+  @doc """
+  What the high-pass, run forward and backward, takes from a frequency, in dB: each run multiplies
+  the amplitude by 1 / √(1 + (cutoff / freq)⁸).
+  """
   def filter_loss(freq, cutoff) when is_number(freq) and is_number(cutoff) do
     20 * :math.log10(1 + (cutoff / freq) ** 8)
   end

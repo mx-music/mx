@@ -2,12 +2,14 @@ defmodule Mix.Tasks.Mx.Page do
   @shortdoc "Writes a song as an HTML page that plays it and shows its parts"
 
   @moduledoc """
-  Writes a song file as one HTML page, which plays the song's render and shows each part's notes on a timeline.
+  Writes a song file as one HTML page, which plays the song's render and shows each part's notes
+  on a timeline.
 
       mx page song.exs
       mx page song.exs --out song.html --title "A song" --seconds 60
 
-  The page is written beside the song with the extension .html unless `--out` names it, and `--force` writes over a file that exists.
+  The page is written beside the song with the extension .html unless `--out` names it, and
+  `--force` writes over a file that exists.
   `--seconds` is how long to render a song whose music does not end.
   The song's sound is encoded with ffmpeg, which has to be installed.
   """

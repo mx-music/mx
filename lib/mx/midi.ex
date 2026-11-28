@@ -1,15 +1,27 @@
 defmodule Mx.MIDI do
   @moduledoc """
-  Reads a Standard MIDI File as a score for `mix mx.import`, and writes a song as one for `mix mx.export`.
+  Reads a Standard MIDI File as a score for `mix mx.import`, and writes a song as one for
+  `mix mx.export`.
 
-  A file read becomes a `Mx.Score`: each track that plays notes is a part, named after the track or numbered among the tracks that play notes, and a file whose notes all lie in one track gives a part for each channel instead.
-  Note starts and ends move to the nearest step of the grid, and notes of a part that start and end together are a chord, while notes that overlap otherwise go to as few voices as the overlaps need.
-  The first tempo is the score's, each later change is kept at the nearest step of the grid, and its time signatures cut the bars, 4/4 when it has none.
-  Notes on channel 10, which General MIDI keeps for drums, the sustain pedal and other controllers are left out, and the score counts them in `left_out` and `left_out_counts` as `:drum_notes`, `:pedal_presses` and `:controls`, part by part, or for the file when its notes lie in one track.
+  A file read becomes a `Mx.Score`: each track that plays notes is a part, named after the track
+  or numbered among the tracks that play notes, and a file whose notes all lie in one track gives
+  a part for each channel instead.
+  Note starts and ends move to the nearest step of the grid, and notes of a part that start and
+  end together are a chord, while notes that overlap otherwise go to as few voices as the overlaps
+  need.
+  The first tempo is the score's, each later change is kept at the nearest step of the grid, and
+  its time signatures cut the bars, 4/4 when it has none.
+  Notes on channel 10, which General MIDI keeps for drums, the sustain pedal and other controllers
+  are left out, and the score counts them in `left_out` and `left_out_counts` as `:drum_notes`,
+  `:pedal_presses` and `:controls`, part by part, or for the file when its notes lie in one track.
 
-  A file written holds a first track with the song's tempo and each change its music makes at once, its time signature and key, then one track per part that plays notes with a pitch, named after the part, each on its own channel, without channel 10.
-  A change made evenly over some beats is written as a change at once where it starts, and named in `left_out`.
-  Each note keeps its vel as its velocity, 0.6 when it has none, the default of every synth that takes one, and the tracks name no instrument, since mx's synths have no General MIDI number.
+  A file written holds a first track with the song's tempo and each change its music makes at
+  once, its time signature and key, then one track per part that plays notes with a pitch, named
+  after the part, each on its own channel, without channel 10.
+  A change made evenly over some beats is written as a change at once where it starts, and named
+  in `left_out`.
+  Each note keeps its vel as its velocity, 0.6 when it has none, the default of every synth that
+  takes one, and the tracks name no instrument, since mx's synths have no General MIDI number.
   """
 
   import Bitwise
@@ -22,7 +34,8 @@ defmodule Mx.MIDI do
   @pedal 64
 
   @doc """
-  Reads the MIDI file at `path` as a score, moving notes to the nearest `grid`, given as `{1, 16}` for a sixteenth note.
+  Reads the MIDI file at `path` as a score, moving notes to the nearest `grid`, given as `{1, 16}`
+  for a sixteenth note.
   Returns `{:ok, score}` or `{:error, message}`.
   """
   def score(path, {count, division} = grid) when is_binary(path) and count > 0 and division > 0 do
@@ -39,8 +52,11 @@ defmodule Mx.MIDI do
   end
 
   @doc """
-  The notes of the MIDI file at `path` as they were played, part by part as `score/2` names the parts, none moved to a grid.
-  Returns `{:ok, %{ticks: ticks, parts: [%{name: name, notes: notes}]}}`, a note as `%{beat: beat, length: beats, midi: key, vel: velocity}` with its beat and length in quarter notes and its velocity from 0 to 1, or `{:error, message}`.
+  The notes of the MIDI file at `path` as they were played, part by part as `score/2` names the
+  parts, none moved to a grid.
+  Returns `{:ok, %{ticks: ticks, parts: [%{name: name, notes: notes}]}}`, a note as
+  `%{beat: beat, length: beats, midi: key, vel: velocity}` with its beat and length in quarter
+  notes and its velocity from 0 to 1, or `{:error, message}`.
   """
   def played(path) when is_binary(path) do
     with {:ok, data} <- read_file(path),
@@ -76,7 +92,8 @@ defmodule Mx.MIDI do
   end
 
   @doc """
-  What the MIDI file at `path` holds besides its notes, as `Mx.Score.about/1` gives it, or `{:error, message}`.
+  What the MIDI file at `path` holds besides its notes, as `Mx.Score.about/1` gives it, or
+  `{:error, message}`.
   """
   def about(path) when is_binary(path) do
     with {:ok, data} <- read_file(path),
@@ -588,8 +605,11 @@ defmodule Mx.MIDI do
   end
 
   @doc """
-  Writes the song at `path` as a MIDI file to `out`, with `time:`, `key:`, `title:` and `force:` as `Mx.MusicXML.write/3` takes them.
-  Returns `{:ok, %{parts: parts, left_out: left_out, notes: notes}}`, the parts and what is left out as `Mx.MusicXML.write/3` gives them and `notes` a line for each tempo change written otherwise than the song makes it, or `{:error, message}`.
+  Writes the song at `path` as a MIDI file to `out`, with `time:`, `key:`, `title:` and `force:`
+  as `Mx.MusicXML.write/3` takes them.
+  Returns `{:ok, %{parts: parts, left_out: left_out, notes: notes}}`, the parts and what is left
+  out as `Mx.MusicXML.write/3` gives them and `notes` a line for each tempo change written
+  otherwise than the song makes it, or `{:error, message}`.
   """
   def write(path, out, opts \\ []) when is_binary(path) and is_binary(out) and is_list(opts) do
     with :ok <- Page.check(out, Keyword.get(opts, :force, false)),

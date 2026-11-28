@@ -1,6 +1,7 @@
 defmodule Mx.Paired.Drums do
   @moduledoc """
-  The helpers mxs's drums share, written with defsound so the twins can share them as the drums do.
+  The helpers mxs's drums share, written with defsound so the twins can share them as the drums
+  do.
   """
 
   use Mx.Instrument
@@ -20,7 +21,10 @@ defmodule Mx.Paired.Drums do
     envelope([{attack, 1, curve}, {decay, 0, curve}])
   end
 
-  @doc "A rise from 0.001 to 1 over `attack` seconds and a fall back to 0.001 over `decay`, both exponential; a first point of no length starts it at 0.001, as the graph's envelopes start at 0."
+  @doc """
+  A rise from 0.001 to 1 over `attack` seconds and a fall back to 0.001 over `decay`, both
+  exponential; a first point of no length starts it at 0.001, as the graph's envelopes start at 0.
+  """
   defsound exp_hit(attack, decay) do
     envelope([{0, 0.001}, {attack, 1, :exp}, {decay, 0.001, :exp}])
   end
@@ -30,7 +34,10 @@ defmodule Mx.Paired.Drums do
     bandpass(sound, hz: f, q: 1 / rq)
   end
 
-  @doc "Bands of noise at the ride's bands from `first`, scaled by `scale`, each struck and fading over its ring."
+  @doc """
+  Bands of noise at the ride's bands from `first`, scaled by `scale`, each struck and fading over
+  its ring.
+  """
   defsound band_noise(levels, rings, first, scale) do
     bands = Enum.zip([Enum.drop(@ride_bands, first), levels, rings])
 
@@ -49,7 +56,10 @@ defmodule Mx.Paired.Drums do
     end)
   end
 
-  @doc "An agogo bell at `f` struck at `vel`: a stick's click ringing its modes at `ratios` with `levels` and `rings`, a hiss up to `top` at `hiss` and a thump at `thump`, scaled by `gain`."
+  @doc """
+  An agogo bell at `f` struck at `vel`: a stick's click ringing its modes at `ratios` with
+  `levels` and `rings`, a hiss up to `top` at `hiss` and a thump at `thump`, scaled by `gain`.
+  """
   defsound agogo(f, vel, ratios, levels, rings, hiss, top, thump, gain) do
     click = impulse() + highpass(noise(:white), hz: 3000) * hit(0.0002, 0.002, -4) * 0.5
     stick = lowpass(click, hz: clamp(4000 + vel * 12_000, 20, 20_000))
@@ -64,7 +74,9 @@ defmodule Mx.Paired.Drums do
     (bell + lowpass(hissing, hz: top) + thumping) * (gain * vel ** 1.4 / 0.6 ** 1.4)
   end
 
-  @doc "A timbale at `f`: a stick of noise ringing the head's modes, with a click, and the shell's."
+  @doc """
+  A timbale at `f`: a stick of noise ringing the head's modes, with a click, and the shell's.
+  """
   defsound timbale(f) do
     stick = highpass(noise(:white), hz: 1500) * hit(0.0004, 0.008, -4)
     head = Enum.map([1, 1.59, 2.14, 2.65], &(f * &1))
@@ -82,7 +94,10 @@ defmodule Mx.Paired.Drums do
     struck + mode(impulse(), hz: head, level: head_levels, fade: head_rings)
   end
 
-  @doc "A bongo at `f` struck at `vel`, `mute` of the way from open to muted: a hand ringing the head's modes, quickly and in a tail."
+  @doc """
+  A bongo at `f` struck at `vel`, `mute` of the way from open to muted: a hand ringing the head's
+  modes, quickly and in a tail.
+  """
   defsound bongo(f, vel, mute, b) do
     mix = fn a, z -> a + (z - a) * mute end
 
@@ -101,7 +116,11 @@ defmodule Mx.Paired.Drums do
     highshelf(head, hz: 1500, q: 0.707, db: (vel - 0.6) * 5) * level
   end
 
-  @doc "A stroke fitted to recordings, at `scale` times its own pitch and struck at `vel`: its partials as measured, rung by a stick of noise, over noise in each of the ride's bands, ringing long and briefly."
+  @doc """
+  A stroke fitted to recordings, at `scale` times its own pitch and struck at `vel`: its partials
+  as measured, rung by a stick of noise, over noise in each of the ride's bands, ringing long and
+  briefly.
+  """
   defsound fitted(scale, vel, d) do
     tilt = (vel - 0.6) * 12
     stick = highshelf(noise(:white) * hit(0.0005, 0.004, -4), hz: 2500, q: 0.707, db: tilt)
@@ -121,7 +140,10 @@ defmodule Mx.Paired.Drums do
       (vel / 0.6) ** 2
   end
 
-  @doc "A value read at `value` from `table` given at each of `bands`, in a straight line between the two bands around it, and held beyond the ends; numbers only."
+  @doc """
+  A value read at `value` from `table` given at each of `bands`, in a straight line between the
+  two bands around it, and held beyond the ends; numbers only.
+  """
   def between(value, bands, table) do
     value = value |> Kernel.max(hd(bands)) |> Kernel.min(List.last(bands))
 
@@ -138,7 +160,11 @@ defmodule Mx.Paired.Drums do
     from + (to - from) * along
   end
 
-  @doc "The pandeiro's stroke `s` at `f`, struck at `vel`, its head pressed `mute` of the way: a hand ringing the head's modes, a crack of band-passed noise, and the jingles' rattle ringing the discs."
+  @doc """
+  The pandeiro's stroke `s` at `f`, struck at `vel`, its head pressed `mute` of the way: a hand
+  ringing the head's modes, a crack of band-passed noise, and the jingles' rattle ringing the
+  discs.
+  """
   defsound pandeiro(f, vel, mute, s) do
     # mxs draws each stroke's strays from the note's first seed, moved by the strokes before it.
     normal = fn index ->
@@ -222,7 +248,11 @@ defmodule Mx.Paired.Drums do
       (0.93 * s.gain * (vel / 0.6) ** 0.75)
   end
 
-  @doc "A tom at the MIDI `note`, tuned from `own`, struck at `vel`: a stick through a pole at 20 Hz ringing the head's modes briefly and long, and the skin's noise with a click, each tilted by vel."
+  @doc """
+  A tom at the MIDI `note`, tuned from `own`, struck at `vel`: a stick through a pole at 20 Hz
+  ringing the head's modes briefly and long, and the skin's noise with a click, each tilted by
+  vel.
+  """
   defsound tom(note, own, vel, t) do
     pitch = hz(note)
     below = min(vel - 0.65, 0)
@@ -247,7 +277,11 @@ defmodule Mx.Paired.Drums do
     (head + dense * db(-11)) * (db(t.gain) * (vel / 0.65) ** t.curve)
   end
 
-  @doc "A conga at the pitch `pitch`, struck at `vel`, tapped by `mute`, slapped by `slap` and stopped by `damp`: the hand through a pole at 20 Hz ringing the head's modes, the skin's noise and a slap's crack."
+  @doc """
+  A conga at the pitch `pitch`, struck at `vel`, tapped by `mute`, slapped by `slap` and stopped
+  by `damp`: the hand through a pole at 20 Hz ringing the head's modes, the skin's noise and a
+  slap's crack.
+  """
   defsound conga(pitch, vel, mute, slap, damp, c) do
     held = 0.09 + 0.25 * vel * vel
     mix = fn open, tapped -> open + (tapped - open) * mute end
@@ -305,7 +339,10 @@ defmodule Mx.Paired.Drums do
     sound * (db(c.gain + mute * c.tap_gain) * (vel / 0.6) ** c.curve)
   end
 
-  @doc "A shaker of the design `s`, shaken down, or upward by `up`, at `vel`: random clicks of beads coloured by a sinking bottom, a dip and a falling top, through a burst and a tail."
+  @doc """
+  A shaker of the design `s`, shaken down, or upward by `up`, at `vel`: random clicks of beads
+  coloured by a sinking bottom, a dip and a falling top, through a burst and a tail.
+  """
   defsound shake(pitch, vel, up, s) do
     shape = Enum.zip_with(s.down, s.upward, &(&1 + up * (&2 - &1)))
     at = &Enum.at(shape, &1)
@@ -356,7 +393,10 @@ defmodule Mx.Paired.Drums do
     mixed * ending * (s.gain * vel / 0.6)
   end
 
-  @doc "A tambourine at `scale` times its own pitch, at `vel`, struck, or shaken for `held` seconds when `shaken`: random clicks and a strike ringing the jingles' modes."
+  @doc """
+  A tambourine at `scale` times its own pitch, at `vel`, struck, or shaken for `held` seconds when
+  `shaken`: random clicks and a strike ringing the jingles' modes.
+  """
   defsound tambourine(scale, vel, held, shaken) do
     rattle = 0.15 + vel * 0.6
     shaking = envelope([{0.005, 1}, {held, 1}, {rattle, 0, -4}])

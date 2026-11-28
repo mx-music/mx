@@ -1,9 +1,12 @@
 defmodule Mx.Import do
   @moduledoc """
-  Builds the song a MusicXML score, a MIDI file or an ABC tune makes, as `mix mx.import` writes it, and loads it without writing it.
+  Builds the song a MusicXML score, a MIDI file or an ABC tune makes, as `mix mx.import` writes
+  it, and loads it without writing it.
 
-  `song/2` gives the song's text, `load/2` the song itself, as `Mx.Song.load/1` would load the file `mix mx.import` writes, so a session or a render plays what the written song plays.
-  Both take what `mix mx.import` takes: `part:` a list such as `["Alto=oboe"]`, `tempo:`, `grid:` such as `"1/16"`, `tune:` and `out:`, the path the song would be written at.
+  `song/2` gives the song's text, `load/2` the song itself, as `Mx.Song.load/1` would load the
+  file `mix mx.import` writes, so a session or a render plays what the written song plays.
+  Both take what `mix mx.import` takes: `part:` a list such as `["Alto=oboe"]`, `tempo:`, `grid:`
+  such as `"1/16"`, `tune:` and `out:`, the path the song would be written at.
   """
 
   alias Mx.{Score, Song}
@@ -15,9 +18,12 @@ defmodule Mx.Import do
   end
 
   @doc """
-  The song the file at `path` makes, as `{:ok, %{source: text, out: path, parts: lines, left_out: lines, tunes: lines}}`, or `{:error, message}` with `mix mx.import`'s message.
+  The song the file at `path` makes, as
+  `{:ok, %{source: text, out: path, parts: lines, left_out: lines, tunes: lines}}`, or
+  `{:error, message}` with `mix mx.import`'s message.
 
-  `out` is where `mix mx.import` would write it, `parts` says what each part plays on, `left_out` what the song leaves out, and `tunes` the tunes of an ABC file of several.
+  `out` is where `mix mx.import` would write it, `parts` says what each part plays on, `left_out`
+  what the song leaves out, and `tunes` the tunes of an ABC file of several.
   """
   def song(path, opts \\ []) when is_binary(path) and is_list(opts) do
     out = Keyword.get(opts, :out, Path.rootname(path) <> ".exs")
@@ -49,7 +55,10 @@ defmodule Mx.Import do
     {__MODULE__, message} -> {:error, message}
   end
 
-  @doc "Loads the song the file at `path` makes, as `song/2` takes it, without writing it, and returns `{:ok, song, imported}` with what `song/2` gives, or `{:error, message}`."
+  @doc """
+  Loads the song the file at `path` makes, as `song/2` takes it, without writing it, and returns
+  `{:ok, song, imported}` with what `song/2` gives, or `{:error, message}`.
+  """
   def load(path, opts \\ []) when is_binary(path) and is_list(opts) do
     with {:ok, imported} <- song(path, opts),
          {:ok, song} <- Song.load(imported.out, source: imported.source) do

@@ -1,11 +1,14 @@
 defmodule Mx.Pattern do
   @moduledoc """
-  Music written as words, which `~MX` reads when the song compiles and `Mx.steps/3` gives its sounds.
+  Music written as words, which `~MX` reads when the song compiles and `Mx.steps/3` gives its
+  sounds.
 
   `Mx.sigil_MX/2` documents what a pattern is written with: its words, lengths and marks.
 
-  A pattern is a list of cells in order, each a map of its `tokens`, none for silence, and its length in `steps`, so two patterns join with `++`.
-  A cell that glides has `glide: true` as well, an accented one `accent: true`, a grace note `grace: true` and no steps, and a cell read a character to a step `char: true`.
+  A pattern is a list of cells in order, each a map of its `tokens`, none for silence, and its
+  length in `steps`, so two patterns join with `++`.
+  A cell that glides has `glide: true` as well, an accented one `accent: true`, a grace note
+  `grace: true` and no steps, and a cell read a character to a step `char: true`.
   """
 
   @doc "The cells of a pattern's text, read a character to a step."

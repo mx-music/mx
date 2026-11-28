@@ -1,9 +1,13 @@
 defmodule Mx.Bench do
   @moduledoc """
-  Measures how a song plays, for `mix mx.bench`: whether its notes reach the engine in time, what a save costs while it plays, and how much of each buffer filling it takes.
+  Measures how a song plays, for `mix mx.bench`: whether its notes reach the engine in time, what
+  a save costs while it plays, and how much of each buffer filling it takes.
 
-  Every measurement plays against an offline engine, so nothing sounds and no sound card is needed, unless it is given `live: true`: it then plays through the default output, and adds how many buffers reached the sound card late.
-  A measurement returns its rows, to print, and its figures, a map from a name such as `"lead/idle/least_lead_ms"` to a number, to keep in a file and compare a later run with.
+  Every measurement plays against an offline engine, so nothing sounds and no sound card is
+  needed, unless it is given `live: true`: it then plays through the default output, and adds how
+  many buffers reached the sound card late.
+  A measurement returns its rows, to print, and its figures, a map from a name such as
+  `"lead/idle/least_lead_ms"` to a number, to keep in a file and compare a later run with.
   The lead of a note is the time between its being handed to the engine and its beat.
   """
 
@@ -15,8 +19,14 @@ defmodule Mx.Bench do
   @band Mx.Bench.Band
 
   @doc """
-  Plays the song at `path` for `seconds` under each of four loads: an idle machine, every scheduler of the VM busy, the song loaded and laid out every 300 ms, and twice as many busy OS processes as schedulers.
-  Returns `{:ok, rows, figures}`, each row a map with `:load`, `:calls`, `:late`, `:least_lead_ms`, `:least_later_lead_ms`, the least lead of the notes of a part's second pass on, `:longest_call_ms` and `:held_ms`, the longest a process handing notes over kept a normal scheduler of the VM without a break, 0 when under a millisecond, and, played live, `:late_buffers`, or `{:error, message}`.
+  Plays the song at `path` for `seconds` under each of four loads: an idle machine, every
+  scheduler of the VM busy, the song loaded and laid out every 300 ms, and twice as many busy OS
+  processes as schedulers.
+  Returns `{:ok, rows, figures}`, each row a map with `:load`, `:calls`, `:late`,
+  `:least_lead_ms`, `:least_later_lead_ms`, the least lead of the notes of a part's second pass
+  on, `:longest_call_ms` and `:held_ms`, the longest a process handing notes over kept a normal
+  scheduler of the VM without a break, 0 when under a millisecond, and, played live,
+  `:late_buffers`, or `{:error, message}`.
   """
   def lead(path, seconds, opts \\ []) when is_binary(path) and is_number(seconds) do
     live = Keyword.get(opts, :live, false)
@@ -191,8 +201,13 @@ defmodule Mx.Bench do
   defp kill_os(pids), do: Enum.each(pids, &System.cmd("kill", ["-9", to_string(&1)]))
 
   @doc """
-  Plays a copy of the song at `path` for `seconds` as a session does, saves a change to the copy at each of `saves`, seconds from the start, and is sent each saved version mx loads as Mx Studio is, in the process that sends its beat every #{@tick_ms} ms.
-  Returns `{:ok, rows, loads, figures}`: a row for each second, a map with `:second`, `:notes`, `:late`, `:longest_gap_ms`, `:memory_mb`, `:processes` and, played live, `:late_buffers`, how many times mx loaded the saves, and for each save the milliseconds until its description reached that process.
+  Plays a copy of the song at `path` for `seconds` as a session does, saves a change to the copy
+  at each of `saves`, seconds from the start, and is sent each saved version mx loads as Mx Studio
+  is, in the process that sends its beat every #{@tick_ms} ms.
+  Returns `{:ok, rows, loads, figures}`: a row for each second, a map with `:second`, `:notes`,
+  `:late`, `:longest_gap_ms`, `:memory_mb`, `:processes` and, played live, `:late_buffers`, how
+  many times mx loaded the saves, and for each save the milliseconds until its description reached
+  that process.
   The song's own file is not changed.
   """
   def saves(path, seconds, saves, opts \\ [])
@@ -369,9 +384,13 @@ defmodule Mx.Bench do
   end
 
   @doc """
-  Renders `seconds` of each song in `paths`, a buffer of #{@frames} frames at a time, and times the engine filling each buffer.
-  Returns `{:ok, rows, figures}`, each row a map with `:song`, `:buffers`, `:mean_percent` and `:worst_percent`, the time filling took as a share of the time a buffer lasts, and `:over`, how many took longer than they last.
-  Played live, each song plays through the default output for `seconds` instead, the buffers are the sound card's, as the engine times them, and `:over` is how many reached the sound card late.
+  Renders `seconds` of each song in `paths`, a buffer of #{@frames} frames at a time, and times
+  the engine filling each buffer.
+  Returns `{:ok, rows, figures}`, each row a map with `:song`, `:buffers`, `:mean_percent` and
+  `:worst_percent`, the time filling took as a share of the time a buffer lasts, and `:over`, how
+  many took longer than they last.
+  Played live, each song plays through the default output for `seconds` instead, the buffers are
+  the sound card's, as the engine times them, and `:over` is how many reached the sound card late.
   """
   def buffers(paths, seconds, opts \\ []) when is_list(paths) and is_number(seconds) do
     fill = if Keyword.get(opts, :live, false), do: &filled_live/2, else: &filled/2
@@ -506,8 +525,10 @@ defmodule Mx.Bench do
   end
 
   @doc """
-  The figures of `now` that are worse than in `before` by more than a tenth, as `{name, before, now}`, sorted by name.
-  A lead is worse when it is shorter, and every other figure when it is larger; a figure that was 0 is worse once it is above 0, and a figure in only one of the two is left out.
+  The figures of `now` that are worse than in `before` by more than a tenth, as
+  `{name, before, now}`, sorted by name.
+  A lead is worse when it is shorter, and every other figure when it is larger; a figure that was
+  0 is worse once it is above 0, and a figure in only one of the two is left out.
   """
   def worse(before, now) when is_map(before) and is_map(now) do
     for {name, value} <- Enum.sort(now),

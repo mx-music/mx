@@ -2,15 +2,22 @@ defmodule Mx.Synths do
   @moduledoc """
   The synths mx ships, with the options each one takes and their defaults, as mxs lists them.
 
-  A song measures time options in beats: those a synth or effect declares in beats, such as attack, decay, sustain, release and an echo's phase, and every option ending in `_slide`.
-  `to_seconds/3` turns them into the seconds the engine expects, defaults included, so a synth sounds the same against the beat at any tempo; `given_to_seconds/3` turns only the options given, for changing a sound that plays.
-  A negative time is left alone, since the sample players read a sustain of -1 as "until the end of the sample".
+  A song measures time options in beats: those a synth or effect declares in beats, such as
+  attack, decay, sustain, release and an echo's phase, and every option ending in `_slide`.
+  `to_seconds/3` turns them into the seconds the engine expects, defaults included, so a synth
+  sounds the same against the beat at any tempo; `given_to_seconds/3` turns only the options
+  given, for changing a sound that plays.
+  A negative time is left alone, since the sample players read a sustain of -1 as "until the end
+  of the sample".
   `tremolo` and `motor` are rates, picks and pulses per beat, so they are sent per second.
 
-  The effects are the synths named `fx_` followed by the effect's name, and are not synths a loop can play.
+  The effects are the synths named `fx_` followed by the effect's name, and are not synths a loop
+  can play.
   Its `in_bus` and `out_bus` are mx's to set, so a song cannot give them.
-  The live audio synths read the sound card for `live_audio`, and the sample players play `sample`, so neither are synths a loop can play.
-  `tail_seconds/1` is how long an effect chain keeps sounding after its last note ends, as Sonic Pi works it out for each effect.
+  The live audio synths read the sound card for `live_audio`, and the sample players play
+  `sample`, so neither are synths a loop can play.
+  `tail_seconds/1` is how long an effect chain keeps sounding after its last note ends, as Sonic
+  Pi works it out for each effect.
   """
 
   alias Mx.Engine.Mxs
@@ -41,24 +48,33 @@ defmodule Mx.Synths do
     Map.has_key?(options, Atom.to_string(option))
   end
 
-  @doc "The default of a synth's option, or nil when it has none or the synth takes no such option."
+  @doc """
+  The default of a synth's option, or nil when it has none or the synth takes no such option.
+  """
   def default(synth, option) when (is_atom(synth) or is_binary(synth)) and is_atom(option) do
     catalog() |> Map.fetch!(to_string(synth)) |> Map.get(Atom.to_string(option))
   end
 
-  @doc "The option of `synth` named `name`, a string such as one given on the command line, or nil when the synth takes no such option."
+  @doc """
+  The option of `synth` named `name`, a string such as one given on the command line, or nil when
+  the synth takes no such option.
+  """
   def option(synth, name) when (is_atom(synth) or is_binary(synth)) and is_binary(name) do
     options = Map.get(catalog(), to_string(synth), %{})
     if Map.has_key?(options, name), do: String.to_atom(name)
   end
 
-  @doc "The family a synth belongs to: `:keys`, `:plucked_strings`, `:bowed_strings`, `:winds`, `:mallets`, `:synths` or `:drums`."
+  @doc """
+  The family a synth belongs to: `:keys`, `:plucked_strings`, `:bowed_strings`, `:winds`,
+  `:mallets`, `:synths` or `:drums`.
+  """
   def family(synth) when is_atom(synth) or is_binary(synth) do
     families() |> Map.fetch!(to_string(synth)) |> elem(0)
   end
 
   @doc """
-  The lowest and highest MIDI notes a synth is meant to play, as `{low, high}`, or nil for a synth with no range of its own, such as `saw` or a drum.
+  The lowest and highest MIDI notes a synth is meant to play, as `{low, high}`, or nil for a synth
+  with no range of its own, such as `saw` or a drum.
   A note outside the range still plays.
   """
   def range(synth) when is_atom(synth) or is_binary(synth) do
@@ -82,8 +98,10 @@ defmodule Mx.Synths do
   end
 
   @doc """
-  An effect's options with each band's written out as the effect's own, as `{:ok, options}`: `mid: [gain: 3]` given to an effect that takes `mid_gain` becomes `mid_gain: 3`.
-  A band given an option it does not take, or anything but a list of options, is `{:error, message}`.
+  An effect's options with each band's written out as the effect's own, as `{:ok, options}`:
+  `mid: [gain: 3]` given to an effect that takes `mid_gain` becomes `mid_gain: 3`.
+  A band given an option it does not take, or anything but a list of options, is
+  `{:error, message}`.
   """
   def bands(effect, opts) when is_atom(effect) and is_list(opts) do
     bands = Map.get(@bands, effect, [])
@@ -145,7 +163,10 @@ defmodule Mx.Synths do
   defp tail(:chorus, opts), do: opts["decay"]
   defp tail(_effect, _opts), do: 1
 
-  @doc "A synth's options with its times in seconds at a tempo, adding its time defaults, which are in beats too."
+  @doc """
+  A synth's options with its times in seconds at a tempo, adding its time defaults, which are in
+  beats too.
+  """
   def to_seconds(synth, opts, tempo)
       when (is_atom(synth) or is_binary(synth)) and is_list(opts) and is_number(tempo) do
     seconds_per_beat = 60 / tempo
@@ -163,7 +184,10 @@ defmodule Mx.Synths do
     given ++ Enum.sort(implied)
   end
 
-  @doc "The options given with their rates per second at a tempo, and their times left in beats, for an engine that places a pass from its beats."
+  @doc """
+  The options given with their rates per second at a tempo, and their times left in beats, for an
+  engine that places a pass from its beats.
+  """
   def rates_to_seconds(opts, tempo) when is_list(opts) and is_number(tempo) do
     Enum.map(opts, fn {key, value} ->
       if Atom.to_string(key) in @rate_options, do: {key, value * tempo / 60}, else: {key, value}
@@ -203,7 +227,10 @@ defmodule Mx.Synths do
 
   defp effect("fx_" <> effect), do: effect
 
-  @doc "Whether an option picks a synth's sound when the note starts, so it cannot change while the note sounds: one that takes names, or one a clause of a synth written in Elixir matches on."
+  @doc """
+  Whether an option picks a synth's sound when the note starts, so it cannot change while the note
+  sounds: one that takes names, or one a clause of a synth written in Elixir matches on.
+  """
   def fixed?(%Mx.Sampled{}, option), do: fixed?("stereo_player", option)
 
   def fixed?(synth, option) do
@@ -216,7 +243,11 @@ defmodule Mx.Synths do
   def owner({:effect, effect}), do: "effect #{effect}"
   def owner(synth), do: "synth #{synth}"
 
-  @doc "Refuses a value a synth's option, or with `{:effect, effect}` an effect's, cannot take: a number outside its range, a name it does not take, or anything but a number where it takes one, naming what it takes."
+  @doc """
+  Refuses a value a synth's option, or with `{:effect, effect}` an effect's, cannot take: a number
+  outside its range, a name it does not take, or anything but a number where it takes one, naming
+  what it takes.
+  """
   def check_value(_synth, :note, _value), do: :ok
   def check_value(_synth, :held, held) when is_number(held) and held > 0, do: :ok
 
@@ -274,7 +305,10 @@ defmodule Mx.Synths do
   defp number(value) when value == trunc(value), do: Integer.to_string(trunc(value))
   defp number(value), do: Float.to_string(value)
 
-  @doc "Forgets the catalog read from the engine, so the next use reads it again, with the synths written in Elixir known since."
+  @doc """
+  Forgets the catalog read from the engine, so the next use reads it again, with the synths
+  written in Elixir known since.
+  """
   def forget do
     :persistent_term.erase(__MODULE__)
     :persistent_term.erase({__MODULE__, :limits})

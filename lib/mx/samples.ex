@@ -1,11 +1,16 @@
 defmodule Mx.Samples do
   @moduledoc """
-  Sonic Pi's sample pack, which is under Creative Commons 0, and the files a song plays as samples: a file by path, a file of a collection as `{collection, name}`, or a file of any public GitHub repository as `{:github, repo, ref, path}`.
+  Sonic Pi's sample pack, which is under Creative Commons 0, and the files a song plays as
+  samples: a file by path, a file of a collection as `{collection, name}`, or a file of any public
+  GitHub repository as `{:github, repo, ref, path}`.
 
-  `Mx.Collections` lists the collections: `{:sonic_pi, :loop_amen}` is a sample of the pack, and `{:vcsl, path}` a file of a repository mx knows by name.
+  `Mx.Collections` lists the collections: `{:sonic_pi, :loop_amen}` is a sample of the pack, and
+  `{:vcsl, path}` a file of a repository mx knows by name.
 
-  The pack is too large for the repository, so `download/1` fetches it from a fixed Sonic Pi release into a folder outside the repository, the user's cache by default.
-  Each file is written under a temporary name and renamed once complete, so an interrupted download never leaves a sample that looks downloaded.
+  The pack is too large for the repository, so `download/1` fetches it from a fixed Sonic Pi
+  release into a folder outside the repository, the user's cache by default.
+  Each file is written under a temporary name and renamed once complete, so an interrupted
+  download never leaves a sample that looks downloaded.
   """
 
   alias Mx.Collections
@@ -29,13 +34,19 @@ defmodule Mx.Samples do
   @doc "The folder in the user's cache the sample pack downloads to."
   def default_dir, do: Path.join(:filename.basedir(:user_cache, "mx"), "samples-#{@release}")
 
-  @doc "How messages name a sample: by its name in the pack, its path, its collection and path, or its repository and path."
+  @doc """
+  How messages name a sample: by its name in the pack, its path, its collection and path, or its
+  repository and path.
+  """
   def name({:github, repo, _ref, path}), do: "#{repo} #{path}"
   def name({:sonic_pi, name}), do: to_string(name)
   def name({collection, path}), do: "#{collection} #{path}"
   def name(ref), do: to_string(ref)
 
-  @doc "Refuses a GitHub sample's reference that is not `{:github, \"owner/repo\", ref, path}`, as `:ok` or `{:error, message}`."
+  @doc """
+  Refuses a GitHub sample's reference that is not `{:github, "owner/repo", ref, path}`, as `:ok`
+  or `{:error, message}`.
+  """
   def check_github({:github, repo, ref, path} = github) do
     if is_binary(repo) and repo =~ ~r"^[\w.-]+/[\w.-]+$" and is_binary(ref) and ref != "" and
          is_binary(path) and path != "" do
@@ -46,7 +57,10 @@ defmodule Mx.Samples do
     end
   end
 
-  @doc "Refuses a sample's reference that mx cannot read, as `:ok` or `{:error, message}`, without looking for its file."
+  @doc """
+  Refuses a sample's reference that mx cannot read, as `:ok` or `{:error, message}`, without
+  looking for its file.
+  """
   def check_ref({:github, _repo, _ref, _path} = github), do: check_github(github)
   def check_ref({:sonic_pi, name}) when is_atom(name), do: :ok
   def check_ref(path) when is_binary(path), do: :ok
@@ -67,7 +81,11 @@ defmodule Mx.Samples do
     end
   end
 
-  @doc "The full path of a sample given as a file path, of a collection, or of a GitHub repository, downloaded into the cache when it is not there yet, or `{:error, message}` saying why it cannot play."
+  @doc """
+  The full path of a sample given as a file path, of a collection, or of a GitHub repository,
+  downloaded into the cache when it is not there yet, or `{:error, message}` saying why it cannot
+  play.
+  """
   def path(ref, dir \\ dir())
 
   def path({:github, repo, ref, file} = github, _dir) do
@@ -118,12 +136,19 @@ defmodule Mx.Samples do
 
   @cut [:from, :to, :beats, :slices, :slice]
 
-  @doc "Whether an option cuts a sample or fits it to beats, which mx works out into the sample players' own options."
+  @doc """
+  Whether an option cuts a sample or fits it to beats, which mx works out into the sample players'
+  own options.
+  """
   def cut_option?(option), do: option in @cut
 
   defp known_option?(option), do: Mx.Synths.option?(:stereo_player, option) or cut_option?(option)
 
-  @doc "The path of the sample `ref` played with a sample's options `opts`, as `{:ok, path}`, or `{:error, message}` refusing a file that cannot play, an option samples do not take, or one that cannot cut it."
+  @doc """
+  The path of the sample `ref` played with a sample's options `opts`, as `{:ok, path}`, or
+  `{:error, message}` refusing a file that cannot play, an option samples do not take, or one that
+  cannot cut it.
+  """
   def check(ref, opts) when is_list(opts) do
     case opts |> Keyword.keys() |> Enum.find(&(not known_option?(&1))) do
       nil ->
@@ -136,7 +161,9 @@ defmodule Mx.Samples do
     end
   end
 
-  @doc "Refuses options that cannot cut the sample `ref` at `path`, as `:ok` or `{:error, message}`."
+  @doc """
+  Refuses options that cannot cut the sample `ref` at `path`, as `:ok` or `{:error, message}`.
+  """
   def check_cut(ref, path, opts) do
     given = &Keyword.has_key?(opts, &1)
 
@@ -197,7 +224,10 @@ defmodule Mx.Samples do
     end
   end
 
-  @doc "Sample options with from, to, slices, slice and beats worked out into start, finish and rate, for a file of `seconds` played at `tempo`; options that cut nothing need no length."
+  @doc """
+  Sample options with from, to, slices, slice and beats worked out into start, finish and rate,
+  for a file of `seconds` played at `tempo`; options that cut nothing need no length.
+  """
   def cut(opts, seconds, tempo) when is_list(opts) and is_number(tempo) do
     if Enum.any?(@cut, &Keyword.has_key?(opts, &1)) do
       start = if from = opts[:from], do: from / seconds, else: Keyword.get(opts, :start, 0)
@@ -225,13 +255,18 @@ defmodule Mx.Samples do
     {start + piece * slice, start + piece * (slice + 1)}
   end
 
-  @doc "The loudest moment of a sample file mx can play, as a level from 0, read from the whole file."
+  @doc """
+  The loudest moment of a sample file mx can play, as a level from 0, read from the whole file.
+  """
   def peak(path) when is_binary(path) do
     {:ok, peak} = Native.sample_peak(path)
     peak
   end
 
-  @doc "The line mx prints when the song loads for a sample file played at `peak`, silent or too quiet to hear without normalize, or nil."
+  @doc """
+  The line mx prints when the song loads for a sample file played at `peak`, silent or too quiet
+  to hear without normalize, or nil.
+  """
   def level_warning(ref, peak, normalized?)
 
   def level_warning(ref, peak, _normalized?) when peak == 0, do: "sample #{name(ref)} is silent"
@@ -264,9 +299,12 @@ defmodule Mx.Samples do
   end
 
   @doc """
-  Downloads a collection ahead of time, for `mx samples download SOURCE` and `mix mx.samples.download SOURCE`, and returns `{:ok, message}` or `{:error, message}`.
+  Downloads a collection ahead of time, for `mx samples download SOURCE` and
+  `mix mx.samples.download SOURCE`, and returns `{:ok, message}` or `{:error, message}`.
 
-  SOURCE is a collection's name, such as `sonic_pi` or `vcsl`, or a GitHub repository as `owner/repo@ref`; but for `sonic_pi`, either is optionally followed by `:folder` for only that folder.
+  SOURCE is a collection's name, such as `sonic_pi` or `vcsl`, or a GitHub repository as
+  `owner/repo@ref`; but for `sonic_pi`, either is optionally followed by `:folder` for only that
+  folder.
   Files already on disk are skipped, so running it again finishes an interrupted download.
   """
   def download_source("sonic_pi") do
@@ -339,7 +377,10 @@ defmodule Mx.Samples do
     "Could not download #{file}: #{reason}.\nThe #{count} files downloaded before it stay in #{dir}; run mix mx.samples.download #{source} again to finish."
   end
 
-  @doc "Downloads the files of the pack that are missing, with its licence, and returns `{:ok, count}` or `{:error, file, reason, count}`."
+  @doc """
+  Downloads the files of the pack that are missing, with its licence, and returns `{:ok, count}`
+  or `{:error, file, reason, count}`.
+  """
   def download(opts \\ []) when is_list(opts) do
     dir = Keyword.get(opts, :dir, dir())
     base_url = Keyword.get(opts, :base_url, Application.get_env(:mx, :samples_url, @base_url))

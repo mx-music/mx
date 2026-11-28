@@ -32,7 +32,10 @@ defmodule Paredao.Synths do
     note_envelope(body + click, played)
   end
 
-  @doc "A funk snare: a low knock under a burst of noise about a tenth of a second long, its balance fitted to the genre's records."
+  @doc """
+  A funk snare: a low knock under a burst of noise about a tenth of a second long, its balance
+  fitted to the genre's records.
+  """
   attr :vel, :float, default: 0.8, range: 0..1, doc: "How hard it is struck."
   envelope_attrs sustain: 1, release: 0.05
 
@@ -50,7 +53,10 @@ defmodule Paredao.Synths do
     (knock + burst) |> gain(0.5 * played.vel) |> note_envelope(played)
   end
 
-  @doc "A keyboard's lead: two saws a little apart over a square an octave below, through a filter that closes after the stroke."
+  @doc """
+  A keyboard's lead: two saws a little apart over a square an octave below, through a filter that
+  closes after the stroke.
+  """
   attr :note, :note, default: 67, doc: "The pitch, which a change glides."
 
   attr :vel, :float,

@@ -2,25 +2,42 @@ defmodule Mix.Tasks.Mx.Bench do
   @shortdoc "Measures whether a song's notes reach the engine in time"
 
   @moduledoc """
-  Measures how a song plays, as `Mx.Bench` works it out, against an offline engine, so nothing sounds.
+  Measures how a song plays, as `Mx.Bench` works it out, against an offline engine, so nothing
+  sounds.
 
       mix mx.bench lead examples/choro.exs
       mix mx.bench saves examples/trap.exs --at 5,10,15
       mix mx.bench buffers examples/choro.exs examples/trap.exs examples/afrobeat.exs
 
-  `lead` plays the song under four loads and prints a row for each: the notes handed to the engine, how many were handed over after their beat, the shortest lead, which is the time between a note being handed over and its beat, the shortest lead from each part's second pass on, the longest call into the engine, and the longest a process handing notes over kept a normal scheduler of the VM without a break, in milliseconds, 0 when under one.
-  The loads are `idle`, `vm_busy`, with every scheduler of the VM busy, `saves`, with the song loaded and laid out every 300 ms, and `os_busy`, with twice as many busy OS processes as schedulers.
+  `lead` plays the song under four loads and prints a row for each: the notes handed to the
+  engine, how many were handed over after their beat, the shortest lead, which is the time between
+  a note being handed over and its beat, the shortest lead from each part's second pass on, the
+  longest call into the engine, and the longest a process handing notes over kept a normal
+  scheduler of the VM without a break, in milliseconds, 0 when under one.
+  The loads are `idle`, `vm_busy`, with every scheduler of the VM busy, `saves`, with the song
+  loaded and laid out every 300 ms, and `os_busy`, with twice as many busy OS processes as
+  schedulers.
 
-  `saves` plays a copy of the song, saves a change to the copy at each second `--at` names, and prints a row for each second: the notes handed over, the late ones, the longest gap between two beat messages to a window, the VM's memory and its process count.
-  Under the rows it prints how many times mx loaded the saves, and how long after each save its description reached the window.
+  `saves` plays a copy of the song, saves a change to the copy at each second `--at` names, and
+  prints a row for each second: the notes handed over, the late ones, the longest gap between two
+  beat messages to a window, the VM's memory and its process count.
+  Under the rows it prints how many times mx loaded the saves, and how long after each save its
+  description reached the window.
   The song's own file is never changed.
 
-  `buffers` renders each song a buffer of 512 frames at a time and prints, for each, the time filling a buffer took as a share of the time it lasts, on average and at worst, and how many buffers took longer than they last.
+  `buffers` renders each song a buffer of 512 frames at a time and prints, for each, the time
+  filling a buffer took as a share of the time it lasts, on average and at worst, and how many
+  buffers took longer than they last.
 
   `--seconds` is how long each measurement plays, 20 unless given.
-  `--live` plays through the default output instead of an offline engine, so the song is heard, and adds a last column with the buffers that reached the sound card late, as the engine counts them; with it, `buffers` plays each song and gives the engine's own timing of the sound card's buffers.
-  `--write FILE` writes the figures to a file, and `--compare FILE` prints each figure that is worse than in such a file by more than a tenth, and nothing when none is.
-  The figures measured on 18 November 2026 on a MacBook Pro are in `bench/`, one file for each command.
+  `--live` plays through the default output instead of an offline engine, so the song is heard,
+  and adds a last column with the buffers that reached the sound card late, as the engine counts
+  them; with it, `buffers` plays each song and gives the engine's own timing of the sound card's
+  buffers.
+  `--write FILE` writes the figures to a file, and `--compare FILE` prints each figure that is
+  worse than in such a file by more than a tenth, and nothing when none is.
+  The figures measured on 18 November 2026 on a MacBook Pro are in `bench/`, one file for each
+  command.
   """
 
   use Mix.Task

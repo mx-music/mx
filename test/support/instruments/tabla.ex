@@ -2,8 +2,11 @@ defmodule Mx.Instruments.Tabla do
   @moduledoc """
   The tabla, measured from the CC0 "tabla bols" pack by mmiron on Freesound.
 
-  Each bol is a stroke: the head's modes as ratios of the note's frequency, each with a level in dB and the seconds it rings, and noise in bands from 113 Hz up, each with a level in dB and the seconds it fades.
-  The bands move with the note, so a note retunes the whole stroke, and a harder stroke is louder and brighter.
+  Each bol is a stroke: the head's modes as ratios of the note's frequency, each with a level in
+  dB and the seconds it rings, and noise in bands from 113 Hz up, each with a level in dB and the
+  seconds it fades.
+  The bands move with the note, so a note retunes the whole stroke, and a harder stroke is louder
+  and brighter.
   """
 
   use Mx.Instrument

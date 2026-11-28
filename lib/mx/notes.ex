@@ -2,8 +2,10 @@ defmodule Mx.Notes do
   @moduledoc """
   Note names, chords and scales, worked out as plain MIDI note numbers.
 
-  A note name is a letter from a to g, upper or lower case, an optional `s` for sharp or `b` for flat, and an optional octave that defaults to 4, so `:c4` is 60, middle C.
-  Chords and scales are lists of note numbers, built from a root given as a name or a number, and a scale ends on the octave above its root.
+  A note name is a letter from a to g, upper or lower case, an optional `s` for sharp or `b` for
+  flat, and an optional octave that defaults to 4, so `:c4` is 60, middle C.
+  Chords and scales are lists of note numbers, built from a root given as a name or a number, and
+  a scale ends on the octave above its root.
   """
 
   @letters %{"c" => 0, "d" => 2, "e" => 4, "f" => 5, "g" => 7, "a" => 9, "b" => 11}
@@ -39,7 +41,10 @@ defmodule Mx.Notes do
     chromatic: List.duplicate(1, 12)
   }
 
-  @doc "A note number for a number or a note name such as `:c4`, raising `ArgumentError` for an unknown name."
+  @doc """
+  A note number for a number or a note name such as `:c4`, raising `ArgumentError` for an unknown
+  name.
+  """
   def note(number) when is_number(number), do: number
 
   def note(name) when is_atom(name) and name not in [nil, true, false] do
@@ -54,7 +59,10 @@ defmodule Mx.Notes do
     end
   end
 
-  @doc "The note number for a note name written as text, such as \"A2\", raising `ArgumentError` for an unknown name."
+  @doc """
+  The note number for a note name written as text, such as "A2", raising `ArgumentError` for an
+  unknown name.
+  """
   def parse(text) when is_binary(text) do
     case Regex.run(~r/^([a-gA-G])([sb]?)(-?\d*)$/, text) do
       [_, letter, accidental, octave] ->
@@ -110,7 +118,10 @@ defmodule Mx.Notes do
     end
   end
 
-  @doc "The chord written at a beat of a chart, a pattern read a word to every step beats, going round past its end."
+  @doc """
+  The chord written at a beat of a chart, a pattern read a word to every step beats, going round
+  past its end.
+  """
   def chord_at(chart, step, beat) when is_list(chart) and is_number(beat) do
     if not (is_number(step) and step > 0) do
       step = inspect(step)
@@ -144,7 +155,11 @@ defmodule Mx.Notes do
     raise ArgumentError, "a chart takes one chord to a step, not #{tokens}"
   end
 
-  @doc "The notes of a scale from a root, ending on the octave above it, over `octaves:` octaves (1 by default), or every note of the scale from `from:` up to `to:`; the kind is a name or the steps from the root in semitones, from 0 up to below 12."
+  @doc """
+  The notes of a scale from a root, ending on the octave above it, over `octaves:` octaves (1 by
+  default), or every note of the scale from `from:` up to `to:`; the kind is a name or the steps
+  from the root in semitones, from 0 up to below 12.
+  """
   def scale(root, kind, opts \\ []) when (is_number(root) or is_atom(root)) and is_list(opts) do
     offsets = offsets!(kind)
     root = note(root)
@@ -175,7 +190,10 @@ defmodule Mx.Notes do
     end
   end
 
-  @doc "The pitch `number` steps of a scale from its root: 0 is the root, the scale's count of notes the root an octave up, and below 0 goes down."
+  @doc """
+  The pitch `number` steps of a scale from its root: 0 is the root, the scale's count of notes the
+  root an octave up, and below 0 goes down.
+  """
   def degree(root, kind, number) when (is_number(root) or is_atom(root)) and is_integer(number) do
     offsets = offsets!(kind)
     count = length(offsets)
@@ -231,13 +249,18 @@ defmodule Mx.Notes do
     Enum.zip_with(notes, Enum.drop(notes, 1), &(&2 - &1))
   end
 
-  @doc "The notes reached by taking each step in turn from a start note given as a name or a number."
+  @doc """
+  The notes reached by taking each step in turn from a start note given as a name or a number.
+  """
   def melody(start, steps) when (is_number(start) or is_atom(start)) and is_list(steps) do
     start = note(start)
     [start | Enum.scan(steps, start, &(&1 + &2))]
   end
 
-  @doc "The note of a chord, in any octave, closest to a note, the lower on a tie; `except:` leaves out one note."
+  @doc """
+  The note of a chord, in any octave, closest to a note, the lower on a tie; `except:` leaves out
+  one note.
+  """
   def nearest(note, chord, opts \\ [])
       when (is_integer(note) or is_atom(note)) and is_list(chord) and is_list(opts) do
     note = note(note)
@@ -260,7 +283,10 @@ defmodule Mx.Notes do
     note - Enum.min(gaps)
   end
 
-  @doc "Each note of a chord placed once from `from:` up to `to:`, leaving out the root of a chord of more notes than `limit:`."
+  @doc """
+  Each note of a chord placed once from `from:` up to `to:`, leaving out the root of a chord of
+  more notes than `limit:`.
+  """
   def voice(chord, opts) when is_list(chord) and is_list(opts) do
     from = Keyword.fetch!(opts, :from)
     to = Keyword.fetch!(opts, :to)
@@ -276,7 +302,10 @@ defmodule Mx.Notes do
     placed
   end
 
-  @doc "A scale bent to a chord: each chord tone missing from the scale takes the place of the scale note a semitone below it, or a semitone above when there is none below."
+  @doc """
+  A scale bent to a chord: each chord tone missing from the scale takes the place of the scale
+  note a semitone below it, or a semitone above when there is none below.
+  """
   def fit(scale, chord) when is_list(scale) and is_list(chord) do
     chord
     |> Enum.map(&Integer.mod(&1, 12))
