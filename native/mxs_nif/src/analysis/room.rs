@@ -1,6 +1,7 @@
 //! The room a recording of struck notes was made in, for `mix mx.fit --struck`: the power its hiss and rumble add to every band, which the fit and the check add to a render before comparing it with the recording.
 //! In each ERB band it is the mean power over the quietest twentieth of the whole file's frames, so a band is read where no note sounds in it, even when the notes ring into one another or one note takes most of the file.
 //! The quietest frames of a steady noise read under its mean, the more so the narrower the band, so each band's mean is brought back up by what the same share of its spread reads, as minimum statistics estimate noise (Martin, Noise power spectral density estimation based on optimal smoothing and minimum statistics, IEEE Transactions on Speech and Audio Processing, 2001).
+//! A band whose quietest frames all come at the file's start or end holds a note still growing or fading there, as in a file of one made note, and has no room.
 //! A file that falls silent anywhere, as one made rather than recorded does, has no room.
 
 use super::bands::{band_power, erb_bands_to};
@@ -60,10 +61,19 @@ impl Room {
         let bands: Vec<(f64, f64, f64)> = grid
             .iter()
             .zip(powers)
-            .map(|((low, high), mut band)| {
-                band.sort_by(f64::total_cmp);
-                let count = ((band.len() as f64 * QUIETEST).ceil() as usize).max(1);
-                let power = band[..count].iter().sum::<f64>() / count as f64;
+            .map(|((low, high), band)| {
+                let frames = band.len();
+                let count = ((frames as f64 * QUIETEST).ceil() as usize).max(1);
+                let mut quietest: Vec<(usize, f64)> = band.into_iter().enumerate().collect();
+                quietest.sort_by(|a, b| a.1.total_cmp(&b.1));
+                quietest.truncate(count);
+                // A note growing from the file's start or fading at its end is quietest there, while a steady noise is quietest anywhere.
+                let first = quietest.iter().all(|(i, _)| *i < 2 * count);
+                let last = quietest.iter().all(|(i, _)| *i + 2 * count >= frames);
+                if first || last {
+                    return (*low, *high, 0.0);
+                }
+                let power = quietest.iter().map(|(_, p)| p).sum::<f64>() / count as f64;
                 (
                     *low,
                     *high,
@@ -224,18 +234,50 @@ mod tests {
         assert!(quietest_share(5000.0) > 0.97);
     }
 
-    #[test]
-    fn a_steady_noise_reads_its_power_in_every_band() {
-        let rate = 48000.0;
+    fn noise(rate: f64, seconds: f64) -> Vec<f64> {
         let mut state = 0x9e37_79b9_7f4a_7c15u64;
-        let noise: Vec<f64> = (0..(rate * 60.0) as usize)
+        (0..(rate * seconds) as usize)
             .map(|_| {
                 state ^= state << 13;
                 state ^= state >> 7;
                 state ^= state << 17;
                 (state >> 11) as f64 / (1u64 << 52) as f64 - 1.0
             })
+            .collect()
+    }
+
+    #[test]
+    fn a_note_that_grows_from_the_start_or_rings_to_the_end_of_its_file_is_no_room() {
+        let rate = 16000.0;
+        let dither = 1e-5;
+        let file: Vec<f64> = noise(rate, 4.0)
+            .iter()
+            .enumerate()
+            .map(|(i, n)| {
+                let t = i as f64 / rate;
+                let growing = 0.1 * 10f64.powf(-20.0 * (1.5 - t).max(0.0) / 20.0);
+                let fading = 0.5 * 10f64.powf(-12.0 * t / 20.0);
+                growing * (2.0 * std::f64::consts::PI * 110.0 * t).sin()
+                    + fading * (2.0 * std::f64::consts::PI * 330.0 * t).sin()
+                    + dither * n
+            })
             .collect();
+        let room = Room::measure(&file, rate, 110.0).unwrap();
+        assert_eq!(room.band(105.0, 115.0), 0.0);
+        assert_eq!(room.band(320.0, 340.0), 0.0);
+        let quiet: Vec<f64> = noise(rate, 4.0).iter().map(|n| dither * n).collect();
+        let alone = Room::measure(&quiet, rate, 110.0).unwrap();
+        let (far, wanted) = (room.band(3000.0, 4000.0), alone.band(3000.0, 4000.0));
+        assert!(
+            (10.0 * (far / wanted).log10()).abs() < 0.1,
+            "{far:e} for {wanted:e}"
+        );
+    }
+
+    #[test]
+    fn a_steady_noise_reads_its_power_in_every_band() {
+        let rate = 48000.0;
+        let noise = noise(rate, 60.0);
         let room = Room::measure(&noise, rate, 261.6).unwrap();
         let window = partials::window(rate, 261.6) as f64;
         // Uniform noise from -1 to 1 has a power of a third; through a Hann window and its norm each bin reads 6 over the window's length of it, and the padded transform has twice the window's length over the rate bins a hertz.
